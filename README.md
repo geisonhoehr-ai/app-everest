@@ -18,8 +18,8 @@ pnpm install
 2. **Configure as variáveis de ambiente:**
 Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 ```env
-NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase_aqui
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_publica_do_supabase_aqui
+VITE_SUPABASE_URL=sua_url_do_supabase_aqui
+VITE_SUPABASE_ANON_KEY=sua_chave_publica_do_supabase_aqui
 ```
 
 3. **Execute o projeto:**
