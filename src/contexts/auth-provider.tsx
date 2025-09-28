@@ -36,13 +36,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
 
-  const waitForProfile = async (userId: string, maxAttempts = 3, baseDelay = 500): Promise<UserProfile | null> => {
+  const waitForProfile = async (userId: string, maxAttempts = 5, baseDelay = 2000): Promise<UserProfile | null> => {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const profile = await Promise.race([
           getUserProfile(userId),
           new Promise<null>((_, reject) =>
-            setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
           )
         ])
 
@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } = await Promise.race([
           supabase.auth.getSession(),
           new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
+            setTimeout(() => reject(new Error('Auth initialization timeout')), 15000)
           )
         ])
 

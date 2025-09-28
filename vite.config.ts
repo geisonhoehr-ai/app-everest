@@ -37,4 +37,8 @@ export default defineConfig(({ mode }) => ({
     environment: 'happy-dom',
     globals: true,
   },
+  preview: {
+    port: 8082,
+    host: true
+  }
 }))

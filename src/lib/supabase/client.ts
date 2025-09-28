@@ -16,7 +16,7 @@ console.log('Supabase config:', {
   hasKey: !!SUPABASE_PUBLISHABLE_KEY
 })
 
-// Create client with error handling
+// Create client with error handling and better timeout configuration
 let supabase: ReturnType<typeof createClient<Database>>
 
 try {
@@ -28,7 +28,22 @@ try {
         storage: typeof window !== 'undefined' ? localStorage : undefined,
         persistSession: true,
         autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce'
       },
+      global: {
+        headers: {
+          'X-Client-Info': 'everest-app'
+        }
+      },
+      db: {
+        schema: 'public'
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
+      }
     },
   )
 } catch (error) {
