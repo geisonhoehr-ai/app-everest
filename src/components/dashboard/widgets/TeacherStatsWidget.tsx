@@ -6,32 +6,69 @@ import {
 } from '@/components/ui/animated-card'
 import { FileText, MessageSquare, Users } from 'lucide-react'
 import { useCountAnimation, useStaggeredAnimation, useFloat } from '@/hooks/useAnimations'
-import { memo, useEffect } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
-
-const stats = [
-  {
-    title: 'Redações para Corrigir',
-    value: 12,
-    description: 'Aguardando sua avaliação',
-    icon: FileText,
-  },
-  {
-    title: 'Dúvidas no Fórum',
-    value: 8,
-    description: 'Tópicos não respondidos',
-    icon: MessageSquare,
-  },
-  {
-    title: 'Alunos Ativos',
-    value: 237,
-    description: 'Em suas turmas',
-    icon: Users,
-  },
-]
+import { dashboardService } from '@/services/dashboardService'
+import { useAuth } from '@/hooks/use-auth'
 
 const TeacherStatsWidget = memo(() => {
+  const { user } = useAuth()
+  const [teacherStats, setTeacherStats] = useState<{
+    essaysToCorrect: number
+    forumQuestions: number
+    activeStudents: number
+  } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!user?.id) return
+      
+      try {
+        const stats = await dashboardService.getTeacherStats(user.id)
+        setTeacherStats(stats)
+      } catch (error) {
+        console.error('Erro ao carregar estatísticas do professor:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadStats()
+  }, [user?.id])
+
+  const stats = teacherStats ? [
+    {
+      title: 'Redações para Corrigir',
+      value: teacherStats.essaysToCorrect,
+      description: 'Aguardando sua avaliação',
+      icon: FileText,
+    },
+    {
+      title: 'Dúvidas no Fórum',
+      value: teacherStats.forumQuestions,
+      description: 'Tópicos não respondidos',
+      icon: MessageSquare,
+    },
+    {
+      title: 'Alunos Ativos',
+      value: teacherStats.activeStudents,
+      description: 'Em suas turmas',
+      icon: Users,
+    },
+  ] : []
+
   const delays = useStaggeredAnimation(stats.length, 100)
+
+  if (loading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="h-24 bg-muted animate-pulse rounded-lg" />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-3">

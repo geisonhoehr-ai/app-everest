@@ -1,271 +1,268 @@
 import { supabase } from '@/lib/supabase/client'
-import type { Database } from '@/lib/supabase/types'
 
-export type Flashcard = Database['public']['Tables']['flashcards']['Row']
-export type Subject = Database['public']['Tables']['subjects']['Row']
-export type TopicWithCardCount =
-  Database['public']['Tables']['topics']['Row'] & {
-    flashcards: { count: number }[]
-  }
-export type TopicWithSubjectAndCards =
-  Database['public']['Tables']['topics']['Row'] & {
-    subjects: Pick<
-      Database['public']['Tables']['subjects']['Row'],
-      'name'
-    > | null
-    flashcards: Flashcard[]
-  }
-
-export interface SessionCardDetail extends Flashcard {
-  userAnswer: 'correct' | 'incorrect'
-}
-
-export interface FlashcardSession {
+export interface FlashcardSubject {
   id: string
-  date: string
-  subjectName: string
-  topicTitle: string
-  mode: string
-  totalCards: number
-  correct: number
-  incorrect: number
-  details?: SessionCardDetail[]
+  name: string
+  description: string
+  image: string
+  topics: FlashcardTopic[]
 }
 
-export interface SaveSessionPayload {
-  topicId: string
-  mode: string
-  totalCards: number
-  correct: number
-  incorrect: number
+export interface FlashcardTopic {
+  id: string
+  name: string
+  description: string
+  flashcardCount: number
 }
 
-export const getSubjectById = async (
-  subjectId: string,
-): Promise<Subject | null> => {
-  const { data, error } = await supabase
-    .from('subjects')
-    .select('*')
-    .eq('id', subjectId)
-    .single()
-
-  if (error) {
-    console.error('Error fetching subject:', error)
-    if (error.code === 'PGRST116') return null
-    throw error
-  }
-
-  return data
+export interface Flashcard {
+  id: string
+  question: string
+  answer: string
+  explanation?: string
+  difficulty: number
+  external_resource_url?: string
 }
 
-export const getTopicsBySubjectId = async (
-  subjectId: string,
-): Promise<TopicWithCardCount[]> => {
-  const { data, error } = await supabase
-    .from('topics')
-    .select(
-      `
-      *,
-      flashcards ( count )
-    `,
-    )
-    .eq('subject_id', subjectId)
-    .order('name', { ascending: true })
-
-  if (error) {
-    console.error('Error fetching topics:', error)
-    throw error
-  }
-
-  return data as TopicWithCardCount[]
+export interface FlashcardProgress {
+  id: string
+  flashcard_id: string
+  last_reviewed_at: string
+  next_review_at?: string
+  interval_days: number
+  ease_factor: number
+  repetitions: number
+  quality?: number
 }
 
-export const getTopicWithCards = async (
-  topicId: string,
-): Promise<TopicWithSubjectAndCards | null> => {
-  const { data, error } = await supabase
-    .from('topics')
-    .select(
-      `
-      *,
-      subjects ( name ),
-      flashcards ( * )
-    `,
-    )
-    .eq('id', topicId)
-    .single()
+export const flashcardService = {
+  // Buscar todas as matérias com flashcards
+  async getFlashcardSubjects(): Promise<FlashcardSubject[]> {
+    try {
+      const { data: subjects, error } = await supabase
+        .from('subjects')
+        .select(`
+          id,
+          name,
+          description,
+          image_url,
+          topics (
+            id,
+            name,
+            description,
+            flashcards (id)
+          )
+        `)
+        .order('name')
 
-  if (error) {
-    console.error('Error fetching topic with cards:', error)
-    return null
+      if (error) throw error
+
+      return subjects?.map(subject => ({
+        id: subject.id,
+        name: subject.name,
+        description: subject.description,
+        image: subject.image_url || `https://img.usecurling.com/p/400/200?q=${encodeURIComponent(subject.name)}`,
+        topics: subject.topics?.map(topic => ({
+          id: topic.id,
+          name: topic.name,
+          description: topic.description,
+          flashcardCount: topic.flashcards?.length || 0
+        })) || []
+      })) || []
+    } catch (error) {
+      console.error('Erro ao buscar matérias de flashcards:', error)
+      return []
+    }
+  },
+
+  // Buscar flashcards de um tópico
+  async getFlashcardsByTopic(topicId: string): Promise<Flashcard[]> {
+    try {
+      const { data: flashcards, error } = await supabase
+        .from('flashcards')
+        .select('*')
+        .eq('topic_id', topicId)
+        .order('created_at')
+
+      if (error) throw error
+
+      return flashcards?.map(flashcard => ({
+        id: flashcard.id,
+        question: flashcard.question,
+        answer: flashcard.answer,
+        explanation: flashcard.explanation,
+        difficulty: flashcard.difficulty,
+        external_resource_url: flashcard.external_resource_url
+      })) || []
+    } catch (error) {
+      console.error('Erro ao buscar flashcards do tópico:', error)
+      return []
+    }
+  },
+
+  // Buscar progresso do usuário em flashcards
+  async getUserFlashcardProgress(userId: string, topicId?: string): Promise<Record<string, FlashcardProgress>> {
+    try {
+      let query = supabase
+        .from('flashcard_progress')
+        .select('*')
+        .eq('user_id', userId)
+
+      if (topicId) {
+        query = query.in('flashcard_id', 
+          supabase
+            .from('flashcards')
+            .select('id')
+            .eq('topic_id', topicId)
+        )
+      }
+
+      const { data: progress, error } = await query
+
+      if (error) throw error
+
+      const progressMap: Record<string, FlashcardProgress> = {}
+      progress?.forEach(p => {
+        progressMap[p.flashcard_id] = {
+          id: p.id,
+          flashcard_id: p.flashcard_id,
+          last_reviewed_at: p.last_reviewed_at,
+          next_review_at: p.next_review_at,
+          interval_days: p.interval_days,
+          ease_factor: p.ease_factor,
+          repetitions: p.repetitions,
+          quality: p.quality
+        }
+      })
+
+      return progressMap
+    } catch (error) {
+      console.error('Erro ao buscar progresso dos flashcards:', error)
+      return {}
+    }
+  },
+
+  // Atualizar progresso de um flashcard
+  async updateFlashcardProgress(
+    userId: string,
+    flashcardId: string,
+    quality: number,
+    responseTimeSeconds?: number
+  ): Promise<void> {
+    try {
+      // Buscar progresso atual
+      const { data: currentProgress, error: fetchError } = await supabase
+        .from('flashcard_progress')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('flashcard_id', flashcardId)
+        .single()
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError
+      }
+
+      // Calcular novos valores usando algoritmo SM-2
+      const now = new Date()
+      let newInterval = 1
+      let newRepetitions = 1
+      let newEaseFactor = 2.5
+
+      if (currentProgress) {
+        newEaseFactor = currentProgress.ease_factor
+        newRepetitions = currentProgress.repetitions
+
+        if (quality >= 3) {
+          if (newRepetitions === 0) {
+            newInterval = 1
+          } else if (newRepetitions === 1) {
+            newInterval = 6
+          } else {
+            newInterval = Math.round(currentProgress.interval_days * newEaseFactor)
+          }
+          newRepetitions += 1
+        } else {
+          newRepetitions = 0
+          newInterval = 1
+        }
+
+        // Ajustar ease factor
+        newEaseFactor = newEaseFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
+        newEaseFactor = Math.max(1.3, newEaseFactor)
+      } else {
+        newEaseFactor = 2.5 + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
+        newEaseFactor = Math.max(1.3, newEaseFactor)
+      }
+
+      const nextReview = new Date(now.getTime() + newInterval * 24 * 60 * 60 * 1000)
+
+      // Inserir ou atualizar progresso
+      const { error: upsertError } = await supabase
+        .from('flashcard_progress')
+        .upsert({
+          user_id: userId,
+          flashcard_id: flashcardId,
+          last_reviewed_at: now.toISOString(),
+          next_review_at: nextReview.toISOString(),
+          interval_days: newInterval,
+          ease_factor: newEaseFactor,
+          repetitions: newRepetitions,
+          quality: quality,
+          response_time_seconds: responseTimeSeconds
+        })
+
+      if (upsertError) throw upsertError
+    } catch (error) {
+      console.error('Erro ao atualizar progresso do flashcard:', error)
+    }
+  },
+
+  // Buscar flashcards para revisão
+  async getFlashcardsForReview(userId: string, topicId?: string): Promise<Flashcard[]> {
+    try {
+      const now = new Date().toISOString()
+      
+      let query = supabase
+        .from('flashcards')
+        .select(`
+          id,
+          question,
+          answer,
+          explanation,
+          difficulty,
+          external_resource_url,
+          flashcard_progress!left (
+            next_review_at,
+            repetitions
+          )
+        `)
+
+      if (topicId) {
+        query = query.eq('topic_id', topicId)
+      }
+
+      const { data: flashcards, error } = await query
+
+      if (error) throw error
+
+      // Filtrar flashcards que precisam de revisão
+      const flashcardsForReview = flashcards?.filter(flashcard => {
+        const progress = flashcard.flashcard_progress?.[0]
+        if (!progress) return true // Novo flashcard
+        return !progress.next_review_at || new Date(progress.next_review_at) <= new Date(now)
+      }) || []
+
+      return flashcardsForReview.map(flashcard => ({
+        id: flashcard.id,
+        question: flashcard.question,
+        answer: flashcard.answer,
+        explanation: flashcard.explanation,
+        difficulty: flashcard.difficulty,
+        external_resource_url: flashcard.external_resource_url
+      }))
+    } catch (error) {
+      console.error('Erro ao buscar flashcards para revisão:', error)
+      return []
+    }
   }
-  return data as TopicWithSubjectAndCards
-}
-
-export const getFlashcardSessionHistory = async (): Promise<
-  FlashcardSession[]
-> => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const { data, error } = await supabase
-    .from('flashcard_session_history')
-    .select(
-      `
-      id,
-      started_at,
-      session_mode,
-      cards_reviewed,
-      correct_answers,
-      incorrect_answers,
-      topics (
-        name,
-        subjects ( name )
-      )
-    `,
-    )
-    .eq('user_id', user.id)
-    .order('started_at', { ascending: false })
-
-  if (error) {
-    console.error('Error fetching session history:', error)
-    throw error
-  }
-
-  return data.map((session: any) => ({
-    id: session.id,
-    date: session.started_at,
-    subjectName: session.topics?.subjects?.name || 'Desconhecido',
-    topicTitle: session.topics?.name || 'Desconhecido',
-    mode: session.session_mode,
-    totalCards: session.cards_reviewed || 0,
-    correct: session.correct_answers || 0,
-    incorrect: session.incorrect_answers || 0,
-  }))
-}
-
-export const getFlashcardSessionDetails = async (
-  sessionId: string,
-): Promise<FlashcardSession | null> => {
-  const { data: session, error } = await supabase
-    .from('flashcard_session_history')
-    .select(
-      `
-      *,
-      topics (
-        name,
-        subjects ( name ),
-        flashcards ( * )
-      )
-    `,
-    )
-    .eq('id', sessionId)
-    .single()
-
-  if (error || !session) {
-    console.error('Error fetching session details:', error)
-    return null
-  }
-
-  const sessionSummary: FlashcardSession = {
-    id: session.id,
-    date: session.started_at,
-    subjectName: session.topics?.subjects?.name || 'Desconhecido',
-    topicTitle: session.topics?.name || 'Desconhecido',
-    mode: session.session_mode,
-    totalCards: session.cards_reviewed || 0,
-    correct: session.correct_answers || 0,
-    incorrect: session.incorrect_answers || 0,
-  }
-
-  const cards = (session.topics?.flashcards as Flashcard[]) || []
-  const details: SessionCardDetail[] = cards.map((card, index) => ({
-    ...card,
-    userAnswer:
-      index < (session.correct_answers || 0) ? 'correct' : 'incorrect',
-  }))
-
-  return { ...sessionSummary, details }
-}
-
-export const saveFlashcardSession = async (
-  sessionData: SaveSessionPayload,
-): Promise<string> => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
-
-  const { data, error } = await supabase
-    .from('flashcard_session_history')
-    .insert({
-      user_id: user.id,
-      topic_id: sessionData.topicId,
-      session_mode: sessionData.mode,
-      cards_reviewed: sessionData.totalCards,
-      correct_answers: sessionData.correct,
-      incorrect_answers: sessionData.incorrect,
-      started_at: new Date().toISOString(),
-      ended_at: new Date().toISOString(),
-    })
-    .select('id')
-    .single()
-
-  if (error || !data) {
-    console.error('Error saving flashcard session:', error)
-    throw error
-  }
-
-  return data.id
-}
-
-export const updateFlashcardProgress = async (
-  flashcardId: string,
-  quality: number,
-): Promise<void> => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return
-
-  const { error } = await supabase.from('flashcard_progress').upsert(
-    {
-      user_id: user.id,
-      flashcard_id: flashcardId,
-      quality,
-      last_reviewed_at: new Date().toISOString(),
-      next_review_at: new Date(Date.now() + 86400000 * quality).toISOString(),
-    },
-    { onConflict: 'user_id,flashcard_id' },
-  )
-
-  if (error) {
-    console.error('Error updating flashcard progress:', error)
-    throw error
-  }
-}
-
-export const getDifficultFlashcardsForTopic = async (
-  topicId: string,
-): Promise<Flashcard[]> => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const { data, error } = await supabase
-    .from('flashcard_progress')
-    .select('flashcards!inner(*)')
-    .eq('user_id', user.id)
-    .eq('flashcards.topic_id', topicId)
-    .lte('quality', 2)
-
-  if (error) {
-    console.error('Error fetching difficult flashcards:', error)
-    throw error
-  }
-
-  return data.map((item) => item.flashcards).filter(Boolean) as Flashcard[]
 }
