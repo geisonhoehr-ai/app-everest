@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+
 
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
@@ -58,7 +58,7 @@ export default function AdminSimulationFormPage() {
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false)
 
   const form = useForm<SimulationFormValues>({
-    resolver: zodResolver(simulationSchema),
+    
     defaultValues: {
       name: '',
       date: '',

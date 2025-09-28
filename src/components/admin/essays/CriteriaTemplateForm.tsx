@@ -1,5 +1,5 @@
 import { useForm, useFieldArray } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+
 
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
@@ -44,7 +44,7 @@ export const CriteriaTemplateForm = ({
   onCancel,
 }: CriteriaTemplateFormProps) => {
   const form = useForm<TemplateFormValues>({
-    resolver: zodResolver(templateSchema),
+    
     defaultValues: {
       name: template?.name || '',
       description: template?.description || '',

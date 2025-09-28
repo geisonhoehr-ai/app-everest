@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+
 
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
@@ -169,7 +169,7 @@ export default function AdminCourseContentPage() {
   const { toast } = useToast()
 
   const form = useForm<CourseContentFormValues>({
-    resolver: zodResolver(courseContentSchema),
+    
     defaultValues: {
       modules: mockCourse.modules.map((m) => ({
         ...m,

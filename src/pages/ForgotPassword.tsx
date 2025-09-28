@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import {
@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(forgotPasswordSchema),
+    
     defaultValues: { email: '' },
   })
 

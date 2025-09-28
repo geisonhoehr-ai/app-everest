@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+
 
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
@@ -50,7 +50,7 @@ export default function AdminUserFormPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userSchema),
+    
   })
 
   useEffect(() => {
