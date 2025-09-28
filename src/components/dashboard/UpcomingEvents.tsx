@@ -30,13 +30,18 @@ export const UpcomingEvents = () => {
 
   useEffect(() => {
     const loadEvents = async () => {
-      if (!user?.id) return
+      if (!user?.id) {
+        setLoading(false)
+        return
+      }
       
       try {
         const upcomingEvents = await dashboardService.getUpcomingEvents(user.id)
         setEvents(upcomingEvents)
       } catch (error) {
         console.error('Erro ao carregar eventos:', error)
+        // Em caso de erro, mostrar lista vazia
+        setEvents([])
       } finally {
         setLoading(false)
       }

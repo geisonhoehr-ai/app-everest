@@ -38,8 +38,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast()
   const { isOnline, isSlowConnection } = useNetworkStatus()
 
-  const waitForProfile = async (userId: string, maxAttempts = 3, baseDelay = 1000): Promise<UserProfile | null> => {
-    const timeout = isSlowConnection ? 8000 : 5000
+  const waitForProfile = async (userId: string, maxAttempts = 2, baseDelay = 2000): Promise<UserProfile | null> => {
+    const timeout = isSlowConnection ? 10000 : 6000
     
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -54,11 +54,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return profile
         }
       } catch (error) {
-        console.warn(`Profile fetch attempt ${attempt} failed:`, error)
+        // Only log on the last attempt to reduce console noise
+        if (attempt === maxAttempts) {
+          console.warn(`Profile fetch failed after ${maxAttempts} attempts:`, error)
+        }
       }
 
       if (attempt < maxAttempts) {
-        const delay = baseDelay * attempt // Linear backoff instead of exponential
+        const delay = baseDelay * attempt
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
@@ -92,8 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        // Add timeout to auth initialization
-        const authTimeout = isSlowConnection ? 12000 : 8000
+        // Add timeout to auth initialization - more generous timeout
+        const authTimeout = isSlowConnection ? 15000 : 10000
         const {
           data: { session: initialSession },
         } = await Promise.race([
@@ -106,11 +109,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(initialSession)
         await fetchSessionAndProfile(initialSession)
       } catch (error) {
-        console.error('Error initializing auth:', error)
+        // Don't log timeout errors as errors, just as warnings
+        if (error instanceof Error && error.message.includes('timeout')) {
+          console.warn('Auth initialization timeout - continuing without authentication')
+        } else {
+          console.error('Error initializing auth:', error)
+        }
+        
         setSession(null)
         setProfile(null)
 
-        // Only show error message if there was a previous session or if it's a network error
+        // Only show error message for non-timeout errors
         if (error instanceof Error && !error.message.includes('timeout')) {
           toast({
             title: 'Erro de Conexão',
