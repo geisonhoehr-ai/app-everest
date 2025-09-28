@@ -35,6 +35,37 @@ export interface FlashcardProgress {
   quality?: number
 }
 
+export interface Subject {
+  id: string
+  name: string
+  description: string
+  image: string
+}
+
+export interface TopicWithCardCount {
+  id: string
+  name: string
+  description: string
+  flashcardCount: number
+}
+
+export interface TopicWithSubjectAndCards {
+  id: string
+  name: string
+  description: string
+  subject: Subject
+  flashcards: Flashcard[]
+}
+
+export interface SaveSessionPayload {
+  topicId: string
+  sessionMode: string
+  cardsReviewed: number
+  correctAnswers: number
+  incorrectAnswers: number
+  durationSeconds: number
+}
+
 export const flashcardService = {
   // Buscar todas as matérias com flashcards
   async getFlashcardSubjects(): Promise<FlashcardSubject[]> {
@@ -262,6 +293,173 @@ export const flashcardService = {
       }))
     } catch (error) {
       console.error('Erro ao buscar flashcards para revisão:', error)
+      return []
+    }
+  },
+
+  // Buscar matéria por ID
+  async getSubjectById(subjectId: string): Promise<Subject | null> {
+    try {
+      const { data: subject, error } = await supabase
+    .from('subjects')
+    .select('*')
+    .eq('id', subjectId)
+    .single()
+
+      if (error) throw error
+
+      return {
+        id: subject.id,
+        name: subject.name,
+        description: subject.description,
+        image: subject.image_url || `https://img.usecurling.com/p/400/200?q=${encodeURIComponent(subject.name)}`
+      }
+    } catch (error) {
+      console.error('Erro ao buscar matéria:', error)
+      return null
+    }
+  },
+
+  // Buscar tópicos por ID da matéria
+  async getTopicsBySubjectId(subjectId: string): Promise<TopicWithCardCount[]> {
+    try {
+      const { data: topics, error } = await supabase
+    .from('topics')
+        .select(`
+          id,
+          name,
+          description,
+          flashcards (id)
+        `)
+    .eq('subject_id', subjectId)
+        .order('name')
+
+      if (error) throw error
+
+      return topics?.map(topic => ({
+        id: topic.id,
+        name: topic.name,
+        description: topic.description,
+        flashcardCount: topic.flashcards?.length || 0
+      })) || []
+    } catch (error) {
+      console.error('Erro ao buscar tópicos:', error)
+      return []
+    }
+  },
+
+  // Buscar tópico com flashcards
+  async getTopicWithCards(topicId: string): Promise<TopicWithSubjectAndCards | null> {
+    try {
+      const { data: topic, error } = await supabase
+    .from('topics')
+        .select(`
+          id,
+          name,
+          description,
+          subjects (
+            id,
+            name,
+            description,
+            image_url
+          ),
+          flashcards (
+            id,
+            question,
+            answer,
+            explanation,
+            difficulty,
+            external_resource_url
+          )
+        `)
+    .eq('id', topicId)
+    .single()
+
+      if (error) throw error
+
+      return {
+        id: topic.id,
+        name: topic.name,
+        description: topic.description,
+        subject: {
+          id: topic.subjects.id,
+          name: topic.subjects.name,
+          description: topic.subjects.description,
+          image: topic.subjects.image_url || `https://img.usecurling.com/p/400/200?q=${encodeURIComponent(topic.subjects.name)}`
+        },
+        flashcards: topic.flashcards?.map(flashcard => ({
+          id: flashcard.id,
+          question: flashcard.question,
+          answer: flashcard.answer,
+          explanation: flashcard.explanation,
+          difficulty: flashcard.difficulty,
+          external_resource_url: flashcard.external_resource_url
+        })) || []
+      }
+    } catch (error) {
+      console.error('Erro ao buscar tópico com flashcards:', error)
+    return null
+  }
+  },
+
+  // Salvar sessão de flashcards
+  async saveFlashcardSession(userId: string, payload: SaveSessionPayload): Promise<string | null> {
+    try {
+  const { data: session, error } = await supabase
+    .from('flashcard_session_history')
+    .insert({
+          user_id: userId,
+          topic_id: payload.topicId,
+          session_mode: payload.sessionMode,
+          cards_reviewed: payload.cardsReviewed,
+          correct_answers: payload.correctAnswers,
+          incorrect_answers: payload.incorrectAnswers,
+          ended_at: new Date().toISOString()
+    })
+    .select('id')
+    .single()
+
+      if (error) throw error
+
+      return session.id
+    } catch (error) {
+      console.error('Erro ao salvar sessão de flashcards:', error)
+      return null
+    }
+  },
+
+  // Buscar flashcards difíceis para um tópico
+  async getDifficultFlashcardsForTopic(userId: string, topicId: string): Promise<Flashcard[]> {
+    try {
+      const { data: flashcards, error } = await supabase
+        .from('flashcards')
+        .select(`
+          id,
+          question,
+          answer,
+          explanation,
+          difficulty,
+          external_resource_url,
+          flashcard_progress!left (
+            ease_factor,
+            repetitions
+          )
+        `)
+        .eq('topic_id', topicId)
+        .or('flashcard_progress.ease_factor.lt.2.0,flashcard_progress.repetitions.lt.3')
+
+      if (error) throw error
+
+      return flashcards?.map(flashcard => ({
+        id: flashcard.id,
+        question: flashcard.question,
+        answer: flashcard.answer,
+        explanation: flashcard.explanation,
+        difficulty: flashcard.difficulty,
+        external_resource_url: flashcard.external_resource_url
+      })) || []
+    } catch (error) {
+      console.error('Erro ao buscar flashcards difíceis:', error)
       return []
     }
   }
