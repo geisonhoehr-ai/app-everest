@@ -9,6 +9,7 @@ import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { getUserProfile, type UserProfile } from '@/services/userService'
 import { useToast } from '@/hooks/use-toast'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 
 interface AuthContextType {
   user: User | null
@@ -35,14 +36,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
+  const { isOnline, isSlowConnection } = useNetworkStatus()
 
-  const waitForProfile = async (userId: string, maxAttempts = 5, baseDelay = 2000): Promise<UserProfile | null> => {
+  const waitForProfile = async (userId: string, maxAttempts = 3, baseDelay = 1000): Promise<UserProfile | null> => {
+    const timeout = isSlowConnection ? 8000 : 5000
+    
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const profile = await Promise.race([
           getUserProfile(userId),
           new Promise<null>((_, reject) =>
-            setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
+            setTimeout(() => reject(new Error('Profile fetch timeout')), timeout)
           )
         ])
 
@@ -54,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (attempt < maxAttempts) {
-        const delay = baseDelay * Math.pow(2, attempt - 1) // Exponential backoff
+        const delay = baseDelay * attempt // Linear backoff instead of exponential
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
@@ -89,12 +93,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initializeAuth = async () => {
       try {
         // Add timeout to auth initialization
+        const authTimeout = isSlowConnection ? 12000 : 8000
         const {
           data: { session: initialSession },
         } = await Promise.race([
           supabase.auth.getSession(),
           new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Auth initialization timeout')), 15000)
+            setTimeout(() => reject(new Error('Auth initialization timeout')), authTimeout)
           )
         ])
 
@@ -105,12 +110,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(null)
         setProfile(null)
 
-        // Show user-friendly error message
-        toast({
-          title: 'Erro de Conexão',
-          description: 'Não foi possível conectar com o servidor. Continuando sem autenticação.',
-          variant: 'destructive',
-        })
+        // Only show error message if there was a previous session or if it's a network error
+        if (error instanceof Error && !error.message.includes('timeout')) {
+          toast({
+            title: 'Erro de Conexão',
+            description: 'Não foi possível conectar com o servidor. Continuando sem autenticação.',
+            variant: 'destructive',
+          })
+        }
       } finally {
         setLoading(false)
       }
