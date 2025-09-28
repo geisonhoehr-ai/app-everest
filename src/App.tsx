@@ -68,6 +68,9 @@ const QuizResultSummaryPage = lazy(
 const FlashcardSessionHistoryPage = lazy(
   () => import('@/pages/FlashcardSessionHistory'),
 )
+const ModernComponentsDemoPage = lazy(
+  () => import('@/pages/ModernComponentsDemo'),
+)
 
 const AdminLayout = lazy(() => import('@/components/admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
@@ -281,6 +284,7 @@ const App = () => (
                   <Route path="/forum/:topicId" element={<ForumTopicPage />} />
                   <Route path="/configuracoes" element={<SettingsPage />} />
                   <Route path="/notificacoes" element={<NotificationsPage />} />
+                  <Route path="/componentes-modernos" element={<ModernComponentsDemoPage />} />
                   <Route path="/faq" element={<FaqPage />} />
                   <Route path="/contato" element={<ContactPage />} />
                   <Route path="/termos" element={<TermsPage />} />
