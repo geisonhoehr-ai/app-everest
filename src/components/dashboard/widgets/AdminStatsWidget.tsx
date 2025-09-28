@@ -7,6 +7,7 @@ import {
 import { mockAdminStats } from '@/lib/dashboard-data'
 import { useCountAnimation, useStaggeredAnimation, useFloat } from '@/hooks/useAnimations'
 import { memo, useEffect } from 'react'
+import { cn } from '@/lib/utils'
 
 const AdminStatsWidget = memo(() => {
   const delays = useStaggeredAnimation(mockAdminStats.length, 100)
