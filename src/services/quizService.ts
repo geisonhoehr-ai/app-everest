@@ -43,6 +43,51 @@ export interface QuizAttempt {
   duration_seconds?: number
 }
 
+// Export individual functions for easier importing
+export const getQuizzes = async (): Promise<Quiz[]> => {
+  try {
+    const { data: quizzes, error } = await supabase
+      .from('quizzes')
+      .select(`
+        id,
+        title,
+        description,
+        duration_minutes,
+        quiz_questions (
+          id,
+          question_text,
+          question_type,
+          options,
+          correct_answer,
+          explanation,
+          points
+        )
+      `)
+      .order('title', { ascending: true })
+
+    if (error) throw error
+
+    return quizzes?.map(quiz => ({
+      id: quiz.id,
+      title: quiz.title,
+      description: quiz.description || '',
+      duration_minutes: quiz.duration_minutes,
+      questions: quiz.quiz_questions?.map(q => ({
+        id: q.id,
+        question_text: q.question_text,
+        question_type: q.question_type,
+        options: q.options as string[],
+        correct_answer: q.correct_answer,
+        explanation: q.explanation,
+        points: q.points,
+      })) || []
+    })) || []
+  } catch (error) {
+    console.error('Erro ao buscar quizzes:', error)
+    return []
+  }
+}
+
 export const quizService = {
   // Buscar todas as matérias com quizzes
   async getQuizSubjects(): Promise<QuizSubject[]> {

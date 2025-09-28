@@ -303,6 +303,63 @@ export const getDifficultFlashcardsForTopic = async (userId: string, topicId: st
   }
 }
 
+export const getFlashcardSessionDetails = async (sessionId: string) => {
+  try {
+    const { data: session, error } = await supabase
+      .from('flashcard_session_history')
+      .select(`
+        *,
+        topics (
+          id,
+          name,
+          description,
+          subjects (
+            id,
+            name
+          )
+        )
+      `)
+      .eq('id', sessionId)
+      .single()
+
+    if (error) throw error
+
+    return session
+  } catch (error) {
+    console.error('Erro ao buscar detalhes da sessão:', error)
+    return null
+  }
+}
+
+export const getFlashcardSessionHistory = async (userId: string, limit: number = 20) => {
+  try {
+    const { data: sessions, error } = await supabase
+      .from('flashcard_session_history')
+      .select(`
+        *,
+        topics (
+          id,
+          name,
+          description,
+          subjects (
+            id,
+            name
+          )
+        )
+      `)
+      .eq('user_id', userId)
+      .order('ended_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+
+    return sessions || []
+  } catch (error) {
+    console.error('Erro ao buscar histórico de sessões:', error)
+    return []
+  }
+}
+
 export const flashcardService = {
   // Buscar todas as matérias com flashcards
   async getFlashcardSubjects(): Promise<FlashcardSubject[]> {
