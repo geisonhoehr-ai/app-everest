@@ -2,51 +2,119 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 interface MagicCardProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: 'default' | 'premium' | 'glass' | 'neon';
+  size?: 'sm' | 'md' | 'lg';
   glow?: boolean;
   gradient?: boolean;
   glass?: boolean;
   interactive?: boolean;
   led?: boolean;
-  ledColor?: 'green' | 'cyan' | 'purple' | 'orange';
+  ledColor?: 'green' | 'cyan' | 'purple' | 'orange' | 'pink' | 'blue';
   children: React.ReactNode;
 }
 
 const MagicCard = React.forwardRef<HTMLDivElement, MagicCardProps>(
-  ({ glow = true, gradient = true, glass = false, interactive = true, led = false, ledColor = 'green', children, className, ...props }, ref) => {
+  ({ 
+    variant = 'premium', 
+    size = 'md', 
+    glow = true, 
+    gradient = true, 
+    glass = false, 
+    interactive = true, 
+    led = false, 
+    ledColor = 'purple', 
+    children, 
+    className, 
+    ...props 
+  }, ref) => {
+    const sizeClasses = {
+      sm: 'p-3',
+      md: 'p-4',
+      lg: 'p-6'
+    };
+
+    const variantClasses = {
+      default: 'bg-card/95 border-border/50',
+      premium: 'bg-gradient-to-br from-card/90 via-card/80 to-card/90 border-gradient-to-r from-primary/20 via-purple-500/20 to-cyan-500/20',
+      glass: 'bg-card/20 backdrop-blur-xl border-white/10 shadow-2xl',
+      neon: 'bg-gradient-to-br from-primary/10 via-purple-900/20 to-cyan-900/20 border-primary/30 shadow-primary/20'
+    };
+
+    const glowClasses = {
+      green: 'hover:shadow-green-500/25 hover:shadow-2xl',
+      cyan: 'hover:shadow-cyan-500/25 hover:shadow-2xl',
+      purple: 'hover:shadow-purple-500/25 hover:shadow-2xl',
+      orange: 'hover:shadow-orange-500/25 hover:shadow-2xl',
+      pink: 'hover:shadow-pink-500/25 hover:shadow-2xl',
+      blue: 'hover:shadow-blue-500/25 hover:shadow-2xl'
+    };
+
     return (
       <div
         ref={ref}
         className={cn(
-          'group relative rounded-xl border border-border/50 overflow-hidden',
-          'bg-card/95 backdrop-blur-sm shadow-sm',
-          'transition-all duration-300 ease-out',
+          // Base styles
+          'group relative rounded-2xl overflow-hidden',
+          'transition-all duration-500 ease-out',
           'will-change-transform',
+          
+          // Size
+          sizeClasses[size],
+          
+          // Variant styles
+          variantClasses[variant],
+          
+          // LED effects
           led && [
             ledColor === 'green' && 'led-border animate-ledBorder',
             ledColor === 'cyan' && 'led-border-cyan animate-ledBorder',
             ledColor === 'purple' && 'led-border-purple animate-ledBorder',
-            ledColor === 'orange' && 'led-border-orange animate-ledBorder'
+            ledColor === 'orange' && 'led-border-orange animate-ledBorder',
+            ledColor === 'pink' && 'led-border-pink animate-ledBorder',
+            ledColor === 'blue' && 'led-border-blue animate-ledBorder'
           ],
+          
+          // Interactive effects
           interactive && [
-            'hover:scale-[1.02] hover:shadow-lg hover:shadow-black/10',
-            'hover:border-border/70 hover:bg-card',
+            'hover:scale-[1.03] hover:-translate-y-1',
+            'hover:rotate-1',
             'cursor-pointer'
           ],
-          glow && 'hover:shadow-md hover:shadow-primary/10',
-          glass && 'bg-card/90 backdrop-blur-md border-border/60',
+          
+          // Glow effects
+          glow && glowClasses[ledColor],
+          
+          // Glass effects
+          glass && 'backdrop-blur-2xl bg-white/5 border-white/20',
+          
           className
         )}
         {...props}
       >
-        {/* Gradient Overlay */}
-        {gradient && (
-          <div className="absolute inset-0 bg-gradient-to-br from-muted/5 via-transparent to-muted/3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        {/* Animated Background Gradient */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-purple-500/10 to-cyan-500/20 animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-tl from-transparent via-white/5 to-transparent" />
+        </div>
+        
+        {/* Floating Particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-4 left-4 w-1 h-1 bg-primary/60 rounded-full animate-ping" />
+          <div className="absolute top-8 right-6 w-0.5 h-0.5 bg-cyan-400/80 rounded-full animate-pulse" />
+          <div className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-purple-400/60 rounded-full animate-bounce" />
+        </div>
+        
+        {/* Premium Border Glow */}
+        {variant === 'premium' && (
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/20 via-purple-500/20 to-cyan-500/20 p-[1px]">
+            <div className="w-full h-full rounded-2xl bg-gradient-to-br from-card/90 via-card/80 to-card/90" />
+          </div>
         )}
         
-        {/* Glow Effect */}
-        {glow && (
-          <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-xl blur-sm" />
+        {/* Neon Glow Effect */}
+        {variant === 'neon' && (
+          <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/30 via-purple-500/30 to-cyan-500/30 blur-sm" />
           </div>
         )}
         
@@ -55,8 +123,10 @@ const MagicCard = React.forwardRef<HTMLDivElement, MagicCardProps>(
           {children}
         </div>
         
-        {/* Border Glow */}
-        <div className="absolute inset-0 rounded-xl border border-transparent bg-gradient-to-r from-primary/10 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        {/* Hover Shine Effect */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+        </div>
       </div>
     );
   }
