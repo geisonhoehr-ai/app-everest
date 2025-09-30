@@ -28,7 +28,7 @@ import {
 } from '@/services/adminQuizService'
 import { parseQuestionBankFromFile, type ImportError } from '@/lib/importExport'
 import { ImportErrorsDialog } from '@/components/admin/ImportErrorsDialog'
-import { useAuth } from '@/contexts/auth-provider'
+import { useAuth } from '@/hooks/use-auth'
 
 interface ImportQuestionsDialogProps {
   isOpen: boolean

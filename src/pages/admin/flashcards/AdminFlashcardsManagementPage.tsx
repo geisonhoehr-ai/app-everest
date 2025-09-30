@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 
@@ -5,6 +6,7 @@ import { useForm, useFieldArray } from 'react-hook-form'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import {
   Form,
   FormControl,
@@ -15,9 +17,18 @@ import {
 } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
-import { flashcardData } from '@/lib/flashcard-data'
-import { ArrowLeft, Trash, Upload, Download } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { 
+  ArrowLeft, 
+  Trash, 
+  Upload, 
+  Download, 
+  Plus,
+  FileText,
+  Layers,
+  BookOpen,
+  Save
+} from 'lucide-react'
+import { useRef } from 'react'
 import { useToast } from '@/components/ui/use-toast'
 import {
   formatFlashcardsForExport,
@@ -26,6 +37,9 @@ import {
   type ImportError,
 } from '@/lib/importExport'
 import { ImportErrorsDialog } from '@/components/admin/ImportErrorsDialog'
+import { getSubjectById } from '@/services/flashcardService'
+import { getTopicWithCards } from '@/services/flashcardService'
+import type { Subject, TopicWithSubjectAndCards } from '@/services/flashcardService'
 
 const flashcardsSchema = z.object({
   flashcards: z.array(
@@ -53,19 +67,35 @@ export default function AdminFlashcardsManagementPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importErrors, setImportErrors] = useState<ImportError[]>([])
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false)
+  const [subject, setSubject] = useState<Subject | null>(null)
+  const [topic, setTopic] = useState<TopicWithSubjectAndCards | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const subject = flashcardData.find((s) => s.id === subjectId)
-  const topic = subject?.topics.find((t) => t.id === topicId)
+  useEffect(() => {
+    const loadData = async () => {
+      if (!subjectId || !topicId) return
+      
+      try {
+        const [subjectData, topicData] = await Promise.all([
+          getSubjectById(subjectId),
+          getTopicWithCards(topicId)
+        ])
+        
+        setSubject(subjectData)
+        setTopic(topicData)
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [subjectId, topicId])
 
   const form = useForm<FlashcardsFormValues>({
-    
     defaultValues: {
-      flashcards:
-        topic?.flashcards.map((f) => ({
-          question: f.question,
-          answer: f.answer,
-          external_resource_url: f.external_resource_url || '',
-        })) || [],
+      flashcards: [],
     },
   })
 
@@ -74,7 +104,74 @@ export default function AdminFlashcardsManagementPage() {
     name: 'flashcards',
   })
 
-  if (!topic) return <div>Tópico não encontrado.</div>
+  // Atualizar o form quando os dados do tópico forem carregados
+  useEffect(() => {
+    if (topic?.flashcards) {
+      form.reset({
+        flashcards: topic.flashcards.map((f) => ({
+          question: f.question,
+          answer: f.answer,
+          external_resource_url: f.external_resource_url || '',
+        }))
+      })
+    }
+  }, [topic, form])
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate(`/admin/flashcards/${subjectId}`)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Carregando...</h1>
+            <p className="text-muted-foreground">Buscando flashcards...</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!topic) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate(`/admin/flashcards/${subjectId}`)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Erro</h1>
+            <p className="text-muted-foreground">Tópico não encontrado</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Tópico não encontrado</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              O tópico que você está procurando não existe ou foi removido
+            </p>
+            <Button onClick={() => navigate(`/admin/flashcards/${subjectId}`)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar para Tópicos
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   const onSubmit = (data: FlashcardsFormValues) => {
     console.log(data)
@@ -125,122 +222,211 @@ export default function AdminFlashcardsManagementPage() {
   return (
     <>
       <ImportErrorsDialog
-        errors={importErrors}
         isOpen={isErrorDialogOpen}
-        onClose={() => setIsErrorDialogOpen(false)}
+        onOpenChange={setIsErrorDialogOpen}
+        errors={importErrors}
       />
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => navigate(`/admin/flashcards/${subjectId}`)}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold">Gerenciar: {topic.title}</h1>
-                <p className="text-muted-foreground">
-                  Adicione, edite ou remova os flashcards deste tópico.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept=".txt"
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="mr-2 h-4 w-4" /> Importar
-              </Button>
-              <Button type="button" variant="outline" onClick={handleExport}>
-                <Download className="mr-2 h-4 w-4" /> Exportar
-              </Button>
-              <Button type="submit">Salvar</Button>
+      
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate(`/admin/flashcards/${subjectId}`)}
+              className="shadow-sm"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">{topic.name}</h1>
+              <p className="text-muted-foreground">
+                Gerencie os flashcards deste tópico
+              </p>
             </div>
           </div>
-          {fields.map((field, index) => (
-            <Card key={field.id}>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Card {index + 1}</CardTitle>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => remove(index)}
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`flashcards.${index}.question`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Pergunta (Frente)</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} rows={4} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`flashcards.${index}.answer`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Resposta (Verso)</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} rows={4} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={form.control}
-                  name={`flashcards.${index}.external_resource_url`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>URL de Recurso Externo (Opcional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="https://exemplo.com/artigo"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() =>
-              append({ question: '', answer: '', external_resource_url: '' })
-            }
-          >
-            Adicionar Novo Card
-          </Button>
-        </form>
-      </Form>
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="shadow-sm">
+              <Upload className="mr-2 h-4 w-4" />
+              Importar
+            </Button>
+            <Button variant="outline" onClick={handleExport} className="shadow-sm">
+              <Download className="mr-2 h-4 w-4" />
+              Exportar
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total de Cards</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{fields.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Matéria</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{topic.subject.name}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Status</CardTitle>
+              <Badge variant="secondary" className="text-xs">Editando</Badge>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">Ativo</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Form */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <Card key={field.id} className="border-0 bg-gradient-to-br from-white to-gray-50 shadow-sm">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-white text-sm font-semibold">
+                          {index + 1}
+                        </div>
+                        <h3 className="font-semibold text-lg">Flashcard {index + 1}</h3>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => remove(index)}
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name={`flashcards.${index}.question`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">Pergunta</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              placeholder="Digite a pergunta do flashcard..." 
+                              className="min-h-[100px] resize-none"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`flashcards.${index}.answer`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">Resposta</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              placeholder="Digite a resposta do flashcard..." 
+                              className="min-h-[100px] resize-none"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`flashcards.${index}.external_resource_url`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">URL de Recurso (Opcional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              placeholder="https://exemplo.com/recurso" 
+                              type="url"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {fields.length === 0 && (
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Layers className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Nenhum flashcard encontrado</h3>
+                  <p className="text-muted-foreground text-center mb-4">
+                    Comece criando seu primeiro flashcard para este tópico
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      append({
+                        question: '',
+                        answer: '',
+                        external_resource_url: '',
+                      })
+                    }
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Criar Primeiro Flashcard
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  append({
+                    question: '',
+                    answer: '',
+                    external_resource_url: '',
+                  })
+                }
+                className="shadow-sm"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Flashcard
+              </Button>
+              <Button type="submit" size="lg" className="shadow-sm">
+                <Save className="mr-2 h-4 w-4" />
+                Salvar Flashcards
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
     </>
   )
 }

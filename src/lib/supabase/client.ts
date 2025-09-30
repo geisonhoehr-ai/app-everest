@@ -26,6 +26,7 @@ try {
     {
       auth: {
         storage: typeof window !== 'undefined' ? localStorage : undefined,
+        storageKey: 'everest-auth-token',
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
@@ -37,9 +38,15 @@ try {
           'X-Client-Info': 'everest-app'
         },
         fetch: (url, options = {}) => {
+          // Create timeout with better browser compatibility
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 30000)
+
           return fetch(url, {
             ...options,
-            signal: AbortSignal.timeout(10000) // 10 second timeout
+            signal: controller.signal
+          }).finally(() => {
+            clearTimeout(timeoutId)
           })
         }
       },

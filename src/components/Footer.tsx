@@ -3,7 +3,7 @@ import { Mountain, Twitter, Github, Linkedin } from 'lucide-react'
 
 export const Footer = () => {
   return (
-    <footer className="bg-background border-t">
+    <footer className="bg-slate-100 dark:bg-gray-900 border-t border-slate-200 dark:border-gray-700">
       <div className="container py-12">
         <div className="grid gap-8 md:grid-cols-3">
           <div className="space-y-4">

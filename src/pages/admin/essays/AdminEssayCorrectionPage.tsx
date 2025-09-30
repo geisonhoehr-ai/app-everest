@@ -10,7 +10,7 @@ import {
   type ErrorCategory,
   type EssayAnnotation,
 } from '@/services/essayService'
-import { useAuth } from '@/contexts/auth-provider'
+import { useAuth } from '@/hooks/use-auth'
 import { SectionLoader } from '@/components/SectionLoader'
 import { InteractiveEssayEditor } from '@/components/admin/essays/InteractiveEssayEditor'
 import { CorrectionPanel } from '@/components/admin/essays/CorrectionPanel'

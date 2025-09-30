@@ -4,9 +4,24 @@ import type { Database } from '@/lib/supabase/types'
 export type User = Database['public']['Tables']['users']['Row']
 
 export const getUsers = async (): Promise<User[]> => {
-  const { data, error } = await supabase.from('users').select('*')
-  if (error) throw error
-  return data
+  console.log('🔍 Fetching users from Supabase...')
+  
+  // Verificar se o usuário está autenticado
+  const { data: session } = await supabase.auth.getSession()
+  console.log('👤 Current session:', session?.session?.user?.email || 'Not authenticated')
+  
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false })
+  
+  if (error) {
+    console.error('❌ Error fetching users:', error)
+    throw error
+  }
+  
+  console.log('✅ Users fetched successfully:', data?.length || 0, 'users')
+  return data || []
 }
 
 export const getUserById = async (id: string): Promise<User | null> => {

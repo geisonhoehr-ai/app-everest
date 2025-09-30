@@ -8,7 +8,54 @@ import { dashboardService, DashboardStats } from '@/services/dashboardService'
 import { useCountAnimation, useStaggeredAnimation, useFloat } from '@/hooks/useAnimations'
 import { memo, useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { BookOpen, Layers, ListChecks, ClipboardCheck, Archive, Calendar, Radio, Users } from 'lucide-react'
+import { BookOpen, Layers, ListChecks, ClipboardCheck, Archive, Calendar, Radio, Users, LucideIcon } from 'lucide-react'
+
+interface StatItemProps {
+  title: string
+  value: string | number
+  icon: LucideIcon
+  delay: number
+}
+
+const StatItem = memo(({ title, value, icon: Icon, delay }: StatItemProps) => {
+  const { count, startAnimation } = useCountAnimation(
+    typeof value === 'number' ? value : parseInt(value.toString().replace(/[^0-9]/g, '')) || 0,
+    1000
+  )
+  const floatProps = useFloat()
+
+  useEffect(() => {
+    const timer = setTimeout(startAnimation, delay + 300)
+    return () => clearTimeout(timer)
+  }, [delay, startAnimation])
+
+  return (
+    <AnimatedCard
+      animationDelay={delay}
+      className="transform-gpu"
+    >
+      <AnimatedCardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <AnimatedCardTitle className="text-sm font-medium">
+          {title}
+        </AnimatedCardTitle>
+        <Icon
+          className={cn(
+            "h-4 w-4 text-muted-foreground",
+            floatProps.className
+          )}
+          style={floatProps.style}
+        />
+      </AnimatedCardHeader>
+      <AnimatedCardContent>
+        <div className="text-2xl font-bold animate-count-up">
+          {typeof value === 'number' ? count : value}
+        </div>
+      </AnimatedCardContent>
+    </AnimatedCard>
+  )
+})
+
+StatItem.displayName = 'StatItem'
 
 const AdminStatsWidget = memo(() => {
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -54,44 +101,15 @@ const AdminStatsWidget = memo(() => {
   
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {adminStats.map((stat, index) => {
-        const { count, startAnimation } = useCountAnimation(
-          typeof stat.value === 'number' ? stat.value : parseInt(stat.value.replace(/[^0-9]/g, '')) || 0,
-          1000
-        )
-        const floatProps = useFloat()
-
-        useEffect(() => {
-          const timer = setTimeout(startAnimation, delays[index].delay + 300)
-          return () => clearTimeout(timer)
-        }, [delays, index, startAnimation])
-
-        return (
-          <AnimatedCard
-            key={stat.title}
-            animationDelay={delays[index].delay}
-            className="transform-gpu"
-          >
-            <AnimatedCardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <AnimatedCardTitle className="text-sm font-medium">
-                {stat.title}
-              </AnimatedCardTitle>
-              <stat.icon 
-                className={cn(
-                  "h-4 w-4 text-muted-foreground",
-                  floatProps.className
-                )}
-                style={floatProps.style}
-              />
-            </AnimatedCardHeader>
-            <AnimatedCardContent>
-              <div className="text-2xl font-bold animate-count-up">
-                {typeof stat.value === 'number' ? count : stat.value}
-              </div>
-            </AnimatedCardContent>
-          </AnimatedCard>
-        )
-      })}
+      {adminStats.map((stat, index) => (
+        <StatItem
+          key={stat.title}
+          title={stat.title}
+          value={stat.value}
+          icon={stat.icon}
+          delay={delays[index].delay}
+        />
+      ))}
     </div>
   )
 })

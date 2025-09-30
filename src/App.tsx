@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { AchievementNotificationContainer } from '@/components/achievements/AchievementNotification'
 import { ThemeProvider } from '@/contexts/theme-provider'
 import { AuthProvider } from '@/contexts/auth-provider'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -71,6 +72,8 @@ const FlashcardSessionHistoryPage = lazy(
 const ModernComponentsDemoPage = lazy(
   () => import('@/pages/ModernComponentsDemo'),
 )
+const RankingPage = lazy(() => import('@/pages/Ranking'))
+const AchievementsPage = lazy(() => import('@/pages/Achievements'))
 
 const AdminLayout = lazy(() => import('@/components/admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
@@ -148,6 +151,12 @@ const AdminEssaySettingsPage = lazy(
 )
 const AdminEssayComparisonPage = lazy(
   () => import('@/pages/admin/essays/AdminEssayComparisonPage'),
+)
+const AdminReportsPage = lazy(
+  () => import('@/pages/admin/reports/AdminReportsPage'),
+)
+const AdminSettingsPage = lazy(
+  () => import('@/pages/admin/settings/AdminSettingsPage'),
 )
 
 const App = () => (
@@ -284,6 +293,8 @@ const App = () => (
                   <Route path="/forum/:topicId" element={<ForumTopicPage />} />
                   <Route path="/configuracoes" element={<SettingsPage />} />
                   <Route path="/notificacoes" element={<NotificationsPage />} />
+                  <Route path="/ranking" element={<RankingPage />} />
+                  <Route path="/achievements" element={<AchievementsPage />} />
                   <Route path="/componentes-modernos" element={<ModernComponentsDemoPage />} />
                   <Route path="/faq" element={<FaqPage />} />
                   <Route path="/contato" element={<ContactPage />} />
@@ -390,6 +401,8 @@ const App = () => (
                     path="essays/settings"
                     element={<AdminEssaySettingsPage />}
                   />
+                  <Route path="reports" element={<AdminReportsPage />} />
+                  <Route path="settings" element={<AdminSettingsPage />} />
                 </Route>
               </Route>
 
@@ -397,6 +410,7 @@ const App = () => (
             </Routes>
           </Suspense>
         </TooltipProvider>
+        <AchievementNotificationContainer />
       </AuthProvider>
     </ThemeProvider>
   </BrowserRouter>

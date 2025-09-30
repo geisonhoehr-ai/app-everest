@@ -46,7 +46,8 @@ export interface TopicWithCardCount {
   id: string
   name: string
   description: string
-  flashcardCount: number
+  flashcardCount?: number
+  flashcards?: { count: number }[]
 }
 
 export interface TopicWithSubjectAndCards {
@@ -108,7 +109,8 @@ export const getTopicsBySubjectId = async (subjectId: string): Promise<TopicWith
       id: topic.id,
       name: topic.name,
       description: topic.description,
-      flashcardCount: topic.flashcards?.length || 0
+      flashcardCount: topic.flashcards?.length || 0,
+      flashcards: [{ count: topic.flashcards?.length || 0 }]
     })) || []
   } catch (error) {
     console.error('Erro ao buscar tópicos:', error)
@@ -195,81 +197,96 @@ export const saveFlashcardSession = async (userId: string, payload: SaveSessionP
 }
 
 export const updateFlashcardProgress = async (userId: string, flashcardId: string, quality: number): Promise<FlashcardProgress> => {
-  const { data: existingProgress, error: fetchError } = await supabase
-    .from('flashcard_progress')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('flashcard_id', flashcardId)
-    .single()
+  try {
+    console.log('Updating flashcard progress:', { userId, flashcardId, quality })
+    
+    // Buscar progresso existente
+    const { data: existingProgress, error: fetchError } = await supabase
+      .from('flashcard_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('flashcard_id', flashcardId)
+      .single()
 
-  if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows found
-    console.error('Error fetching existing flashcard progress:', fetchError)
-    throw new Error('Failed to fetch flashcard progress')
-  }
-
-  let newInterval: number
-  let newRepetitions: number
-  let newEaseFactor: number
-  const now = new Date()
-
-  if (!existingProgress) {
-    // First time seeing this card or first correct answer
-    newRepetitions = quality >= 3 ? 1 : 0
-    newInterval = quality >= 3 ? 1 : 0
-    newEaseFactor = 2.5
-  } else {
-    newRepetitions = existingProgress.repetitions
-    newEaseFactor = existingProgress.ease_factor
-
-    if (quality < 3) {
-      newRepetitions = 0
-      newInterval = 0
-    } else {
-      newEaseFactor = newEaseFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-      if (newEaseFactor < 1.3) newEaseFactor = 1.3
-
-      if (newRepetitions === 0) {
-        newInterval = 1
-      } else if (newRepetitions === 1) {
-        newInterval = 6
-      } else {
-        newInterval = Math.round(existingProgress.interval_days * newEaseFactor)
-      }
-      newRepetitions++
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('Error fetching existing flashcard progress:', fetchError)
+      throw new Error('Failed to fetch flashcard progress')
     }
+
+    let newInterval: number
+    let newRepetitions: number
+    let newEaseFactor: number
+    const now = new Date()
+
+    if (!existingProgress) {
+      // Primeira vez vendo este card
+      newRepetitions = quality >= 3 ? 1 : 0
+      newInterval = quality >= 3 ? 1 : 0
+      newEaseFactor = 2.5
+    } else {
+      newRepetitions = existingProgress.repetitions || 0
+      newEaseFactor = existingProgress.ease_factor || 2.5
+
+      if (quality < 3) {
+        // Resposta incorreta - resetar
+        newRepetitions = 0
+        newInterval = 1
+      } else {
+        // Resposta correta - calcular novo intervalo
+        newEaseFactor = newEaseFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
+        if (newEaseFactor < 1.3) newEaseFactor = 1.3
+
+        if (newRepetitions === 0) {
+          newInterval = 1
+        } else if (newRepetitions === 1) {
+          newInterval = 6
+        } else {
+          newInterval = Math.round((existingProgress.interval_days || 1) * newEaseFactor)
+        }
+        newRepetitions++
+      }
+    }
+
+    const nextReviewAt = new Date(now)
+    nextReviewAt.setDate(now.getDate() + newInterval)
+
+    const upsertData = {
+      user_id: userId,
+      flashcard_id: flashcardId,
+      last_reviewed_at: now.toISOString(),
+      next_review_at: nextReviewAt.toISOString(),
+      interval_days: newInterval,
+      ease_factor: newEaseFactor,
+      repetitions: newRepetitions,
+      quality: quality,
+      updated_at: now.toISOString(),
+    }
+
+    console.log('Upserting data:', upsertData)
+
+    const { data, error } = await supabase
+      .from('flashcard_progress')
+      .upsert(upsertData, { onConflict: 'user_id,flashcard_id' })
+      .select('*')
+      .single()
+
+    if (error) {
+      console.error('Error updating flashcard progress:', error)
+      throw new Error('Failed to update flashcard progress')
+    }
+
+    console.log('Flashcard progress updated successfully:', data)
+    return data as FlashcardProgress
+  } catch (error) {
+    console.error('Error in updateFlashcardProgress:', error)
+    throw error
   }
-
-  const nextReviewAt = new Date(now)
-  nextReviewAt.setDate(now.getDate() + newInterval)
-
-  const upsertData = {
-    user_id: userId,
-    flashcard_id: flashcardId,
-    last_reviewed_at: now.toISOString(),
-    next_review_at: nextReviewAt.toISOString(),
-    interval_days: newInterval,
-    ease_factor: newEaseFactor,
-    repetitions: newRepetitions,
-    quality: quality,
-    updated_at: now.toISOString(),
-  }
-
-  const { data, error } = await supabase
-    .from('flashcard_progress')
-    .upsert(upsertData, { onConflict: 'user_id,flashcard_id' })
-    .select('*')
-    .single()
-
-  if (error) {
-    console.error('Error updating flashcard progress:', error)
-    throw new Error('Failed to update flashcard progress')
-  }
-
-  return data as FlashcardProgress
 }
 
 export const getDifficultFlashcardsForTopic = async (userId: string, topicId: string, limit: number = 10): Promise<Flashcard[]> => {
   try {
+    console.log('Getting difficult flashcards for topic:', { userId, topicId })
+    
     const { data: flashcards, error } = await supabase
       .from('flashcards')
       .select(`
@@ -281,13 +298,21 @@ export const getDifficultFlashcardsForTopic = async (userId: string, topicId: st
         external_resource_url,
         flashcard_progress!left (
           ease_factor,
-          repetitions
+          repetitions,
+          user_id
         )
       `)
       .eq('topic_id', topicId)
-      .or('flashcard_progress.ease_factor.lt.2.0,flashcard_progress.repetitions.lt.3')
+      .eq('flashcard_progress.user_id', userId)
+      .or('flashcard_progress.ease_factor.lt.2.0,flashcard_progress.repetitions.lt.3,flashcard_progress.ease_factor.is.null')
+      .limit(limit)
 
-    if (error) throw error
+    if (error) {
+      console.error('Error fetching difficult flashcards:', error)
+      throw error
+    }
+
+    console.log('Found difficult flashcards:', flashcards?.length || 0)
 
     return flashcards?.map(flashcard => ({
       id: flashcard.id,
@@ -434,12 +459,15 @@ export const flashcardService = {
         .eq('user_id', userId)
 
       if (topicId) {
-        query = query.in('flashcard_id', 
-          supabase
-            .from('flashcards')
-            .select('id')
-            .eq('topic_id', topicId)
-        )
+        // Primeiro buscar os IDs dos flashcards do tópico
+        const { data: flashcardIds } = await supabase
+          .from('flashcards')
+          .select('id')
+          .eq('topic_id', topicId)
+        
+        if (flashcardIds && flashcardIds.length > 0) {
+          query = query.in('flashcard_id', flashcardIds.map(f => f.id))
+        }
       }
 
       const { data: progress, error } = await query
@@ -467,80 +495,6 @@ export const flashcardService = {
     }
   },
 
-  // Atualizar progresso de um flashcard
-  async updateFlashcardProgress(
-    userId: string,
-    flashcardId: string,
-    quality: number,
-    responseTimeSeconds?: number
-  ): Promise<void> {
-    try {
-      // Buscar progresso atual
-      const { data: currentProgress, error: fetchError } = await supabase
-        .from('flashcard_progress')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('flashcard_id', flashcardId)
-        .single()
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError
-      }
-
-      // Calcular novos valores usando algoritmo SM-2
-      const now = new Date()
-      let newInterval = 1
-      let newRepetitions = 1
-      let newEaseFactor = 2.5
-
-      if (currentProgress) {
-        newEaseFactor = currentProgress.ease_factor
-        newRepetitions = currentProgress.repetitions
-
-        if (quality >= 3) {
-          if (newRepetitions === 0) {
-            newInterval = 1
-          } else if (newRepetitions === 1) {
-            newInterval = 6
-          } else {
-            newInterval = Math.round(currentProgress.interval_days * newEaseFactor)
-          }
-          newRepetitions += 1
-        } else {
-          newRepetitions = 0
-          newInterval = 1
-        }
-
-        // Ajustar ease factor
-        newEaseFactor = newEaseFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-        newEaseFactor = Math.max(1.3, newEaseFactor)
-      } else {
-        newEaseFactor = 2.5 + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-        newEaseFactor = Math.max(1.3, newEaseFactor)
-      }
-
-      const nextReview = new Date(now.getTime() + newInterval * 24 * 60 * 60 * 1000)
-
-      // Inserir ou atualizar progresso
-      const { error: upsertError } = await supabase
-        .from('flashcard_progress')
-        .upsert({
-          user_id: userId,
-          flashcard_id: flashcardId,
-          last_reviewed_at: now.toISOString(),
-          next_review_at: nextReview.toISOString(),
-          interval_days: newInterval,
-          ease_factor: newEaseFactor,
-          repetitions: newRepetitions,
-          quality: quality,
-          response_time_seconds: responseTimeSeconds
-        })
-
-      if (upsertError) throw upsertError
-    } catch (error) {
-      console.error('Erro ao atualizar progresso do flashcard:', error)
-    }
-  },
 
   // Buscar flashcards para revisão
   async getFlashcardsForReview(userId: string, topicId?: string): Promise<Flashcard[]> {

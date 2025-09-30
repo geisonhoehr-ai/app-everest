@@ -12,7 +12,7 @@ import {
   type TopicWithCardCount,
 } from '@/services/flashcardService'
 import { SectionLoader } from '@/components/SectionLoader'
-import { useStaggeredAnimation, useCountAnimation } from '@/hooks/useAnimations'
+import { useStaggeredAnimation } from '@/hooks/useAnimations'
 import { cn } from '@/lib/utils'
 
 // Separate component to fix hooks rule violation
@@ -24,58 +24,74 @@ interface TopicCardProps {
 }
 
 const TopicCard = ({ topic, index, delay, onStudyClick }: TopicCardProps) => {
-  const { count, startAnimation } = useCountAnimation(
-    topic.flashcards[0]?.count || 0,
-    1000
-  )
+  const cardCount = topic.flashcards?.[0]?.count || topic.flashcardCount || 0
+  const [animatedCount, setAnimatedCount] = useState(0)
 
   useEffect(() => {
-    const timer = setTimeout(startAnimation, delay + 500)
+    const timer = setTimeout(() => {
+      let current = 0
+      const increment = cardCount / 50 // 50 steps for smooth animation
+      const interval = setInterval(() => {
+        current += increment
+        if (current >= cardCount) {
+          setAnimatedCount(cardCount)
+          clearInterval(interval)
+        } else {
+          setAnimatedCount(Math.floor(current))
+        }
+      }, 20) // 20ms intervals for smooth animation
+
+      return () => clearInterval(interval)
+    }, delay + 500)
+
     return () => clearTimeout(timer)
-  }, [delay, startAnimation])
+  }, [cardCount, delay])
 
   return (
     <MagicCard
       key={topic.id}
-      className="h-full flex flex-col"
+      className="h-[320px] flex flex-col bg-white dark:bg-slate-900/90 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl dark:hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm"
       led
       ledColor={index % 4 === 0 ? 'cyan' : index % 4 === 1 ? 'purple' : index % 4 === 2 ? 'orange' : 'green'}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="flex-grow flex flex-col p-4">
-        <div className="space-y-3">
+      <div className="flex-1 flex flex-col p-6">
+        <div className="flex-1 flex flex-col space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-foreground">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
               {topic.name}
             </h3>
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
-              {count} cards
+            <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 text-xs">
+              {animatedCount} cards
             </Badge>
           </div>
           
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-slate-600 dark:text-slate-400 flex-1">
             {topic.description || `Estude ${topic.name} com flashcards interativos`}
           </p>
           
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-muted-foreground">{count} flashcards</span>
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="text-slate-500 dark:text-slate-400">{animatedCount} flashcards</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-success" />
-              <span className="text-muted-foreground">Ativo</span>
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-slate-500 dark:text-slate-400">Ativo</span>
             </div>
           </div>
         </div>
         
-        <Button
-          onClick={() => onStudyClick(topic.id)}
-          className="w-full mt-4 text-sm py-2.5"
-        >
-          <Play className="h-4 w-4 mr-2" />
-          Estudar Agora
-        </Button>
+        {/* Button sempre na parte inferior */}
+        <div className="mt-6">
+          <Button
+            onClick={() => onStudyClick(topic.id)}
+            className="w-full text-sm py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white shadow-lg dark:shadow-blue-500/25"
+          >
+            <Play className="h-4 w-4 mr-2" />
+            Estudar Agora
+          </Button>
+        </div>
       </div>
     </MagicCard>
   )
@@ -135,25 +151,26 @@ export default function FlashcardTopicsPage() {
     setIsModalOpen(true)
   }
 
-  const delays = useStaggeredAnimation(topics.length, 100)
+  const delays = useStaggeredAnimation(Math.max(topics.length, 1), 100)
 
   return (
-    <>
-      {selectedTopicId && subjectId && (
-        <StudyModeDialog
-          isOpen={isModalOpen}
-          onOpenChange={setIsModalOpen}
-          subjectId={subjectId}
-          topicId={selectedTopicId}
-        />
-      )}
-      <div className="flex flex-col gap-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-blue-950 dark:to-gray-900">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {selectedTopicId && subjectId && (
+          <StudyModeDialog
+            isOpen={isModalOpen}
+            onOpenChange={setIsModalOpen}
+            subjectId={subjectId}
+            topicId={selectedTopicId}
+          />
+        )}
+        <div className="flex flex-col gap-6">
         <div className="flex items-center gap-4 animate-fade-in-up">
           <Button 
             variant="outline" 
             size="icon" 
             asChild
-            className="group transition-all duration-300 hover:bg-primary/5"
+            className="group transition-all duration-300 hover:bg-slate-100 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800"
           >
             <Link to="/flashcards">
               <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
@@ -161,28 +178,29 @@ export default function FlashcardTopicsPage() {
           </Button>
           <div>
             <h1 className={cn(
-              "text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent",
+              "text-3xl font-bold text-slate-900 dark:text-slate-100",
               "animate-fade-in-up animation-delay-200"
             )}>
               {subject.name}
             </h1>
-            <p className="text-muted-foreground animate-fade-in-up animation-delay-300">
+            <p className="text-slate-600 dark:text-slate-400 animate-fade-in-up animation-delay-300">
               Selecione um tópico para começar a estudar.
             </p>
           </div>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 grid-rows-[repeat(auto-fit,minmax(320px,1fr))]">
           {topics.map((topic, index) => (
             <TopicCard
               key={topic.id}
               topic={topic}
               index={index}
-              delay={delays[index].delay}
+              delay={delays[index]?.delay || 0}
               onStudyClick={handleStudyClick}
             />
           ))}
         </div>
+        </div>
       </div>
-    </>
+    </div>
   )
 }

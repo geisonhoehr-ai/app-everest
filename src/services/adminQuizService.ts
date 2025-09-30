@@ -77,6 +77,35 @@ export const getTopics = async (): Promise<AdminTopic[]> => {
   return data
 }
 
+export const getAllQuestions = async () => {
+  const { data, error } = await supabase
+    .from('quiz_questions')
+    .select(`
+      id,
+      question_text,
+      question_type,
+      options,
+      correct_answer,
+      explanation,
+      points,
+      topics (
+        id,
+        name,
+        subjects (
+          id,
+          name
+        )
+      )
+    `)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching questions:', error)
+    throw error
+  }
+  return data
+}
+
 export const createQuiz = async (
   quizData: QuizInsert,
 ): Promise<AdminQuiz | null> => {

@@ -79,7 +79,7 @@ const TeacherStatsWidget = memo(() => {
         useEffect(() => {
           const timer = setTimeout(startAnimation, delays[index].delay + 300)
           return () => clearTimeout(timer)
-        }, [delays, index, startAnimation])
+        }, [index, startAnimation])
 
         return (
           <AnimatedCard

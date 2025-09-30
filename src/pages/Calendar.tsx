@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Calendar } from '@/components/ui/calendar'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { MagicLayout } from '@/components/ui/magic-layout'
+import { MagicCard } from '@/components/ui/magic-card'
 import { format, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
@@ -16,7 +11,18 @@ import {
 } from '@/services/calendarService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { AlertCircle } from 'lucide-react'
+import { 
+  AlertCircle, 
+  Calendar as CalendarIcon, 
+  Clock, 
+  BookOpen, 
+  FileText, 
+  Play, 
+  Users,
+  TrendingUp,
+  Award
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const eventColors = {
   SIMULATION:
@@ -78,79 +84,172 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <div className="lg:col-span-2">
-        <Card>
-          <CardContent className="p-2 md:p-4">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              month={currentMonth}
-              onMonthChange={setCurrentMonth}
-              className="rounded-md"
-              locale={ptBR}
-              modifiers={{
-                event: events.map((event) => new Date(event.start_time)),
-              }}
-              modifiersStyles={{
-                event: {
-                  fontWeight: 'bold',
-                  color: 'hsl(var(--primary))',
-                },
-              }}
-            />
-          </CardContent>
-        </Card>
-      </div>
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Eventos do Dia</CardTitle>
-            <CardDescription>
-              {date
-                ? format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
-                : 'Selecione uma data'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {selectedDayEvents.length > 0 ? (
-              <ul className="space-y-3">
-                {selectedDayEvents.map((event) => (
-                  <li
-                    key={event.id}
-                    className="p-3 rounded-lg border bg-card flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="font-medium">{event.title}</p>
+    <MagicLayout 
+      title="Calendário"
+      description="Acompanhe seus eventos, prazos e atividades importantes"
+    >
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header Stats */}
+        <MagicCard variant="premium" size="lg">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <CalendarIcon className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    Calendário de Estudos
+                  </h1>
+                  <p className="text-muted-foreground text-lg">
+                    Acompanhe seus eventos, prazos e atividades importantes
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Agenda Inteligente</span>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <CalendarIcon className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-blue-600">{events.length}</div>
+                <div className="text-sm text-muted-foreground">Eventos</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <BookOpen className="h-6 w-6 text-green-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-green-600">
+                  {events.filter(e => e.event_type === 'LIVE_CLASS').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Aulas</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <FileText className="h-6 w-6 text-purple-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-purple-600">
+                  {events.filter(e => e.event_type === 'ESSAY_DEADLINE').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Prazos</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+                <Play className="h-6 w-6 text-orange-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-orange-600">
+                  {events.filter(e => e.event_type === 'SIMULATION').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Simulados</div>
+              </div>
+            </div>
+          </div>
+        </MagicCard>
+
+        {/* Calendar and Events */}
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Calendar */}
+          <div className="lg:col-span-2">
+            <MagicCard variant="glass" size="lg">
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
+                    <CalendarIcon className="h-5 w-5 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-semibold">Calendário</h2>
+                </div>
+                
+                <div className="p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    month={currentMonth}
+                    onMonthChange={setCurrentMonth}
+                    className="rounded-xl"
+                    locale={ptBR}
+                    modifiers={{
+                      event: events.map((event) => new Date(event.start_time)),
+                    }}
+                    modifiersStyles={{
+                      event: {
+                        fontWeight: 'bold',
+                        color: 'hsl(var(--primary))',
+                        backgroundColor: 'hsl(var(--primary) / 0.1)',
+                        borderRadius: '8px',
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+            </MagicCard>
+          </div>
+
+          {/* Events List */}
+          <div>
+            <MagicCard variant="glass" size="lg">
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">Eventos do Dia</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {date
+                        ? format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                        : 'Selecione uma data'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {selectedDayEvents.length > 0 ? (
+                    selectedDayEvents.map((event) => (
+                      <div
+                        key={event.id}
+                        className="p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/20 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              {event.event_type === 'LIVE_CLASS' && <Users className="h-4 w-4 text-green-500" />}
+                              {event.event_type === 'ESSAY_DEADLINE' && <FileText className="h-4 w-4 text-red-500" />}
+                              {event.event_type === 'SIMULATION' && <Play className="h-4 w-4 text-blue-500" />}
+                              {event.event_type === 'GENERAL' && <CalendarIcon className="h-4 w-4 text-gray-500" />}
+                              <h3 className="font-semibold text-sm truncate">{event.title}</h3>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              <span>{format(new Date(event.start_time), 'HH:mm')}</span>
+                            </div>
+                          </div>
+                          <Badge
+                            className={cn(
+                              "text-xs font-medium",
+                              event.event_type === 'LIVE_CLASS' && "bg-gradient-to-r from-green-500/10 to-green-600/5 border-green-500/20 text-green-600",
+                              event.event_type === 'ESSAY_DEADLINE' && "bg-gradient-to-r from-red-500/10 to-red-600/5 border-red-500/20 text-red-600",
+                              event.event_type === 'SIMULATION' && "bg-gradient-to-r from-blue-500/10 to-blue-600/5 border-blue-500/20 text-blue-600",
+                              event.event_type === 'GENERAL' && "bg-gradient-to-r from-gray-500/10 to-gray-600/5 border-gray-500/20 text-gray-600"
+                            )}
+                          >
+                            {eventTypeLabels[event.event_type as keyof typeof eventTypeLabels]}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <CalendarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(event.start_time), 'HH:mm')}
+                        Nenhum evento para este dia
                       </p>
                     </div>
-                    <Badge
-                      className={
-                        eventColors[
-                          event.event_type as keyof typeof eventColors
-                        ]
-                      }
-                    >
-                      {
-                        eventTypeLabels[
-                          event.event_type as keyof typeof eventTypeLabels
-                        ]
-                      }
-                    </Badge>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Nenhum evento para este dia.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+                  )}
+                </div>
+              </div>
+            </MagicCard>
+          </div>
+        </div>
       </div>
-    </div>
+    </MagicLayout>
   )
 }

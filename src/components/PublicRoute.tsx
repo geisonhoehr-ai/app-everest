@@ -1,30 +1,27 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useAuth } from '@/contexts/auth-provider'
+import { useAuth } from '@/hooks/use-auth'
 import { PageLoader } from '@/components/PageLoader'
-import type { UserProfile } from '@/services/userService'
 
-const getDashboardRouteByRole = (role: UserProfile['role']) => {
-  switch (role) {
-    case 'administrator':
-      return '/admin'
-    case 'teacher':
-    case 'student':
-    default:
-      return '/dashboard'
-  }
-}
-
+/**
+ * Simplified Public Route Component
+ *
+ * Handles public routes that should redirect authenticated users
+ * to their appropriate dashboard.
+ */
 export const PublicRoute = () => {
-  const { profile, loading } = useAuth()
+  const { isAuthenticated, loading, getRedirectPath } = useAuth()
 
+  // Show loading while determining authentication state
   if (loading) {
     return <PageLoader />
   }
 
-  if (profile) {
-    const redirectTo = getDashboardRouteByRole(profile.role)
-    return <Navigate to={redirectTo} replace />
+  // Redirect authenticated users to their dashboard
+  if (isAuthenticated) {
+    const redirectPath = getRedirectPath()
+    return <Navigate to={redirectPath} replace />
   }
 
+  // Render public content for unauthenticated users
   return <Outlet />
 }

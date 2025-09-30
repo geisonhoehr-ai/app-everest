@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,15 +24,40 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, PlusCircle, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { questionBankData } from '@/lib/data'
 import { ImportQuestionsDialog } from '@/components/admin/questions/ImportQuestionsDialog'
+import { getAllQuestions } from '@/services/adminQuizService'
 
 export default function AdminQuestionsPage() {
   const [isImportOpen, setIsImportOpen] = useState(false)
+  const [questions, setQuestions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        const data = await getAllQuestions()
+        setQuestions(data)
+      } catch (error) {
+        console.error('Erro ao carregar questões:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadQuestions()
+  }, [])
 
   const handleImportComplete = () => {
-    // Here you would typically refetch the questions list
-    console.log('Import complete, refetching questions...')
+    // Refetch the questions list
+    const loadQuestions = async () => {
+      try {
+        const data = await getAllQuestions()
+        setQuestions(data)
+      } catch (error) {
+        console.error('Erro ao carregar questões:', error)
+      }
+    }
+    loadQuestions()
   }
 
   return (
@@ -64,56 +89,64 @@ export default function AdminQuestionsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Enunciado</TableHead>
-                <TableHead>Fonte</TableHead>
-                <TableHead>Matéria</TableHead>
-                <TableHead>
-                  <span className="sr-only">Ações</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {questionBankData.map((q) => (
-                <TableRow key={q.id}>
-                  <TableCell className="font-medium max-w-md truncate">
-                    {q.question}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {q.source} {q.year}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{q.subject}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          aria-haspopup="true"
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link to={`/admin/questions/${q.id}/edit`}>
-                            Editar
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          Deletar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Enunciado</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Matéria</TableHead>
+                  <TableHead>Tópico</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Ações</span>
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {questions.map((q) => (
+                  <TableRow key={q.id}>
+                    <TableCell className="font-medium max-w-md truncate">
+                      {q.question_text}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {q.question_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{q.topics?.subjects?.name || 'N/A'}</TableCell>
+                    <TableCell>{q.topics?.name || 'N/A'}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            aria-haspopup="true"
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link to={`/admin/questions/${q.id}/edit`}>
+                              Editar
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive">
+                            Deletar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </>

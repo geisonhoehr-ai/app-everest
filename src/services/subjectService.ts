@@ -3,7 +3,12 @@ import type { Database } from '@/lib/supabase/types'
 
 export type SubjectWithTopicCount =
   Database['public']['Tables']['subjects']['Row'] & {
-    topics: { count: number }[]
+    topics: Array<{
+      id: string
+      name: string
+      description: string
+      flashcard_count?: number
+    }>
   }
 
 export const getSubjects = async (): Promise<SubjectWithTopicCount[]> => {
@@ -12,9 +17,15 @@ export const getSubjects = async (): Promise<SubjectWithTopicCount[]> => {
     .select(
       `
       *,
-      topics ( count )
+      topics (
+        id,
+        name,
+        description,
+        flashcards (count)
+      )
     `,
     )
+    .in('name', ['Português', 'Regulamentos'])
     .order('name', { ascending: true })
 
   if (error) {
@@ -22,5 +33,14 @@ export const getSubjects = async (): Promise<SubjectWithTopicCount[]> => {
     throw error
   }
 
-  return data as SubjectWithTopicCount[]
+  // Transformar os dados para incluir contagem de flashcards
+  return data?.map(subject => ({
+    ...subject,
+    topics: subject.topics?.map(topic => ({
+      id: topic.id,
+      name: topic.name,
+      description: topic.description,
+      flashcard_count: topic.flashcards?.[0]?.count || 0
+    })) || []
+  })) as SubjectWithTopicCount[] || []
 }

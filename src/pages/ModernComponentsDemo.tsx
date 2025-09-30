@@ -23,7 +23,7 @@ import {
 
 const ModernComponentsDemo = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:via-blue-950 dark:to-gray-900 p-8">
       <div className="max-w-7xl mx-auto space-y-12">
         
         {/* Header */}

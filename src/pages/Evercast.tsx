@@ -1,14 +1,22 @@
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Search, PlayCircle, Clock, Mic } from 'lucide-react'
+import { MagicLayout } from '@/components/ui/magic-layout'
+import { MagicCard } from '@/components/ui/magic-card'
 import { Badge } from '@/components/ui/badge'
+import { 
+  Search, 
+  PlayCircle, 
+  Clock, 
+  Mic, 
+  Headphones,
+  Volume2,
+  Star,
+  TrendingUp,
+  Award,
+  Users,
+  Zap
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const audioClasses = [
   {
@@ -39,58 +47,199 @@ const audioClasses = [
 
 export default function EvercastPage() {
   return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Mic className="text-primary" /> Evercast
-              </CardTitle>
-              <CardDescription>
-                Suas aulas em áudio para ouvir onde e quando quiser.
-              </CardDescription>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Buscar áudio-aulas..."
-                className="pl-8 w-full md:w-64"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {audioClasses.map((audio) => (
-            <Card
-              key={audio.title}
-              className="rounded-2xl border transition-all duration-200 hover:shadow-xl hover:-translate-y-2 hover:scale-102 cursor-pointer group relative flex flex-col overflow-hidden"
-            >
-              <img
-                src={audio.image}
-                alt={audio.title}
-                className="w-full h-48 object-cover"
-              />
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/50 transition-colors flex items-center justify-center">
-                <PlayCircle className="h-16 w-16 text-white/70 group-hover:text-white group-hover:scale-110 transition-transform" />
-              </div>
-              <div className="p-6 flex flex-col flex-grow">
-                <Badge variant="secondary" className="mb-2 w-fit">
-                  {audio.series}
-                </Badge>
-                <h3 className="font-semibold text-md flex-grow">
-                  {audio.title}
-                </h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
-                  <Clock className="h-4 w-4" />
-                  <span>{audio.duration}</span>
+    <MagicLayout 
+      title="Evercast"
+      description="Suas aulas em áudio para ouvir onde e quando quiser"
+    >
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header Stats */}
+        <MagicCard variant="premium" size="lg">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <Headphones className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    Evercast
+                  </h1>
+                  <p className="text-muted-foreground text-lg">
+                    Suas aulas em áudio para ouvir onde e quando quiser
+                  </p>
                 </div>
               </div>
-            </Card>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <Volume2 className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Áudio Premium</span>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <Mic className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-blue-600">{audioClasses.length}</div>
+                <div className="text-sm text-muted-foreground">Aulas</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <Clock className="h-6 w-6 text-green-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-green-600">2.5h</div>
+                <div className="text-sm text-muted-foreground">Total</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <Star className="h-6 w-6 text-purple-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-purple-600">4.8</div>
+                <div className="text-sm text-muted-foreground">Avaliação</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+                <Users className="h-6 w-6 text-orange-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-orange-600">1.2k</div>
+                <div className="text-sm text-muted-foreground">Ouvintes</div>
+              </div>
+            </div>
+          </div>
+        </MagicCard>
+
+        {/* Search and Filter */}
+        <MagicCard variant="glass" size="lg">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                type="search"
+                placeholder="Buscar áudio-aulas..." 
+                className="pl-10 bg-card/50 backdrop-blur-sm border-border/50"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Populares
+              </Button>
+              <Button variant="outline" size="sm" className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80">
+                <Award className="mr-2 h-4 w-4" />
+                Recomendados
+              </Button>
+            </div>
+          </div>
+        </MagicCard>
+
+        {/* Audio Classes Grid */}
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {audioClasses.map((audio, index) => (
+            <MagicCard
+              key={audio.title}
+              variant="premium"
+              size="lg"
+              className="h-[400px] flex flex-col overflow-hidden transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl cursor-pointer group"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              {/* Image Header */}
+              <div className="relative h-48 overflow-hidden rounded-t-2xl">
+                <img
+                  src={audio.image}
+                  alt={audio.title}
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                
+                {/* Play Button */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
+                    <PlayCircle className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+
+                {/* Duration Badge */}
+                <div className="absolute top-4 right-4">
+                  <div className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-white/20">
+                    <span className="text-sm font-semibold text-gray-900">{audio.duration}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 flex flex-col p-6">
+                <div className="flex-1 flex flex-col space-y-4">
+                  {/* Series Badge */}
+                  <Badge 
+                    variant="secondary" 
+                    className="w-fit bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 text-primary"
+                  >
+                    {audio.series}
+                  </Badge>
+
+                  {/* Title */}
+                  <h3 className="font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                    {audio.title}
+                  </h3>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      <span>4.8</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span>1.2k</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Button */}
+                <div className="mt-6">
+                  <Button className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white transition-all duration-300 ease-out py-3 text-sm font-semibold rounded-xl group-hover:scale-105">
+                    <div className="flex items-center justify-center gap-2">
+                      <PlayCircle className="w-4 h-4" />
+                      Ouvir Agora
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            </MagicCard>
           ))}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+
+        {/* Features Section */}
+        <MagicCard variant="glass" size="lg">
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold mb-2">Por que escolher o Evercast?</h3>
+              <p className="text-muted-foreground">
+                Aprenda de forma mais eficiente com nossas aulas em áudio
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <Headphones className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                <h4 className="text-lg font-semibold mb-2">Ouvir em Qualquer Lugar</h4>
+                <p className="text-sm text-muted-foreground">
+                  Acesse suas aulas durante o trânsito, exercícios ou em casa
+                </p>
+              </div>
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <Zap className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <h4 className="text-lg font-semibold mb-2">Aprendizado Acelerado</h4>
+                <p className="text-sm text-muted-foreground">
+                  Conteúdo condensado e direto ao ponto para máximo aproveitamento
+                </p>
+              </div>
+              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <Volume2 className="h-12 w-12 text-purple-500 mx-auto mb-4" />
+                <h4 className="text-lg font-semibold mb-2">Áudio de Qualidade</h4>
+                <p className="text-sm text-muted-foreground">
+                  Gravações profissionais com clareza e nitidez excepcionais
+                </p>
+              </div>
+            </div>
+          </div>
+        </MagicCard>
+      </div>
+    </MagicLayout>
   )
 }

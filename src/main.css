@@ -375,52 +375,53 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .dark {
-    --background: #252533;
+    /* Enhanced Dark Mode - Apple-inspired */
+    --background: 0 0% 3%;
     --foreground: 0 0% 98%;
-    --card: 224 71% 4%;
+    --card: 0 0% 4%;
     --card-foreground: 0 0% 98%;
-    --popover: 224 71% 4%;
+    --popover: 0 0% 4%;
     --popover-foreground: 0 0% 98%;
     --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 222 47% 11%;
+    --secondary: 0 0% 8%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 8%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 0 0% 12%;
+    --input: 0 0% 8%;
     --ring: 25 95% 53%;
-    --sidebar-background: 224 71% 4%;
+    --sidebar-background: 0 0% 2%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent: 0 0% 8%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-border: 0 0% 12%;
     --sidebar-ring: 25 95% 53%;
     --chart-1: 25 95% 53%;
     --chart-2: 175 80% 40%;
     --chart-3: 45 95% 55%;
     --chart-4: 340 82% 52%;
     --chart-5: 210 80% 60%;
-    --bauhaus-card-bg: #151419;
-    --bauhaus-card-separator: #2F2B2A;
-    --bauhaus-card-accent: #156ef6;
+    --bauhaus-card-bg: #0a0a0a;
+    --bauhaus-card-separator: #1a1a1a;
+    --bauhaus-card-accent: #ff6b35;
     --bauhaus-card-radius: 2em;
     --bauhaus-card-border-width: 2px;
-    --bauhaus-card-inscription-top: #bfc7d5;
-    --bauhaus-card-inscription-main: #f0f0f1;
-    --bauhaus-card-inscription-sub: #a0a1b3;
-    --bauhaus-card-inscription-progress-label: #b5b6c4;
-    --bauhaus-card-inscription-progress-value: #e7e7f7;
-    --bauhaus-card-progress-bar-bg: #363636;
-    --bauhaus-chronicle-bg: #fff;
-    --bauhaus-chronicle-fg: #151419;
-    --bauhaus-chronicle-hover-fg: #fff;
+    --bauhaus-card-inscription-top: #e0e0e0;
+    --bauhaus-card-inscription-main: #ffffff;
+    --bauhaus-card-inscription-sub: #a0a0a0;
+    --bauhaus-card-inscription-progress-label: #b0b0b0;
+    --bauhaus-card-inscription-progress-value: #ffffff;
+    --bauhaus-card-progress-bar-bg: #1a1a1a;
+    --bauhaus-chronicle-bg: #ffffff;
+    --bauhaus-chronicle-fg: #0a0a0a;
+    --bauhaus-chronicle-hover-fg: #ffffff;
   }
 
   html {

@@ -1,39 +1,60 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '@/contexts/auth-provider'
-import { type UserProfile } from '@/services/userService'
+import { useAuth } from '@/hooks/use-auth'
 import { PageLoader } from '@/components/PageLoader'
+import type { UserProfile } from '@/contexts/auth-provider'
 
 interface ProtectedRouteProps {
   allowedRoles: Array<UserProfile['role']>
+  redirectTo?: string
 }
 
-const getDashboardRouteByRole = (role: UserProfile['role']) => {
-  switch (role) {
-    case 'administrator':
-      return '/admin'
-    case 'teacher':
-    case 'student':
-    default:
-      return '/dashboard'
-  }
-}
-
-export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
-  const { profile, loading } = useAuth()
+/**
+ * Simplified Protected Route Component
+ *
+ * Much cleaner and more reliable than the previous version.
+ * Handles all edge cases properly and provides clear feedback.
+ */
+export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps) => {
+  const { profile, loading, isAuthenticated, getRedirectPath } = useAuth()
   const location = useLocation()
 
+  // Show loading while authentication is being determined
   if (loading) {
     return <PageLoader />
   }
 
-  if (!profile) {
+  // Redirect to login if not authenticated
+  if (!isAuthenticated || !profile) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
+  // Check if user has required role
   if (allowedRoles.includes(profile.role)) {
     return <Outlet />
   }
 
-  const redirectTo = getDashboardRouteByRole(profile.role)
-  return <Navigate to={redirectTo} state={{ from: location }} replace />
+  // Redirect to appropriate dashboard if user doesn't have required role
+  const fallbackPath = redirectTo || getRedirectPath()
+  return <Navigate to={fallbackPath} state={{ from: location }} replace />
+}
+
+/**
+ * Admin Only Route - Convenience component for admin routes
+ */
+export const AdminRoute = () => {
+  return <ProtectedRoute allowedRoles={['administrator']} />
+}
+
+/**
+ * Teacher Route - For teacher and admin access
+ */
+export const TeacherRoute = () => {
+  return <ProtectedRoute allowedRoles={['teacher', 'administrator']} />
+}
+
+/**
+ * Student Route - For all authenticated users
+ */
+export const StudentRoute = () => {
+  return <ProtectedRoute allowedRoles={['student', 'teacher', 'administrator']} />
 }

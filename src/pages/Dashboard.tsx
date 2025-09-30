@@ -1,222 +1,311 @@
 import { useState, useEffect, useRef } from 'react'
-import { useAuth } from '@/contexts/auth-provider'
+import { useAuth } from '@/hooks/use-auth'
 import {
   getUserSettings,
   saveDashboardLayout,
 } from '@/services/userSettingsService'
-import { DEFAULT_LAYOUTS, AVAILABLE_WIDGETS } from '@/lib/dashboard-config'
+import { DEFAULT_LAYOUTS, AVAILABLE_WIDGETS, WIDGETS } from '@/lib/dashboard-config'
 import { WidgetRenderer } from '@/components/dashboard/WidgetRenderer'
 import { CustomizationPanel } from '@/components/dashboard/CustomizationPanel'
 import { Button } from '@/components/ui/button'
-import { Settings, Layout, GripVertical } from 'lucide-react'
+import { Settings, Layout, GripVertical, Star, BookOpen, Brain, Clock, TrendingUp, CheckCircle, Award, Users, Zap } from 'lucide-react'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/components/ui/use-toast'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { cn } from '@/lib/utils'
+import { useStaggeredAnimation } from '@/hooks/useAnimations'
 
 export default function DashboardPage() {
   const { user, profile } = useAuth()
   const { toast } = useToast()
-  const [layout, setLayout] = useState<{ order: string[]; hidden: string[] }>({
-    order: [],
-    hidden: [],
-  })
   const [isLoading, setIsLoading] = useState(true)
   const [isCustomizing, setIsCustomizing] = useState(false)
-
-  const draggedItemIndex = useRef<number | null>(null)
-  const dragOverItemIndex = useRef<number | null>(null)
-  const [dragOverVisualIndex, setDragOverVisualIndex] = useState<number | null>(
-    null,
-  )
+  const [widgets, setWidgets] = useState<string[]>([])
+  const [isDragging, setIsDragging] = useState(false)
+  const [draggedWidget, setDraggedWidget] = useState<string | null>(null)
+  const [dragOverWidget, setDragOverWidget] = useState<string | null>(null)
+  const dragRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (user && profile) {
-      setIsLoading(true)
-      getUserSettings(user.id)
-        .then((settings) => {
-          const savedLayout = settings?.dashboard_layout as any
-          if (savedLayout && savedLayout.order) {
-            setLayout(savedLayout)
-          } else {
-            // Use default layout for the user's role
-            setLayout(DEFAULT_LAYOUTS[profile.role])
-          }
-        })
-        .catch((error) => {
-          // If user_settings fails completely, just use defaults
-          console.warn('Failed to load user settings, using defaults:', error)
-          setLayout(DEFAULT_LAYOUTS[profile.role])
-        })
-        .finally(() => setIsLoading(false))
-    }
-  }, [user, profile])
-
-  if (isLoading || !profile) {
-    return <SectionLoader />
-  }
-
-  const handleSave = async () => {
-    if (!user) return
-
-    try {
-      const result = await saveDashboardLayout(user.id, layout)
-      if (result) {
-        toast({ title: 'Dashboard salvo com sucesso!' })
-      } else {
-        toast({
-          title: 'Configuração aplicada',
-          description: 'Layout salvo localmente (funcionalidade de persistência indisponível)'
-        })
+    const loadDashboard = async () => {
+      try {
+        const settings = await getUserSettings(user?.id || '')
+        if (settings?.dashboard_layout) {
+          setWidgets(settings.dashboard_layout as string[])
+        } else {
+          // Use default layout based on user role
+          const defaultLayout = DEFAULT_LAYOUTS[profile?.role || 'student'] || DEFAULT_LAYOUTS.student
+          setWidgets(defaultLayout.order)
+        }
+      } catch (error) {
+        console.error('Error loading dashboard:', error)
+        // Fallback to default layout
+        const defaultLayout = DEFAULT_LAYOUTS[profile?.role || 'student'] || DEFAULT_LAYOUTS.student
+        setWidgets(defaultLayout.order)
+      } finally {
+        setIsLoading(false)
       }
-      setIsCustomizing(false)
-    } catch (error) {
-      console.warn('Error saving dashboard layout:', error)
-      toast({
-        title: 'Layout aplicado',
-        description: 'As configurações estão ativas para esta sessão'
-      })
-      setIsCustomizing(false)
     }
+
+    if (user) {
+      loadDashboard()
+    }
+  }, [user, profile?.role])
+
+  const handleDragStart = (e: React.DragEvent, widgetId: string) => {
+    setIsDragging(true)
+    setDraggedWidget(widgetId)
+    e.dataTransfer.effectAllowed = 'move'
   }
 
-  const handleReset = () => {
-    setLayout(DEFAULT_LAYOUTS[profile.role])
-    toast({ title: 'Dashboard restaurado para o padrão.' })
+  const handleDragOver = (e: React.DragEvent, widgetId: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverWidget(widgetId)
   }
 
-  const handleVisibilityChange = (widgetId: string, isVisible: boolean) => {
-    setLayout((prev) => {
-      const newOrder = isVisible
-        ? [...prev.order, widgetId]
-        : prev.order.filter((id) => id !== widgetId)
-      const newHidden = isVisible
-        ? prev.hidden.filter((id) => id !== widgetId)
-        : [...prev.hidden, widgetId]
-      return { order: newOrder, hidden: newHidden }
-    })
+  const handleDragLeave = () => {
+    setDragOverWidget(null)
   }
 
-  const handleDragStart = (index: number) => {
-    draggedItemIndex.current = index
-  }
-
-  const handleDragEnter = (index: number) => {
-    dragOverItemIndex.current = index
-    setDragOverVisualIndex(index)
-  }
-
-  const handleDrop = () => {
-    if (
-      draggedItemIndex.current === null ||
-      dragOverItemIndex.current === null ||
-      draggedItemIndex.current === dragOverItemIndex.current
-    ) {
+  const handleDrop = (e: React.DragEvent, targetWidgetId: string) => {
+    e.preventDefault()
+    
+    if (!draggedWidget || draggedWidget === targetWidgetId) {
+      setIsDragging(false)
+      setDraggedWidget(null)
+      setDragOverWidget(null)
       return
     }
-    const newOrder = [...layout.order]
-    const [draggedItem] = newOrder.splice(draggedItemIndex.current, 1)
-    newOrder.splice(dragOverItemIndex.current, 0, draggedItem)
-    setLayout({ ...layout, order: newOrder })
+
+    const draggedIndex = widgets.indexOf(draggedWidget)
+    const targetIndex = widgets.indexOf(targetWidgetId)
+    
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    const newWidgets = [...widgets]
+    newWidgets.splice(draggedIndex, 1)
+    newWidgets.splice(targetIndex, 0, draggedWidget)
+    
+    setWidgets(newWidgets)
+    setIsDragging(false)
+    setDraggedWidget(null)
+    setDragOverWidget(null)
   }
 
   const handleDragEnd = () => {
-    draggedItemIndex.current = null
-    dragOverItemIndex.current = null
-    setDragOverVisualIndex(null)
+    setIsDragging(false)
+    setDraggedWidget(null)
+    setDragOverWidget(null)
   }
 
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Bom dia'
-    if (hour < 18) return 'Boa tarde'
-    return 'Boa noite'
-  }
-
-  const getRoleDisplay = () => {
-    switch (profile.role) {
-      case 'student': return 'Estudante'
-      case 'teacher': return 'Professor'
-      case 'admin': return 'Administrador'
-      default: return 'Usuário'
+  const handleSaveLayout = async () => {
+    try {
+      await saveDashboardLayout(user?.id || '', widgets)
+      toast({
+        title: "Layout salvo",
+        description: "Suas preferências de dashboard foram salvas com sucesso.",
+      })
+    } catch (error) {
+      console.error('Error saving layout:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o layout. Tente novamente.",
+        variant: "destructive",
+      })
     }
   }
 
+  const handleResetLayout = () => {
+    const defaultLayout = DEFAULT_LAYOUTS[profile?.role || 'student'] || DEFAULT_LAYOUTS.student
+    setWidgets(defaultLayout.order)
+  }
+
+  const handleAddWidget = (widgetId: string) => {
+    if (!widgets.includes(widgetId)) {
+      setWidgets([...widgets, widgetId])
+    }
+  }
+
+  const handleRemoveWidget = (widgetId: string) => {
+    setWidgets(widgets.filter(id => id !== widgetId))
+  }
+
+  if (isLoading) {
+    return <SectionLoader />
+  }
+
+  const delays = useStaggeredAnimation(widgets.length, 100)
+
   return (
-    <>
-      <CustomizationPanel
-        isOpen={isCustomizing}
-        onOpenChange={setIsCustomizing}
-        visibleWidgets={layout.order}
-        onVisibilityChange={handleVisibilityChange}
-        onSave={handleSave}
-        onReset={handleReset}
-        userRole={profile.role}
-      />
-      
-      <MagicLayout
-        title={`${getGreeting()}, ${profile.first_name}!`}
-        description={`Bem-vindo ao seu dashboard como ${getRoleDisplay().toLowerCase()}. Gerencie seu aprendizado e acompanhe seu progresso.`}
-      >
-        <div className="space-y-8">
-          {/* Welcome Section */}
-          <MagicCard className="p-6" glow>
+    <MagicLayout 
+      title={`Olá, ${profile?.first_name || 'Usuário'}!`}
+      description="Bem-vindo ao seu dashboard personalizado. Acompanhe seu progresso e continue aprendendo."
+    >
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header Stats */}
+        <MagicCard variant="premium" size="lg">
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-gradient">
-                  {getGreeting()}, {profile.first_name}!
-                </h2>
-                <p className="text-muted-foreground">
-                  Aqui está um resumo da sua jornada de aprendizado hoje.
-                </p>
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <Star className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    Dashboard Inteligente
+                  </h1>
+                  <p className="text-muted-foreground text-lg">
+                    Acompanhe seu progresso e continue aprendendo
+                  </p>
+                </div>
               </div>
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsCustomizing(true)}
-                  className="group transition-all duration-300 hover:bg-primary/5"
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCustomizing(!isCustomizing)}
+                  className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
                 >
-                  <Layout className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:rotate-3" />
+                  <Layout className="w-4 h-4 mr-2" />
                   Personalizar
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={handleSaveLayout}
+                  className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Salvar
                 </Button>
               </div>
             </div>
-          </MagicCard>
 
-          {/* Dashboard Widgets */}
-          <div className="space-y-6">
-            {layout.order
-              .filter((id) => AVAILABLE_WIDGETS[profile.role].includes(id))
-              .map((widgetId, index) => (
-                <div
-                  key={widgetId}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragEnter={() => handleDragEnter(index)}
-                  onDragEnd={handleDragEnd}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={handleDrop}
-                  className={cn(
-                    'group cursor-move transition-all duration-300 rounded-2xl',
-                    'hover:shadow-lg hover:shadow-primary/10',
-                    dragOverVisualIndex === index && 'bg-primary/5 border-2 border-dashed border-primary/30',
-                    'relative'
-                  )}
-                >
-                  {/* Drag Handle */}
-                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="bg-background/80 backdrop-blur-sm border border-border/50 rounded-lg p-2 shadow-lg">
-                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+            {/* Stats Grid */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <BookOpen className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-blue-600">12</div>
+                <div className="text-sm text-muted-foreground">Cursos Ativos</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <TrendingUp className="h-6 w-6 text-green-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-green-600">78%</div>
+                <div className="text-sm text-muted-foreground">Progresso Médio</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <CheckCircle className="h-6 w-6 text-purple-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-purple-600">24</div>
+                <div className="text-sm text-muted-foreground">Aulas Concluídas</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+                <Clock className="h-6 w-6 text-orange-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-orange-600">48h</div>
+                <div className="text-sm text-muted-foreground">Tempo de Estudo</div>
+              </div>
+            </div>
+          </div>
+        </MagicCard>
+
+        {/* Customization Panel */}
+        {isCustomizing && (
+          <MagicCard variant="glass" size="lg">
+            <CustomizationPanel
+              availableWidgets={AVAILABLE_WIDGETS}
+              currentWidgets={widgets}
+              onAddWidget={handleAddWidget}
+              onRemoveWidget={handleRemoveWidget}
+              onResetLayout={handleResetLayout}
+              onClose={() => setIsCustomizing(false)}
+            />
+          </MagicCard>
+        )}
+
+        {/* Widgets Grid */}
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+          {widgets.map((widgetId, index) => {
+            const widget = WIDGETS[widgetId]
+            if (!widget) return null
+
+            return (
+              <MagicCard
+                key={widgetId}
+                variant="glass"
+                size="lg"
+                className={cn(
+                  "transition-all duration-300",
+                  isDragging && draggedWidget === widgetId && "opacity-50 scale-95",
+                  isDragging && dragOverWidget === widgetId && "ring-2 ring-primary/50",
+                  "hover:scale-105"
+                )}
+                style={{ animationDelay: `${delays[index]}ms` }}
+                draggable={isCustomizing}
+                onDragStart={(e) => handleDragStart(e, widgetId)}
+                onDragOver={(e) => handleDragOver(e, widgetId)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, widgetId)}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
+                        {widget.icon}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{widget.title}</h3>
+                        <p className="text-sm text-muted-foreground">{widget.description}</p>
+                      </div>
                     </div>
+                    {isCustomizing && (
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveWidget(widgetId)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   
-                  <WidgetRenderer widgetId={widgetId} />
+                  <div className="min-h-[200px]">
+                    <WidgetRenderer widgetId={widgetId} />
+                  </div>
                 </div>
-              ))}
-          </div>
+              </MagicCard>
+            )
+          })}
         </div>
-      </MagicLayout>
-    </>
+
+        {/* Empty State */}
+        {widgets.length === 0 && (
+          <MagicCard variant="glass" size="lg" className="text-center py-24">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <Layout className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                Dashboard vazio
+              </h3>
+              <p className="text-muted-foreground mb-8">
+                Personalize seu dashboard adicionando widgets úteis para acompanhar seu progresso.
+              </p>
+              <Button 
+                onClick={() => setIsCustomizing(true)}
+                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-8 py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              >
+                <Layout className="mr-2 h-4 w-4" />
+                Personalizar Dashboard
+              </Button>
+            </div>
+          </MagicCard>
+        )}
+      </div>
+    </MagicLayout>
   )
 }

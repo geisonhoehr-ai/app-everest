@@ -66,18 +66,19 @@ const MagicCard = React.forwardRef<HTMLDivElement, MagicCardProps>(
           
           // LED effects
           led && [
-            ledColor === 'green' && 'led-border animate-ledBorder',
-            ledColor === 'cyan' && 'led-border-cyan animate-ledBorder',
-            ledColor === 'purple' && 'led-border-purple animate-ledBorder',
-            ledColor === 'orange' && 'led-border-orange animate-ledBorder',
-            ledColor === 'pink' && 'led-border-pink animate-ledBorder',
-            ledColor === 'blue' && 'led-border-blue animate-ledBorder'
+            'relative',
+            'before:absolute before:inset-0 before:rounded-2xl before:p-[2px] before:bg-gradient-to-r',
+            ledColor === 'green' && 'before:from-green-400/50 before:via-green-500/70 before:to-green-400/50 before:animate-pulse',
+            ledColor === 'cyan' && 'before:from-cyan-400/50 before:via-cyan-500/70 before:to-cyan-400/50 before:animate-pulse',
+            ledColor === 'purple' && 'before:from-purple-400/50 before:via-purple-500/70 before:to-purple-400/50 before:animate-pulse',
+            ledColor === 'orange' && 'before:from-orange-400/50 before:via-orange-500/70 before:to-orange-400/50 before:animate-pulse',
+            ledColor === 'pink' && 'before:from-pink-400/50 before:via-pink-500/70 before:to-pink-400/50 before:animate-pulse',
+            ledColor === 'blue' && 'before:from-blue-400/50 before:via-blue-500/70 before:to-blue-400/50 before:animate-pulse'
           ],
           
           // Interactive effects
           interactive && [
-            'hover:scale-[1.03] hover:-translate-y-1',
-            'hover:rotate-1',
+            'hover:scale-105',
             'cursor-pointer'
           ],
           

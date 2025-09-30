@@ -3,13 +3,30 @@ import {
   useContext,
   useEffect,
   useState,
+  useCallback,
   ReactNode,
 } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
-import { getUserProfile, type UserProfile } from '@/services/userService'
 import { useToast } from '@/hooks/use-toast'
-import { useNetworkStatus } from '@/hooks/useNetworkStatus'
+
+// Simplified UserProfile interface
+export interface UserProfile {
+  id: string
+  email: string
+  first_name: string
+  last_name: string
+  role: 'student' | 'teacher' | 'administrator'
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  // Optional extended data
+  student_id_number?: string
+  employee_id_number?: string
+  department?: string
+  enrollment_date?: string
+  hire_date?: string
+}
 
 interface AuthContextType {
   user: User | null
@@ -19,16 +36,105 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
   loading: boolean
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const useAuth = () => {
+// Simple hook with better error handling - used internally by enhanced hook
+export const useAuth = () => {
   const context = useContext(AuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
+}
+
+// Centralized profile fetching with automatic profile creation
+const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
+  try {
+    console.log('🔍 Fetching profile for user:', userId)
+
+    // First try to fetch existing profile
+    const { data: existingProfile, error: fetchError } = await Promise.race([
+      supabase
+        .from('user_profiles')
+        .select(`
+          id,
+          email,
+          first_name,
+          last_name,
+          role,
+          is_active,
+          created_at,
+          updated_at,
+          student_id_number,
+          employee_id_number,
+          department,
+          enrollment_date,
+          hire_date
+        `)
+        .eq('id', userId)
+        .single(),
+      new Promise<any>((_, reject) =>
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
+      )
+    ])
+
+    // If profile exists, return it
+    if (!fetchError && existingProfile) {
+      console.log('✅ Profile fetched successfully:', existingProfile.email)
+      return existingProfile
+    }
+
+    // If profile doesn't exist (PGRST116 = no rows returned), try to create one
+    if (fetchError && fetchError.code === 'PGRST116') {
+      console.log('📝 Profile not found, attempting to create from auth data...')
+
+      // Get user data from Supabase Auth
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+      if (userError || !user) {
+        console.error('❌ Could not get user data for profile creation:', userError)
+        return null
+      }
+
+      // Create a basic profile
+      const newProfile = {
+        id: userId,
+        email: user.email || '',
+        first_name: user.user_metadata?.first_name || '',
+        last_name: user.user_metadata?.last_name || '',
+        role: 'student' as const, // Default role
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      // Try to insert the profile
+      const { data: createdProfile, error: createError } = await supabase
+        .from('user_profiles')
+        .insert(newProfile)
+        .select()
+        .single()
+
+      if (createError) {
+        console.error('❌ Failed to create profile:', createError)
+        return null
+      }
+
+      console.log('✅ Profile created successfully:', createdProfile.email)
+      return createdProfile
+    }
+
+    // For other errors, log and return null
+    console.error('❌ Profile fetch error:', fetchError)
+    return null
+
+  } catch (error) {
+    console.error('💥 Network error fetching profile:', error)
+    return null
+  }
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -36,134 +142,208 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
-  const { isOnline, isSlowConnection } = useNetworkStatus()
 
-  const waitForProfile = async (userId: string, maxAttempts = 2, baseDelay = 2000): Promise<UserProfile | null> => {
-    const timeout = isSlowConnection ? 10000 : 6000
-    
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        const profile = await Promise.race([
-          getUserProfile(userId),
-          new Promise<null>((_, reject) =>
-            setTimeout(() => reject(new Error('Profile fetch timeout')), timeout)
-          )
-        ])
+  // Refresh profile function
+  const refreshProfile = async () => {
+    if (!session?.user?.id) return
 
-        if (profile) {
-          return profile
-        }
-      } catch (error) {
-        // Only log on the last attempt to reduce console noise
-        if (attempt === maxAttempts) {
-          console.warn(`Profile fetch failed after ${maxAttempts} attempts:`, error)
-        }
-      }
-
-      if (attempt < maxAttempts) {
-        const delay = baseDelay * attempt
-        await new Promise(resolve => setTimeout(resolve, delay))
-      }
-    }
-
-    return null
+    console.log('🔄 Refreshing profile...')
+    const userProfile = await fetchUserProfile(session.user.id)
+    setProfile(userProfile)
   }
 
-  useEffect(() => {
-    const fetchSessionAndProfile = async (currentSession: Session | null) => {
-      if (currentSession?.user) {
-        try {
-          // Wait for profile with retry logic - the database trigger should create it automatically
-          const userProfile = await waitForProfile(currentSession.user.id)
+  // Handle session changes
+  const handleSessionChange = useCallback(async (newSession: Session | null) => {
+    console.log('🔄 Session changed:', !!newSession)
+    setSession(newSession)
 
-          if (userProfile) {
-            setProfile(userProfile)
-          } else {
-            console.warn('Profile not found for user:', currentSession.user.id)
-            // Don't force logout, allow user to use the app without profile
-            setProfile(null)
-          }
-        } catch (error) {
-          console.error('Error loading profile:', error)
-          // Don't force logout on profile errors, allow user to continue
-          setProfile(null)
-        }
+    if (newSession?.user) {
+      // Fetch profile for authenticated user
+      const userProfile = await fetchUserProfile(newSession.user.id)
+      setProfile(userProfile)
+
+      // Only show error if profile creation also failed
+      if (!userProfile) {
+        console.warn('⚠️ Failed to create or fetch user profile')
+        toast({
+          title: 'Erro no Perfil',
+          description: 'Não foi possível carregar seu perfil. Tente fazer login novamente.',
+          variant: 'destructive',
+        })
       } else {
-        setProfile(null)
+        console.log('✅ User authenticated with profile:', userProfile.email)
       }
+    } else {
+      // Clear profile for unauthenticated state
+      setProfile(null)
+      console.log('🔓 User logged out, profile cleared')
     }
+  }, [toast])
+
+  // Initialize auth
+  useEffect(() => {
+    let mounted = true
+    let refreshInterval: NodeJS.Timeout | null = null
 
     const initializeAuth = async () => {
       try {
-        // Add timeout to auth initialization - more generous timeout
-        const authTimeout = isSlowConnection ? 15000 : 10000
-        const {
-          data: { session: initialSession },
-        } = await Promise.race([
+        console.log('🚀 Initializing authentication...')
+
+        // Get initial session with reasonable timeout
+        const { data: { session: initialSession } } = await Promise.race([
           supabase.auth.getSession(),
           new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Auth initialization timeout')), authTimeout)
+            setTimeout(() => reject(new Error('Auth timeout')), 10000)
           )
         ])
 
-        setSession(initialSession)
-        await fetchSessionAndProfile(initialSession)
-      } catch (error) {
-        // Don't log timeout errors as errors, just as warnings
-        if (error instanceof Error && error.message.includes('timeout')) {
-          console.warn('Auth initialization timeout - continuing without authentication')
-        } else {
-          console.error('Error initializing auth:', error)
-        }
-        
-        setSession(null)
-        setProfile(null)
+        if (!mounted) return
 
-        // Only show error message for non-timeout errors
-        if (error instanceof Error && !error.message.includes('timeout')) {
+        console.log('📋 Initial session:', !!initialSession)
+        await handleSessionChange(initialSession)
+
+        // Set up token refresh check every 5 minutes
+        if (initialSession) {
+          refreshInterval = setInterval(async () => {
+            const { data: { session: currentSession } } = await supabase.auth.getSession()
+            if (currentSession) {
+              const expiresAt = currentSession.expires_at
+              const now = Math.floor(Date.now() / 1000)
+
+              // Refresh if less than 10 minutes until expiration
+              if (expiresAt && (expiresAt - now) < 600) {
+                console.log('🔄 Refreshing auth token...')
+                await supabase.auth.refreshSession()
+              }
+            }
+          }, 5 * 60 * 1000) // Check every 5 minutes
+        }
+
+      } catch (error) {
+        if (!mounted) return
+
+        console.error('💥 Auth initialization failed:', error)
+
+        // Don't show toast for timeout - just continue
+        if (!(error instanceof Error && error.message.includes('timeout'))) {
           toast({
             title: 'Erro de Conexão',
-            description: 'Não foi possível conectar com o servidor. Continuando sem autenticação.',
+            description: 'Problemas na conexão. Tente recarregar a página.',
             variant: 'destructive',
           })
         }
+
+        // Ensure clean state
+        setSession(null)
+        setProfile(null)
       } finally {
-        setLoading(false)
+        if (mounted) {
+          setLoading(false)
+          console.log('✅ Auth initialization completed')
+        }
       }
     }
 
     initializeAuth()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      setSession(newSession)
-      await fetchSessionAndProfile(newSession)
-      // Loading is already false from initializeAuth
-    })
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        if (!mounted) return
 
-    return () => subscription.unsubscribe()
-  }, [toast])
+        console.log('🔔 Auth event:', event)
 
+        // Handle token refresh
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('✅ Token refreshed successfully')
+        }
+
+        // Handle signed out
+        if (event === 'SIGNED_OUT') {
+          console.log('🚪 User signed out')
+          if (refreshInterval) {
+            clearInterval(refreshInterval)
+            refreshInterval = null
+          }
+        }
+
+        // Handle signed in
+        if (event === 'SIGNED_IN' && !refreshInterval) {
+          // Set up token refresh check
+          refreshInterval = setInterval(async () => {
+            const { data: { session: currentSession } } = await supabase.auth.getSession()
+            if (currentSession) {
+              const expiresAt = currentSession.expires_at
+              const now = Math.floor(Date.now() / 1000)
+
+              if (expiresAt && (expiresAt - now) < 600) {
+                console.log('🔄 Refreshing auth token...')
+                await supabase.auth.refreshSession()
+              }
+            }
+          }, 5 * 60 * 1000)
+        }
+
+        await handleSessionChange(newSession)
+      }
+    )
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+      if (refreshInterval) {
+        clearInterval(refreshInterval)
+      }
+    }
+  }, [toast, handleSessionChange])
+
+  // Auth methods
   const signIn = async (email: string, password: string) => {
+    console.log('🔐 Signing in user:', email)
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
+
+    if (error) {
+      console.error('❌ Sign in error:', error)
+    } else {
+      console.log('✅ Sign in successful')
+    }
+
     return { error }
   }
 
   const signUp = async (email: string, password: string) => {
+    console.log('📝 Signing up user:', email)
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
     })
+
+    if (error) {
+      console.error('❌ Sign up error:', error)
+    } else {
+      console.log('✅ Sign up successful')
+    }
+
     return { error }
   }
 
   const signOut = async () => {
+    console.log('🚪 Signing out user')
+
     const { error } = await supabase.auth.signOut()
-    setProfile(null)
+
+    if (error) {
+      console.error('❌ Sign out error:', error)
+    } else {
+      console.log('✅ Sign out successful')
+      setProfile(null)
+    }
+
     return { error }
   }
 
@@ -175,9 +355,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signUp,
     signOut,
     loading,
+    refreshProfile,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
-
-export { useAuth }

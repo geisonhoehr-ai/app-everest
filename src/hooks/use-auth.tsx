@@ -1,102 +1,105 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-  useCallback,
-} from 'react'
-import { User, Session, AuthError } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase/client'
-import { getUserProfile, type UserProfile } from '@/services/userService'
+import { useAuth as useAuthContext } from '@/contexts/auth-provider'
 
-interface AuthContextType {
-  user: User | null
-  session: Session | null
-  profile: UserProfile | null
-  signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signOut: () => Promise<{ error: AuthError | null }>
-  loading: boolean
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+/**
+ * Enhanced Auth Hook with Additional Utilities
+ *
+ * This hook provides a clean interface to the auth system
+ * with additional helper functions and computed properties.
+ */
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+  const auth = useAuthContext()
+
+  // Computed properties for convenience
+  const isAuthenticated = !!auth.session && !!auth.profile
+  const isLoading = auth.loading
+  const isAdmin = auth.profile?.role === 'administrator'
+  const isTeacher = auth.profile?.role === 'teacher'
+  const isStudent = auth.profile?.role === 'student'
+
+  // Helper functions
+  const hasRole = (role: string | string[]) => {
+    if (!auth.profile) return false
+    const roles = Array.isArray(role) ? role : [role]
+    return roles.includes(auth.profile.role)
   }
-  return context
+
+  const hasPermission = (requiredRoles: string[]) => {
+    return hasRole(requiredRoles)
+  }
+
+  const getDisplayName = () => {
+    if (!auth.profile) return 'Usuário'
+    return `${auth.profile.first_name} ${auth.profile.last_name}`.trim() || auth.profile.email
+  }
+
+  const getInitials = () => {
+    if (!auth.profile) return 'U'
+    const first = auth.profile.first_name?.[0] || ''
+    const last = auth.profile.last_name?.[0] || ''
+    return (first + last).toUpperCase() || auth.profile.email[0].toUpperCase()
+  }
+
+  const getUserId = () => auth.profile?.id || null
+
+  const getRedirectPath = () => {
+    if (!auth.profile) return '/login'
+
+    switch (auth.profile.role) {
+      case 'administrator':
+        return '/admin'
+      case 'teacher':
+      case 'student':
+      default:
+        return '/dashboard'
+    }
+  }
+
+  return {
+    // Original auth properties
+    ...auth,
+
+    // Computed properties
+    isAuthenticated,
+    isLoading,
+    isAdmin,
+    isTeacher,
+    isStudent,
+
+    // Helper functions
+    hasRole,
+    hasPermission,
+    getDisplayName,
+    getInitials,
+    getUserId,
+    getRedirectPath,
+  }
 }
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+/**
+ * Hook for requiring authentication
+ * Throws error if used outside authenticated context
+ */
+export const useRequireAuth = () => {
+  const auth = useAuth()
 
-  const fetchProfile = useCallback(async (user: User | null) => {
-    if (user) {
-      const userProfile = await getUserProfile(user.id)
-      setProfile(userProfile)
-    } else {
-      setProfile(null)
-    }
-  }, [])
-
-  useEffect(() => {
-    setLoading(true)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user ?? null
-      setSession(session)
-      setUser(currentUser)
-      await fetchProfile(currentUser)
-      setLoading(false)
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [fetchProfile])
-
-  const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
-    })
-    return { error }
+  if (!auth.isAuthenticated && !auth.isLoading) {
+    throw new Error('Authentication required')
   }
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    return { error }
+  return auth
+}
+
+/**
+ * Hook for requiring specific roles
+ */
+export const useRequireRole = (requiredRoles: string | string[]) => {
+  const auth = useRequireAuth()
+  const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles]
+
+  if (!auth.hasRole(roles)) {
+    throw new Error(`Role required: ${roles.join(' or ')}`)
   }
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    setProfile(null)
-    return { error }
-  }
-
-  const value = {
-    user,
-    session,
-    profile,
-    signUp,
-    signIn,
-    signOut,
-    loading,
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return auth
 }

@@ -1,157 +1,187 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import {
-  BookOpen,
-  Calendar,
-  ClipboardCheck,
-  FileText,
-  HelpCircle,
-  LayoutDashboard,
-  LogOut,
-  MessageSquare,
-  Mountain,
-  Settings,
-  TrendingUp,
-  Layers,
-  ListChecks,
-  Radio,
-  Archive,
-  Users,
-} from 'lucide-react'
-
+import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '@/hooks/use-auth'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuItem,
   SidebarSeparator,
 } from '@/components/ui/sidebar'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import { useAuth } from '@/contexts/auth-provider'
-import { useStaggeredAnimation } from '@/hooks/useAnimations'
+import {
+  LayoutDashboard,
+  BookOpen,
+  Calendar,
+  Layers,
+  Users,
+  ListChecks,
+  Radio,
+  FileText,
+  ClipboardCheck,
+  Settings,
+  HelpCircle,
+  LogOut,
+  Mountain,
+} from 'lucide-react'
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/meus-cursos', label: 'Meus Cursos', icon: BookOpen },
-  { href: '/calendario', label: 'Calendário', icon: Calendar },
-  { href: '/flashcards', label: 'Flashcards', icon: Layers },
-  { href: '/meus-conjuntos', label: 'Meus Conjuntos', icon: Users },
-  { href: '/quizzes', label: 'Quizzes', icon: ListChecks },
-  { href: '/evercast', label: 'Evercast', icon: Radio },
-  { href: '/redacoes', label: 'Redações', icon: FileText },
-  { href: '/simulados', label: 'Simulados', icon: ClipboardCheck },
-  { href: '/banco-de-questoes', label: 'Questões', icon: Archive },
-  { href: '/progresso', label: 'Progresso', icon: TrendingUp },
-  { href: '/forum', label: 'Fórum', icon: MessageSquare },
+  {
+    label: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+  },
+  {
+    label: 'Meus Cursos',
+    href: '/courses',
+    icon: BookOpen,
+  },
+  {
+    label: 'Calendário',
+    href: '/calendar',
+    icon: Calendar,
+  },
+  {
+    label: 'Flashcards',
+    href: '/flashcards',
+    icon: Layers,
+    badge: 'Novo',
+  },
+  {
+    label: 'Meus Conjuntos',
+    href: '/my-flashcard-sets',
+    icon: Users,
+  },
+  {
+    label: 'Quizzes',
+    href: '/quizzes',
+    icon: ListChecks,
+  },
+  {
+    label: 'Evercast',
+    href: '/evercast',
+    icon: Radio,
+  },
+  {
+    label: 'Redações',
+    href: '/essays',
+    icon: FileText,
+  },
+  {
+    label: 'Simulados',
+    href: '/simulations',
+    icon: ClipboardCheck,
+  },
 ]
 
 const bottomMenuItems = [
-  { href: '/configuracoes', label: 'Configurações', icon: Settings },
-  { href: '/faq', label: 'Ajuda', icon: HelpCircle },
+  {
+    label: 'Configurações',
+    href: '/settings',
+    icon: Settings,
+  },
+  {
+    label: 'Ajuda',
+    href: '/help',
+    icon: HelpCircle,
+  },
 ]
 
-export const AppSidebar = () => {
+export function AppSidebar() {
   const location = useLocation()
-  const navigate = useNavigate()
   const { profile, signOut } = useAuth()
 
-  const handleSignOut = async () => {
-    await signOut()
-    navigate('/login')
+  const isActive = (href: string) => {
+    return location.pathname === href
   }
 
-  const isActive = (path: string) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/dashboard'
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('Error signing out:', error)
     }
-    return location.pathname.startsWith(path)
   }
 
   const getInitials = () => {
     if (!profile) return 'U'
-    const first = profile.first_name?.charAt(0) || ''
-    const last = profile.last_name?.charAt(0) || ''
-    return `${first}${last}`.toUpperCase()
+    const firstName = profile.first_name || ''
+    const lastName = profile.last_name || ''
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U'
   }
 
-  const menuDelays = useStaggeredAnimation(menuItems.length, 50)
-  const bottomDelays = useStaggeredAnimation(bottomMenuItems.length + 1, 50)
-
   return (
-    <Sidebar 
-      collapsible="icon" 
-      className="border-r border-border/20 bg-gradient-to-b from-card/80 via-card/60 to-card/80 backdrop-blur-xl"
+    <Sidebar
+      collapsible="icon"
+      className="border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-black"
     >
-      <SidebarHeader className="border-b border-border/20 p-6 bg-gradient-to-r from-primary/5 to-transparent">
-        <div className="flex items-center gap-4 animate-fade-in-up">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 blur-sm" />
-            <div className="relative bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 p-3 rounded-xl shadow-lg shadow-primary/30">
-              <Mountain className="h-6 w-6 text-primary-foreground animate-float" />
-            </div>
+      <SidebarHeader className="border-b border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-black">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-2xl bg-gray-900 dark:bg-white">
+            <Mountain className="h-6 w-6 text-white dark:text-gray-900" />
           </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-2xl text-gradient">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
               Everest
-            </span>
-            <span className="text-xs text-muted-foreground font-medium">
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-light">
               Education Platform
-            </span>
+            </p>
           </div>
         </div>
       </SidebarHeader>
-      
-      <SidebarContent className="flex-grow p-4 space-y-2">
-        <SidebarMenu className="space-y-1">
-          {menuItems.map((item, index) => (
-            <SidebarMenuItem 
-              key={item.label}
-              className="animate-fade-in-up"
-              style={{ animationDelay: `${menuDelays[index].delay}ms` }}
-            >
-              <SidebarMenuButton 
-                asChild 
+
+      <SidebarContent className="flex-grow p-4">
+        <SidebarMenu className="space-y-2">
+          {menuItems.map((item) => (
+            <SidebarMenuItem key={item.label}>
+              <SidebarMenuButton
+                asChild
                 isActive={isActive(item.href)}
                 className={cn(
-                  "group relative overflow-hidden transition-all duration-300",
-                  "hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/30 hover:shadow-lg hover:shadow-muted/10",
-                  "rounded-xl p-3 h-auto min-h-[44px]",
-                  "border border-transparent hover:border-muted/30",
+                  "group relative transition-all duration-300 ease-out",
+                  "hover:bg-gray-50 dark:hover:bg-gray-900",
+                  "rounded-2xl p-4 h-auto border border-transparent",
+                  "hover:border-gray-200 dark:hover:border-gray-800",
                   isActive(item.href) && [
-                    "bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5",
-                    "border-primary/40 shadow-lg shadow-primary/25",
-                    "text-primary"
+                    "bg-gray-50 dark:bg-gray-900",
+                    "text-gray-900 dark:text-white",
+                    "border-gray-200 dark:border-gray-800",
+                    "shadow-sm"
                   ]
                 )}
               >
-                <Link to={item.href} className="flex items-center gap-3 w-full">
-                  <div className="relative">
-                    <div className={cn(
-                      "p-2.5 rounded-xl transition-all duration-300",
-                      "group-hover:bg-muted/30 group-hover:scale-105",
-                      isActive(item.href) && "bg-gradient-to-br from-primary/25 via-primary/15 to-primary/10 shadow-lg shadow-primary/25"
-                    )}>
-                      <item.icon className={cn(
-                        "h-5 w-5 transition-all duration-300",
-                        "group-hover:scale-110",
-                        isActive(item.href) && "text-primary"
-                      )} />
-                    </div>
-                    {isActive(item.href) && (
-                      <div className="absolute inset-0 rounded-xl bg-primary/10 animate-pulse" />
-                    )}
+                <Link to={item.href} className="flex items-center gap-4 w-full">
+                  <div className={cn(
+                    "p-2 rounded-xl transition-all duration-300 ease-out",
+                    "group-hover:bg-gray-100 dark:group-hover:bg-gray-800",
+                    isActive(item.href) && "bg-gray-100 dark:bg-gray-800"
+                  )}>
+                    <item.icon className={cn(
+                      "h-5 w-5 transition-colors duration-300 ease-out",
+                      isActive(item.href) && "text-gray-900 dark:text-white"
+                    )} />
                   </div>
                   <span className={cn(
-                    "transition-all duration-300 font-semibold text-sm flex-1",
-                    "group-hover:text-foreground group-hover:translate-x-1"
+                    "transition-colors duration-300 ease-out font-medium text-sm flex-1",
+                    isActive(item.href) && "text-gray-900 dark:text-white"
                   )}>
                     {item.label}
                   </span>
-                  {isActive(item.href) && (
-                    <div className="h-2 w-2 rounded-full bg-gradient-to-r from-primary to-primary-600 animate-glow shadow-lg shadow-primary/50" />
+                  {item.badge && (
+                    <Badge
+                      variant="default"
+                      className={cn(
+                        "text-xs border-0 px-2 py-1 rounded-full",
+                        "bg-blue-500 text-white"
+                      )}
+                    >
+                      {item.badge}
+                    </Badge>
                   )}
                 </Link>
               </SidebarMenuButton>
@@ -159,44 +189,40 @@ export const AppSidebar = () => {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      
-      <SidebarFooter className="border-t border-border/20 p-4 space-y-4 bg-gradient-to-t from-muted/20 to-transparent">
-        <SidebarMenu className="space-y-1">
-          {bottomMenuItems.map((item, index) => (
-            <SidebarMenuItem 
-              key={item.label}
-              className="animate-fade-in-up"
-              style={{ animationDelay: `${bottomDelays[index].delay}ms` }}
-            >
-              <SidebarMenuButton 
-                asChild 
+
+      <SidebarFooter className="border-t border-gray-200 dark:border-gray-800 p-4 space-y-4 bg-white dark:bg-black">
+        <SidebarMenu className="space-y-2">
+          {bottomMenuItems.map((item) => (
+            <SidebarMenuItem key={item.label}>
+              <SidebarMenuButton
+                asChild
                 isActive={isActive(item.href)}
                 className={cn(
-                  "group relative overflow-hidden transition-all duration-300",
-                  "hover:bg-muted/40 hover:shadow-md hover:shadow-muted/10",
-                  "rounded-xl p-3 h-auto min-h-[44px]",
-                  "border border-transparent hover:border-muted/30",
+                  "group relative transition-all duration-300 ease-out",
+                  "hover:bg-gray-50 dark:hover:bg-gray-900",
+                  "rounded-2xl p-4 h-auto border border-transparent",
+                  "hover:border-gray-200 dark:hover:border-gray-800",
                   isActive(item.href) && [
-                    "bg-gradient-to-r from-primary/10 to-primary/5",
-                    "border-primary/30 shadow-md shadow-primary/20"
+                    "bg-gray-50 dark:bg-gray-900",
+                    "text-gray-900 dark:text-white",
+                    "shadow-sm"
                   ]
                 )}
               >
-                <Link to={item.href} className="flex items-center gap-3 w-full">
+                <Link to={item.href} className="flex items-center gap-4 w-full">
                   <div className={cn(
-                    "p-1.5 rounded-lg transition-all duration-300",
-                    "group-hover:bg-muted/30 group-hover:scale-110",
-                    isActive(item.href) && "bg-primary/20"
+                    "p-2 rounded-xl transition-all duration-300 ease-out",
+                    "group-hover:bg-gray-100 dark:group-hover:bg-gray-800",
+                    isActive(item.href) && "bg-gray-100 dark:bg-gray-800"
                   )}>
                     <item.icon className={cn(
-                      "h-4 w-4 transition-all duration-300",
-                      "group-hover:rotate-3",
-                      isActive(item.href) && "text-primary"
+                      "h-5 w-5 transition-colors duration-300 ease-out",
+                      isActive(item.href) && "text-gray-900 dark:text-white"
                     )} />
                   </div>
                   <span className={cn(
-                    "transition-all duration-300 font-medium text-sm",
-                    "group-hover:text-foreground group-hover:translate-x-1"
+                    "transition-colors duration-300 ease-out font-medium text-sm",
+                    isActive(item.href) && "text-gray-900 dark:text-white"
                   )}>
                     {item.label}
                   </span>
@@ -204,66 +230,48 @@ export const AppSidebar = () => {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          
-          <SidebarSeparator className="animate-fade-in-up my-3 bg-gradient-to-r from-transparent via-border to-transparent" style={{ animationDelay: '800ms' }} />
-          
-          <SidebarMenuItem 
-            className="animate-fade-in-up"
-            style={{ animationDelay: `${bottomDelays[bottomDelays.length - 1].delay}ms` }}
-          >
-            <SidebarMenuButton 
+
+          <SidebarSeparator className="my-4" />
+
+          <SidebarMenuItem>
+            <SidebarMenuButton
               onClick={handleSignOut}
               className={cn(
-                "group relative overflow-hidden transition-all duration-300",
-                "hover:bg-destructive/10 hover:shadow-md hover:shadow-destructive/10",
-                "rounded-xl p-3 h-auto min-h-[44px] text-destructive/70 hover:text-destructive",
-                "border border-transparent hover:border-destructive/20"
+                "group relative transition-all duration-300 ease-out",
+                "hover:bg-red-50 dark:hover:bg-red-900/20",
+                "rounded-2xl p-4 h-auto text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300",
+                "border border-transparent hover:border-red-200 dark:hover:border-red-800"
               )}
             >
-              <div className="p-1.5 rounded-lg transition-all duration-300 group-hover:bg-destructive/10 group-hover:scale-110">
-                <LogOut className="h-4 w-4 transition-all duration-300 group-hover:rotate-3" />
+              <div className="p-2 rounded-xl transition-all duration-300 ease-out group-hover:bg-red-100 dark:group-hover:bg-red-900/30">
+                <LogOut className="h-5 w-5" />
               </div>
-              <span className="transition-all duration-300 font-medium text-sm group-hover:translate-x-1">
+              <span className="transition-colors duration-300 ease-out font-medium text-sm">
                 Sair
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        
-        <div
-          className={cn(
-            'flex items-center gap-4 rounded-2xl p-4 transition-all duration-300',
-            'bg-gradient-to-r from-muted/30 to-muted/20 backdrop-blur-sm',
-            'border border-border/30 hover:border-primary/30',
-            'hover:bg-primary/5 hover:shadow-xl hover:shadow-primary/10',
-            'animate-fade-in-up cursor-pointer group',
-          )}
-          style={{ animationDelay: '900ms' }}
-        >
-          <div className="relative">
-            <Avatar className="h-12 w-12 ring-2 ring-primary/20 ring-offset-2 ring-offset-background transition-all duration-300 group-hover:ring-primary group-hover:scale-105 shadow-lg">
-              <AvatarImage
-                src={`https://img.usecurling.com/ppl/medium?seed=${profile?.id}`}
-                alt="Avatar"
-                className="object-cover"
-              />
-              <AvatarFallback className="bg-gradient-to-br from-primary/30 to-primary/10 text-primary font-bold text-lg">
-                {getInitials()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-success border-2 border-background animate-pulse shadow-lg" />
-          </div>
-          <div className="flex flex-col overflow-hidden flex-1">
-            <span className="text-sm font-bold text-foreground truncate transition-colors duration-300 group-hover:text-primary">
+
+        {/* User Profile - Apple Style */}
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+          <Avatar className="h-12 w-12">
+            <AvatarImage
+              src={`https://img.usecurling.com/ppl/medium?seed=${profile?.id}`}
+              alt="Avatar"
+              className="object-cover"
+            />
+            <AvatarFallback className="bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-semibold">
+              {getInitials()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {profile?.first_name} {profile?.last_name}
-            </span>
-            <span className="text-xs text-muted-foreground truncate">
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
               {profile?.email}
-            </span>
-            <div className="flex items-center gap-1 mt-1">
-              <div className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-              <span className="text-xs text-success font-medium">Online</span>
-            </div>
+            </p>
           </div>
         </div>
       </SidebarFooter>

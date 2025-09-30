@@ -19,6 +19,9 @@ const TeacherStatsWidget = lazy(
 const AdminStatsWidget = lazy(
   () => import('@/components/dashboard/widgets/AdminStatsWidget'),
 )
+const RankingWidget = lazy(
+  () => import('@/components/dashboard/widgets/RankingWidget'),
+)
 
 export interface WidgetConfig {
   id: string
@@ -64,6 +67,12 @@ export const WIDGETS: Record<string, WidgetConfig> = {
     description: 'Visão geral dos dados da plataforma.',
     component: AdminStatsWidget,
   },
+  ranking: {
+    id: 'ranking',
+    name: 'Ranking',
+    description: 'Sua posição no ranking e conquistas recentes.',
+    component: RankingWidget,
+  },
 }
 
 export const DEFAULT_LAYOUTS: Record<
@@ -71,7 +80,7 @@ export const DEFAULT_LAYOUTS: Record<
   { order: string[]; hidden: string[] }
 > = {
   student: {
-    order: ['welcome', 'progress', 'events', 'courses'],
+    order: ['welcome', 'ranking', 'progress', 'events', 'courses'],
     hidden: [],
   },
   teacher: {
@@ -85,7 +94,7 @@ export const DEFAULT_LAYOUTS: Record<
 }
 
 export const AVAILABLE_WIDGETS: Record<UserProfile['role'], string[]> = {
-  student: ['welcome', 'courses', 'progress', 'events'],
-  teacher: ['teacherStats', 'events'],
-  administrator: ['adminStats'],
+  student: ['welcome', 'courses', 'progress', 'events', 'ranking'],
+  teacher: ['teacherStats', 'events', 'ranking'],
+  administrator: ['adminStats', 'ranking'],
 }
