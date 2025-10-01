@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-
-
+import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import {
@@ -53,7 +52,7 @@ export default function AdminQuizFormPage() {
   }, [])
 
   const form = useForm<QuizFormValues>({
-    
+    resolver: zodResolver(quizSchema),
     defaultValues: {
       title: '',
       description: '',

@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-
-
+import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import {
@@ -49,7 +48,7 @@ export default function AdminCourseFormPage() {
   const isEditing = !!courseId
 
   const form = useForm<CourseFormValues>({
-    
+    resolver: zodResolver(courseSchema),
     defaultValues: {
       name: '',
       description: '',

@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-
-
+import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import {
@@ -43,7 +42,7 @@ export default function AdminEvercastFormPage() {
   const isEditing = !!evercastId
 
   const form = useForm<EvercastFormValues>({
-    
+    resolver: zodResolver(evercastSchema),
     defaultValues: {
       title: '',
       series: '',
