@@ -336,9 +336,10 @@ const App = () => (
                 </Route>
               </Route>
 
+              {/* ROTAS APENAS PARA ADMINISTRATOR */}
               <Route
                 element={
-                  <ProtectedRoute allowedRoles={['administrator', 'teacher']} />
+                  <ProtectedRoute allowedRoles={['administrator']} />
                 }
               >
                 <Route path="/admin" element={<AdminLayout />}>
@@ -356,6 +357,18 @@ const App = () => (
                     path="users/:userId/edit"
                     element={<AdminUserFormPage />}
                   />
+                  <Route path="reports" element={<AdminReportsPage />} />
+                  <Route path="settings" element={<AdminSettingsPage />} />
+                </Route>
+              </Route>
+
+              {/* ROTAS PARA ADMINISTRATOR E TEACHER (Gestão de Conteúdo) */}
+              <Route
+                element={
+                  <ProtectedRoute allowedRoles={['administrator', 'teacher']} />
+                }
+              >
+                <Route path="/admin" element={<AdminLayout />}>
                   <Route path="courses" element={<AdminCoursesPage />} />
                   <Route path="courses/new" element={<AdminCourseFormPage />} />
                   <Route
@@ -455,8 +468,6 @@ const App = () => (
                     path="essays/settings"
                     element={<AdminEssaySettingsPage />}
                   />
-                  <Route path="reports" element={<AdminReportsPage />} />
-                  <Route path="settings" element={<AdminSettingsPage />} />
                 </Route>
               </Route>
 
