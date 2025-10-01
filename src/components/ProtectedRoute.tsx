@@ -15,16 +15,28 @@ interface ProtectedRouteProps {
  * Handles all edge cases properly and provides clear feedback.
  */
 export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps) => {
-  const { profile, loading, session, getRedirectPath } = useAuth()
+  const { profile, loading, session, profileFetchAttempted, getRedirectPath } = useAuth()
   const location = useLocation()
 
-  // Show loading while authentication is being determined OR while profile is loading
-  if (loading || (session && !profile)) {
+  // Show loading while authentication is being determined
+  if (loading) {
     return <PageLoader />
   }
 
-  // Redirect to login if not authenticated
-  if (!session || !profile) {
+  // If we have a session but profile hasn't been attempted yet, keep loading
+  if (session && !profileFetchAttempted) {
+    return <PageLoader />
+  }
+
+  // Redirect to login if not authenticated (no session at all)
+  if (!session) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  // At this point we have session, fetch was attempted, but profile is null
+  // This means the profile fetch failed after retries - redirect to login
+  if (!profile) {
+    console.error('❌ Profile fetch failed after retries - redirecting to login')
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 

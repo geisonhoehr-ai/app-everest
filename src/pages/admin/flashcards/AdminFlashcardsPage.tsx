@@ -11,28 +11,66 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { PlusCircle, BookOpen, TrendingUp, Layers } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { PlusCircle, BookOpen, TrendingUp, Layers, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/lib/supabase/client'
 import { getSubjects } from '@/services/subjectService'
 import type { SubjectWithTopicCount } from '@/services/subjectService'
 
 export default function AdminFlashcardsPage() {
   const [subjects, setSubjects] = useState<SubjectWithTopicCount[]>([])
   const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
+
+  const loadSubjects = async () => {
+    try {
+      const data = await getSubjects()
+      setSubjects(data)
+    } catch (error) {
+      console.error('Erro ao carregar matérias:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const loadSubjects = async () => {
-      try {
-        const data = await getSubjects()
-        setSubjects(data)
-      } catch (error) {
-        console.error('Erro ao carregar matérias:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadSubjects()
   }, [])
+
+  const handleDeleteSubject = async (subjectId: string, subjectName: string) => {
+    if (!confirm(`Deseja realmente deletar a matéria "${subjectName}"? Todos os tópicos e flashcards serão removidos.`)) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('subjects')
+        .delete()
+        .eq('id', subjectId)
+
+      if (error) throw error
+
+      toast({
+        title: 'Sucesso',
+        description: 'Matéria deletada com sucesso',
+      })
+
+      loadSubjects()
+    } catch (error) {
+      console.error('Erro ao deletar matéria:', error)
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível deletar a matéria',
+        variant: 'destructive',
+      })
+    }
+  }
 
   const totalTopics = subjects.reduce((acc, subject) => acc + subject.topics.length, 0)
 
@@ -44,9 +82,15 @@ export default function AdminFlashcardsPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Actions */}
         <div className="flex items-center justify-end">
-          <Button size="lg" className="gap-2 bg-gradient-to-r from-primary to-primary/80">
-            <PlusCircle className="h-5 w-5" />
-            Nova Matéria
+          <Button
+            size="lg"
+            className="gap-2 bg-gradient-to-r from-primary to-primary/80"
+            asChild
+          >
+            <Link to="/admin/flashcards/new">
+              <PlusCircle className="h-5 w-5" />
+              Nova Matéria
+            </Link>
           </Button>
         </div>
 
@@ -120,24 +164,53 @@ export default function AdminFlashcardsPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {subjects.map((subject) => (
-              <Link to={`/admin/flashcards/${subject.id}`} key={subject.id}>
-                <MagicCard variant="premium" glow className="group transition-all duration-300 hover:-translate-y-1">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                          <BookOpen className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold group-hover:text-primary transition-colors">
-                            {subject.name}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {subject.description || 'Sem descrição'}
-                          </p>
-                        </div>
+              <MagicCard key={subject.id} variant="premium" glow className="group transition-all duration-300 hover:-translate-y-1">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Link to={`/admin/flashcards/${subject.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                        <BookOpen className="h-6 w-6 text-primary" />
                       </div>
-                    </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold group-hover:text-primary transition-colors truncate">
+                          {subject.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {subject.description || 'Sem descrição'}
+                        </p>
+                      </div>
+                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link to={`/admin/flashcards/${subject.id}/edit`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar Matéria
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteSubject(subject.id, subject.name)
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Deletar Matéria
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                     
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -157,7 +230,6 @@ export default function AdminFlashcardsPage() {
                     </div>
                   </div>
                 </MagicCard>
-              </Link>
             ))}
           </div>
         )}

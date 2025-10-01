@@ -42,7 +42,7 @@ export default function AdminManagementPage() {
 
       // Get courses count
       const { count: coursesCount } = await supabase
-        .from('courses')
+        .from('video_courses')
         .select('*', { count: 'exact', head: true })
 
       setStats({

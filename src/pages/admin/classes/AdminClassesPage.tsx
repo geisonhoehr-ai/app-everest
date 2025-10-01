@@ -14,15 +14,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
   GraduationCap,
   Users,
   PlusCircle,
@@ -41,7 +32,6 @@ import {
 import { cn } from '@/lib/utils'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/hooks/use-toast'
-import { Label } from '@/components/ui/label'
 import { 
   getClasses, 
   createClass, 
@@ -52,9 +42,6 @@ export default function AdminClassesPage() {
   const [classes, setClasses] = useState<Class[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [newClassName, setNewClassName] = useState('')
-  const [newClassDescription, setNewClassDescription] = useState('')
   const { toast } = useToast()
 
   useEffect(() => {
@@ -77,42 +64,6 @@ export default function AdminClassesPage() {
     }
   }
 
-  const handleCreateClass = async () => {
-    if (!newClassName.trim()) {
-      toast({
-        title: 'Erro',
-        description: 'Digite o nome da turma',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    try {
-      await createClass({
-        name: newClassName,
-        description: newClassDescription,
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      })
-
-      toast({
-        title: 'Sucesso',
-        description: 'Turma criada com sucesso'
-      })
-
-      setIsCreateDialogOpen(false)
-      setNewClassName('')
-      setNewClassDescription('')
-      loadClasses()
-    } catch (error) {
-      console.error('Erro ao criar turma:', error)
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível criar a turma',
-        variant: 'destructive'
-      })
-    }
-  }
 
   const filteredClasses = classes.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -219,50 +170,12 @@ export default function AdminClassesPage() {
                 className="pl-10"
               />
             </div>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-primary to-primary/80 w-full md:w-auto">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Nova Turma
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Criar Nova Turma</DialogTitle>
-                  <DialogDescription>
-                    Adicione uma nova turma ao sistema
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nome da Turma</Label>
-                    <Input
-                      id="name"
-                      placeholder="Ex: Turma 2025.1"
-                      value={newClassName}
-                      onChange={(e) => setNewClassName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descrição</Label>
-                    <Input
-                      id="description"
-                      placeholder="Descrição da turma (opcional)"
-                      value={newClassDescription}
-                      onChange={(e) => setNewClassDescription(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleCreateClass}>
-                    Criar Turma
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button className="bg-gradient-to-r from-primary to-primary/80 w-full md:w-auto" asChild>
+              <Link to="/admin/classes/new">
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Nova Turma
+              </Link>
+            </Button>
           </div>
         </MagicCard>
 

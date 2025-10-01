@@ -36,6 +36,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
   loading: boolean
+  profileFetchAttempted: boolean
   refreshProfile: () => Promise<void>
 }
 
@@ -55,10 +56,10 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
   try {
     console.log('🔍 Fetching profile for user:', userId)
 
-    // First try to fetch existing profile (increased timeout to 15s)
+    // First try to fetch existing profile (timeout: 10s per attempt)
     const { data: existingProfile, error: fetchError } = await Promise.race([
       supabase
-        .from('user_profiles')
+        .from('users')
         .select(`
           id,
           email,
@@ -67,17 +68,12 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
           role,
           is_active,
           created_at,
-          updated_at,
-          student_id_number,
-          employee_id_number,
-          department,
-          enrollment_date,
-          hire_date
+          updated_at
         `)
         .eq('id', userId)
         .single(),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 15000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
       )
     ])
 
@@ -113,7 +109,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
 
       // Try to insert the profile
       const { data: createdProfile, error: createError } = await supabase
-        .from('user_profiles')
+        .from('users')
         .insert(newProfile)
         .select()
         .single()
@@ -141,6 +137,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [profileFetchAttempted, setProfileFetchAttempted] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const { toast } = useToast()
 
   // Refresh profile function
@@ -156,22 +154,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleSessionChange = useCallback(async (newSession: Session | null) => {
     console.log('🔄 Session changed:', !!newSession)
     setSession(newSession)
+    setProfileFetchAttempted(false)
 
     if (newSession?.user) {
-      // Fetch profile for authenticated user
-      const userProfile = await fetchUserProfile(newSession.user.id)
+      // Fetch profile for authenticated user with retry
+      let userProfile = await fetchUserProfile(newSession.user.id)
+
+      // If failed, retry once after 2 seconds
+      if (!userProfile) {
+        console.log('🔄 Profile fetch failed, retrying in 2s...')
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        userProfile = await fetchUserProfile(newSession.user.id)
+      }
+
       setProfile(userProfile)
+      setProfileFetchAttempted(true)
 
       // Only log the result, don't show error toast
       // (profile might load on subsequent attempts)
       if (!userProfile) {
-        console.warn('⚠️ Failed to create or fetch user profile')
+        console.warn('⚠️ Failed to create or fetch user profile after retry')
       } else {
         console.log('✅ User authenticated with profile:', userProfile.email)
       }
     } else {
       // Clear profile for unauthenticated state
       setProfile(null)
+      setProfileFetchAttempted(false)
       console.log('🔓 User logged out, profile cleared')
     }
   }, [])
@@ -248,6 +257,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!mounted) return
 
         console.log('🔔 Auth event:', event)
+
+        // Ignore duplicate events
+        if (event === 'SIGNED_OUT' && !session) {
+          console.log('⏭️ Ignoring duplicate SIGNED_OUT event')
+          return
+        }
 
         // Handle token refresh
         if (event === 'TOKEN_REFRESHED') {
@@ -329,18 +344,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const signOut = async () => {
-    console.log('🚪 Signing out user')
-
-    const { error } = await supabase.auth.signOut()
-
-    if (error) {
-      console.error('❌ Sign out error:', error)
-    } else {
-      console.log('✅ Sign out successful')
-      setProfile(null)
+    // Prevent multiple simultaneous signOut calls
+    if (isSigningOut) {
+      console.log('⏸️ SignOut already in progress, skipping...')
+      return { error: null }
     }
 
-    return { error }
+    // Get stack trace to see who called signOut
+    const stack = new Error().stack
+    console.log('🚪 Signing out user - Called from:', stack?.split('\n')[2]?.trim())
+
+    setIsSigningOut(true)
+
+    try {
+      const { error } = await supabase.auth.signOut()
+
+      if (error) {
+        // Ignore 403 errors - session already ended
+        if (error.status !== 403) {
+          console.error('❌ Sign out error:', error)
+        } else {
+          console.log('⚠️ Sign out 403 ignored (session already ended)')
+        }
+      } else {
+        console.log('✅ Sign out successful')
+      }
+
+      // Always clear profile on signout attempt
+      setProfile(null)
+      setProfileFetchAttempted(false)
+
+      return { error }
+    } finally {
+      // Reset flag after a delay to allow the process to complete
+      setTimeout(() => setIsSigningOut(false), 2000)
+    }
   }
 
   const value = {
@@ -351,6 +389,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signUp,
     signOut,
     loading,
+    profileFetchAttempted,
     refreshProfile,
   }
 

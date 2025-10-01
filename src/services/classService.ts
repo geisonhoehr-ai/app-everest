@@ -26,6 +26,8 @@ export interface ClassStudent {
 }
 
 export async function getClasses(): Promise<Class[]> {
+  console.log('📚 Fetching classes...')
+
   try {
     // Try to use view first
     const { data, error } = await supabase
@@ -33,42 +35,72 @@ export async function getClasses(): Promise<Class[]> {
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (!error && data) return data
+    if (!error && data) {
+      console.log('✅ Classes loaded from view:', data.length)
+      return data
+    }
+    console.log('⚠️ View not available, error:', error)
   } catch (e) {
-    console.log('View not available, using fallback query')
+    console.log('⚠️ View not available, using fallback query')
   }
 
   // Fallback: Query classes and count students manually
+  console.log('📊 Loading classes from tables...')
   const { data: classesData, error: classesError } = await supabase
     .from('classes')
     .select('*')
     .order('created_at', { ascending: false })
 
-  if (classesError) throw classesError
+  if (classesError) {
+    console.error('❌ Error loading classes:', classesError)
+    // Return empty array instead of throwing - don't crash the app
+    return []
+  }
 
-  // Get student counts for each class
-  const classesWithCounts = await Promise.all(
-    (classesData || []).map(async (classItem) => {
-      const { count } = await supabase
-        .from('student_classes')
-        .select('*', { count: 'exact', head: true })
-        .eq('class_id', classItem.id)
+  console.log('✅ Classes loaded:', classesData?.length || 0)
 
-      const { count: permissionsCount } = await supabase
-        .from('class_feature_permissions')
-        .select('*', { count: 'exact', head: true })
-        .eq('class_id', classItem.id)
+  // Get student counts for each class (with error handling)
+  try {
+    const classesWithCounts = await Promise.all(
+      (classesData || []).map(async (classItem) => {
+        let studentCount = 0
+        let permissionsCount = 0
 
-      return {
-        ...classItem,
-        student_count: count || 0,
-        enabled_features_count: permissionsCount || 0,
-        status: classItem.status || 'active' as any
-      }
-    })
-  )
+        try {
+          const { count } = await supabase
+            .from('student_classes')
+            .select('*', { count: 'exact', head: true })
+            .eq('class_id', classItem.id)
+          studentCount = count || 0
+        } catch (e) {
+          console.warn('⚠️ Could not fetch student count for class:', classItem.id)
+        }
 
-  return classesWithCounts
+        try {
+          const { count } = await supabase
+            .from('class_feature_permissions')
+            .select('*', { count: 'exact', head: true })
+            .eq('class_id', classItem.id)
+          permissionsCount = count || 0
+        } catch (e) {
+          console.warn('⚠️ Could not fetch permissions count for class:', classItem.id)
+        }
+
+        return {
+          ...classItem,
+          student_count: studentCount,
+          enabled_features_count: permissionsCount,
+          status: classItem.status || 'active' as any
+        }
+      })
+    )
+
+    return classesWithCounts
+  } catch (e) {
+    console.error('❌ Error enriching class data:', e)
+    // Return basic class data without counts
+    return classesData || []
+  }
 }
 
 export async function getClassById(classId: string): Promise<Class | null> {

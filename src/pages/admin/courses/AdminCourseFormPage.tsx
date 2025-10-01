@@ -62,7 +62,7 @@ export default function AdminCourseFormPage() {
       if (isEditing && courseId) {
         try {
           const { data: course, error } = await supabase
-            .from('courses')
+            .from('video_courses')
             .select('*')
             .eq('id', courseId)
             .single()

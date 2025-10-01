@@ -15,15 +15,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { 
-  MoreHorizontal, 
-  PlusCircle, 
-  ArrowLeft, 
-  BookOpen, 
+import {
+  MoreHorizontal,
+  PlusCircle,
+  ArrowLeft,
+  BookOpen,
   Layers,
   FileText,
-  TrendingUp
+  TrendingUp,
+  Trash2
 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/lib/supabase/client'
 import { getSubjectById } from '@/services/flashcardService'
 import { getTopicsBySubjectId } from '@/services/flashcardService'
 import type { Subject, TopicWithCardCount } from '@/services/flashcardService'
@@ -31,31 +34,61 @@ import type { Subject, TopicWithCardCount } from '@/services/flashcardService'
 export default function AdminFlashcardTopicsPage() {
   const { subjectId } = useParams<{ subjectId: string }>()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [subject, setSubject] = useState<Subject | null>(null)
   const [topics, setTopics] = useState<TopicWithCardCount[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (!subjectId) return
-      
-      try {
-        const [subjectData, topicsData] = await Promise.all([
-          getSubjectById(subjectId),
-          getTopicsBySubjectId(subjectId)
-        ])
-        
-        setSubject(subjectData)
-        setTopics(topicsData)
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
+  const loadData = async () => {
+    if (!subjectId) return
 
+    try {
+      const [subjectData, topicsData] = await Promise.all([
+        getSubjectById(subjectId),
+        getTopicsBySubjectId(subjectId)
+      ])
+
+      setSubject(subjectData)
+      setTopics(topicsData)
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     loadData()
   }, [subjectId])
+
+  const handleDeleteTopic = async (topicId: string, topicName: string) => {
+    if (!confirm(`Deseja realmente deletar o tópico "${topicName}"? Todos os flashcards serão removidos.`)) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('flashcard_topics')
+        .delete()
+        .eq('id', topicId)
+
+      if (error) throw error
+
+      toast({
+        title: 'Sucesso',
+        description: 'Tópico deletado com sucesso',
+      })
+
+      loadData()
+    } catch (error) {
+      console.error('Erro ao deletar tópico:', error)
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível deletar o tópico',
+        variant: 'destructive',
+      })
+    }
+  }
 
   if (loading) {
     return (
@@ -135,9 +168,11 @@ export default function AdminFlashcardTopicsPage() {
             </p>
           </div>
         </div>
-        <Button size="lg" className="shadow-sm">
-          <PlusCircle className="mr-2 h-5 w-5" />
-          Novo Tópico
+        <Button size="lg" className="shadow-sm" asChild>
+          <Link to={`/admin/flashcards/${subjectId}/topics/new`}>
+            <PlusCircle className="mr-2 h-5 w-5" />
+            Novo Tópico
+          </Link>
         </Button>
       </div>
 
@@ -175,7 +210,7 @@ export default function AdminFlashcardTopicsPage() {
       {/* Topics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {topics.map((topic) => (
-          <Card key={topic.id} className="group relative overflow-hidden border-0 bg-gradient-to-br from-white to-gray-50 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1">
+          <Card key={topic.id} className="group relative overflow-hidden bg-gradient-to-br from-card to-card/50 dark:from-card dark:to-muted/20 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -208,11 +243,17 @@ export default function AdminFlashcardTopicsPage() {
                         Gerenciar Cards
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <TrendingUp className="mr-2 h-4 w-4" />
-                      Editar Tópico
+                    <DropdownMenuItem asChild>
+                      <Link to={`/admin/flashcards/${subjectId}/topics/${topic.id}/edit`}>
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        Editar Tópico
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => handleDeleteTopic(topic.id, topic.name)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
                       Deletar Tópico
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -231,8 +272,8 @@ export default function AdminFlashcardTopicsPage() {
                   {topic.flashcardCount > 0 ? 'Ativo' : 'Vazio'}
                 </Badge>
               </div>
-              <div className="mt-4 h-1 w-full rounded-full bg-gray-200">
-                <div 
+              <div className="mt-4 h-1 w-full rounded-full bg-muted">
+                <div
                   className="h-1 rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
                   style={{ width: `${Math.min((topic.flashcardCount / 20) * 100, 100)}%` }}
                 />

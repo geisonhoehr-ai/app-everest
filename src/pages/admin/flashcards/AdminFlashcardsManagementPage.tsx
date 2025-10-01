@@ -301,7 +301,7 @@ export default function AdminFlashcardsManagementPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4">
               {fields.map((field, index) => (
-                <Card key={field.id} className="border-0 bg-gradient-to-br from-white to-gray-50 shadow-sm">
+                <Card key={field.id} className="bg-gradient-to-br from-card to-card/50 dark:from-card dark:to-muted/20 shadow-sm">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">

@@ -104,6 +104,12 @@ const AdminFlashcardTopicsPage = lazy(
 const AdminFlashcardsManagementPage = lazy(
   () => import('@/pages/admin/flashcards/AdminFlashcardsManagementPage'),
 )
+const AdminSubjectFormPage = lazy(
+  () => import('@/pages/admin/flashcards/AdminSubjectFormPage'),
+)
+const AdminTopicFormPage = lazy(
+  () => import('@/pages/admin/flashcards/AdminTopicFormPage'),
+)
 const AdminQuizzesPage = lazy(
   () => import('@/pages/admin/quizzes/AdminQuizzesPage'),
 )
@@ -172,6 +178,15 @@ const AdminClassesPage = lazy(
 )
 const AdminGamificationPage = lazy(
   () => import('@/pages/admin/gamification/AdminGamificationPage'),
+)
+const AdminClassStudentsPage = lazy(
+  () => import('@/pages/admin/classes/AdminClassStudentsPage'),
+)
+const AdminClassFormPage = lazy(
+  () => import('@/pages/admin/classes/AdminClassFormPage'),
+)
+const MemberkitImportPage = lazy(
+  () => import('@/pages/admin/integrations/MemberkitImportPage'),
 )
 
 const App = () => (
@@ -332,6 +347,10 @@ const App = () => (
                   <Route path="permissions" element={<AdminClassPermissionsPage />} />
                   <Route path="management" element={<AdminManagementPage />} />
                   <Route path="classes" element={<AdminClassesPage />} />
+                  <Route path="classes/new" element={<AdminClassFormPage />} />
+                  <Route path="classes/:classId/edit" element={<AdminClassFormPage />} />
+                  <Route path="classes/:classId/students" element={<AdminClassStudentsPage />} />
+                  <Route path="integrations/memberkit-import" element={<MemberkitImportPage />} />
                   <Route path="gamification" element={<AdminGamificationPage />} />
                   <Route
                     path="users/:userId/edit"
@@ -348,9 +367,22 @@ const App = () => (
                     element={<AdminCourseContentPage />}
                   />
                   <Route path="flashcards" element={<AdminFlashcardsPage />} />
+                  <Route path="flashcards/new" element={<AdminSubjectFormPage />} />
                   <Route
                     path="flashcards/:subjectId"
                     element={<AdminFlashcardTopicsPage />}
+                  />
+                  <Route
+                    path="flashcards/:subjectId/edit"
+                    element={<AdminSubjectFormPage />}
+                  />
+                  <Route
+                    path="flashcards/:subjectId/topics/new"
+                    element={<AdminTopicFormPage />}
+                  />
+                  <Route
+                    path="flashcards/:subjectId/topics/:topicId/edit"
+                    element={<AdminTopicFormPage />}
                   />
                   <Route
                     path="flashcards/:subjectId/:topicId"
