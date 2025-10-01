@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -95,28 +96,28 @@ export default function AdminUserFormPage() {
       title="Editar Usuário"
       description="Atualize as informações e permissões do usuário"
     >
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
         {/* Header */}
         <MagicCard variant="premium" size="lg">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <User className="h-8 w-8 text-primary" />
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <User className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                     Editar Usuário
                   </h1>
-                  <p className="text-muted-foreground text-lg">
-                    Atualize as informações e permissões do usuário
+                  <p className="text-muted-foreground text-sm md:text-lg">
+                    Atualize as informações do usuário
                   </p>
                 </div>
               </div>
               <Button 
                 variant="outline" 
                 onClick={() => navigate('/admin/management')}
-                className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
+                className="w-full md:w-auto bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
@@ -128,14 +129,14 @@ export default function AdminUserFormPage() {
         {/* User Form */}
         <MagicCard variant="glass" size="lg">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
               {/* Personal Information */}
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/10">
                     <User className="h-5 w-5 text-blue-500" />
                   </div>
-                  <h2 className="text-xl font-semibold">Informações Pessoais</h2>
+                  <h2 className="text-lg md:text-xl font-semibold">Informações Pessoais</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
