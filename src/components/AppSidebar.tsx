@@ -37,24 +37,18 @@ const menuItems = [
   },
   {
     label: 'Meus Cursos',
-    href: '/courses',
+    href: '/meus-cursos',
     icon: BookOpen,
   },
   {
     label: 'Calendário',
-    href: '/calendar',
+    href: '/calendario',
     icon: Calendar,
   },
   {
     label: 'Flashcards',
     href: '/flashcards',
     icon: Layers,
-    badge: 'Novo',
-  },
-  {
-    label: 'Meus Conjuntos',
-    href: '/my-flashcard-sets',
-    icon: Users,
   },
   {
     label: 'Quizzes',
@@ -68,12 +62,12 @@ const menuItems = [
   },
   {
     label: 'Redações',
-    href: '/essays',
+    href: '/redacoes',
     icon: FileText,
   },
   {
     label: 'Simulados',
-    href: '/simulations',
+    href: '/simulados',
     icon: ClipboardCheck,
   },
 ]
@@ -81,12 +75,12 @@ const menuItems = [
 const bottomMenuItems = [
   {
     label: 'Configurações',
-    href: '/settings',
+    href: '/configuracoes',
     icon: Settings,
   },
   {
     label: 'Ajuda',
-    href: '/help',
+    href: '/faq',
     icon: HelpCircle,
   },
 ]

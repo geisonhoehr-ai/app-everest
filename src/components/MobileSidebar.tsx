@@ -75,18 +75,53 @@ const adminMenuItems = [
     label: 'Controle Total',
     href: '/admin/system-control',
     icon: Settings,
+    adminOnly: true,
   },
   {
-    label: 'Gestão',
+    label: 'Gestão de Usuários',
     href: '/admin/management',
     icon: Users,
+    adminOnly: true,
+  },
+]
+
+const contentMenuItems = [
+  {
+    label: 'Gerenciar Flashcards',
+    href: '/admin/flashcards',
+    icon: Layers,
+  },
+  {
+    label: 'Gerenciar Quizzes',
+    href: '/admin/quizzes',
+    icon: ListChecks,
+  },
+  {
+    label: 'Gerenciar Cursos',
+    href: '/admin/courses',
+    icon: BookOpen,
+  },
+  {
+    label: 'Gerenciar Simulados',
+    href: '/admin/simulations',
+    icon: ClipboardCheck,
+  },
+  {
+    label: 'Gerenciar Redações',
+    href: '/admin/essays',
+    icon: FileText,
+  },
+  {
+    label: 'Gerenciar Evercast',
+    href: '/admin/evercast',
+    icon: Radio,
   },
 ]
 
 export const MobileSidebar = () => {
   const location = useLocation()
   const navigate = useNavigate()
-  const { profile, signOut, isAdmin } = useAuth()
+  const { profile, signOut, isAdmin, isTeacher } = useAuth()
 
   const handleSignOut = async () => {
     await signOut()
@@ -161,11 +196,17 @@ export const MobileSidebar = () => {
             )
           })}
 
-          {isAdmin && (
+          {(isAdmin || isTeacher) && (
             <>
               <div className="my-4 border-t" />
+              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase mb-2">
+                {isAdmin ? 'Administração' : 'Gestão'}
+              </p>
               <div className="space-y-1">
-                {adminMenuItems.map((item) => {
+                {adminMenuItems.map((item: any) => {
+                  // Pular itens adminOnly se for teacher
+                  if (item.adminOnly && !isAdmin) return null
+
                   const Icon = item.icon
                   const isActive = location.pathname === item.href
 
@@ -173,7 +214,34 @@ export const MobileSidebar = () => {
                     <SheetClose asChild key={item.href}>
                       <Link
                         to={item.href}
-                        onClick={() => console.log('📱 Admin - Navegando para:', item.href)}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                          isActive
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        )}
+                      >
+                        <Icon className="h-5 w-5 shrink-0" />
+                        <span className="font-medium">{item.label}</span>
+                      </Link>
+                    </SheetClose>
+                  )
+                })}
+              </div>
+
+              <div className="my-4 border-t" />
+              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase mb-2">
+                Gerenciar Conteúdo
+              </p>
+              <div className="space-y-1">
+                {contentMenuItems.map((item) => {
+                  const Icon = item.icon
+                  const isActive = location.pathname.startsWith(item.href)
+
+                  return (
+                    <SheetClose asChild key={item.href}>
+                      <Link
+                        to={item.href}
                         className={cn(
                           'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
                           isActive
