@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { SheetClose } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -82,11 +83,7 @@ const adminMenuItems = [
   },
 ]
 
-interface MobileSidebarProps {
-  onClose?: () => void
-}
-
-export const MobileSidebar = ({ onClose }: MobileSidebarProps = {}) => {
+export const MobileSidebar = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const { profile, signOut, isAdmin } = useAuth()
@@ -94,13 +91,6 @@ export const MobileSidebar = ({ onClose }: MobileSidebarProps = {}) => {
   const handleSignOut = async () => {
     await signOut()
     navigate('/login')
-    onClose?.()
-  }
-
-  const handleNavigation = (href: string) => {
-    navigate(href)
-    // Pequeno delay para animação antes de fechar
-    setTimeout(() => onClose?.(), 100)
   }
 
   const getInitials = () => {
@@ -153,19 +143,20 @@ export const MobileSidebar = ({ onClose }: MobileSidebarProps = {}) => {
             const isActive = location.pathname === item.href
 
             return (
-              <button
-                key={item.href}
-                onClick={() => handleNavigation(item.href)}
-                className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-left',
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                <span className="font-medium">{item.label}</span>
-              </button>
+              <SheetClose asChild key={item.href}>
+                <Link
+                  to={item.href}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              </SheetClose>
             )
           })}
 
@@ -178,19 +169,20 @@ export const MobileSidebar = ({ onClose }: MobileSidebarProps = {}) => {
                   const isActive = location.pathname === item.href
 
                   return (
-                    <button
-                      key={item.href}
-                      onClick={() => handleNavigation(item.href)}
-                      className={cn(
-                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-left',
-                        isActive
-                          ? 'bg-primary text-primary-foreground shadow-md'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      )}
-                    >
-                      <Icon className="h-5 w-5 shrink-0" />
-                      <span className="font-medium">{item.label}</span>
-                    </button>
+                    <SheetClose asChild key={item.href}>
+                      <Link
+                        to={item.href}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                          isActive
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        )}
+                      >
+                        <Icon className="h-5 w-5 shrink-0" />
+                        <span className="font-medium">{item.label}</span>
+                      </Link>
+                    </SheetClose>
                   )
                 })}
               </div>
@@ -201,27 +193,33 @@ export const MobileSidebar = ({ onClose }: MobileSidebarProps = {}) => {
 
       {/* Footer */}
       <div className="p-4 border-t space-y-1">
-        <button
-          onClick={() => handleNavigation('/configuracoes')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200 text-left"
-        >
-          <Settings className="h-5 w-5 shrink-0" />
-          <span className="font-medium">Configurações</span>
-        </button>
-        <button
-          onClick={() => handleNavigation('/faq')}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200 text-left"
-        >
-          <HelpCircle className="h-5 w-5 shrink-0" />
-          <span className="font-medium">Ajuda</span>
-        </button>
-        <button
-          onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-all duration-200 text-left"
-        >
-          <LogOut className="h-5 w-5 shrink-0" />
-          <span className="font-medium">Sair</span>
-        </button>
+        <SheetClose asChild>
+          <Link
+            to="/configuracoes"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
+          >
+            <Settings className="h-5 w-5 shrink-0" />
+            <span className="font-medium">Configurações</span>
+          </Link>
+        </SheetClose>
+        <SheetClose asChild>
+          <Link
+            to="/faq"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
+          >
+            <HelpCircle className="h-5 w-5 shrink-0" />
+            <span className="font-medium">Ajuda</span>
+          </Link>
+        </SheetClose>
+        <SheetClose asChild>
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-all duration-200 text-left"
+          >
+            <LogOut className="h-5 w-5 shrink-0" />
+            <span className="font-medium">Sair</span>
+          </button>
+        </SheetClose>
       </div>
     </div>
   )

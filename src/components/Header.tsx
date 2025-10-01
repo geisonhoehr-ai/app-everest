@@ -68,7 +68,7 @@ export const Header = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-72 bg-background">
-                <MobileSidebar onClose={() => setMobileMenuOpen(false)} />
+                <MobileSidebar />
               </SheetContent>
             </Sheet>
           </div>
