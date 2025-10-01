@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Bell, Menu, Search, Mountain } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ export const Header = () => {
   const unreadNotifications = 3
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleSignOut = async () => {
     await signOut()
@@ -55,7 +57,7 @@ export const Header = () => {
             </SidebarTrigger>
           </div>
           <div className="md:hidden animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-            <Sheet>
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button 
                   variant="outline" 
@@ -66,7 +68,7 @@ export const Header = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-72 bg-background">
-                <MobileSidebar />
+                <MobileSidebar onClose={() => setMobileMenuOpen(false)} />
               </SheetContent>
             </Sheet>
           </div>

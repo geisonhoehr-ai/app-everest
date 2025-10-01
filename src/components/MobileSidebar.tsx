@@ -82,7 +82,11 @@ const adminMenuItems = [
   },
 ]
 
-export const MobileSidebar = () => {
+interface MobileSidebarProps {
+  onClose?: () => void
+}
+
+export const MobileSidebar = ({ onClose }: MobileSidebarProps = {}) => {
   const location = useLocation()
   const navigate = useNavigate()
   const { profile, signOut, isAdmin } = useAuth()
@@ -90,6 +94,13 @@ export const MobileSidebar = () => {
   const handleSignOut = async () => {
     await signOut()
     navigate('/login')
+    onClose?.()
+  }
+
+  const handleNavigation = (href: string) => {
+    navigate(href)
+    // Pequeno delay para animação antes de fechar
+    setTimeout(() => onClose?.(), 100)
   }
 
   const getInitials = () => {
@@ -142,11 +153,11 @@ export const MobileSidebar = () => {
             const isActive = location.pathname === item.href
 
             return (
-              <Link
+              <button
                 key={item.href}
-                to={item.href}
+                onClick={() => handleNavigation(item.href)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-left',
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-md'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -154,7 +165,7 @@ export const MobileSidebar = () => {
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className="font-medium">{item.label}</span>
-              </Link>
+              </button>
             )
           })}
 
@@ -167,11 +178,11 @@ export const MobileSidebar = () => {
                   const isActive = location.pathname === item.href
 
                   return (
-                    <Link
+                    <button
                       key={item.href}
-                      to={item.href}
+                      onClick={() => handleNavigation(item.href)}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-left',
                         isActive
                           ? 'bg-primary text-primary-foreground shadow-md'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -179,7 +190,7 @@ export const MobileSidebar = () => {
                     >
                       <Icon className="h-5 w-5 shrink-0" />
                       <span className="font-medium">{item.label}</span>
-                    </Link>
+                    </button>
                   )
                 })}
               </div>
@@ -190,23 +201,23 @@ export const MobileSidebar = () => {
 
       {/* Footer */}
       <div className="p-4 border-t space-y-1">
-        <Link
-          to="/configuracoes"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
+        <button
+          onClick={() => handleNavigation('/configuracoes')}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200 text-left"
         >
           <Settings className="h-5 w-5 shrink-0" />
           <span className="font-medium">Configurações</span>
-        </Link>
-        <Link
-          to="/faq"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
+        </button>
+        <button
+          onClick={() => handleNavigation('/faq')}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200 text-left"
         >
           <HelpCircle className="h-5 w-5 shrink-0" />
           <span className="font-medium">Ajuda</span>
-        </Link>
+        </button>
         <button
           onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-all duration-200"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-all duration-200 text-left"
         >
           <LogOut className="h-5 w-5 shrink-0" />
           <span className="font-medium">Sair</span>
