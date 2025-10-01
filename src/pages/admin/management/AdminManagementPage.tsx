@@ -64,67 +64,67 @@ export default function AdminManagementPage() {
       title="Gerenciamento Administrativo"
       description="Administre usuários, turmas e permissões da plataforma"
     >
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         {/* Header Stats */}
         <MagicCard variant="premium" size="lg">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <Settings className="h-8 w-8 text-primary" />
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <Settings className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                     Painel Administrativo
                   </h1>
-                  <p className="text-muted-foreground text-lg">
-                    Gerencie usuários, turmas e configurações do sistema
+                  <p className="text-muted-foreground text-sm md:text-lg">
+                    Gerencie usuários e turmas
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                <Shield className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Admin</span>
+              <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <Shield className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                <span className="text-xs md:text-sm font-medium">Admin</span>
               </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                <Users className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
                 {stats.loading ? (
-                  <Skeleton className="h-8 w-16 mx-auto" />
+                  <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
                 ) : (
-                  <div className="text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
+                  <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
                 )}
-                <div className="text-sm text-muted-foreground">Usuários</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Usuários</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                <GraduationCap className="h-6 w-6 text-green-500 mx-auto mb-2" />
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <GraduationCap className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
                 {stats.loading ? (
-                  <Skeleton className="h-8 w-16 mx-auto" />
+                  <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
                 ) : (
-                  <div className="text-2xl font-bold text-green-600">{stats.students}</div>
+                  <div className="text-xl md:text-2xl font-bold text-green-600">{stats.students}</div>
                 )}
-                <div className="text-sm text-muted-foreground">Alunos</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Alunos</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                <UserCheck className="h-6 w-6 text-purple-500 mx-auto mb-2" />
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <UserCheck className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
                 {stats.loading ? (
-                  <Skeleton className="h-8 w-16 mx-auto" />
+                  <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
                 ) : (
-                  <div className="text-2xl font-bold text-purple-600">{stats.teachers}</div>
+                  <div className="text-xl md:text-2xl font-bold text-purple-600">{stats.teachers}</div>
                 )}
-                <div className="text-sm text-muted-foreground">Professores</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Professores</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
-                <BookOpen className="h-6 w-6 text-orange-500 mx-auto mb-2" />
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+                <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
                 {stats.loading ? (
-                  <Skeleton className="h-8 w-16 mx-auto" />
+                  <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
                 ) : (
-                  <div className="text-2xl font-bold text-orange-600">{stats.totalCourses}</div>
+                  <div className="text-xl md:text-2xl font-bold text-orange-600">{stats.totalCourses}</div>
                 )}
-                <div className="text-sm text-muted-foreground">Cursos</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Cursos</div>
               </div>
             </div>
           </div>
@@ -133,35 +133,35 @@ export default function AdminManagementPage() {
         {/* Management Tabs */}
         <MagicCard variant="glass" size="lg">
           <Tabs defaultValue="users" className="w-full">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
               <div>
-                <h2 className="text-2xl font-bold">Gerenciamento</h2>
-                <p className="text-muted-foreground">
-                  Administre usuários, turmas e permissões da plataforma
+                <h2 className="text-xl md:text-2xl font-bold">Gerenciamento</h2>
+                <p className="text-muted-foreground text-sm md:text-base">
+                  Administre usuários e turmas
                 </p>
               </div>
-              <TabsList className="bg-card/50 backdrop-blur-sm border border-border/50">
+              <TabsList className="bg-card/50 backdrop-blur-sm border border-border/50 w-full md:w-auto">
                 <TabsTrigger 
                   value="users" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white"
+                  className="flex-1 md:flex-none data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white"
                 >
-                  <Users className="mr-2 h-4 w-4" />
-                  Usuários
+                  <Users className="mr-2 h-3 w-3 md:h-4 md:w-4" />
+                  <span className="text-xs md:text-sm">Usuários</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="classes"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white"
+                  className="flex-1 md:flex-none data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white"
                 >
-                  <GraduationCap className="mr-2 h-4 w-4" />
-                  Turmas
+                  <GraduationCap className="mr-2 h-3 w-3 md:h-4 md:w-4" />
+                  <span className="text-xs md:text-sm">Turmas</span>
                 </TabsTrigger>
               </TabsList>
             </div>
             
-            <TabsContent value="users" className="mt-6">
+            <TabsContent value="users" className="mt-4 md:mt-6">
               <UserManagement />
             </TabsContent>
-            <TabsContent value="classes" className="mt-6">
+            <TabsContent value="classes" className="mt-4 md:mt-6">
               <ClassManagement />
             </TabsContent>
           </Tabs>

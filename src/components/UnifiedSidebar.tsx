@@ -1,5 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
+import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
+import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -44,80 +46,103 @@ import {
   Award,
   TrendingUp,
   Zap,
-  Trophy
+  Trophy,
+  Lock
 } from 'lucide-react'
 
-// Menu items for students
+// Menu items for students (com feature_key para controle de permissões)
+// null = 🟢 PADRÃO - SEMPRE VISÍVEL para todos os alunos
+// feature_key = 🔒 CONTROLADO POR TURMA (via class_feature_permissions)
 const studentMenuItems = [
   {
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-  },
-  {
-    label: 'Meus Cursos',
-    href: '/courses',
-    icon: BookOpen,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
   {
     label: 'Calendário',
     href: '/calendar',
     icon: Calendar,
-  },
-  {
-    label: 'Flashcards',
-    href: '/flashcards',
-    icon: Brain,
-  },
-  {
-    label: 'Quizzes',
-    href: '/quizzes',
-    icon: Target,
-  },
-  {
-    label: 'Redações',
-    href: '/redacoes',
-    icon: FileText,
-  },
-  {
-    label: 'Simulados',
-    href: '/simulados',
-    icon: ClipboardCheck,
-  },
-  {
-    label: 'Evercast',
-    href: '/evercast',
-    icon: Mic,
-  },
-  {
-    label: 'Fórum',
-    href: '/forum',
-    icon: MessageSquare,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
   {
     label: 'Ranking',
     href: '/ranking',
     icon: Trophy,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
+  },
+  {
+    label: 'Meus Cursos',
+    href: '/courses',
+    icon: BookOpen,
+    featureKey: FEATURE_KEYS.VIDEO_LESSONS, // 🔒 Controlado por turma
+  },
+  {
+    label: 'Flashcards',
+    href: '/flashcards',
+    icon: Brain,
+    featureKey: FEATURE_KEYS.FLASHCARDS, // 🔒 Controlado por turma
+  },
+  {
+    label: 'Quizzes',
+    href: '/quizzes',
+    icon: Target,
+    featureKey: FEATURE_KEYS.QUIZ, // 🔒 Controlado por turma
+  },
+  {
+    label: 'Redações',
+    href: '/redacoes',
+    icon: FileText,
+    featureKey: FEATURE_KEYS.ESSAYS, // 🔒 Controlado por turma
+  },
+  {
+    label: 'Simulados',
+    href: '/simulados',
+    icon: ClipboardCheck,
+    featureKey: FEATURE_KEYS.QUIZ, // 🔒 Controlado por turma
+  },
+  {
+    label: 'Evercast',
+    href: '/evercast',
+    icon: Mic,
+    featureKey: FEATURE_KEYS.EVERCAST, // 🔒 Controlado por turma
+  },
+  {
+    label: 'Fórum',
+    href: '/forum',
+    icon: MessageSquare,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
   {
     label: 'Conquistas',
     href: '/achievements',
     icon: Award,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
+  },
+  {
+    label: 'Plano de Estudos',
+    href: '/study-planner',
+    icon: Calendar,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
   {
     label: 'Progresso',
     href: '/progresso',
     icon: TrendingUp,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
   {
     label: 'Notificações',
     href: '/notificacoes',
     icon: Radio,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
   {
     label: 'Configurações',
     href: '/configuracoes',
     icon: Settings,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
 ]
 
@@ -126,11 +151,18 @@ const adminMenuItems = [
   {
     group: 'Principal',
     items: [
-      { 
-        href: '/admin', 
-        label: 'Dashboard', 
+      {
+        href: '/admin',
+        label: 'Dashboard',
         icon: LayoutDashboard,
         badge: null
+      },
+      {
+        href: '/admin/system-control',
+        label: 'Controle Total',
+        icon: Shield,
+        badge: null,
+        adminOnly: true
       },
       {
         href: '/admin/management',
@@ -138,44 +170,51 @@ const adminMenuItems = [
         icon: UserCog,
         badge: null
       },
+      {
+        href: '/admin/permissions',
+        label: 'Permissões',
+        icon: Lock,
+        badge: null,
+        adminOnly: true
+      },
     ]
   },
   {
     group: 'Conteúdo',
     items: [
-      { 
-        href: '/admin/courses', 
-        label: 'Cursos', 
+      {
+        href: '/admin/courses',
+        label: 'Cursos',
         icon: BookOpen,
         badge: null
       },
-      { 
-        href: '/admin/flashcards', 
-        label: 'Flashcards', 
+      {
+        href: '/admin/flashcards',
+        label: 'Flashcards',
         icon: Brain,
         badge: null
       },
-      { 
-        href: '/admin/quizzes', 
-        label: 'Quizzes', 
+      {
+        href: '/admin/quizzes',
+        label: 'Quizzes',
         icon: Target,
         badge: null
       },
-      { 
-        href: '/admin/essays', 
-        label: 'Redações', 
+      {
+        href: '/admin/essays',
+        label: 'Redações',
         icon: FileText,
         badge: null
       },
-      { 
-        href: '/admin/simulations', 
-        label: 'Simulados', 
+      {
+        href: '/admin/simulations',
+        label: 'Simulados',
         icon: ClipboardCheck,
         badge: null
       },
-      { 
-        href: '/admin/evercast', 
-        label: 'Evercast', 
+      {
+        href: '/admin/evercast',
+        label: 'Evercast',
         icon: Mic,
         badge: null
       },
@@ -184,9 +223,9 @@ const adminMenuItems = [
   {
     group: 'Relatórios',
     items: [
-      { 
-        href: '/admin/reports', 
-        label: 'Relatórios', 
+      {
+        href: '/admin/reports',
+        label: 'Relatórios',
         icon: BarChart3,
         badge: null
       },
@@ -195,9 +234,9 @@ const adminMenuItems = [
   {
     group: 'Sistema',
     items: [
-      { 
-        href: '/admin/settings', 
-        label: 'Configurações', 
+      {
+        href: '/admin/settings',
+        label: 'Configurações',
         icon: Settings,
         badge: null
       },
@@ -206,17 +245,42 @@ const adminMenuItems = [
 ]
 
 export function UnifiedSidebar() {
-  const { profile, logout } = useAuth()
+  const { profile, signOut } = useAuth()
+  const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const location = useLocation()
 
   if (!profile) return null
 
-  const isAdmin = profile.role === 'administrator' || profile.role === 'teacher'
-  const menuItems = isAdmin ? adminMenuItems : studentMenuItems
+  const isAdministrator = profile.role === 'administrator'
+  const isTeacher = profile.role === 'teacher'
+  const isAdmin = isAdministrator || isTeacher
+  const isStudent = profile.role === 'student'
 
   const handleLogout = () => {
-    logout()
+    signOut()
   }
+
+  // Filtra os itens do menu de alunos baseado nas permissões
+  const visibleStudentMenuItems = isStudent
+    ? studentMenuItems.filter(item => {
+        // Se não tem featureKey, sempre mostra
+        if (!item.featureKey) return true
+        // Se ainda está carregando permissões, não mostra itens com permissão
+        if (permissionsLoading) return false
+        // Verifica se tem permissão
+        return hasFeature(item.featureKey)
+      })
+    : studentMenuItems
+
+  // Filtra itens admin-only do menu (professores não veem)
+  const visibleAdminMenuItems = adminMenuItems.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      // Se tem adminOnly e o usuário é professor (não admin), não mostra
+      if (item.adminOnly && !isAdministrator) return false
+      return true
+    })
+  })).filter(group => group.items.length > 0) // Remove grupos vazios
 
   return (
     <Sidebar className="border-r border-border/50 bg-card/50 backdrop-blur-sm">
@@ -240,7 +304,7 @@ export function UnifiedSidebar() {
         {isAdmin ? (
           // Admin/Teacher Menu Structure
           <>
-            {adminMenuItems.map((group, groupIndex) => (
+            {visibleAdminMenuItems.map((group, groupIndex) => (
               <SidebarGroup key={groupIndex}>
                 <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   {group.group}
@@ -278,9 +342,9 @@ export function UnifiedSidebar() {
             ))}
           </>
         ) : (
-          // Student Menu Structure
+          // Student Menu Structure (com filtro de permissões)
           <SidebarMenu>
-            {studentMenuItems.map((item) => {
+            {visibleStudentMenuItems.map((item) => {
               const isActive = location.pathname === item.href
               return (
                 <SidebarMenuItem key={item.href}>
@@ -340,26 +404,6 @@ export function UnifiedSidebar() {
                 </Badge>
               </div>
             </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <SidebarMenuButton
-              asChild
-              className="flex-1 justify-center gap-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50 hover:bg-card/80 text-muted-foreground hover:text-foreground"
-            >
-              <Link to="/configuracoes">
-                <Settings className="h-4 w-4" />
-                <span className="text-sm">Config</span>
-              </Link>
-            </SidebarMenuButton>
-            <SidebarMenuButton
-              onClick={handleLogout}
-              className="flex-1 justify-center gap-2 rounded-xl bg-gradient-to-r from-destructive/10 to-destructive/5 border border-destructive/20 hover:bg-destructive/20 text-destructive hover:text-destructive"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="text-sm">Sair</span>
-            </SidebarMenuButton>
           </div>
         </div>
       </SidebarFooter>

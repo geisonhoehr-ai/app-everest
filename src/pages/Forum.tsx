@@ -78,48 +78,48 @@ export default function ForumPage() {
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header Stats */}
         <MagicCard variant="premium" size="lg">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <MessageSquare className="h-8 w-8 text-primary" />
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <MessageSquare className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                     Fórum de Dúvidas
                   </h1>
-                  <p className="text-muted-foreground text-lg">
-                    Interaja, tire suas dúvidas e ajude outros estudantes
+                  <p className="text-muted-foreground text-sm md:text-lg">
+                    Interaja e tire suas dúvidas
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                <Users className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">3 Tópicos Ativos</span>
+              <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <Users className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                <span className="text-xs md:text-sm font-medium">3 Tópicos Ativos</span>
               </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                <MessageCircle className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-600">25</div>
-                <div className="text-sm text-muted-foreground">Respostas</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-blue-600">25</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Respostas</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                <Users className="h-6 w-6 text-green-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-green-600">12</div>
-                <div className="text-sm text-muted-foreground">Participantes</div>
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <Users className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-green-600">12</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Participantes</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                <TrendingUp className="h-6 w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-600">3</div>
-                <div className="text-sm text-muted-foreground">Categorias</div>
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-purple-600">3</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Categorias</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
-                <Clock className="h-6 w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-orange-600">2h</div>
-                <div className="text-sm text-muted-foreground">Última Atividade</div>
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+                <Clock className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-orange-600">2h</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Última Atividade</div>
               </div>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function ForumPage() {
 
         {/* Search and Actions */}
         <MagicCard variant="glass" size="lg">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="flex flex-col md:flex-row gap-3 md:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
@@ -135,17 +135,18 @@ export default function ForumPage() {
                 className="pl-10 bg-card/50 backdrop-blur-sm border-border/50"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full md:w-auto">
               <Button 
                 variant="outline"
-                className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
+                className="flex-1 md:flex-none bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
               >
                 <Filter className="mr-2 h-4 w-4" />
                 Filtrar
               </Button>
-              <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg">
+              <Button className="flex-1 md:flex-none bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg">
                 <PlusCircle className="mr-2 h-4 w-4" /> 
-                Novo Tópico
+                <span className="hidden sm:inline">Novo Tópico</span>
+                <span className="sm:hidden">Novo</span>
               </Button>
             </div>
           </div>

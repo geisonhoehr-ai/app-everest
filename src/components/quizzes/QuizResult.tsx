@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { MagicLayout } from '@/components/ui/magic-layout'
@@ -14,7 +15,8 @@ import {
   Award,
   ChevronRight,
   ArrowRight,
-  RotateCcw
+  RotateCcw,
+  Share2
 } from 'lucide-react'
 import {
   Accordion,
@@ -23,6 +25,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { cn } from '@/lib/utils'
+import { ShareQuizResultsDialog } from './ShareQuizResultsDialog'
 
 interface Question {
   id: number | string
@@ -51,6 +54,8 @@ export const QuizResult = ({
   backLink,
   backLinkText = 'Voltar',
 }: QuizResultProps) => {
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  
   const { questions } = topic
   const score = questions.reduce((acc, question) => {
     return answers[question.id] === question.correctAnswer ? acc + 1 : acc
@@ -65,7 +70,16 @@ export const QuizResult = ({
     return { level: 'Precisa melhorar', color: 'red', icon: Brain }
   }
 
+  const getMotivationalMessage = (percentage: number) => {
+    if (percentage >= 90) return '🌟 Incrível! Você dominou este conteúdo!'
+    if (percentage >= 80) return '🚀 Parabéns! Você está arrasando!'
+    if (percentage >= 70) return '💪 Bom trabalho! Continue assim!'
+    if (percentage >= 60) return '📚 Você está no caminho certo!'
+    return '🎓 Continue estudando! Você vai conseguir!'
+  }
+
   const performance = getPerformanceLevel(percentage)
+  const motivationalMessage = getMotivationalMessage(percentage)
   const PerformanceIcon = performance.icon
 
   return (
@@ -73,12 +87,21 @@ export const QuizResult = ({
       title="Resultado do Quiz"
       description={`${topic.title} • ${percentage}% de acerto`}
     >
+      <ShareQuizResultsDialog
+        isOpen={isShareOpen}
+        onOpenChange={setIsShareOpen}
+        topicTitle={topic.title}
+        correct={score}
+        total={questions.length}
+        percentage={percentage}
+      />
+
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Results Header */}
         <MagicCard variant="premium" size="lg" className="text-center">
           <div className="space-y-8">
             <div className="flex items-center justify-center gap-4">
-              <div className="p-4 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10">
+              <div className="p-4 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 animate-pulse">
                 <PerformanceIcon className="h-12 w-12 text-primary" />
               </div>
               <div>
@@ -87,6 +110,13 @@ export const QuizResult = ({
                 </h1>
                 <p className="text-muted-foreground text-lg">{topic.title}</p>
               </div>
+            </div>
+            
+            {/* Motivational Message */}
+            <div className="px-6 py-4 rounded-xl bg-gradient-to-r from-primary/5 via-purple-500/5 to-cyan-500/5 border border-primary/10">
+              <p className="text-lg font-semibold text-foreground">
+                {motivationalMessage}
+              </p>
             </div>
 
             {/* Score Display */}
@@ -213,20 +243,32 @@ export const QuizResult = ({
         </MagicCard>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Button
+            onClick={() => setIsShareOpen(true)}
+            size="lg"
+            className="bg-gradient-to-r from-primary via-purple-600 to-cyan-600 hover:from-primary/90 hover:via-purple-600/90 hover:to-cyan-600/90 text-white font-semibold py-3 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl shadow-lg"
+          >
+            <Share2 className="mr-2 h-5 w-5" />
+            Compartilhar Resultado
+          </Button>
+          
           <Button 
             asChild 
-            className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold py-3 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+            size="lg"
+            className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-3 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
           >
             <Link to={retakeLink}>
               <RotateCcw className="mr-2 h-5 w-5" />
               Refazer Quiz
             </Link>
           </Button>
+          
           <Button 
             variant="outline" 
+            size="lg"
             asChild
-            className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all duration-300 py-3 px-8 rounded-xl"
+            className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all duration-300 py-3 px-8 rounded-xl font-semibold"
           >
             <Link to={backLink}>
               <ArrowRight className="mr-2 h-4 w-4" />

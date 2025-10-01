@@ -49,51 +49,51 @@ export default function EssaysPage() {
     >
       <div className="space-y-8">
         {/* Stats Cards */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <MagicCard className="p-6 text-center" glow>
-            <div className="space-y-2">
-              <FileText className="h-8 w-8 text-primary mx-auto" />
-              <div className="text-2xl font-bold">{essays.length}</div>
-              <div className="text-sm text-muted-foreground">Redações Enviadas</div>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <MagicCard className="p-4 md:p-6 text-center" glow>
+            <div className="space-y-1 md:space-y-2">
+              <FileText className="h-6 w-6 md:h-8 md:w-8 text-primary mx-auto" />
+              <div className="text-xl md:text-2xl font-bold">{essays.length}</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Redações Enviadas</div>
             </div>
           </MagicCard>
-          <MagicCard className="p-6 text-center" glow>
-            <div className="space-y-2">
-              <TrendingUp className="h-8 w-8 text-green-500 mx-auto" />
-              <div className="text-2xl font-bold">900</div>
-              <div className="text-sm text-muted-foreground">Nota Média</div>
+          <MagicCard className="p-4 md:p-6 text-center" glow>
+            <div className="space-y-1 md:space-y-2">
+              <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-green-500 mx-auto" />
+              <div className="text-xl md:text-2xl font-bold">900</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Nota Média</div>
             </div>
           </MagicCard>
-          <MagicCard className="p-6 text-center" glow>
-            <div className="space-y-2">
-              <Clock className="h-8 w-8 text-blue-500 mx-auto" />
-              <div className="text-2xl font-bold">3</div>
-              <div className="text-sm text-muted-foreground">Dias Médio</div>
+          <MagicCard className="p-4 md:p-6 text-center" glow>
+            <div className="space-y-1 md:space-y-2">
+              <Clock className="h-6 w-6 md:h-8 md:w-8 text-blue-500 mx-auto" />
+              <div className="text-xl md:text-2xl font-bold">3</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Dias Médio</div>
             </div>
           </MagicCard>
-          <MagicCard className="p-6 text-center" glow>
-            <div className="space-y-2">
-              <Calendar className="h-8 w-8 text-orange-500 mx-auto" />
-              <div className="text-2xl font-bold">1</div>
-              <div className="text-sm text-muted-foreground">Pendentes</div>
+          <MagicCard className="p-4 md:p-6 text-center" glow>
+            <div className="space-y-1 md:space-y-2">
+              <Calendar className="h-6 w-6 md:h-8 md:w-8 text-orange-500 mx-auto" />
+              <div className="text-xl md:text-2xl font-bold">1</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Pendentes</div>
             </div>
           </MagicCard>
         </div>
 
         {/* Actions Bar */}
         <MagicCard className="p-6" glow>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-4">
-              <h2 className="text-xl font-semibold">Histórico de Redações</h2>
-              <Badge variant="outline" className="bg-primary/10 border-primary/20 text-primary">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+              <h2 className="text-lg md:text-xl font-semibold">Histórico de Redações</h2>
+              <Badge variant="outline" className="bg-primary/10 border-primary/20 text-primary w-fit">
                 {essays.filter(e => e.status === 'Corrigida').length} corrigidas
               </Badge>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Button 
                 variant="outline" 
                 asChild
-                className="group transition-all duration-300 hover:bg-primary/5"
+                className="group transition-all duration-300 hover:bg-primary/5 w-full sm:w-auto"
               >
                 <Link to="/redacoes/evolucao" target="_blank">
                   <FileDown className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
@@ -104,7 +104,7 @@ export default function EssaysPage() {
               </Button>
               <Button 
                 asChild
-                className="group transition-all duration-300 hover:bg-primary/90"
+                className="group transition-all duration-300 hover:bg-primary/90 w-full sm:w-auto"
               >
                 <Link to="/redacoes/nova">
                   <FilePlus2 className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
@@ -117,7 +117,8 @@ export default function EssaysPage() {
 
         {/* Essays Table */}
         <MagicCard className="overflow-hidden" glow>
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow className="animate-fade-in-up animation-delay-400">
                 <TableHead>Tema</TableHead>
@@ -182,6 +183,7 @@ export default function EssaysPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </MagicCard>
       </div>
     </MagicLayout>

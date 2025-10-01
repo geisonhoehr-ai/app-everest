@@ -15,16 +15,16 @@ interface ProtectedRouteProps {
  * Handles all edge cases properly and provides clear feedback.
  */
 export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps) => {
-  const { profile, loading, isAuthenticated, getRedirectPath } = useAuth()
+  const { profile, loading, session, getRedirectPath } = useAuth()
   const location = useLocation()
 
-  // Show loading while authentication is being determined
-  if (loading) {
+  // Show loading while authentication is being determined OR while profile is loading
+  if (loading || (session && !profile)) {
     return <PageLoader />
   }
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated || !profile) {
+  if (!session || !profile) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 

@@ -4,6 +4,8 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AchievementNotificationContainer } from '@/components/achievements/AchievementNotification'
+import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt'
+import { InstallPWA } from '@/components/InstallPWA'
 import { ThemeProvider } from '@/contexts/theme-provider'
 import { AuthProvider } from '@/contexts/auth-provider'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -74,6 +76,7 @@ const ModernComponentsDemoPage = lazy(
 )
 const RankingPage = lazy(() => import('@/pages/Ranking'))
 const AchievementsPage = lazy(() => import('@/pages/Achievements'))
+const StudyPlannerPage = lazy(() => import('@/pages/StudyPlannerPage'))
 
 const AdminLayout = lazy(() => import('@/components/admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
@@ -158,6 +161,18 @@ const AdminReportsPage = lazy(
 const AdminSettingsPage = lazy(
   () => import('@/pages/admin/settings/AdminSettingsPage'),
 )
+const AdminSystemControlPage = lazy(
+  () => import('@/pages/admin/system/AdminSystemControlPage'),
+)
+const AdminClassPermissionsPage = lazy(
+  () => import('@/pages/admin/permissions/AdminClassPermissionsPage'),
+)
+const AdminClassesPage = lazy(
+  () => import('@/pages/admin/classes/AdminClassesPage'),
+)
+const AdminGamificationPage = lazy(
+  () => import('@/pages/admin/gamification/AdminGamificationPage'),
+)
 
 const App = () => (
   <BrowserRouter
@@ -168,6 +183,8 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <PWAUpdatePrompt />
+          <InstallPWA />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route element={<PublicRoute />}>
@@ -295,6 +312,7 @@ const App = () => (
                   <Route path="/notificacoes" element={<NotificationsPage />} />
                   <Route path="/ranking" element={<RankingPage />} />
                   <Route path="/achievements" element={<AchievementsPage />} />
+                  <Route path="/study-planner" element={<StudyPlannerPage />} />
                   <Route path="/componentes-modernos" element={<ModernComponentsDemoPage />} />
                   <Route path="/faq" element={<FaqPage />} />
                   <Route path="/contato" element={<ContactPage />} />
@@ -310,7 +328,11 @@ const App = () => (
               >
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
+                  <Route path="system-control" element={<AdminSystemControlPage />} />
+                  <Route path="permissions" element={<AdminClassPermissionsPage />} />
                   <Route path="management" element={<AdminManagementPage />} />
+                  <Route path="classes" element={<AdminClassesPage />} />
+                  <Route path="gamification" element={<AdminGamificationPage />} />
                   <Route
                     path="users/:userId/edit"
                     element={<AdminUserFormPage />}

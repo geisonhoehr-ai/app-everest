@@ -101,48 +101,48 @@ export default function CoursesPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Stats */}
         <MagicCard variant="premium" size="lg">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <BookOpen className="h-8 w-8 text-primary" />
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <BookOpen className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                     Plataforma de Cursos
                   </h1>
-                  <p className="text-muted-foreground text-lg">
+                  <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
                     Aprenda com os melhores professores e domine qualquer assunto
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                <Star className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Ensino Inteligente</span>
+              <div className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <Star className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                <span className="text-xs md:text-sm font-medium">Ensino Inteligente</span>
               </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                <BookOpen className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-600">{totalActiveCourses}</div>
-                <div className="text-sm text-muted-foreground">Cursos Ativos</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-blue-600">{totalActiveCourses}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Cursos Ativos</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                <Play className="h-6 w-6 text-green-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-green-600">{totalLessonsCompleted}</div>
-                <div className="text-sm text-muted-foreground">Aulas Concluídas</div>
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <Play className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-green-600">{totalLessonsCompleted}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Aulas Concluídas</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                <Users className="h-6 w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-600">{totalStudents.toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground">Estudantes</div>
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <Users className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-purple-600">{totalStudents.toLocaleString()}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Estudantes</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
-                <TrendingUp className="h-6 w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-orange-600">{Math.round(averageProgress)}%</div>
-                <div className="text-sm text-muted-foreground">Progresso Médio</div>
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+                <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-orange-600">{Math.round(averageProgress)}%</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Progresso Médio</div>
               </div>
             </div>
           </div>
@@ -150,8 +150,8 @@ export default function CoursesPage() {
 
         {/* Search and Filter */}
         <MagicCard variant="glass" size="lg">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="relative flex-1">
+          <div className="flex flex-col gap-3 md:gap-4">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
                 placeholder="Buscar cursos..." 
@@ -160,7 +160,7 @@ export default function CoursesPage() {
                 className="pl-10 bg-card/50 backdrop-blur-sm border-border/50"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {categories.map((category) => (
                 <Button
                   key={category}
@@ -168,7 +168,7 @@ export default function CoursesPage() {
                   size="sm"
                   onClick={() => setFilterCategory(category)}
                   className={cn(
-                    "transition-all duration-300",
+                    "transition-all duration-300 whitespace-nowrap flex-shrink-0",
                     filterCategory === category 
                       ? "bg-gradient-to-r from-primary to-primary/80 text-white" 
                       : "bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
@@ -232,7 +232,7 @@ export default function CoursesPage() {
                   <MagicCard
                     variant="premium"
                     size="lg"
-                    className="h-[480px] flex flex-col overflow-hidden transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl"
+                    className="h-[450px] md:h-[480px] flex flex-col overflow-hidden transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl"
                     style={{ animationDelay: `${delays[index]}ms` }}
                   >
                     {/* Image Header */}

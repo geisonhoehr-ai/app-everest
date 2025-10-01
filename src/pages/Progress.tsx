@@ -62,41 +62,41 @@ export default function ProgressPage() {
     >
       <div className="space-y-8">
         {/* Overall Progress */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <MagicCard className="p-6 text-center" glow>
-            <div className="space-y-3">
-              <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-primary" />
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <MagicCard className="p-4 md:p-6 text-center" glow>
+            <div className="space-y-2 md:space-y-3">
+              <div className="mx-auto w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-lg md:rounded-xl flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-primary" />
               </div>
               <div className="space-y-1">
-                <div className="text-3xl font-bold">{data.overallProgress}%</div>
-                <div className="text-sm text-muted-foreground">Progresso Geral</div>
-                <Badge variant="outline" className="text-xs">
+                <div className="text-2xl md:text-3xl font-bold">{data.overallProgress}%</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Progresso Geral</div>
+                <Badge variant="outline" className="text-xs hidden md:inline-flex">
                   {getProgressText(data.overallProgress)}
                 </Badge>
               </div>
             </div>
           </MagicCard>
 
-          <MagicCard className="p-6 text-center" glow>
-            <div className="space-y-3">
-              <div className="mx-auto w-12 h-12 bg-success/10 rounded-xl flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-success" />
+          <MagicCard className="p-4 md:p-6 text-center" glow>
+            <div className="space-y-2 md:space-y-3">
+              <div className="mx-auto w-10 h-10 md:w-12 md:h-12 bg-success/10 rounded-lg md:rounded-xl flex items-center justify-center">
+                <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-success" />
               </div>
               <div className="space-y-1">
-                <div className="text-3xl font-bold">{data.coursesCompleted}/{data.totalCourses}</div>
-                <div className="text-sm text-muted-foreground">Cursos Concluídos</div>
-                <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/20">
+                <div className="text-2xl md:text-3xl font-bold">{data.coursesCompleted}/{data.totalCourses}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Cursos</div>
+                <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/20 hidden md:inline-flex">
                   {Math.round((data.coursesCompleted / data.totalCourses) * 100)}% completo
                 </Badge>
               </div>
             </div>
           </MagicCard>
 
-          <MagicCard className="p-6 text-center" glow>
-            <div className="space-y-3">
-              <div className="mx-auto w-12 h-12 bg-info/10 rounded-xl flex items-center justify-center">
-                <Clock className="h-6 w-6 text-info" />
+          <MagicCard className="p-4 md:p-6 text-center" glow>
+            <div className="space-y-2 md:space-y-3">
+              <div className="mx-auto w-10 h-10 md:w-12 md:h-12 bg-info/10 rounded-lg md:rounded-xl flex items-center justify-center">
+                <Clock className="h-5 w-5 md:h-6 md:w-6 text-info" />
               </div>
               <div className="space-y-1">
                 <div className="text-3xl font-bold">{data.studyTime}h</div>

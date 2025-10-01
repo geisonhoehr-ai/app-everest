@@ -91,80 +91,80 @@ export default function CalendarPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Stats */}
         <MagicCard variant="premium" size="lg">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <CalendarIcon className="h-8 w-8 text-primary" />
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <CalendarIcon className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                     Calendário de Estudos
                   </h1>
-                  <p className="text-muted-foreground text-lg">
-                    Acompanhe seus eventos, prazos e atividades importantes
+                  <p className="text-muted-foreground text-sm md:text-lg">
+                    Acompanhe seus eventos e prazos
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                <Clock className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Agenda Inteligente</span>
+              <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <Clock className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                <span className="text-xs md:text-sm font-medium">Agenda Inteligente</span>
               </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                <CalendarIcon className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-600">{events.length}</div>
-                <div className="text-sm text-muted-foreground">Eventos</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <CalendarIcon className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-blue-600">{events.length}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Eventos</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                <BookOpen className="h-6 w-6 text-green-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-green-600">
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-green-600">
                   {events.filter(e => e.event_type === 'LIVE_CLASS').length}
                 </div>
-                <div className="text-sm text-muted-foreground">Aulas</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Aulas</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                <FileText className="h-6 w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-600">
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <FileText className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-purple-600">
                   {events.filter(e => e.event_type === 'ESSAY_DEADLINE').length}
                 </div>
-                <div className="text-sm text-muted-foreground">Prazos</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Prazos</div>
               </div>
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
-                <Play className="h-6 w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-orange-600">
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+                <Play className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-orange-600">
                   {events.filter(e => e.event_type === 'SIMULATION').length}
                 </div>
-                <div className="text-sm text-muted-foreground">Simulados</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Simulados</div>
               </div>
             </div>
           </div>
         </MagicCard>
 
         {/* Calendar and Events */}
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
           {/* Calendar */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-2 lg:order-1">
             <MagicCard variant="glass" size="lg">
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
                     <CalendarIcon className="h-5 w-5 text-primary" />
                   </div>
-                  <h2 className="text-xl font-semibold">Calendário</h2>
+                  <h2 className="text-lg md:text-xl font-semibold">Calendário</h2>
                 </div>
                 
-                <div className="p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50">
+                <div className="p-3 md:p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50">
                   <Calendar
                     mode="single"
                     selected={date}
                     onSelect={setDate}
                     month={currentMonth}
                     onMonthChange={setCurrentMonth}
-                    className="rounded-xl"
+                    className="rounded-xl mx-auto"
                     locale={ptBR}
                     modifiers={{
                       event: events.map((event) => new Date(event.start_time)),
@@ -184,16 +184,16 @@ export default function CalendarPage() {
           </div>
 
           {/* Events List */}
-          <div>
+          <div className="order-1 lg:order-2">
             <MagicCard variant="glass" size="lg">
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
                     <Clock className="h-5 w-5 text-primary" />
                   </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">Eventos do Dia</h2>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg md:text-xl font-semibold">Eventos do Dia</h2>
+                    <p className="text-xs md:text-sm text-muted-foreground truncate">
                       {date
                         ? format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
                         : 'Selecione uma data'}
@@ -201,21 +201,21 @@ export default function CalendarPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4 max-h-[400px] md:max-h-[600px] overflow-y-auto pr-2">
                   {selectedDayEvents.length > 0 ? (
                     selectedDayEvents.map((event) => (
                       <div
                         key={event.id}
-                        className="p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/20 transition-colors"
+                        className="p-3 md:p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 hover:border-primary/20 transition-all duration-300 hover:shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start justify-between gap-2 md:gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">
-                              {event.event_type === 'LIVE_CLASS' && <Users className="h-4 w-4 text-green-500" />}
-                              {event.event_type === 'ESSAY_DEADLINE' && <FileText className="h-4 w-4 text-red-500" />}
-                              {event.event_type === 'SIMULATION' && <Play className="h-4 w-4 text-blue-500" />}
-                              {event.event_type === 'GENERAL' && <CalendarIcon className="h-4 w-4 text-gray-500" />}
-                              <h3 className="font-semibold text-sm truncate">{event.title}</h3>
+                              {event.event_type === 'LIVE_CLASS' && <Users className="h-3 w-3 md:h-4 md:w-4 text-green-500" />}
+                              {event.event_type === 'ESSAY_DEADLINE' && <FileText className="h-3 w-3 md:h-4 md:w-4 text-red-500" />}
+                              {event.event_type === 'SIMULATION' && <Play className="h-3 w-3 md:h-4 md:w-4 text-blue-500" />}
+                              {event.event_type === 'GENERAL' && <CalendarIcon className="h-3 w-3 md:h-4 md:w-4 text-gray-500" />}
+                              <h3 className="font-semibold text-xs md:text-sm truncate">{event.title}</h3>
                             </div>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
@@ -224,7 +224,7 @@ export default function CalendarPage() {
                           </div>
                           <Badge
                             className={cn(
-                              "text-xs font-medium",
+                              "text-[10px] md:text-xs font-medium shrink-0",
                               event.event_type === 'LIVE_CLASS' && "bg-gradient-to-r from-green-500/10 to-green-600/5 border-green-500/20 text-green-600",
                               event.event_type === 'ESSAY_DEADLINE' && "bg-gradient-to-r from-red-500/10 to-red-600/5 border-red-500/20 text-red-600",
                               event.event_type === 'SIMULATION' && "bg-gradient-to-r from-blue-500/10 to-blue-600/5 border-blue-500/20 text-blue-600",
@@ -237,8 +237,8 @@ export default function CalendarPage() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8">
-                      <CalendarIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <div className="text-center py-8 md:py-12">
+                      <CalendarIcon className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-3 md:mb-4 opacity-50" />
                       <p className="text-sm text-muted-foreground">
                         Nenhum evento para este dia
                       </p>

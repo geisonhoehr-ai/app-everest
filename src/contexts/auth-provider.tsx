@@ -55,7 +55,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
   try {
     console.log('🔍 Fetching profile for user:', userId)
 
-    // First try to fetch existing profile
+    // First try to fetch existing profile (increased timeout to 15s)
     const { data: existingProfile, error: fetchError } = await Promise.race([
       supabase
         .from('user_profiles')
@@ -77,7 +77,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
         .eq('id', userId)
         .single(),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 15000)
       )
     ])
 
@@ -162,14 +162,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userProfile = await fetchUserProfile(newSession.user.id)
       setProfile(userProfile)
 
-      // Only show error if profile creation also failed
+      // Only log the result, don't show error toast
+      // (profile might load on subsequent attempts)
       if (!userProfile) {
         console.warn('⚠️ Failed to create or fetch user profile')
-        toast({
-          title: 'Erro no Perfil',
-          description: 'Não foi possível carregar seu perfil. Tente fazer login novamente.',
-          variant: 'destructive',
-        })
       } else {
         console.log('✅ User authenticated with profile:', userProfile.email)
       }
@@ -178,7 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfile(null)
       console.log('🔓 User logged out, profile cleared')
     }
-  }, [toast])
+  }, [])
 
   // Initialize auth
   useEffect(() => {
