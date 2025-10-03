@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
@@ -59,6 +60,7 @@ interface SystemStat {
 }
 
 export default function AdminSystemControlPage() {
+  const navigate = useNavigate()
   const { profile } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
   const [loading, setLoading] = useState(true)
@@ -401,28 +403,31 @@ export default function AdminSystemControlPage() {
           <TabsContent value="modules" className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {systemModules.map((module, index) => (
-                <MagicCard key={index} variant="glass" className="hover:scale-105 transition-transform cursor-pointer group">
-                  <a href={module.link} className="block">
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between">
-                        <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 group-hover:from-primary/30 group-hover:to-primary/20 transition-all">
-                          <module.icon className="h-6 w-6 text-primary" />
-                        </div>
-                        <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-600">
-                          {getStatusIcon(module.status)}
-                          Ativo
-                        </Badge>
+                <MagicCard
+                  key={index}
+                  variant="glass"
+                  className="hover:scale-105 transition-transform cursor-pointer group"
+                  onClick={() => navigate(module.link)}
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 group-hover:from-primary/30 group-hover:to-primary/20 transition-all">
+                        <module.icon className="h-6 w-6 text-primary" />
                       </div>
-                      <div>
-                        <h3 className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">
-                          {module.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {module.description}
-                        </p>
-                      </div>
+                      <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-600">
+                        {getStatusIcon(module.status)}
+                        Ativo
+                      </Badge>
                     </div>
-                  </a>
+                    <div>
+                      <h3 className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">
+                        {module.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {module.description}
+                      </p>
+                    </div>
+                  </div>
                 </MagicCard>
               ))}
             </div>

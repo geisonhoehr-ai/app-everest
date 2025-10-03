@@ -123,6 +123,10 @@ export const MobileSidebar = () => {
   const navigate = useNavigate()
   const { profile, signOut, isAdmin, isTeacher } = useAuth()
 
+  const handleNavigate = (href: string) => {
+    navigate(href)
+  }
+
   const handleSignOut = async () => {
     await signOut()
     navigate('/login')
@@ -179,9 +183,8 @@ export const MobileSidebar = () => {
 
             return (
               <SheetClose asChild key={item.href}>
-                <Link
-                  to={item.href}
-                  onClick={() => console.log('📱 Navegando para:', item.href)}
+                <button
+                  onClick={() => handleNavigate(item.href)}
                   className={cn(
                     'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
                     isActive
@@ -191,7 +194,7 @@ export const MobileSidebar = () => {
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   <span className="font-medium">{item.label}</span>
-                </Link>
+                </button>
               </SheetClose>
             )
           })}
@@ -212,8 +215,8 @@ export const MobileSidebar = () => {
 
                   return (
                     <SheetClose asChild key={item.href}>
-                      <Link
-                        to={item.href}
+                      <button
+                        onClick={() => handleNavigate(item.href)}
                         className={cn(
                           'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
                           isActive
@@ -223,7 +226,7 @@ export const MobileSidebar = () => {
                       >
                         <Icon className="h-5 w-5 shrink-0" />
                         <span className="font-medium">{item.label}</span>
-                      </Link>
+                      </button>
                     </SheetClose>
                   )
                 })}
@@ -240,8 +243,8 @@ export const MobileSidebar = () => {
 
                   return (
                     <SheetClose asChild key={item.href}>
-                      <Link
-                        to={item.href}
+                      <button
+                        onClick={() => handleNavigate(item.href)}
                         className={cn(
                           'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
                           isActive
@@ -251,7 +254,7 @@ export const MobileSidebar = () => {
                       >
                         <Icon className="h-5 w-5 shrink-0" />
                         <span className="font-medium">{item.label}</span>
-                      </Link>
+                      </button>
                     </SheetClose>
                   )
                 })}
@@ -264,22 +267,22 @@ export const MobileSidebar = () => {
       {/* Footer */}
       <div className="p-4 border-t space-y-1">
         <SheetClose asChild>
-          <Link
-            to="/configuracoes"
+          <button
+            onClick={() => handleNavigate('/configuracoes')}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
           >
             <Settings className="h-5 w-5 shrink-0" />
             <span className="font-medium">Configurações</span>
-          </Link>
+          </button>
         </SheetClose>
         <SheetClose asChild>
-          <Link
-            to="/faq"
+          <button
+            onClick={() => handleNavigate('/faq')}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
           >
             <HelpCircle className="h-5 w-5 shrink-0" />
             <span className="font-medium">Ajuda</span>
-          </Link>
+          </button>
         </SheetClose>
         <SheetClose asChild>
           <button

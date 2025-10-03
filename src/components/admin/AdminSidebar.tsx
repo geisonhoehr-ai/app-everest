@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   BarChart3,
+  Plug,
 } from 'lucide-react'
 
 import {
@@ -196,16 +197,27 @@ export const AdminSidebar = () => {
             ))}
           </SidebarMenu>
         </SidebarGroup>
-      </SidebarContent>
-      
-      <SidebarGroup>
+
+        <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Sistema
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
             <SidebarMenuItem>
-              <SidebarMenuButton 
-                asChild 
+              <SidebarMenuButton
+                asChild
+                isActive={isActive('/admin/integrations')}
+                className="group relative h-10 rounded-lg transition-all duration-200 hover:bg-accent/50"
+              >
+                <Link to="/admin/integrations" className="flex items-center gap-3">
+                  <Plug className="h-4 w-4 transition-colors group-hover:text-primary" />
+                  <span className="font-medium">Integrações</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
                 isActive={isActive('/admin/reports')}
                 className="group relative h-10 rounded-lg transition-all duration-200 hover:bg-accent/50"
               >
@@ -216,8 +228,8 @@ export const AdminSidebar = () => {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton 
-                asChild 
+              <SidebarMenuButton
+                asChild
                 isActive={isActive('/admin/settings')}
                 className="group relative h-10 rounded-lg transition-all duration-200 hover:bg-accent/50"
               >

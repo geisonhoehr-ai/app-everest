@@ -128,6 +128,9 @@ const AdminSimulationsPage = lazy(
 const AdminSimulationFormPage = lazy(
   () => import('@/pages/admin/simulations/AdminSimulationFormPage'),
 )
+const AdminSimulationReportsPage = lazy(
+  () => import('@/pages/admin/simulations/AdminSimulationReportsPage'),
+)
 const AdminQuestionsPage = lazy(
   () => import('@/pages/admin/questions/AdminQuestionsPage'),
 )
@@ -187,6 +190,9 @@ const AdminClassFormPage = lazy(
 )
 const MemberkitImportPage = lazy(
   () => import('@/pages/admin/integrations/MemberkitImportPage'),
+)
+const AdminIntegrationsPage = lazy(
+  () => import('@/pages/admin/integrations/AdminIntegrationsPage'),
 )
 
 const App = () => (
@@ -351,6 +357,7 @@ const App = () => (
                   <Route path="classes/new" element={<AdminClassFormPage />} />
                   <Route path="classes/:classId/edit" element={<AdminClassFormPage />} />
                   <Route path="classes/:classId/students" element={<AdminClassStudentsPage />} />
+                  <Route path="integrations" element={<AdminIntegrationsPage />} />
                   <Route path="integrations/memberkit-import" element={<MemberkitImportPage />} />
                   <Route path="gamification" element={<AdminGamificationPage />} />
                   <Route
@@ -426,6 +433,10 @@ const App = () => (
                   <Route
                     path="simulations/:simulationId/edit"
                     element={<AdminSimulationFormPage />}
+                  />
+                  <Route
+                    path="simulations/:simulationId/reports"
+                    element={<AdminSimulationReportsPage />}
                   />
                   <Route path="questions" element={<AdminQuestionsPage />} />
                   <Route

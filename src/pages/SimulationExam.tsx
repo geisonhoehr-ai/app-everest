@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import {
@@ -17,62 +14,76 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { 
-  Timer, 
-  ChevronLeft, 
-  ChevronRight, 
-  Clock, 
-  Target, 
+import {
+  Timer,
+  ChevronLeft,
+  ChevronRight,
+  Target,
   Brain,
-  BookOpen,
-  FileText,
-  CheckCircle,
   AlertTriangle,
-  ArrowRight,
-  Trophy
+  Trophy,
+  Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const mockSimulation = {
-  id: 1,
-  name: 'Simulado Nacional - Humanas',
-  duration: 180, // in minutes
-  questions: [
-    {
-      id: 1,
-      type: 'mcq',
-      question: 'Qual filósofo é conhecido pela frase "Penso, logo existo"?',
-      options: ['Platão', 'Aristóteles', 'Descartes', 'Sócrates'],
-      answer: 'Descartes',
-    },
-    {
-      id: 2,
-      type: 'reading',
-      passage: 'Texto longo sobre a Revolução Industrial...',
-      question:
-        'Com base no texto, qual foi o principal impacto social da Revolução Industrial?',
-    },
-    {
-      id: 3,
-      type: 'essay',
-      question:
-        'Discorra sobre as consequências da globalização para os países em desenvolvimento.',
-    },
-  ],
-}
+import { QuestionRenderer } from '@/components/QuestionRenderer'
+import { getSimulation, type Simulation } from '@/services/simulationService'
+import { useToast } from '@/hooks/use-toast'
 
 export default function SimulationExamPage() {
   const { simulationId } = useParams()
   const navigate = useNavigate()
+  const { toast } = useToast()
+
+  const [simulation, setSimulation] = useState<Simulation | null>(null)
+  const [loading, setLoading] = useState(true)
   const [currentQ, setCurrentQ] = useState(0)
-  const [timeLeft, setTimeLeft] = useState(mockSimulation.duration * 60)
+  const [answers, setAnswers] = useState<Record<string, any>>({})
+  const [timeLeft, setTimeLeft] = useState(0)
 
   useEffect(() => {
+    if (simulationId) {
+      loadSimulation()
+    }
+  }, [simulationId])
+
+  useEffect(() => {
+    if (!simulation) return
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0))
     }, 1000)
+
     return () => clearInterval(timer)
-  }, [])
+  }, [simulation])
+
+  const loadSimulation = async () => {
+    try {
+      setLoading(true)
+      const data = await getSimulation(simulationId!)
+
+      if (!data) {
+        toast({
+          title: 'Erro',
+          description: 'Simulado não encontrado',
+          variant: 'destructive',
+        })
+        navigate('/simulados')
+        return
+      }
+
+      setSimulation(data)
+      setTimeLeft((data.duration_minutes || 60) * 60)
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao carregar simulado',
+        description: error.message,
+        variant: 'destructive',
+      })
+      navigate('/simulados')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600)
@@ -85,39 +96,47 @@ export default function SimulationExamPage() {
     return `${h}:${m}:${s}`
   }
 
-  const question = mockSimulation.questions[currentQ]
-  const progress = ((currentQ + 1) / mockSimulation.questions.length) * 100
-
-  const getQuestionTypeIcon = (type: string) => {
-    switch (type) {
-      case 'mcq':
-        return <CheckCircle className="h-5 w-5" />
-      case 'reading':
-        return <BookOpen className="h-5 w-5" />
-      case 'essay':
-        return <FileText className="h-5 w-5" />
-      default:
-        return <Target className="h-5 w-5" />
-    }
+  const handleAnswerChange = (questionId: string, answer: any) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: answer,
+    }))
   }
 
-  const getQuestionTypeLabel = (type: string) => {
-    switch (type) {
-      case 'mcq':
-        return 'Múltipla Escolha'
-      case 'reading':
-        return 'Interpretação de Texto'
-      case 'essay':
-        return 'Redação'
-      default:
-        return 'Questão'
-    }
+  const handleFinish = () => {
+    // TODO: Salvar respostas e redirecionar para resultados
+    navigate(`/simulados/${simulationId}/resultado`)
   }
+
+  if (loading) {
+    return (
+      <MagicLayout title="Carregando..." description="Aguarde...">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MagicLayout>
+    )
+  }
+
+  if (!simulation || !simulation.questions.length) {
+    return (
+      <MagicLayout title="Erro" description="Simulado não encontrado">
+        <MagicCard>
+          <p className="text-center text-muted-foreground">
+            Nenhuma questão encontrada neste simulado.
+          </p>
+        </MagicCard>
+      </MagicLayout>
+    )
+  }
+
+  const question = simulation.questions[currentQ]
+  const progress = ((currentQ + 1) / simulation.questions.length) * 100
 
   return (
-    <MagicLayout 
-      title={mockSimulation.name}
-      description={`Questão ${currentQ + 1} de ${mockSimulation.questions.length} • Simulado`}
+    <MagicLayout
+      title={simulation.title}
+      description={`Questão ${currentQ + 1} de ${simulation.questions.length} • Simulado`}
       showHeader={false}
     >
       <div className="max-w-6xl mx-auto space-y-6">
@@ -130,14 +149,14 @@ export default function SimulationExamPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                  {mockSimulation.name}
+                  {simulation.title}
                 </h1>
                 <p className="text-muted-foreground">
-                  Questão {currentQ + 1} de {mockSimulation.questions.length}
+                  Questão {currentQ + 1} de {simulation.questions.length}
                 </p>
               </div>
             </div>
-            
+
             <div className={cn(
               "flex items-center gap-3 px-4 py-3 rounded-xl border-2 font-mono text-xl font-bold transition-all duration-300",
               timeLeft < 300 ? "bg-red-500/10 border-red-500/30 text-red-600" : "bg-primary/10 border-primary/30 text-primary"
@@ -154,7 +173,7 @@ export default function SimulationExamPage() {
               <span className="font-medium">{progress.toFixed(0)}%</span>
             </div>
             <div className="w-full bg-muted/50 rounded-full h-2">
-              <div 
+              <div
                 className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
@@ -169,98 +188,32 @@ export default function SimulationExamPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                  {getQuestionTypeIcon(question.type)}
+                  <Target className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold">Questão {currentQ + 1}</h2>
                   <p className="text-sm text-muted-foreground">
-                    {getQuestionTypeLabel(question.type)}
+                    {question.question_format === 'multiple_choice' && 'Múltipla Escolha'}
+                    {question.question_format === 'true_false' && 'Verdadeiro/Falso'}
+                    {question.question_format === 'essay' && 'Dissertativa'}
+                    {question.question_format === 'fill_blank' && 'Preencher Lacuna'}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-muted/30 to-muted/20 border border-border/50">
                 <Brain className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  {mockSimulation.questions.length - currentQ - 1} restantes
+                  {simulation.questions.length - currentQ - 1} restantes
                 </span>
               </div>
             </div>
 
-            {/* Question Content */}
-            <div className="space-y-6">
-              {question.type === 'mcq' && (
-                <>
-                  <div className="p-6 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50">
-                    <p className="text-lg font-medium leading-relaxed">
-                      {question.question}
-                    </p>
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold">Selecione sua resposta:</h3>
-                    <RadioGroup className="space-y-3">
-                      {question.options?.map((opt, index) => (
-                        <div
-                          key={opt}
-                          className="group flex items-center space-x-4 p-4 rounded-xl border transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10 hover:border-primary/30 hover:scale-[1.02] hover:shadow-lg"
-                        >
-                          <RadioGroupItem value={opt} id={opt} className="text-primary border-2" />
-                          <Label htmlFor={opt} className="cursor-pointer flex-1 text-base font-medium group-hover:text-primary transition-colors">
-                            {opt}
-                          </Label>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ArrowRight className="h-4 w-4 text-primary" />
-                          </div>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-                </>
-              )}
-
-              {question.type === 'reading' && (
-                <>
-                  <div className="p-6 rounded-xl bg-gradient-to-r from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                    <div className="flex items-center gap-2 mb-4">
-                      <BookOpen className="h-5 w-5 text-blue-600" />
-                      <h3 className="font-semibold text-blue-600">Texto para Interpretação</h3>
-                    </div>
-                    <div className="max-h-48 overflow-y-auto p-4 rounded-lg bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50">
-                      <p className="text-sm leading-relaxed">{question.passage}</p>
-                    </div>
-                  </div>
-                  <div className="p-6 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50">
-                    <p className="text-lg font-medium leading-relaxed mb-4">
-                      {question.question}
-                    </p>
-                    <Textarea 
-                      placeholder="Digite sua resposta aqui..." 
-                      className="min-h-32 bg-card/50 backdrop-blur-sm border-border/50"
-                    />
-                  </div>
-                </>
-              )}
-
-              {question.type === 'essay' && (
-                <>
-                  <div className="p-6 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50">
-                    <p className="text-lg font-medium leading-relaxed mb-4">
-                      {question.question}
-                    </p>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-green-500/10 to-green-600/5 border border-green-500/20">
-                      <FileText className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-600">Redação</span>
-                    </div>
-                    <Textarea 
-                      placeholder="Digite sua redação aqui..." 
-                      rows={15}
-                      className="bg-card/50 backdrop-blur-sm border-border/50"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
+            {/* Question Content with QuestionRenderer */}
+            <QuestionRenderer
+              question={question}
+              answer={answers[question.id]}
+              onAnswerChange={(answer) => handleAnswerChange(question.id, answer)}
+            />
           </div>
         </MagicCard>
 
@@ -273,33 +226,34 @@ export default function SimulationExamPage() {
               disabled={currentQ === 0}
               className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all duration-300"
             >
-              <ChevronLeft className="mr-2 h-4 w-4" /> 
+              <ChevronLeft className="mr-2 h-4 w-4" />
               Anterior
             </Button>
 
             <div className="flex items-center gap-2">
-              {mockSimulation.questions.map((_, index) => (
+              {simulation.questions.map((_, index) => (
                 <div
                   key={index}
                   className={cn(
-                    "w-3 h-3 rounded-full transition-all duration-300",
-                    index === currentQ 
-                      ? "bg-primary scale-125" 
-                      : index < currentQ 
-                        ? "bg-green-500" 
+                    "w-3 h-3 rounded-full transition-all duration-300 cursor-pointer",
+                    index === currentQ
+                      ? "bg-primary scale-125"
+                      : answers[simulation.questions[index].id]
+                        ? "bg-green-500"
                         : "bg-muted/50"
                   )}
+                  onClick={() => setCurrentQ(index)}
                 />
               ))}
             </div>
 
-            {currentQ < mockSimulation.questions.length - 1 ? (
-              <Button 
-                variant="outline" 
+            {currentQ < simulation.questions.length - 1 ? (
+              <Button
+                variant="outline"
                 onClick={() => setCurrentQ((p) => p + 1)}
                 className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all duration-300"
               >
-                Próxima 
+                Próxima
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
@@ -326,9 +280,7 @@ export default function SimulationExamPage() {
                       Cancelar
                     </AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() =>
-                        navigate(`/simulados/${simulationId}/resultado`)
-                      }
+                      onClick={handleFinish}
                       className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                     >
                       Confirmar e Enviar

@@ -35,6 +35,7 @@ const classSchema = z.object({
   start_date: z.string().min(1, 'A data de início é obrigatória'),
   end_date: z.string().min(1, 'A data de término é obrigatória'),
   status: z.enum(['active', 'inactive', 'archived']),
+  class_type: z.enum(['standard', 'trial']).default('standard'),
 })
 
 type ClassFormValues = z.infer<typeof classSchema>
@@ -55,6 +56,7 @@ export default function AdminClassFormPage() {
       start_date: new Date().toISOString().split('T')[0],
       end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'active',
+      class_type: 'standard',
     },
   })
 
@@ -81,6 +83,7 @@ export default function AdminClassFormPage() {
           start_date: data.start_date,
           end_date: data.end_date,
           status: data.status || 'active',
+          class_type: data.class_type || 'standard',
         })
       }
     } catch (error) {
@@ -106,6 +109,7 @@ export default function AdminClassFormPage() {
             start_date: values.start_date,
             end_date: values.end_date,
             status: values.status,
+            class_type: values.class_type,
           })
           .eq('id', classId)
 
@@ -124,6 +128,7 @@ export default function AdminClassFormPage() {
             start_date: values.start_date,
             end_date: values.end_date,
             status: values.status,
+            class_type: values.class_type,
           })
 
         if (error) throw error
@@ -244,9 +249,34 @@ export default function AdminClassFormPage() {
 
                 <FormField
                   control={form.control}
+                  name="class_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Turma *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="standard">Padrão</SelectItem>
+                          <SelectItem value="trial">Trial (Teste)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Turmas trial têm acesso limitado
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="status"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem>
                       <FormLabel>Status *</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
