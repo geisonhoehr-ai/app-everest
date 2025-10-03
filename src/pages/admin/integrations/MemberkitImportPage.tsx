@@ -3,7 +3,7 @@ import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { Button } from '@/components/ui/button'
 import { Download, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
-import { importAllMemberkitCourses } from '@/services/memberkitService'
+import { importAll } from '@/services/memberkitService'
 import { useToast } from '@/hooks/use-toast'
 
 export default function MemberkitImportPage() {
@@ -16,12 +16,17 @@ export default function MemberkitImportPage() {
     setResults(null)
 
     try {
-      const importResults = await importAllMemberkitCourses()
-      setResults(importResults)
+      const importResults = await importAll()
+      setResults({
+        total: importResults.classrooms.total + importResults.users.total + importResults.courses.total,
+        imported: importResults.classrooms.success + importResults.users.success + importResults.courses.success,
+        skipped: importResults.classrooms.skipped + importResults.users.skipped + importResults.courses.skipped,
+        errors: importResults.classrooms.errors + importResults.users.errors + importResults.courses.errors,
+      })
 
       toast({
         title: 'Importação Concluída!',
-        description: `${importResults.imported} turmas importadas com sucesso`,
+        description: `${importResults.classrooms.success} turmas, ${importResults.users.success} usuários e ${importResults.courses.success} cursos importados`,
       })
     } catch (error) {
       console.error('Erro na importação:', error)
