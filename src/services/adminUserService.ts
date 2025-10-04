@@ -53,3 +53,56 @@ export const updateUser = async (
   }
   return data
 }
+
+export const getUserClasses = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('student_classes')
+    .select(`
+      id,
+      user_id,
+      class_id,
+      enrolled_at,
+      class:classes!class_id (
+        id,
+        name,
+        description,
+        status,
+        start_date,
+        end_date
+      )
+    `)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('Error fetching user classes:', error)
+    throw error
+  }
+
+  return data || []
+}
+
+export const addUserToClass = async (userId: string, classId: string) => {
+  const { error } = await supabase
+    .from('student_classes')
+    .insert({
+      user_id: userId,
+      class_id: classId
+    })
+
+  if (error) {
+    console.error('Error adding user to class:', error)
+    throw error
+  }
+}
+
+export const removeUserFromClass = async (studentClassId: string) => {
+  const { error } = await supabase
+    .from('student_classes')
+    .delete()
+    .eq('id', studentClassId)
+
+  if (error) {
+    console.error('Error removing user from class:', error)
+    throw error
+  }
+}

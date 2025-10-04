@@ -41,6 +41,9 @@ const EssayEvolutionReportPage = lazy(
 const SimulationsPage = lazy(() => import('@/pages/Simulations'))
 const SimulationExamPage = lazy(() => import('@/pages/SimulationExam'))
 const SimulationResultsPage = lazy(() => import('@/pages/SimulationResults'))
+const AnswerSheetsListPage = lazy(() => import('@/pages/AnswerSheetsListPage'))
+const AnswerSheetFillPage = lazy(() => import('@/pages/AnswerSheetFillPage'))
+const AnswerSheetResultPage = lazy(() => import('@/pages/AnswerSheetResultPage'))
 const ForumPage = lazy(() => import('@/pages/Forum'))
 const ForumTopicPage = lazy(() => import('@/pages/ForumTopic'))
 const SettingsPage = lazy(() => import('@/pages/Settings'))
@@ -188,6 +191,9 @@ const AdminClassStudentsPage = lazy(
 const AdminClassFormPage = lazy(
   () => import('@/pages/admin/classes/AdminClassFormPage'),
 )
+const AdminStudentClassesPage = lazy(
+  () => import('@/pages/admin/users/AdminStudentClassesPage'),
+)
 const MemberkitImportPage = lazy(
   () => import('@/pages/admin/integrations/MemberkitImportPage'),
 )
@@ -323,6 +329,15 @@ const App = () => (
                     path="/simulados/:simulationId/resultado"
                     element={<SimulationResultsPage />}
                   />
+                  <Route path="/cartoes-resposta" element={<AnswerSheetsListPage />} />
+                  <Route
+                    path="/cartao-resposta/:sheetId"
+                    element={<AnswerSheetFillPage />}
+                  />
+                  <Route
+                    path="/cartao-resposta/:sheetId/resultado"
+                    element={<AnswerSheetResultPage />}
+                  />
                   <Route
                     path="/banco-de-questoes"
                     element={<QuestionBankPage />}
@@ -363,6 +378,10 @@ const App = () => (
                   <Route
                     path="users/:userId/edit"
                     element={<AdminUserFormPage />}
+                  />
+                  <Route
+                    path="users/:userId/classes"
+                    element={<AdminStudentClassesPage />}
                   />
                   <Route path="reports" element={<AdminReportsPage />} />
                   <Route path="settings" element={<AdminSettingsPage />} />

@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { MoreHorizontal, PlusCircle, Search, Edit, Trash2, UserX, UserCheck, RefreshCw } from 'lucide-react'
+import { MoreHorizontal, PlusCircle, Search, Edit, Trash2, UserX, UserCheck, RefreshCw, GraduationCap } from 'lucide-react'
 import { getUsers, updateUser, type User } from '@/services/adminUserService'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
@@ -287,6 +287,13 @@ export const UserManagement = () => {
                               <Edit className="mr-2 h-4 w-4" /> Editar
                             </Link>
                           </DropdownMenuItem>
+                          {user.role === 'student' && (
+                            <DropdownMenuItem asChild>
+                              <Link to={`/admin/users/${user.id}/classes`}>
+                                <GraduationCap className="mr-2 h-4 w-4" /> Gerenciar Turmas
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
                             {user.is_active ? (
