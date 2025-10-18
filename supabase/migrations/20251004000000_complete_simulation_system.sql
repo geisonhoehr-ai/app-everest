@@ -24,7 +24,7 @@ ADD COLUMN IF NOT EXISTS shuffle_questions BOOLEAN DEFAULT false,
 ADD COLUMN IF NOT EXISTS shuffle_options BOOLEAN DEFAULT false,
 ADD COLUMN IF NOT EXISTS allow_review BOOLEAN DEFAULT true,
 ADD COLUMN IF NOT EXISTS instructions TEXT,
-ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id);
+ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES public.users(id);
 
 -- Índices para performance
 CREATE INDEX IF NOT EXISTS idx_quizzes_type ON public.quizzes(type);
@@ -81,7 +81,7 @@ CREATE INDEX IF NOT EXISTS idx_quiz_questions_reading_text ON public.quiz_questi
 CREATE TABLE IF NOT EXISTS public.quiz_attempts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   quiz_id UUID NOT NULL REFERENCES public.quizzes(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   started_at TIMESTAMPTZ DEFAULT NOW(),
   submitted_at TIMESTAMPTZ,
   time_spent_seconds INTEGER,
@@ -175,7 +175,7 @@ BEGIN
     IF v_quiz_status IS NOT NULL AND v_quiz_status != 'published' THEN
       -- Permitir acesso para admins e professores mesmo em draft
       IF EXISTS (
-        SELECT 1 FROM public.profiles
+        SELECT 1 FROM public.users
         WHERE id = p_user_id
         AND role IN ('administrator', 'teacher')
       ) THEN
@@ -353,7 +353,7 @@ CREATE POLICY "Admins e professores podem gerenciar turmas de quiz"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.profiles
+      SELECT 1 FROM public.users
       WHERE id = auth.uid()
       AND role IN ('administrator', 'teacher')
     )
@@ -374,7 +374,7 @@ CREATE POLICY "Admins e professores podem gerenciar textos"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.profiles
+      SELECT 1 FROM public.users
       WHERE id = auth.uid()
       AND role IN ('administrator', 'teacher')
     )
@@ -409,7 +409,7 @@ CREATE POLICY "Admins e professores veem todas tentativas"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.profiles
+      SELECT 1 FROM public.users
       WHERE id = auth.uid()
       AND role IN ('administrator', 'teacher')
     )
@@ -436,7 +436,7 @@ CREATE POLICY "Admins e professores veem todas respostas"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.profiles
+      SELECT 1 FROM public.users
       WHERE id = auth.uid()
       AND role IN ('administrator', 'teacher')
     )
