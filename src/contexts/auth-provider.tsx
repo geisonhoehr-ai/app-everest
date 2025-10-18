@@ -56,7 +56,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
   try {
     console.log('🔍 Fetching profile for user:', userId)
 
-    // First try to fetch existing profile (timeout: 30s per attempt)
+    // First try to fetch existing profile (timeout: 10s is enough)
     const { data: existingProfile, error: fetchError } = await Promise.race([
       supabase
         .from('users')
@@ -73,7 +73,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
         .eq('id', userId)
         .single(),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 30000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
       )
     ])
 
@@ -167,10 +167,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Fetch profile for authenticated user with retry
       let userProfile = await fetchUserProfile(newSession.user.id)
 
-      // If failed, retry once after 3 seconds
+      // If failed, retry once after 1 second
       if (!userProfile) {
-        console.log('🔄 Profile fetch failed, retrying in 3s...')
-        await new Promise(resolve => setTimeout(resolve, 3000))
+        console.log('🔄 Profile fetch failed, retrying in 1s...')
+        await new Promise(resolve => setTimeout(resolve, 1000))
         userProfile = await fetchUserProfile(newSession.user.id)
       }
 
@@ -201,11 +201,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         console.log('🚀 Initializing authentication...')
 
-        // Get initial session with reasonable timeout
+        // Get initial session with shorter timeout (5s is enough)
         const { data: { session: initialSession } } = await Promise.race([
           supabase.auth.getSession(),
           new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Auth timeout')), 30000)
+            setTimeout(() => reject(new Error('Auth timeout')), 5000)
           )
         ])
 
@@ -236,13 +236,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         console.error('💥 Auth initialization failed:', error)
 
-        // Don't show toast for timeout - just continue
-        if (!(error instanceof Error && error.message.includes('timeout'))) {
+        // Don't show toast for timeout on landing page - just continue
+        // This is normal when user is not logged in
+        const isTimeout = error instanceof Error && error.message.includes('timeout')
+
+        if (!isTimeout) {
           toast({
             title: 'Erro de Conexão',
             description: 'Problemas na conexão. Tente recarregar a página.',
             variant: 'destructive',
           })
+        } else {
+          console.log('⏭️ Auth timeout (user not logged in) - continuing...')
         }
 
         // Ensure clean state
