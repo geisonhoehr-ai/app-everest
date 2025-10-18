@@ -27,6 +27,11 @@ import {
   HelpCircle,
   LogOut,
   Mountain,
+  TrendingUp,
+  Trophy,
+  Award,
+  CalendarDays,
+  MessageSquare,
 } from 'lucide-react'
 
 const menuItems = [
@@ -69,6 +74,31 @@ const menuItems = [
     label: 'Simulados',
     href: '/simulados',
     icon: ClipboardCheck,
+  },
+  {
+    label: 'Meu Progresso',
+    href: '/progresso',
+    icon: TrendingUp,
+  },
+  {
+    label: 'Ranking',
+    href: '/ranking',
+    icon: Trophy,
+  },
+  {
+    label: 'Conquistas',
+    href: '/conquistas',
+    icon: Award,
+  },
+  {
+    label: 'Planejamento',
+    href: '/planejamento',
+    icon: CalendarDays,
+  },
+  {
+    label: 'Fórum',
+    href: '/forum',
+    icon: MessageSquare,
   },
 ]
 
