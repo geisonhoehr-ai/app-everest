@@ -20,7 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
-import { FEATURE_KEYS } from '@/lib/constants/features'
+import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { SectionLoader } from '@/components/SectionLoader'
 
 const audioClasses = [
