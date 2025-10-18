@@ -55,8 +55,6 @@ const FlashcardSessionResultPage = lazy(
 )
 const QuizzesPage = lazy(() => import('@/pages/Quizzes'))
 const QuizTopicsPage = lazy(() => import('@/pages/QuizTopics'))
-const QuizTakerPage = lazy(() => import('@/pages/QuizTaker'))
-const QuizResultsPage = lazy(() => import('@/pages/QuizResults'))
 const EvercastPage = lazy(() => import('@/pages/Evercast'))
 const QuestionBankPage = lazy(() => import('@/pages/QuestionBank'))
 const MyFlashcardSetsPage = lazy(() => import('@/pages/MyFlashcardSets'))
@@ -283,14 +281,6 @@ const App = () => (
                   <Route
                     path="/quizzes/:subjectId"
                     element={<QuizTopicsPage />}
-                  />
-                  <Route
-                    path="/quizzes/:subjectId/:topicId"
-                    element={<QuizTakerPage />}
-                  />
-                  <Route
-                    path="/quizzes/:subjectId/:topicId/resultados"
-                    element={<QuizResultsPage />}
                   />
                   <Route path="/quiz/:quizId" element={<QuizPlayerPage />} />
                   <Route
