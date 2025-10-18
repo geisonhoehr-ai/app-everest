@@ -9,6 +9,8 @@ import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 import {
   User,
   Bell,
@@ -24,6 +26,8 @@ import {
 
 export default function SettingsPage() {
   const { profile } = useAuth()
+  const { toast } = useToast()
+  const [isSaving, setIsSaving] = useState(false)
 
   const [settings, setSettings] = useState({
     profile: {
@@ -71,9 +75,48 @@ export default function SettingsPage() {
     }
   }, [profile])
 
-  const handleSave = () => {
-    // Aqui você implementaria a lógica para salvar as configurações
-    console.log('Configurações salvas:', settings)
+  const handleSave = async () => {
+    if (!profile?.id) {
+      toast({
+        title: 'Erro',
+        description: 'Usuário não autenticado',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setIsSaving(true)
+
+    try {
+      // Atualizar o perfil do usuário na tabela user_profiles
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          first_name: settings.profile.firstName,
+          last_name: settings.profile.lastName,
+          bio: settings.profile.bio,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', profile.id)
+
+      if (error) throw error
+
+      toast({
+        title: 'Sucesso! ✅',
+        description: 'Suas configurações foram salvas com sucesso.',
+      })
+
+      console.log('✅ Configurações salvas:', settings)
+    } catch (error: any) {
+      console.error('❌ Erro ao salvar configurações:', error)
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message || 'Não foi possível salvar suas configurações. Tente novamente.',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleAvatarChange = () => {
@@ -371,9 +414,16 @@ export default function SettingsPage() {
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button onClick={handleSave} className="group transition-all duration-300 hover:bg-primary/90">
-            <Save className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-            Salvar Configurações
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="group transition-all duration-300 hover:bg-primary/90"
+          >
+            <Save className={cn(
+              "mr-2 h-4 w-4 transition-transform duration-300",
+              isSaving ? "animate-spin" : "group-hover:scale-110"
+            )} />
+            {isSaving ? 'Salvando...' : 'Salvar Configurações'}
           </Button>
         </div>
       </div>
