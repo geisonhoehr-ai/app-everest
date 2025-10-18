@@ -83,7 +83,7 @@ export function InstallPWA() {
               <Button
                 onClick={handleInstallClick}
                 size="sm"
-                className="bg-white text-primary hover:bg-white/90 font-semibold"
+                className="bg-white hover:bg-white/90 text-gray-900 font-semibold shadow-md"
               >
                 Instalar Agora
               </Button>
@@ -91,7 +91,7 @@ export function InstallPWA() {
                 onClick={handleDismiss}
                 size="sm"
                 variant="ghost"
-                className="text-white hover:bg-white/10"
+                className="text-white hover:bg-white/20 border border-white/30"
               >
                 Depois
               </Button>
