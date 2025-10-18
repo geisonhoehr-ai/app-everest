@@ -62,7 +62,7 @@ const studentMenuItems = [
   },
   {
     label: 'Calendário',
-    href: '/calendar',
+    href: '/calendario',
     icon: Calendar,
     featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
@@ -74,7 +74,7 @@ const studentMenuItems = [
   },
   {
     label: 'Meus Cursos',
-    href: '/courses',
+    href: '/meus-cursos',
     icon: BookOpen,
     featureKey: FEATURE_KEYS.VIDEO_LESSONS, // 🔒 Controlado por turma
   },
