@@ -94,6 +94,8 @@ export const quizService = {
   // Buscar todas as matérias com quizzes
   async getQuizSubjects(): Promise<QuizSubject[]> {
     try {
+      console.log('🔍 Fetching quiz subjects from database...')
+
       const { data: subjects, error } = await supabase
         .from('subjects')
         .select(`
@@ -116,7 +118,21 @@ export const quizService = {
         `)
         .order('name')
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ Error fetching quiz subjects:', error)
+        throw error
+      }
+
+      console.log('✅ Found subjects:', subjects?.length || 0)
+      subjects?.forEach(subject => {
+        console.log(`📚 Subject: ${subject.name}, Topics: ${subject.topics?.length || 0}`)
+        subject.topics?.forEach(topic => {
+          console.log(`  📖 Topic: ${topic.name}, Quizzes: ${topic.quizzes?.length || 0}`)
+          if (topic.quizzes?.length === 0) {
+            console.warn(`  ⚠️ No quizzes found for topic: ${topic.name} in subject: ${subject.name}`)
+          }
+        })
+      })
 
       return subjects?.map(subject => ({
         id: subject.id,
