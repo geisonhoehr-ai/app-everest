@@ -356,12 +356,29 @@ export const getFlashcardSessionDetails = async (sessionId: string) => {
   }
 }
 
-export const getFlashcardSessionHistory = async (userId: string, limit: number = 20) => {
+export interface FlashcardSession {
+  id: string
+  topicTitle: string
+  subjectName: string
+  correct: number
+  totalCards: number
+  mode: string
+  date: string
+}
+
+export const getFlashcardSessionHistory = async (userId: string, limit: number = 20): Promise<FlashcardSession[]> => {
   try {
+    console.log('🔍 Fetching flashcard session history for user:', userId)
+
     const { data: sessions, error } = await supabase
       .from('flashcard_session_history')
       .select(`
-        *,
+        id,
+        session_mode,
+        cards_reviewed,
+        correct_answers,
+        incorrect_answers,
+        ended_at,
         topics (
           id,
           name,
@@ -376,9 +393,25 @@ export const getFlashcardSessionHistory = async (userId: string, limit: number =
       .order('ended_at', { ascending: false })
       .limit(limit)
 
-    if (error) throw error
+    if (error) {
+      console.error('❌ Error fetching session history:', error)
+      throw error
+    }
 
-    return sessions || []
+    console.log('✅ Found sessions:', sessions?.length || 0)
+
+    // Map database structure to expected FlashcardSession interface
+    const mappedSessions: FlashcardSession[] = sessions?.map(session => ({
+      id: session.id,
+      topicTitle: session.topics?.name || 'Tópico desconhecido',
+      subjectName: session.topics?.subjects?.name || 'Matéria desconhecida',
+      correct: session.correct_answers || 0,
+      totalCards: session.cards_reviewed || 0,
+      mode: session.session_mode || 'full',
+      date: session.ended_at
+    })) || []
+
+    return mappedSessions
   } catch (error) {
     console.error('Erro ao buscar histórico de sessões:', error)
     return []

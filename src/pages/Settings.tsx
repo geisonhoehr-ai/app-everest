@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/hooks/use-auth'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { Button } from '@/components/ui/button'
@@ -8,12 +9,12 @@ import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import { 
-  User, 
-  Bell, 
-  Shield, 
-  Palette, 
-  Globe, 
+import {
+  User,
+  Bell,
+  Shield,
+  Palette,
+  Globe,
   Download,
   Upload,
   Trash2,
@@ -22,13 +23,15 @@ import {
 } from 'lucide-react'
 
 export default function SettingsPage() {
+  const { profile } = useAuth()
+
   const [settings, setSettings] = useState({
     profile: {
-      firstName: 'João',
-      lastName: 'Silva',
-      email: 'joao.silva@email.com',
+      firstName: profile?.first_name || '',
+      lastName: profile?.last_name || '',
+      email: profile?.email || '',
       bio: 'Estudante apaixonado por aprender e crescer constantemente.',
-      avatar: 'https://img.usecurling.com/ppl/medium?seed=user123'
+      avatar: `https://img.usecurling.com/ppl/medium?seed=${profile?.id || 'default'}`
     },
     notifications: {
       email: true,
@@ -51,6 +54,22 @@ export default function SettingsPage() {
       animations: true
     }
   })
+
+  // Atualizar settings quando o profile carregar
+  useEffect(() => {
+    if (profile) {
+      setSettings(prev => ({
+        ...prev,
+        profile: {
+          ...prev.profile,
+          firstName: profile.first_name || '',
+          lastName: profile.last_name || '',
+          email: profile.email || '',
+          avatar: `https://img.usecurling.com/ppl/medium?seed=${profile.id}`
+        }
+      }))
+    }
+  }, [profile])
 
   const handleSave = () => {
     // Aqui você implementaria a lógica para salvar as configurações
