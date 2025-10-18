@@ -3,20 +3,25 @@ import { Input } from '@/components/ui/input'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Search, 
-  PlayCircle, 
-  Clock, 
-  Mic, 
+import {
+  Search,
+  PlayCircle,
+  Clock,
+  Mic,
   Headphones,
   Volume2,
   Star,
   TrendingUp,
   Award,
   Users,
-  Zap
+  Zap,
+  Lock
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/use-auth'
+import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
+import { FEATURE_KEYS } from '@/lib/constants/features'
+import { SectionLoader } from '@/components/SectionLoader'
 
 const audioClasses = [
   {
