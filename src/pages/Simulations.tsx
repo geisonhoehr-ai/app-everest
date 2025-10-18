@@ -509,25 +509,56 @@ export default function SimulationsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-6 rounded-xl bg-gradient-to-r from-blue-500/10 to-blue-600/5 border border-blue-500/20 hover:border-blue-500/30 transition-all duration-300 hover:scale-105">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-lg bg-blue-500/20">
-                    <Clock className="h-5 w-5 text-blue-600" />
+              {/* Próximo Simulado */}
+              {currentData.filter(q => getSimulationStatus(q) === 'available')[0] ? (
+                <div className="p-6 rounded-xl bg-gradient-to-r from-blue-500/10 to-blue-600/5 border border-blue-500/20 hover:border-blue-500/30 transition-all duration-300 hover:scale-105">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-blue-500/20">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <h3 className="font-semibold text-blue-600">Próximo Simulado</h3>
                   </div>
-                  <h3 className="font-semibold text-blue-600">Próximo Simulado</h3>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {currentData.filter(q => getSimulationStatus(q) === 'available')[0].title}
+                  </p>
+                  <Button
+                    size="sm"
+                    asChild
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                  >
+                    <Link to={activeTab === 'online'
+                      ? `/simulados/${currentData.filter(q => getSimulationStatus(q) === 'available')[0].id}`
+                      : `/cartao-resposta/${currentData.filter(q => getSimulationStatus(q) === 'available')[0].id}`
+                    }>
+                      <Play className="mr-2 h-4 w-4" />
+                      Iniciar Agora
+                    </Link>
+                  </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Simulado Nacional - Humanas disponível para realização
-                </p>
-                <Button 
-                  size="sm" 
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-                >
-                  <Play className="mr-2 h-4 w-4" />
-                  Iniciar Agora
-                </Button>
-              </div>
+              ) : (
+                <div className="p-6 rounded-xl bg-gradient-to-r from-gray-500/10 to-gray-600/5 border border-gray-500/20">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-gray-500/20">
+                      <Clock className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <h3 className="font-semibold text-gray-600">Próximo Simulado</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Nenhum simulado disponível no momento
+                  </p>
+                  <Button
+                    size="sm"
+                    disabled
+                    variant="outline"
+                    className="opacity-50 cursor-not-allowed"
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    Aguarde
+                  </Button>
+                </div>
+              )}
 
+              {/* Meu Progresso */}
               <div className="p-6 rounded-xl bg-gradient-to-r from-green-500/10 to-green-600/5 border border-green-500/20 hover:border-green-500/30 transition-all duration-300 hover:scale-105">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 rounded-lg bg-green-500/20">
@@ -536,18 +567,25 @@ export default function SimulationsPage() {
                   <h3 className="font-semibold text-green-600">Meu Progresso</h3>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Acompanhe sua evolução nos simulados realizados
+                  {currentStats.completed > 0
+                    ? `Você realizou ${currentStats.completed} ${currentStats.completed === 1 ? 'simulado' : 'simulados'} com média de ${currentStats.average}%`
+                    : 'Comece a realizar simulados para ver seu progresso'
+                  }
                 </p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
+                  asChild
                   className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
                 >
-                  <BarChart2 className="mr-2 h-4 w-4" />
-                  Ver Relatório
+                  <Link to="/progresso">
+                    <BarChart2 className="mr-2 h-4 w-4" />
+                    Ver Relatório
+                  </Link>
                 </Button>
               </div>
 
+              {/* Conquistas */}
               <div className="p-6 rounded-xl bg-gradient-to-r from-purple-500/10 to-purple-600/5 border border-purple-500/20 hover:border-purple-500/30 transition-all duration-300 hover:scale-105">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 rounded-lg bg-purple-500/20">
@@ -556,15 +594,21 @@ export default function SimulationsPage() {
                   <h3 className="font-semibold text-purple-600">Conquistas</h3>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Desbloqueie novas conquistas e badges
+                  {currentStats.best > 0
+                    ? `Sua melhor nota: ${currentStats.best}% - Continue assim!`
+                    : 'Desbloqueie novas conquistas realizando simulados'
+                  }
                 </p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
+                  asChild
                   className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
                 >
-                  <Trophy className="mr-2 h-4 w-4" />
-                  Ver Conquistas
+                  <Link to="/conquistas">
+                    <Trophy className="mr-2 h-4 w-4" />
+                    Ver Conquistas
+                  </Link>
                 </Button>
               </div>
             </div>
