@@ -114,7 +114,7 @@ export default function FlashcardsPage() {
               </div>
               <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
                 <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-orange-600">98%</div>
+                <div className="text-xl md:text-2xl font-bold text-orange-600">-</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Eficácia</div>
               </div>
             </div>
@@ -163,7 +163,9 @@ export default function FlashcardsPage() {
               {subjectList.map((subject, index) => {
                 const totalTopics = subject.topics?.length || 0
                 const totalFlashcards = subject.topics?.reduce((sum, topic) => sum + (topic.flashcard_count || 0), 0) || 0
-                const progress = Math.min(100, (totalFlashcards / 10) + Math.random() * 20)
+                // Progress will be calculated from real user data later
+                // For now, showing 0 instead of fake random progress
+                const progress = 0
                 
                 return (
                   <Link 
