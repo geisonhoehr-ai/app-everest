@@ -20,6 +20,8 @@ export interface Quiz {
   id: string
   title: string
   description: string
+  type?: string // 'quiz', 'simulation', 'answer_sheet'
+  status?: string // 'draft', 'published'
   duration_minutes?: number
   questions: QuizQuestion[]
 }
@@ -150,6 +152,8 @@ export const quizService = {
           id,
           title,
           description,
+          type,
+          status,
           duration_minutes,
           quiz_questions (
             id,
@@ -170,14 +174,16 @@ export const quizService = {
         id: quiz.id,
         title: quiz.title,
         description: quiz.description,
+        type: quiz.type,
+        status: quiz.status,
         duration_minutes: quiz.duration_minutes,
         questions: quiz.quiz_questions?.map(q => ({
           id: q.id,
           question_text: q.question_text,
           question_type: q.question_type,
-          options: q.options || [],
+          options: (Array.isArray(q.options) ? q.options : []) as string[],
           correct_answer: q.correct_answer,
-          explanation: q.explanation,
+          explanation: q.explanation || '',
           points: q.points
         })) || []
       }
