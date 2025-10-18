@@ -48,6 +48,7 @@ import {
 import { SectionLoader } from '@/components/SectionLoader'
 import { useActivityScoring } from '@/hooks/useAchievements'
 import { LevelBadge } from '@/components/gamification/LevelBadge'
+import { FlashcardInstructionsDialog } from '@/components/flashcards/FlashcardInstructionsDialog'
 
 type SessionResult = { cardId: string; result: 'correct' | 'incorrect' }
 type StudyState = 'question' | 'answer' | 'result'
@@ -98,6 +99,7 @@ export default function FlashcardStudyPage() {
   const [showAnswer, setShowAnswer] = useState(false)
   const [cardTransition, setCardTransition] = useState(false)
   const [lastAnswer, setLastAnswer] = useState<'correct' | 'incorrect' | null>(null)
+  const [showInstructions, setShowInstructions] = useState(true)
 
   useEffect(() => {
     if (!topicId || !subjectId) return
@@ -321,7 +323,13 @@ export default function FlashcardStudyPage() {
   }
 
   return (
-    <MagicLayout 
+    <>
+      <FlashcardInstructionsDialog
+        isOpen={showInstructions}
+        onClose={() => setShowInstructions(false)}
+      />
+
+      <MagicLayout 
       title={topicData?.name || 'Estudo de Flashcards'}
       description={`${topicData?.subject?.name} • Card ${currentIndex + 1} de ${studyDeck.length}`}
       showHeader={false}
@@ -640,5 +648,6 @@ export default function FlashcardStudyPage() {
         </div>
       </div>
     </MagicLayout>
+    </>
   )
 }
