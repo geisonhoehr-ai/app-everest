@@ -25,7 +25,7 @@ export const getSubjects = async (): Promise<SubjectWithTopicCount[]> => {
       )
     `,
     )
-    .in('name', ['Português', 'Regulamentos'])
+    // Removido filtro .in('name', ['Português', 'Regulamentos']) para mostrar TODAS as matérias
     .order('name', { ascending: true })
 
   if (error) {
