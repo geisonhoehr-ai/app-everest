@@ -1,5 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
+import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
+import { FEATURE_KEYS, type FeatureKey } from '@/services/classPermissionsService'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -27,71 +29,91 @@ import {
   MessageSquare,
 } from 'lucide-react'
 
-const menuItems = [
+type MenuItem = {
+  label: string
+  href: string
+  icon: any
+  featureKey?: FeatureKey
+}
+
+const menuItems: MenuItem[] = [
   {
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
+    // Dashboard sempre visível
   },
   {
     label: 'Meus Cursos',
     href: '/meus-cursos',
     icon: BookOpen,
+    featureKey: FEATURE_KEYS.VIDEO_LESSONS,
   },
   {
     label: 'Calendário',
     href: '/calendario',
     icon: Calendar,
+    featureKey: FEATURE_KEYS.CALENDAR,
   },
   {
     label: 'Flashcards',
     href: '/flashcards',
     icon: Layers,
+    featureKey: FEATURE_KEYS.FLASHCARDS,
   },
   {
     label: 'Quizzes',
     href: '/quizzes',
     icon: ListChecks,
+    featureKey: FEATURE_KEYS.QUIZ,
   },
   {
     label: 'Evercast',
     href: '/evercast',
     icon: Radio,
+    featureKey: FEATURE_KEYS.EVERCAST,
   },
   {
     label: 'Redações',
     href: '/redacoes',
     icon: FileText,
+    featureKey: FEATURE_KEYS.ESSAYS,
   },
   {
     label: 'Simulados',
     href: '/simulados',
     icon: ClipboardCheck,
+    featureKey: FEATURE_KEYS.QUIZ,
   },
   {
     label: 'Meu Progresso',
     href: '/progresso',
     icon: TrendingUp,
+    // Progresso sempre visível
   },
   {
     label: 'Ranking',
     href: '/ranking',
     icon: Trophy,
+    featureKey: FEATURE_KEYS.RANKING,
   },
   {
     label: 'Conquistas',
     href: '/conquistas',
     icon: Award,
+    // Conquistas sempre visível
   },
   {
     label: 'Planejamento',
     href: '/planejamento',
     icon: CalendarDays,
+    featureKey: FEATURE_KEYS.CALENDAR,
   },
   {
     label: 'Fórum',
     href: '/forum',
     icon: MessageSquare,
+    // Fórum sempre visível
   },
 ]
 
@@ -151,7 +173,8 @@ const contentMenuItems = [
 export const MobileSidebar = () => {
   const location = useLocation()
   const navigate = useNavigate()
-  const { profile, signOut, isAdmin, isTeacher } = useAuth()
+  const { profile, signOut, isAdmin, isTeacher, isStudent } = useAuth()
+  const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
 
   const handleNavigate = (href: string) => {
     navigate(href)
@@ -207,27 +230,43 @@ export const MobileSidebar = () => {
       {/* Menu Items */}
       <nav className="flex-1 overflow-y-auto p-4">
         <div className="space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.href
+          {menuItems
+            .filter((item) => {
+              // Se não tem featureKey, sempre mostra (páginas públicas)
+              if (!item.featureKey) return true
 
-            return (
-              <SheetClose asChild key={item.href}>
-                <button
-                  onClick={() => handleNavigate(item.href)}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-md'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  )}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              </SheetClose>
-            )
-          })}
+              // Se for admin ou teacher, mostra tudo
+              if (isAdmin || isTeacher) return true
+
+              // Se for aluno, verifica permissão
+              if (isStudent) {
+                return hasFeature(item.featureKey)
+              }
+
+              // Default: mostra
+              return true
+            })
+            .map((item) => {
+              const Icon = item.icon
+              const isActive = location.pathname === item.href
+
+              return (
+                <SheetClose asChild key={item.href}>
+                  <button
+                    onClick={() => handleNavigate(item.href)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                      isActive
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    )}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span className="font-medium">{item.label}</span>
+                  </button>
+                </SheetClose>
+              )
+            })}
 
           {(isAdmin || isTeacher) && (
             <>

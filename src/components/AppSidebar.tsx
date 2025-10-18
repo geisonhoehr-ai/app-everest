@@ -1,5 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
+import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
+import { FEATURE_KEYS, type FeatureKey } from '@/services/classPermissionsService'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -34,7 +36,14 @@ import {
   MessageSquare,
 } from 'lucide-react'
 
-const menuItems = [
+type MenuItem = {
+  label: string
+  href: string
+  icon: any
+  featureKey?: FeatureKey
+}
+
+const menuItems: MenuItem[] = [
   {
     label: 'Dashboard',
     href: '/dashboard',
@@ -44,36 +53,43 @@ const menuItems = [
     label: 'Meus Cursos',
     href: '/meus-cursos',
     icon: BookOpen,
+    featureKey: FEATURE_KEYS.VIDEO_LESSONS,
   },
   {
     label: 'Calendário',
     href: '/calendario',
     icon: Calendar,
+    featureKey: FEATURE_KEYS.CALENDAR,
   },
   {
     label: 'Flashcards',
     href: '/flashcards',
     icon: Layers,
+    featureKey: FEATURE_KEYS.FLASHCARDS,
   },
   {
     label: 'Quizzes',
     href: '/quizzes',
     icon: ListChecks,
+    featureKey: FEATURE_KEYS.QUIZ,
   },
   {
     label: 'Evercast',
     href: '/evercast',
     icon: Radio,
+    featureKey: FEATURE_KEYS.EVERCAST,
   },
   {
     label: 'Redações',
     href: '/redacoes',
     icon: FileText,
+    featureKey: FEATURE_KEYS.ESSAYS,
   },
   {
     label: 'Simulados',
     href: '/simulados',
     icon: ClipboardCheck,
+    featureKey: FEATURE_KEYS.QUIZ,
   },
   {
     label: 'Meu Progresso',
@@ -84,6 +100,7 @@ const menuItems = [
     label: 'Ranking',
     href: '/ranking',
     icon: Trophy,
+    featureKey: FEATURE_KEYS.RANKING,
   },
   {
     label: 'Conquistas',
@@ -94,6 +111,7 @@ const menuItems = [
     label: 'Planejamento',
     href: '/planejamento',
     icon: CalendarDays,
+    featureKey: FEATURE_KEYS.CALENDAR,
   },
   {
     label: 'Fórum',
@@ -117,7 +135,8 @@ const bottomMenuItems = [
 
 export function AppSidebar() {
   const location = useLocation()
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, isAdmin, isTeacher, isStudent } = useAuth()
+  const { hasFeature } = useFeaturePermissions()
 
   const isActive = (href: string) => {
     return location.pathname === href
@@ -161,7 +180,22 @@ export function AppSidebar() {
 
       <SidebarContent className="flex-grow p-4">
         <SidebarMenu className="space-y-2">
-          {menuItems.map((item) => (
+          {menuItems
+            .filter((item) => {
+              // Se não tem featureKey, sempre mostra
+              if (!item.featureKey) return true
+
+              // Se for admin ou teacher, mostra tudo
+              if (isAdmin || isTeacher) return true
+
+              // Se for aluno, verifica permissão
+              if (isStudent) {
+                return hasFeature(item.featureKey)
+              }
+
+              return true
+            })
+            .map((item) => (
             <SidebarMenuItem key={item.label}>
               <SidebarMenuButton
                 asChild
