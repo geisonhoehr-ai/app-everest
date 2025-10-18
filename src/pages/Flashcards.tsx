@@ -174,7 +174,7 @@ export default function FlashcardsPage() {
                     <MagicCard
                       variant="premium"
                       size="lg"
-                      className="h-[450px] md:h-[480px] flex flex-col overflow-hidden transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl"
+                      className="flex flex-col overflow-hidden transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl"
                       style={{ animationDelay: `${delays[index]}ms` }}
                     >
                       {/* Image Header */}
