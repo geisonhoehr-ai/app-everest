@@ -158,26 +158,37 @@ export default function FlashcardStudyPage() {
   }, [topicId, studyMode, cardCountParam, subjectId, navigate, toast, user])
 
   const finishSession = useCallback(async () => {
-    if (!topicData) return
+    if (!topicData || !user?.id) return
 
     const correct = sessionResults.filter((r) => r.result === 'correct').length
     const incorrect = sessionResults.length - correct
 
     const sessionPayload: SaveSessionPayload = {
       topicId: topicData.id,
-      mode: studyMode,
-      totalCards: studyDeck.length,
-      correct,
-      incorrect,
+      sessionMode: studyMode,
+      cardsReviewed: studyDeck.length,
+      correctAnswers: correct,
+      incorrectAnswers: incorrect,
+      durationSeconds: 0, // TODO: Track actual duration
     }
 
-    const sessionId = await saveFlashcardSession(sessionPayload)
-    
+    const sessionId = await saveFlashcardSession(user.id, sessionPayload)
+
+    if (!sessionId) {
+      toast({
+        title: 'Erro ao salvar sessão',
+        description: 'Não foi possível salvar o resultado da sessão.',
+        variant: 'destructive',
+      })
+      navigate(`/flashcards/${subjectId}`)
+      return
+    }
+
     // Adicionar pontuação baseada na performance
     await scoreFlashcardActivity(correct, studyDeck.length, sessionId)
-    
+
     navigate(`/flashcards/session/${sessionId}/result`)
-  }, [topicData, sessionResults, studyMode, studyDeck.length, navigate, scoreFlashcardActivity])
+  }, [topicData, user, sessionResults, studyMode, studyDeck.length, navigate, scoreFlashcardActivity, toast, subjectId])
 
   const handleNext = useCallback(() => {
     setCardTransition(true)
