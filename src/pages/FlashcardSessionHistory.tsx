@@ -28,6 +28,7 @@ import { Progress } from '@/components/ui/progress'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/use-auth'
 
 const getModeDetails = (mode: string) => {
   switch (mode) {
@@ -55,14 +56,20 @@ const getPerformanceColor = (percentage: number) => {
 }
 
 export default function FlashcardSessionHistoryPage() {
+  const { user } = useAuth()
   const [history, setHistory] = useState<FlashcardSession[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    getFlashcardSessionHistory()
+    if (!user?.id) {
+      setIsLoading(false)
+      return
+    }
+
+    getFlashcardSessionHistory(user.id)
       .then(setHistory)
       .finally(() => setIsLoading(false))
-  }, [])
+  }, [user?.id])
 
   if (isLoading) {
     return <SectionLoader />
