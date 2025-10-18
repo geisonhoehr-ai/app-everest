@@ -60,6 +60,13 @@ export const useFeaturePermissions = (): UseFeaturePermissionsReturn => {
     }
 
     // Se for aluno, busca as permissões baseadas nas turmas
+    // Evita recarregar se já temos permissões
+    if (allowedFeatures.length > 0) {
+      console.log('⏭️ Permissões já carregadas, pulando...')
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       const features = await getUserAllowedFeatures(profile.id)
@@ -71,7 +78,7 @@ export const useFeaturePermissions = (): UseFeaturePermissionsReturn => {
     } finally {
       setLoading(false)
     }
-  }, [isAuthenticated, profile, isStudent])
+  }, [isAuthenticated, profile, isStudent, allowedFeatures.length])
 
   // Carregar permissões quando o hook é montado ou quando o usuário muda
   useEffect(() => {

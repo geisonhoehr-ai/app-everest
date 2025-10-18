@@ -194,6 +194,9 @@ export const MobileSidebar = () => {
 
   return (
     <div className="flex flex-col h-full bg-background">
+      {/* Accessibility: Hidden title for screen readers */}
+      <h2 className="sr-only">Menu de Navegação</h2>
+
       {/* Header */}
       <div className="p-6 border-b">
         <Link to="/dashboard" className="flex items-center gap-2 font-bold text-lg group">

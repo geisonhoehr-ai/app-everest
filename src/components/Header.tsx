@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { MobileSidebar } from './MobileSidebar'
 import { ThemeToggle } from './ThemeToggle'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
@@ -68,6 +68,7 @@ export const Header = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-72 bg-background">
+                <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
                 <MobileSidebar />
               </SheetContent>
             </Sheet>
