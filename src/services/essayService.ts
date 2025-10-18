@@ -134,3 +134,93 @@ export const getStudentEssayDetails = async (
   }
   return data as StudentEssayDetails
 }
+
+// Funções para página de listagem de redações
+export interface EssayListItem {
+  id: string
+  theme: string
+  date: string
+  status: 'Rascunho' | 'Enviada' | 'Corrigindo' | 'Corrigida'
+  grade: number | null
+}
+
+export interface EssayStatsData {
+  totalEssays: number
+  averageGrade: number
+  averageDays: number
+  pending: number
+}
+
+export const getUserEssaysList = async (userId: string): Promise<EssayListItem[]> => {
+  try {
+    const { data: essays, error } = await supabase
+      .from('essays')
+      .select(`
+        id,
+        status,
+        final_grade,
+        created_at,
+        submission_date,
+        essay_prompts (
+          title
+        )
+      `)
+      .eq('student_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    return essays?.map(essay => ({
+      id: essay.id,
+      theme: essay.essay_prompts?.title || 'Redação sem título',
+      date: new Date(essay.submission_date || essay.created_at).toLocaleDateString('pt-BR'),
+      status: mapStatusToPortuguese(essay.status || 'draft'),
+      grade: essay.final_grade
+    })) || []
+  } catch (error) {
+    console.error('Erro ao buscar lista de redações:', error)
+    return []
+  }
+}
+
+export const getUserEssayStats = async (userId: string): Promise<EssayStatsData> => {
+  try {
+    const essays = await getUserEssaysList(userId)
+
+    const correctedEssays = essays.filter(e => e.status === 'Corrigida' && e.grade !== null)
+    const averageGrade = correctedEssays.length > 0
+      ? Math.round(correctedEssays.reduce((sum, e) => sum + (e.grade || 0), 0) / correctedEssays.length)
+      : 0
+
+    // Calcular média de dias (mock por enquanto, pois precisa de correction_date)
+    const averageDays = 3
+
+    return {
+      totalEssays: essays.length,
+      averageGrade,
+      averageDays,
+      pending: essays.filter(e => e.status === 'Enviada' || e.status === 'Corrigindo').length
+    }
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas de redações:', error)
+    return {
+      totalEssays: 0,
+      averageGrade: 0,
+      averageDays: 0,
+      pending: 0
+    }
+  }
+}
+
+function mapStatusToPortuguese(status: string): 'Rascunho' | 'Enviada' | 'Corrigindo' | 'Corrigida' {
+  switch (status) {
+    case 'draft':
+      return 'Rascunho'
+    case 'correcting':
+      return 'Corrigindo'
+    case 'corrected':
+      return 'Corrigida'
+    default:
+      return 'Enviada'
+  }
+}

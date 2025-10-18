@@ -34,10 +34,11 @@ export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps
   }
 
   // At this point we have session, fetch was attempted, but profile is null
-  // This means the profile fetch failed after retries - redirect to login
+  // This means the profile fetch failed after retries
+  // Instead of redirecting, keep showing loader to give it more time
   if (!profile) {
-    console.error('❌ Profile fetch failed after retries - redirecting to login')
-    return <Navigate to="/login" state={{ from: location }} replace />
+    console.warn('⚠️ Profile still loading or failed - showing loader...')
+    return <PageLoader />
   }
 
   // Check if user has required role

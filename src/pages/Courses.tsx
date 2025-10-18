@@ -7,91 +7,74 @@ import { useStaggeredAnimation } from '@/hooks/useAnimations'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { dashboardService } from '@/services/dashboardService'
+import { useAuth } from '@/hooks/use-auth'
+import { SectionLoader } from '@/components/SectionLoader'
 
-const allCourses = [
-  {
-    id: 'matematica-para-concursos',
-    title: 'Matemática para Concursos',
-    category: 'Exatas',
-    progress: 75,
-    image: 'https://img.usecurling.com/p/400/200?q=mathematics%20abstract',
-    description: 'Domine a matemática essencial para concursos públicos com aulas claras e exercícios práticos.',
-    lessons: 45,
-    students: 1200,
-  },
-  {
-    id: 'redacao-nota-mil',
-    title: 'Redação Nota Mil',
-    category: 'Linguagens',
-    progress: 40,
-    image: 'https://img.usecurling.com/p/400/200?q=writing%20on%20paper',
-    description: 'Aprenda as técnicas para escrever redações impecáveis e alcançar a nota máxima em qualquer prova.',
-    lessons: 30,
-    students: 850,
-  },
-  {
-    id: 'historia-do-brasil',
-    title: 'História do Brasil',
-    category: 'Humanas',
-    progress: 90,
-    image: 'https://img.usecurling.com/p/400/200?q=brazil%20colonial%20history',
-    description: 'Uma jornada completa pela história do Brasil, desde o período colonial até os dias atuais.',
-    lessons: 60,
-    students: 1500,
-  },
-  {
-    id: 'fisica-moderna',
-    title: 'Física Moderna',
-    category: 'Exatas',
-    progress: 25,
-    image: 'https://img.usecurling.com/p/400/200?q=physics%20quantum',
-    description: 'Explore os conceitos fascinantes da física moderna, incluindo relatividade e mecânica quântica.',
-    lessons: 35,
-    students: 700,
-  },
-  {
-    id: 'literatura-brasileira',
-    title: 'Literatura Brasileira',
-    category: 'Linguagens',
-    progress: 60,
-    image:
-      'https://img.usecurling.com/p/400/200?q=brazilian%20literature%20books',
-    description: 'Descubra os grandes autores e movimentos da literatura brasileira, com análises aprofundadas.',
-    lessons: 50,
-    students: 1100,
-  },
-  {
-    id: 'geografia-mundial',
-    title: 'Geografia Mundial',
-    category: 'Humanas',
-    progress: 10,
-    image: 'https://img.usecurling.com/p/400/200?q=world%20map',
-    description: 'Entenda a dinâmica global com um estudo aprofundado da geografia física e humana mundial.',
-    lessons: 40,
-    students: 950,
-  },
-]
+interface CourseData {
+  id: string
+  title: string
+  description: string
+  progress: number
+  image: string
+  lessons?: number
+  students?: number
+  category?: string
+}
 
 export default function CoursesPage() {
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategory, setFilterCategory] = useState('Todos')
+  const [allCourses, setAllCourses] = useState<CourseData[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        if (!user?.id) return
+
+        const courses = await dashboardService.getUserCourses(user.id)
+        setAllCourses(courses.map(course => ({
+          id: course.id,
+          title: course.title,
+          description: course.description,
+          progress: course.progress,
+          image: course.image,
+          lessons: 0, // Será calculado dos módulos
+          students: 0, // Pode ser adicionado no futuro
+          category: 'Geral' // Pode ser adicionado no futuro
+        })))
+      } catch (error) {
+        console.error('Error fetching courses:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCourses()
+  }, [user?.id])
 
   const filteredCourses = allCourses.filter(course =>
     course.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (filterCategory === 'Todos' || course.category === filterCategory)
   )
 
-  const categories = ['Todos', ...Array.from(new Set(allCourses.map(course => course.category)))]
+  const categories = ['Todos', ...Array.from(new Set(allCourses.map(course => course.category || 'Geral')))]
 
   const delays = useStaggeredAnimation(filteredCourses.length, 100)
 
   const totalActiveCourses = filteredCourses.length
-  const totalLessonsCompleted = filteredCourses.reduce((sum, course) => sum + Math.round(course.lessons * (course.progress / 100)), 0)
-  const totalStudents = filteredCourses.reduce((sum, course) => sum + course.students, 0)
+  const totalLessonsCompleted = filteredCourses.reduce((sum, course) => sum + Math.round((course.lessons || 0) * (course.progress / 100)), 0)
+  const totalStudents = filteredCourses.reduce((sum, course) => sum + (course.students || 0), 0)
   const averageProgress = filteredCourses.length > 0
     ? filteredCourses.reduce((sum, course) => sum + course.progress, 0) / filteredCourses.length
     : 0
+
+  if (isLoading) {
+    return <SectionLoader />
+  }
 
   return (
     <MagicLayout 
@@ -254,11 +237,13 @@ export default function CoursesPage() {
                       </div>
 
                       {/* Category Badge */}
-                      <div className="absolute top-4 left-4">
-                        <div className="px-3 py-1.5 rounded-full bg-primary/90 backdrop-blur-sm border border-primary/20">
-                          <span className="text-sm font-semibold text-white">{course.category}</span>
+                      {course.category && (
+                        <div className="absolute top-4 left-4">
+                          <div className="px-3 py-1.5 rounded-full bg-primary/90 backdrop-blur-sm border border-primary/20">
+                            <span className="text-sm font-semibold text-white">{course.category}</span>
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {/* Title */}
                       <div className="absolute bottom-4 left-4 right-4">
@@ -281,7 +266,7 @@ export default function CoursesPage() {
                               <Play className="w-4 h-4 text-white" />
                             </div>
                             <div className="text-lg font-bold text-blue-600">
-                              {course.lessons}
+                              {course.lessons || 0}
                             </div>
                             <div className="text-xs text-muted-foreground">Aulas</div>
                           </div>
@@ -290,7 +275,7 @@ export default function CoursesPage() {
                               <Users className="w-4 h-4 text-white" />
                             </div>
                             <div className="text-lg font-bold text-green-600">
-                              {course.students.toLocaleString()}
+                              {(course.students || 0).toLocaleString()}
                             </div>
                             <div className="text-xs text-muted-foreground">Estudantes</div>
                           </div>

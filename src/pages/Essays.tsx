@@ -13,34 +13,78 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { FilePlus2, Eye, FileDown, FileText, Calendar, Clock, TrendingUp } from 'lucide-react'
-
-const essays = [
-  {
-    id: 1,
-    theme: 'Inteligência Artificial e o Futuro do Trabalho',
-    date: '20/10/2025',
-    status: 'Corrigida',
-    grade: 920,
-  },
-  {
-    id: 2,
-    theme: 'A Persistência da Violência Contra a Mulher na Sociedade',
-    date: '05/10/2025',
-    status: 'Corrigida',
-    grade: 880,
-  },
-  {
-    id: 3,
-    theme: 'Desafios da Educação a Distância no Brasil',
-    date: '28/09/2025',
-    status: 'Enviada',
-    grade: null,
-  },
-]
+import { FilePlus2, Eye, FileDown, FileText, Calendar, Clock, TrendingUp, Lock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { getUserEssaysList, getUserEssayStats, type EssayListItem, type EssayStatsData } from '@/services/essayService'
+import { useAuth } from '@/hooks/use-auth'
+import { SectionLoader } from '@/components/SectionLoader'
+import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
+import { FEATURE_KEYS } from '@/services/classPermissionsService'
 
 export default function EssaysPage() {
+  const { user, isStudent } = useAuth()
+  const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
+  const [essays, setEssays] = useState<EssayListItem[]>([])
+  const [stats, setStats] = useState<EssayStatsData>({
+    totalEssays: 0,
+    averageGrade: 0,
+    averageDays: 0,
+    pending: 0
+  })
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchEssays = async () => {
+      try {
+        if (!user?.id) return
+
+        const [essaysData, statsData] = await Promise.all([
+          getUserEssaysList(user.id),
+          getUserEssayStats(user.id)
+        ])
+
+        setEssays(essaysData)
+        setStats(statsData)
+      } catch (error) {
+        console.error('Error fetching essays:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchEssays()
+  }, [user?.id])
+
   const rowDelays = useStaggeredAnimation(essays.length, 100)
+
+  // Verificação de permissões para alunos
+  if (permissionsLoading || isLoading) {
+    return <SectionLoader />
+  }
+
+  // Se for aluno e não tiver permissão, mostra página bloqueada
+  if (isStudent && !hasFeature(FEATURE_KEYS.ESSAYS)) {
+    return (
+      <MagicLayout
+        title="Redações"
+        description="Sistema de redações bloqueado"
+      >
+        <MagicCard variant="glass" size="lg" className="text-center py-24">
+          <div className="max-w-md mx-auto">
+            <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 flex items-center justify-center">
+              <Lock className="w-10 h-10 text-orange-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-4">
+              Recurso Bloqueado
+            </h3>
+            <p className="text-muted-foreground mb-8">
+              O sistema de redações não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
+            </p>
+          </div>
+        </MagicCard>
+      </MagicLayout>
+    )
+  }
 
   return (
     <MagicLayout
@@ -53,28 +97,28 @@ export default function EssaysPage() {
           <MagicCard className="p-4 md:p-6 text-center" glow>
             <div className="space-y-1 md:space-y-2">
               <FileText className="h-6 w-6 md:h-8 md:w-8 text-primary mx-auto" />
-              <div className="text-xl md:text-2xl font-bold">{essays.length}</div>
+              <div className="text-xl md:text-2xl font-bold">{stats.totalEssays}</div>
               <div className="text-xs md:text-sm text-muted-foreground">Redações Enviadas</div>
             </div>
           </MagicCard>
           <MagicCard className="p-4 md:p-6 text-center" glow>
             <div className="space-y-1 md:space-y-2">
               <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-green-500 mx-auto" />
-              <div className="text-xl md:text-2xl font-bold">900</div>
+              <div className="text-xl md:text-2xl font-bold">{stats.averageGrade}</div>
               <div className="text-xs md:text-sm text-muted-foreground">Nota Média</div>
             </div>
           </MagicCard>
           <MagicCard className="p-4 md:p-6 text-center" glow>
             <div className="space-y-1 md:space-y-2">
               <Clock className="h-6 w-6 md:h-8 md:w-8 text-blue-500 mx-auto" />
-              <div className="text-xl md:text-2xl font-bold">3</div>
+              <div className="text-xl md:text-2xl font-bold">{stats.averageDays}</div>
               <div className="text-xs md:text-sm text-muted-foreground">Dias Médio</div>
             </div>
           </MagicCard>
           <MagicCard className="p-4 md:p-6 text-center" glow>
             <div className="space-y-1 md:space-y-2">
               <Calendar className="h-6 w-6 md:h-8 md:w-8 text-orange-500 mx-auto" />
-              <div className="text-xl md:text-2xl font-bold">1</div>
+              <div className="text-xl md:text-2xl font-bold">{stats.pending}</div>
               <div className="text-xs md:text-sm text-muted-foreground">Pendentes</div>
             </div>
           </MagicCard>

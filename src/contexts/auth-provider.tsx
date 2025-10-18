@@ -56,7 +56,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
   try {
     console.log('🔍 Fetching profile for user:', userId)
 
-    // First try to fetch existing profile (timeout: 10s per attempt)
+    // First try to fetch existing profile (timeout: 30s per attempt)
     const { data: existingProfile, error: fetchError } = await Promise.race([
       supabase
         .from('users')
@@ -73,7 +73,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
         .eq('id', userId)
         .single(),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 30000)
       )
     ])
 
@@ -154,16 +154,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleSessionChange = useCallback(async (newSession: Session | null) => {
     console.log('🔄 Session changed:', !!newSession)
     setSession(newSession)
-    setProfileFetchAttempted(false)
 
     if (newSession?.user) {
+      // Evita buscar perfil novamente se já estamos tentando
+      if (profileFetchAttempted && profile) {
+        console.log('⏭️ Profile already fetched, skipping...')
+        return
+      }
+
+      setProfileFetchAttempted(false)
+
       // Fetch profile for authenticated user with retry
       let userProfile = await fetchUserProfile(newSession.user.id)
 
-      // If failed, retry once after 2 seconds
+      // If failed, retry once after 3 seconds
       if (!userProfile) {
-        console.log('🔄 Profile fetch failed, retrying in 2s...')
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        console.log('🔄 Profile fetch failed, retrying in 3s...')
+        await new Promise(resolve => setTimeout(resolve, 3000))
         userProfile = await fetchUserProfile(newSession.user.id)
       }
 
@@ -183,7 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfileFetchAttempted(false)
       console.log('🔓 User logged out, profile cleared')
     }
-  }, [])
+  }, [profile, profileFetchAttempted])
 
   // Initialize auth
   useEffect(() => {
@@ -198,7 +205,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { session: initialSession } } = await Promise.race([
           supabase.auth.getSession(),
           new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Auth timeout')), 10000)
+            setTimeout(() => reject(new Error('Auth timeout')), 30000)
           )
         ])
 
