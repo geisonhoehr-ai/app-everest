@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MagicLayout } from '@/components/ui/magic-layout'
@@ -22,40 +23,32 @@ import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { SectionLoader } from '@/components/SectionLoader'
-
-const audioClasses = [
-  {
-    title: 'Revolução Francesa em 30 minutos',
-    series: 'História em Foco',
-    duration: '32 min',
-    image: 'https://img.usecurling.com/p/400/400?q=french%20revolution',
-  },
-  {
-    title: 'Os Biomas Brasileiros',
-    series: 'Geografia Descomplicada',
-    duration: '45 min',
-    image: 'https://img.usecurling.com/p/400/400?q=brazilian%20biomes',
-  },
-  {
-    title: 'Entendendo a Crase',
-    series: 'Português para Concursos',
-    duration: '18 min',
-    image: 'https://img.usecurling.com/p/400/400?q=portuguese%20grammar',
-  },
-  {
-    title: 'A Tabela Periódica e suas Propriedades',
-    series: 'Química Essencial',
-    duration: '55 min',
-    image: 'https://img.usecurling.com/p/400/400?q=periodic%20table',
-  },
-]
+import { audioLessonService, type AudioLesson } from '@/services/audioLessonService'
 
 export default function EvercastPage() {
   const { isStudent } = useAuth()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
+  const [audioLessons, setAudioLessons] = useState<AudioLesson[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    loadAudioLessons()
+  }, [])
+
+  const loadAudioLessons = async () => {
+    try {
+      setIsLoading(true)
+      const lessons = await audioLessonService.getAudioLessons()
+      setAudioLessons(lessons)
+    } catch (error) {
+      console.error('Error loading audio lessons:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Verificação de permissões para alunos
-  if (permissionsLoading) {
+  if (permissionsLoading || isLoading) {
     return <SectionLoader />
   }
 
@@ -116,22 +109,30 @@ export default function EvercastPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
                 <Mic className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-blue-600">{audioClasses.length}</div>
+                <div className="text-xl md:text-2xl font-bold text-blue-600">{audioLessons.length}</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Aulas</div>
               </div>
               <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
                 <Clock className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-green-600">2.5h</div>
+                <div className="text-xl md:text-2xl font-bold text-green-600">
+                  {audioLessons.reduce((total, lesson) => total + (lesson.duration_minutes || 0), 0)}min
+                </div>
                 <div className="text-xs md:text-sm text-muted-foreground">Total</div>
               </div>
               <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
                 <Star className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-purple-600">4.8</div>
+                <div className="text-xl md:text-2xl font-bold text-purple-600">
+                  {audioLessons.length > 0
+                    ? (audioLessons.reduce((sum, l) => sum + (l.rating || 0), 0) / audioLessons.length).toFixed(1)
+                    : '0'}
+                </div>
                 <div className="text-xs md:text-sm text-muted-foreground">Avaliação</div>
               </div>
               <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
                 <Users className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-orange-600">1.2k</div>
+                <div className="text-xl md:text-2xl font-bold text-orange-600">
+                  {audioLessons.reduce((total, lesson) => total + (lesson.listens_count || 0), 0)}
+                </div>
                 <div className="text-xs md:text-sm text-muted-foreground">Ouvintes</div>
               </div>
             </div>
@@ -165,10 +166,25 @@ export default function EvercastPage() {
         </MagicCard>
 
         {/* Audio Classes Grid */}
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {audioClasses.map((audio, index) => (
+        {audioLessons.length === 0 ? (
+          <MagicCard variant="glass" size="lg" className="text-center py-24">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <Headphones className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                Nenhuma áudio-aula encontrada
+              </h3>
+              <p className="text-muted-foreground mb-8">
+                Não há áudio-aulas disponíveis no momento. Volte em breve!
+              </p>
+            </div>
+          </MagicCard>
+        ) : (
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {audioLessons.map((audio, index) => (
             <MagicCard
-              key={audio.title}
+              key={audio.id}
               variant="premium"
               size="lg"
               className="h-[400px] flex flex-col overflow-hidden transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl cursor-pointer group"
@@ -177,14 +193,14 @@ export default function EvercastPage() {
               {/* Image Header */}
               <div className="relative h-48 overflow-hidden rounded-t-2xl">
                 <img
-                  src={audio.image}
+                  src={audio.thumbnail_url}
                   alt={audio.title}
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
-                
+
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                
+
                 {/* Play Button */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
@@ -195,7 +211,9 @@ export default function EvercastPage() {
                 {/* Duration Badge */}
                 <div className="absolute top-4 right-4">
                   <div className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-white/20">
-                    <span className="text-sm font-semibold text-gray-900">{audio.duration}</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {audio.duration_minutes ? `${audio.duration_minutes} min` : '-'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -204,12 +222,14 @@ export default function EvercastPage() {
               <div className="flex-1 flex flex-col p-6">
                 <div className="flex-1 flex flex-col space-y-4">
                   {/* Series Badge */}
-                  <Badge 
-                    variant="secondary" 
-                    className="w-fit bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 text-primary"
-                  >
-                    {audio.series}
-                  </Badge>
+                  {audio.series && (
+                    <Badge
+                      variant="secondary"
+                      className="w-fit bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 text-primary"
+                    >
+                      {audio.series}
+                    </Badge>
+                  )}
 
                   {/* Title */}
                   <h3 className="font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
@@ -220,11 +240,11 @@ export default function EvercastPage() {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-yellow-500" />
-                      <span>4.8</span>
+                      <span>{audio.rating?.toFixed(1) || '0.0'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
-                      <span>1.2k</span>
+                      <span>{audio.listens_count || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -241,7 +261,8 @@ export default function EvercastPage() {
               </div>
             </MagicCard>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Features Section */}
         <MagicCard variant="glass" size="lg">
