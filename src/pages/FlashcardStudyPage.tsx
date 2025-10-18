@@ -163,6 +163,14 @@ export default function FlashcardStudyPage() {
     const correct = sessionResults.filter((r) => r.result === 'correct').length
     const incorrect = sessionResults.length - correct
 
+    console.log('📊 Session Results:', {
+      sessionResults,
+      total: sessionResults.length,
+      correct,
+      incorrect,
+      deckLength: studyDeck.length
+    })
+
     const sessionPayload: SaveSessionPayload = {
       topicId: topicData.id,
       sessionMode: studyMode,
@@ -271,6 +279,14 @@ export default function FlashcardStudyPage() {
       await updateFlashcardProgress(user.id, currentCard.id, quality)
       const result: 'correct' | 'incorrect' =
         quality <= 2 ? 'incorrect' : 'correct'
+
+      console.log('💯 Answer recorded:', {
+        cardId: currentCard.id,
+        quality,
+        result,
+        cardIndex: currentIndex
+      })
+
       setSessionResults((prev) => [...prev, { cardId: currentCard.id, result }])
       setLastAnswer(result)
       
