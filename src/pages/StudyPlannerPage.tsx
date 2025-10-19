@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { SectionLoader } from '@/components/SectionLoader'
+import * as studyPlannerService from '@/services/studyPlannerService'
 
 type StudyTopic = {
   id: string
@@ -104,74 +105,22 @@ export default function StudyPlannerPage() {
     if (!user) return
     setIsLoading(true)
     try {
-      // Aqui você carregaria do Supabase
-      // Por enquanto, dados mock
-      setTopics([
-        {
-          id: '1',
-          title: 'Sintaxe - Período Simples',
-          category: 'portugues',
-          type: 'teoria',
-          status: 'completed',
-          pomodoros: 3,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          title: 'Sintaxe - Período Composto',
-          category: 'portugues',
-          type: 'teoria',
-          status: 'in-progress',
-          pomodoros: 2,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          title: 'Exercícios de Concordância',
-          category: 'portugues',
-          type: 'exercicios',
-          status: 'pending',
-          pomodoros: 0,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '4',
-          title: 'Estrutura Dissertativa',
-          category: 'redacao',
-          type: 'teoria',
-          status: 'completed',
-          pomodoros: 2,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '5',
-          title: 'Treino: Tema Social',
-          category: 'redacao',
-          type: 'pratica',
-          status: 'in-progress',
-          pomodoros: 1,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '6',
-          title: 'Lei 8.112/90 - Capítulo I',
-          category: 'legislacao',
-          type: 'teoria',
-          status: 'pending',
-          pomodoros: 0,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        }
-      ])
+      console.log('🔍 Loading study planner data for user:', user.id)
+
+      // Carregar tópicos de estudo do Supabase
+      const loadedTopics = await studyPlannerService.getStudyTopics(user.id)
+      setTopics(loadedTopics)
+      console.log('✅ Loaded study topics:', loadedTopics.length)
+
+      // Carregar sessões pomodoro
+      const loadedSessions = await studyPlannerService.getPomodoroSessions(user.id, 20)
+      setSessions(loadedSessions)
+      console.log('✅ Loaded pomodoro sessions:', loadedSessions.length)
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error('❌ Error loading study planner data:', error)
       toast({
         title: 'Erro ao carregar dados',
+        description: 'Não foi possível carregar seu plano de estudos.',
         variant: 'destructive'
       })
     } finally {
@@ -250,7 +199,7 @@ export default function StudyPlannerPage() {
     setCompletedPomodoros(0)
   }
 
-  const addOrUpdateTopic = () => {
+  const addOrUpdateTopic = async () => {
     if (!newTopic.title.trim()) {
       toast({
         title: 'Erro',
@@ -260,49 +209,76 @@ export default function StudyPlannerPage() {
       return
     }
 
-    if (editingTopic) {
-      setTopics(topics.map(t => 
-        t.id === editingTopic.id 
-          ? { ...t, ...newTopic }
-          : t
-      ))
-      toast({
-        title: '✅ Conteúdo atualizado!',
-        description: 'Suas alterações foram salvas.'
-      })
-    } else {
-      const newTopicData: StudyTopic = {
-        id: Date.now().toString(),
-        ...newTopic,
-        status: 'pending',
-        pomodoros: 0,
-        user_id: user?.id || '',
-        created_at: new Date().toISOString()
+    if (!user) return
+
+    try {
+      if (editingTopic) {
+        // Atualizar tópico existente no banco
+        const updatedTopic = await studyPlannerService.updateStudyTopic(editingTopic.id, newTopic)
+        setTopics(topics.map(t => t.id === editingTopic.id ? updatedTopic : t))
+        toast({
+          title: '✅ Conteúdo atualizado!',
+          description: 'Suas alterações foram salvas.'
+        })
+      } else {
+        // Criar novo tópico no banco
+        const topicData = {
+          ...newTopic,
+          status: 'pending' as const,
+          pomodoros: 0,
+          user_id: user.id
+        }
+        const createdTopic = await studyPlannerService.createStudyTopic(topicData)
+        setTopics([...topics, createdTopic])
+        toast({
+          title: '✅ Conteúdo adicionado!',
+          description: 'Novo tópico de estudo criado com sucesso.'
+        })
       }
-      setTopics([...topics, newTopicData])
+
+      setNewTopic({ title: '', category: 'portugues', type: 'teoria' })
+      setEditingTopic(null)
+      setShowAddModal(false)
+    } catch (error) {
+      console.error('Error saving topic:', error)
       toast({
-        title: '✅ Conteúdo adicionado!',
-        description: 'Novo tópico de estudo criado com sucesso.'
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar o tópico. Tente novamente.',
+        variant: 'destructive'
       })
     }
-
-    setNewTopic({ title: '', category: 'portugues', type: 'teoria' })
-    setEditingTopic(null)
-    setShowAddModal(false)
   }
 
-  const deleteTopic = (id: string) => {
-    setTopics(topics.filter(t => t.id !== id))
-    toast({
-      title: 'Conteúdo removido',
-      description: 'O tópico foi excluído do seu planejamento.'
-    })
+  const deleteTopic = async (id: string) => {
+    try {
+      await studyPlannerService.deleteStudyTopic(id)
+      setTopics(topics.filter(t => t.id !== id))
+      toast({
+        title: 'Conteúdo removido',
+        description: 'O tópico foi excluído do seu planejamento.'
+      })
+    } catch (error) {
+      console.error('Error deleting topic:', error)
+      toast({
+        title: 'Erro ao deletar',
+        description: 'Não foi possível deletar o tópico. Tente novamente.',
+        variant: 'destructive'
+      })
+    }
   }
 
-  const updateTopicStatus = (id: string, status: StudyTopic['status']) => {
-    setTopics(topics.map(t => 
-      t.id === id ? { ...t, status } : t
-    ))
+  const updateTopicStatus = async (id: string, status: StudyTopic['status']) => {
+    try {
+      await studyPlannerService.updateStudyTopic(id, { status })
+      setTopics(topics.map(t => t.id === id ? { ...t, status } : t))
+    } catch (error) {
+      console.error('Error updating topic status:', error)
+      toast({
+        title: 'Erro ao atualizar',
+        description: 'Não foi possível atualizar o status. Tente novamente.',
+        variant: 'destructive'
+      })
+    }
   }
 
   const getCategoryIcon = (category: string) => {
