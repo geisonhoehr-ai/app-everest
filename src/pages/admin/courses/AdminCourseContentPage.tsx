@@ -1,8 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useForm, useFieldArray, FormProvider } from 'react-hook-form'
-
-
+import { useForm, useFieldArray, FormProvider, useFormContext } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -22,6 +23,8 @@ import { FormControl, FormField, FormItem } from '@/components/ui/form'
 import { useToast } from '@/components/ui/use-toast'
 import { ArrowLeft, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { LessonForm } from '@/components/admin/courses/LessonForm'
+import { MagicLayout } from '@/components/ui/magic-layout'
+import { SectionLoader } from '@/components/SectionLoader'
 
 const lessonSchema = z.object({
   title: z.string().min(3, 'O título da aula é muito curto.'),
@@ -46,28 +49,26 @@ const courseContentSchema = z.object({
 
 type CourseContentFormValues = z.infer<typeof courseContentSchema>
 
-const mockCourse = {
-  id: 'course1',
-  name: 'Matemática para Concursos',
-  modules: [
-    {
-      name: 'Módulo 1: Fundamentos',
-      lessons: [
-        {
-          title: 'Aula 1: Adição e Subtração',
-          is_active: true,
-          is_preview: true,
-          attachments: [],
-        },
-        {
-          title: 'Aula 2: Multiplicação',
-          is_active: true,
-          is_preview: false,
-          attachments: [],
-        },
-      ],
-    },
-  ],
+interface CourseWithModules {
+  id: string
+  name: string
+  modules: Array<{
+    id?: string
+    name: string
+    order_index?: number
+    lessons: Array<{
+      id?: string
+      title: string
+      description?: string
+      video_source_type?: string
+      video_source_id?: string
+      duration_seconds?: number
+      is_active: boolean
+      is_preview: boolean
+      order_index?: number
+      attachments?: any[]
+    }>
+  }>
 }
 
 const ModuleItem = ({
@@ -167,20 +168,97 @@ export default function AdminCourseContentPage() {
   const { courseId } = useParams()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const [course, setCourse] = useState<CourseWithModules | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const form = useForm<CourseContentFormValues>({
-    
+    resolver: zodResolver(courseContentSchema),
     defaultValues: {
-      modules: mockCourse.modules.map((m) => ({
-        ...m,
-        lessons: m.lessons.map((l) => ({
-          ...l,
-          description: '',
-          video_source_id: '',
-        })),
-      })),
+      modules: [],
     },
   })
+
+  // Load course with modules and lessons
+  useEffect(() => {
+    const fetchCourseContent = async () => {
+      if (!courseId) return
+
+      try {
+        setLoading(true)
+
+        // Get course
+        const { data: courseData, error: courseError } = await supabase
+          .from('video_courses')
+          .select('id, name')
+          .eq('id', courseId)
+          .single()
+
+        if (courseError) throw courseError
+
+        // Get modules
+        const { data: modulesData, error: modulesError } = await supabase
+          .from('video_modules')
+          .select('*')
+          .eq('course_id', courseId)
+          .order('order_index')
+
+        if (modulesError) throw modulesError
+
+        // Get lessons for each module
+        const modulesWithLessons = await Promise.all(
+          (modulesData || []).map(async (module) => {
+            const { data: lessonsData } = await supabase
+              .from('video_lessons')
+              .select('*')
+              .eq('module_id', module.id)
+              .order('order_index')
+
+            return {
+              id: module.id,
+              name: module.name,
+              order_index: module.order_index,
+              lessons: (lessonsData || []).map((lesson) => ({
+                id: lesson.id,
+                title: lesson.title,
+                description: lesson.description || '',
+                video_source_type: lesson.video_source_type || '',
+                video_source_id: lesson.video_source_id || '',
+                duration_seconds: lesson.duration_seconds || 0,
+                is_active: lesson.is_active || false,
+                is_preview: lesson.is_preview || false,
+                order_index: lesson.order_index,
+                attachments: [],
+              })),
+            }
+          })
+        )
+
+        const courseWithModules: CourseWithModules = {
+          id: courseData.id,
+          name: courseData.name,
+          modules: modulesWithLessons,
+        }
+
+        setCourse(courseWithModules)
+
+        // Set form values
+        form.reset({
+          modules: modulesWithLessons,
+        })
+      } catch (error) {
+        console.error('Error loading course content:', error)
+        toast({
+          title: 'Erro ao carregar',
+          description: 'Não foi possível carregar o conteúdo do curso.',
+          variant: 'destructive',
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCourseContent()
+  }, [courseId, form, toast])
 
   const {
     fields: moduleFields,
@@ -191,31 +269,109 @@ export default function AdminCourseContentPage() {
     name: 'modules',
   })
 
-  const onSubmit = (data: CourseContentFormValues) => {
-    console.log('Saving course content:', data)
-    toast({ title: 'Conteúdo do curso salvo com sucesso!' })
+  const onSubmit = async (data: CourseContentFormValues) => {
+    if (!courseId) return
+
+    try {
+      // Delete all existing modules and lessons for this course
+      const { error: deleteError } = await supabase
+        .from('video_modules')
+        .delete()
+        .eq('course_id', courseId)
+
+      if (deleteError) throw deleteError
+
+      // Insert new modules and lessons
+      for (let moduleIndex = 0; moduleIndex < data.modules.length; moduleIndex++) {
+        const module = data.modules[moduleIndex]
+
+        const { data: newModule, error: moduleError } = await supabase
+          .from('video_modules')
+          .insert({
+            course_id: courseId,
+            name: module.name,
+            order_index: moduleIndex,
+            is_active: true,
+          })
+          .select()
+          .single()
+
+        if (moduleError) throw moduleError
+
+        // Insert lessons for this module
+        for (let lessonIndex = 0; lessonIndex < module.lessons.length; lessonIndex++) {
+          const lesson = module.lessons[lessonIndex]
+
+          const { error: lessonError } = await supabase
+            .from('video_lessons')
+            .insert({
+              module_id: newModule.id,
+              title: lesson.title,
+              description: lesson.description || null,
+              video_source_type: lesson.video_source_type || null,
+              video_source_id: lesson.video_source_id || null,
+              duration_seconds: lesson.duration_seconds || null,
+              is_active: lesson.is_active,
+              is_preview: lesson.is_preview,
+              order_index: lessonIndex,
+            })
+
+          if (lessonError) throw lessonError
+        }
+      }
+
+      toast({
+        title: 'Conteúdo salvo!',
+        description: 'O conteúdo do curso foi salvo com sucesso.',
+      })
+
+      navigate('/admin/courses')
+    } catch (error) {
+      console.error('Error saving course content:', error)
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar o conteúdo do curso.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  if (loading) {
+    return <SectionLoader />
+  }
+
+  if (!course) {
+    return (
+      <MagicLayout title="Curso não encontrado">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold mb-4">Curso não encontrado</h2>
+          <Button onClick={() => navigate('/admin/courses')}>
+            Voltar para Cursos
+          </Button>
+        </div>
+      </MagicLayout>
+    )
   }
 
   return (
-    <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => navigate('/admin/courses')}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">Gerenciar Conteúdo</h1>
-              <p className="text-muted-foreground">{mockCourse.name}</p>
+    <MagicLayout
+      title={`Gerenciar Conteúdo: ${course.name}`}
+      description="Organize módulos e aulas do seu curso"
+    >
+      <div className="max-w-6xl mx-auto">
+        <FormProvider {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="flex items-center justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/admin/courses')}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar para Cursos
+              </Button>
+              <Button type="submit">Salvar Alterações</Button>
             </div>
-          </div>
-          <Button type="submit">Salvar Alterações</Button>
-        </div>
 
         <Card>
           <CardHeader>
@@ -243,8 +399,10 @@ export default function AdminCourseContentPage() {
               <Plus className="mr-2 h-4 w-4" /> Adicionar Módulo
             </Button>
           </CardContent>
-        </Card>
-      </form>
-    </FormProvider>
+            </Card>
+          </form>
+        </FormProvider>
+      </div>
+    </MagicLayout>
   )
 }

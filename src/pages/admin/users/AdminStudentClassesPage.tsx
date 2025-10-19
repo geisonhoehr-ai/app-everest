@@ -102,8 +102,8 @@ export default function AdminStudentClassesPage() {
           id,
           user_id,
           class_id,
-          enrolled_at,
-          classes!student_classes_class_id_fkey (
+          enrollment_date,
+          classes (
             id,
             name,
             description,
@@ -170,7 +170,8 @@ export default function AdminStudentClassesPage() {
         .from('student_classes')
         .insert({
           user_id: userId,
-          class_id: selectedClassId
+          class_id: selectedClassId,
+          enrollment_date: new Date().toISOString().split('T')[0]
         })
 
       if (error) throw error

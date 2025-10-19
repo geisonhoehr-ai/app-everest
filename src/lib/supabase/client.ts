@@ -11,10 +11,18 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ||
                                 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuaHppbmRzZnVxbmF4b3N1amF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MzU5NTIsImV4cCI6MjA2ODUxMTk1Mn0.cT7fe1wjee9HfZw_IVD7K_exMqu-LtUxiClCD-sDLyU'
 
 // Debug log
-console.log('Supabase config:', {
+console.log('🔧 Supabase config:', {
   url: SUPABASE_URL?.substring(0, 30) + '...',
-  hasKey: !!SUPABASE_PUBLISHABLE_KEY
+  hasKey: !!SUPABASE_PUBLISHABLE_KEY,
+  storage: typeof window !== 'undefined' ? 'localStorage' : 'none',
+  storageKey: 'everest-auth-token'
 })
+
+// Check if there's an existing session in localStorage
+if (typeof window !== 'undefined') {
+  const existingToken = localStorage.getItem('everest-auth-token')
+  console.log('🔑 Existing auth token:', existingToken ? 'Found' : 'Not found')
+}
 
 // Create client with error handling and better timeout configuration
 let supabase: ReturnType<typeof createClient<Database>>

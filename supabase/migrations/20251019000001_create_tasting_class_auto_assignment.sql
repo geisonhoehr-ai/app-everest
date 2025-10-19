@@ -143,11 +143,11 @@ BEGIN
     INSERT INTO public.student_classes (
       user_id,
       class_id,
-      enrolled_at
+      enrollment_date
     ) VALUES (
       NEW.id,
       v_tasting_class_id,
-      NOW()
+      NOW()::date
     )
     ON CONFLICT (user_id, class_id) DO NOTHING;
 

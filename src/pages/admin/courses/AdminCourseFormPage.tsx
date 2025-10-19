@@ -25,6 +25,8 @@ import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/components/ui/use-toast'
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { MagicLayout } from '@/components/ui/magic-layout'
+import { ChevronLeft } from 'lucide-react'
 
 const courseSchema = z.object({
   name: z.string().min(3, 'O título deve ter pelo menos 3 caracteres.'),
@@ -99,25 +101,97 @@ export default function AdminCourseFormPage() {
     fetchCourseData()
   }, [isEditing, courseId, form, toast])
 
-  const onSubmit = (data: CourseFormValues) => {
-    console.log(data)
-    toast({
-      title: `Curso ${isEditing ? 'atualizado' : 'criado'} com sucesso!`,
-    })
-    navigate('/admin/courses')
+  const onSubmit = async (data: CourseFormValues) => {
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+      if (userError || !user) {
+        toast({
+          title: 'Erro de autenticação',
+          description: 'Você precisa estar logado para criar um curso.',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      if (isEditing && courseId) {
+        // Update existing course
+        const { error } = await supabase
+          .from('video_courses')
+          .update({
+            name: data.name,
+            description: data.description,
+            thumbnail_url: data.thumbnail_url || null,
+            is_active: data.is_active,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', courseId)
+
+        if (error) throw error
+
+        toast({
+          title: 'Curso atualizado!',
+          description: 'O curso foi atualizado com sucesso.',
+        })
+      } else {
+        // Create new course
+        const { error } = await supabase
+          .from('video_courses')
+          .insert({
+            name: data.name,
+            description: data.description,
+            thumbnail_url: data.thumbnail_url || null,
+            is_active: data.is_active,
+            created_by_user_id: user.id,
+          })
+
+        if (error) throw error
+
+        toast({
+          title: 'Curso criado!',
+          description: 'O curso foi criado com sucesso.',
+        })
+      }
+
+      navigate('/admin/courses')
+    } catch (error) {
+      console.error('Error saving course:', error)
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar o curso. Tente novamente.',
+        variant: 'destructive',
+      })
+    }
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{isEditing ? 'Editar Curso' : 'Novo Curso'}</CardTitle>
-            <CardDescription>
-              Preencha os detalhes principais do curso.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+    <MagicLayout
+      title={isEditing ? 'Editar Curso' : 'Novo Curso'}
+      description="Preencha os detalhes principais do curso"
+    >
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-6">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/admin/courses')}
+            className="gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Voltar para Cursos
+          </Button>
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{isEditing ? 'Editar Curso' : 'Novo Curso'}</CardTitle>
+                <CardDescription>
+                  Preencha os detalhes principais do curso.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -177,19 +251,22 @@ export default function AdminCourseFormPage() {
                 </FormItem>
               )}
             />
-          </CardContent>
-        </Card>
-        <div className="flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate('/admin/courses')}
-          >
-            Cancelar
-          </Button>
-          <Button type="submit">Salvar Curso</Button>
-        </div>
-      </form>
-    </Form>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/admin/courses')}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit">Salvar Curso</Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </MagicLayout>
   )
 }

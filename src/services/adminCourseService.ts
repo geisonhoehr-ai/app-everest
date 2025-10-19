@@ -34,13 +34,7 @@ export type AdminCourse = VideoCourse & {
 export const getAllCourses = async (): Promise<AdminCourse[]> => {
   const { data, error } = await supabase
     .from('video_courses')
-    .select(`
-      *,
-      video_modules (count),
-      video_modules!inner (
-        video_lessons (count)
-      )
-    `)
+    .select('*')
     .order('name')
 
   if (error) {
@@ -48,20 +42,41 @@ export const getAllCourses = async (): Promise<AdminCourse[]> => {
     throw error
   }
 
-  return (data || []).map((course: any) => {
-    const modulesCount = course.video_modules?.[0]?.count || 0
-    const lessonsCount =
-      course.video_modules?.reduce(
-        (sum: number, mod: any) => sum + (mod.video_lessons?.[0]?.count || 0),
-        0,
-      ) || 0
+  // Buscar contagens separadamente para cada curso
+  const coursesWithCounts = await Promise.all(
+    (data || []).map(async (course: any) => {
+      // Contar módulos
+      const { count: modulesCount } = await supabase
+        .from('video_modules')
+        .select('*', { count: 'exact', head: true })
+        .eq('course_id', course.id)
 
-    return {
-      ...course,
-      modules_count: modulesCount,
-      lessons_count: lessonsCount,
-    }
-  }) as AdminCourse[]
+      // Contar aulas (buscar IDs dos módulos primeiro)
+      const { data: modules } = await supabase
+        .from('video_modules')
+        .select('id')
+        .eq('course_id', course.id)
+
+      const moduleIds = modules?.map(m => m.id) || []
+
+      let lessonsCount = 0
+      if (moduleIds.length > 0) {
+        const { count } = await supabase
+          .from('video_lessons')
+          .select('*', { count: 'exact', head: true })
+          .in('module_id', moduleIds)
+        lessonsCount = count || 0
+      }
+
+      return {
+        ...course,
+        modules_count: modulesCount || 0,
+        lessons_count: lessonsCount,
+      }
+    })
+  )
+
+  return coursesWithCounts as AdminCourse[]
 }
 
 /**

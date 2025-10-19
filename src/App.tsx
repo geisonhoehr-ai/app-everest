@@ -48,6 +48,7 @@ const ForumPage = lazy(() => import('@/pages/Forum'))
 const ForumTopicPage = lazy(() => import('@/pages/ForumTopic'))
 const SettingsPage = lazy(() => import('@/pages/Settings'))
 const FlashcardsPage = lazy(() => import('@/pages/Flashcards'))
+const DebugAuthPage = lazy(() => import('@/pages/DebugAuth'))
 const FlashcardTopicsPage = lazy(() => import('@/pages/FlashcardTopics'))
 const FlashcardStudyPage = lazy(() => import('@/pages/FlashcardStudyPage'))
 const FlashcardSessionResultPage = lazy(
@@ -95,6 +96,9 @@ const AdminCourseFormPage = lazy(
 )
 const AdminCourseContentPage = lazy(
   () => import('@/pages/admin/courses/AdminCourseContentPage'),
+)
+const AdminCourseClassesPage = lazy(
+  () => import('@/pages/admin/courses/AdminCourseClassesPage'),
 )
 const AdminFlashcardsPage = lazy(
   () => import('@/pages/admin/flashcards/AdminFlashcardsPage'),
@@ -224,6 +228,7 @@ const App = () => (
                   element={<ForgotPasswordPage />}
                 />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/debug-auth" element={<DebugAuthPage />} />
               </Route>
 
               <Route
@@ -401,6 +406,10 @@ const App = () => (
                   <Route
                     path="courses/:courseId/content"
                     element={<AdminCourseContentPage />}
+                  />
+                  <Route
+                    path="courses/:courseId/classes"
+                    element={<AdminCourseClassesPage />}
                   />
                   <Route path="flashcards" element={<AdminFlashcardsPage />} />
                   <Route path="flashcards/new" element={<AdminSubjectFormPage />} />

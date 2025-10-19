@@ -90,14 +90,14 @@ export default function AdminClassStudentsPage() {
       }
 
       // Carregar alunos da turma
-      const { data: studentsData, error: studentsError } = await supabase
+      const { data: studentsData, error: studentsError} = await supabase
         .from('student_classes')
         .select(`
           id,
           user_id,
           class_id,
-          enrolled_at,
-          users!student_classes_user_id_fkey (
+          enrollment_date,
+          users (
             id,
             email,
             first_name,
@@ -154,7 +154,8 @@ export default function AdminClassStudentsPage() {
         .from('student_classes')
         .insert({
           user_id: selectedUserId,
-          class_id: classId
+          class_id: classId,
+          enrollment_date: new Date().toISOString().split('T')[0]
         })
 
       if (error) throw error

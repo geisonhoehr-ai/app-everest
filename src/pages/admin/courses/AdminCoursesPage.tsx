@@ -246,6 +246,12 @@ export default function AdminCoursesPage() {
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
+                                <Link to={`/admin/courses/${course.id}/classes`} className="hover:bg-muted/50">
+                                  <Users className="mr-2 h-4 w-4" />
+                                  Gerenciar Turmas
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
                                 <Link to={`/admin/courses/${course.id}/edit`} className="hover:bg-muted/50">
                                   <Pencil className="mr-2 h-4 w-4" />
                                   Editar Detalhes
