@@ -4,7 +4,19 @@ import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { Badge } from '@/components/ui/badge'
 import { SectionLoader } from '@/components/SectionLoader'
-import { getSystemStats, type SystemStats } from '@/services/adminStatsService'
+import {
+  getSystemStats,
+  getUserGrowthData,
+  getWeeklyActivityData,
+  getRecentActivities,
+  getSystemAlerts,
+  getKPIChanges,
+  type SystemStats,
+  type UserGrowthData,
+  type ActivityDataPoint,
+  type RecentActivity,
+  type Alert,
+} from '@/services/adminStatsService'
 import {
   Shield,
   Users,
@@ -70,31 +82,51 @@ export default function AdminDashboard() {
     activeUsers: 0,
     completionRate: 0,
   })
+  const [userGrowthData, setUserGrowthData] = useState<UserGrowthData[]>([])
+  const [activityData, setActivityData] = useState<ActivityDataPoint[]>([])
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([])
+  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [kpiChanges, setKpiChanges] = useState({
+    users: { current: 0, previous: 0, change: '+0%', trend: 'stable' as const },
+    activeUsers: { current: 0, previous: 0, change: '+0%', trend: 'stable' as const },
+    classes: { current: 0, previous: 0, change: '+0%', trend: 'stable' as const },
+    completionRate: { current: 0, previous: 0, change: '+0%', trend: 'stable' as const },
+  })
 
   useEffect(() => {
-    loadStats()
+    loadAllData()
   }, [])
 
-  const loadStats = async () => {
+  const loadAllData = async () => {
     try {
-      const data = await getSystemStats()
-      setStats(data)
+      const [
+        statsData,
+        growthData,
+        weeklyData,
+        activitiesData,
+        alertsData,
+        kpiData
+      ] = await Promise.all([
+        getSystemStats(),
+        getUserGrowthData(),
+        getWeeklyActivityData(),
+        getRecentActivities(),
+        getSystemAlerts(),
+        getKPIChanges()
+      ])
+
+      setStats(statsData)
+      setUserGrowthData(growthData)
+      setActivityData(weeklyData)
+      setRecentActivities(activitiesData)
+      setAlerts(alertsData)
+      setKpiChanges(kpiData)
     } catch (error) {
-      console.error('Error loading stats:', error)
+      console.error('Error loading dashboard data:', error)
     } finally {
       setLoading(false)
     }
   }
-
-  // Dados simulados para gráficos (substituir por dados reais da API)
-  const userGrowthData = [
-    { month: 'Jan', usuarios: 45, ativos: 38 },
-    { month: 'Fev', usuarios: 52, ativos: 44 },
-    { month: 'Mar', usuarios: 61, ativos: 51 },
-    { month: 'Abr', usuarios: 72, ativos: 63 },
-    { month: 'Mai', usuarios: 85, ativos: 74 },
-    { month: 'Jun', usuarios: stats.totalUsers, ativos: stats.activeUsers },
-  ]
 
   const contentDistribution = [
     { name: 'Flashcards', value: stats.totalFlashcards },
@@ -104,46 +136,36 @@ export default function AdminDashboard() {
     { name: 'Áudio', value: stats.totalAudioCourses },
   ]
 
-  const activityData = [
-    { day: 'Seg', atividades: 145 },
-    { day: 'Ter', atividades: 167 },
-    { day: 'Qua', atividades: 189 },
-    { day: 'Qui', atividades: 203 },
-    { day: 'Sex', atividades: 178 },
-    { day: 'Sab', atividades: 95 },
-    { day: 'Dom', atividades: 67 },
-  ]
-
   const mainKPIs = [
     {
       label: 'Usuários Totais',
       value: stats.totalUsers,
-      change: '+12%',
-      trend: 'up',
+      change: kpiChanges.users.change,
+      trend: kpiChanges.users.trend,
       icon: Users,
       color: 'text-blue-600 bg-blue-500/10',
     },
     {
       label: 'Usuários Ativos',
       value: stats.activeUsers,
-      change: '+8%',
-      trend: 'up',
+      change: kpiChanges.activeUsers.change,
+      trend: kpiChanges.activeUsers.trend,
       icon: Activity,
       color: 'text-green-600 bg-green-500/10',
     },
     {
       label: 'Turmas Ativas',
       value: stats.totalClasses,
-      change: '+5%',
-      trend: 'up',
+      change: kpiChanges.classes.change,
+      trend: kpiChanges.classes.trend,
       icon: GraduationCap,
       color: 'text-purple-600 bg-purple-500/10',
     },
     {
       label: 'Taxa de Conclusão',
       value: `${stats.completionRate}%`,
-      change: '+3%',
-      trend: 'up',
+      change: kpiChanges.completionRate.change,
+      trend: kpiChanges.completionRate.trend,
       icon: CheckCircle,
       color: 'text-orange-600 bg-orange-500/10',
     },
@@ -157,28 +179,17 @@ export default function AdminDashboard() {
     { label: 'Evercast', value: stats.totalAudioCourses, icon: Mic },
   ]
 
-  const recentActivities = [
-    { type: 'user', message: 'Novo aluno cadastrado', time: '5 min atrás', icon: Users },
-    { type: 'essay', message: '3 redações aguardando correção', time: '15 min atrás', icon: FileText },
-    { type: 'course', message: 'Curso "React Avançado" publicado', time: '1 hora atrás', icon: BookOpen },
-    { type: 'achievement', message: '12 conquistas desbloqueadas hoje', time: '2 horas atrás', icon: Award },
-    { type: 'class', message: 'Nova turma "2025.2" criada', time: '3 horas atrás', icon: GraduationCap },
-  ]
-
-  const alerts = [
-    {
-      type: 'warning',
-      message: '5 redações pendentes há mais de 48h',
-      action: 'Ver redações',
-      link: '/admin/essays',
-    },
-    {
-      type: 'info',
-      message: 'Backup do sistema concluído com sucesso',
-      action: null,
-      link: null,
-    },
-  ]
+  // Map icon strings to icon components
+  const getIconComponent = (iconName: string) => {
+    const iconMap: Record<string, any> = {
+      Users,
+      FileText,
+      BookOpen,
+      Award,
+      GraduationCap,
+    }
+    return iconMap[iconName] || Activity
+  }
 
   if (loading) {
     return <SectionLoader />
@@ -252,8 +263,15 @@ export default function AdminDashboard() {
                   <div className={cn('p-2 rounded-lg', kpi.color)}>
                     <kpi.icon className="h-5 w-5" />
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-medium text-green-600">
-                    <TrendingUp className="h-3 w-3" />
+                  <div className={cn(
+                    "flex items-center gap-1 text-xs font-medium",
+                    kpi.trend === 'up' ? 'text-green-600' : kpi.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                  )}>
+                    {kpi.trend === 'up' ? (
+                      <TrendingUp className="h-3 w-3" />
+                    ) : kpi.trend === 'down' ? (
+                      <TrendingDown className="h-3 w-3" />
+                    ) : null}
                     {kpi.change}
                   </div>
                 </div>
@@ -415,18 +433,27 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="space-y-2">
-              {recentActivities.map((activity, index) => (
-                <div
-                  key={index}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                >
-                  <activity.icon className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.message}</p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
+              {recentActivities.length > 0 ? (
+                recentActivities.map((activity, index) => {
+                  const IconComponent = getIconComponent(activity.icon)
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <IconComponent className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{activity.message}</p>
+                        <p className="text-xs text-muted-foreground">{activity.time}</p>
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhuma atividade recente
+                </p>
+              )}
             </div>
           </div>
         </MagicCard>
