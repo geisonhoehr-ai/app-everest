@@ -31,18 +31,47 @@ import {
   ListChecks,
   BarChart2,
 } from 'lucide-react'
-import { getAdminQuizzes, type AdminQuiz } from '@/services/adminQuizService'
+import { getAdminQuizzes, deleteQuiz, type AdminQuiz } from '@/services/adminQuizService'
 import { SectionLoader } from '@/components/SectionLoader'
+import { useToast } from '@/components/ui/use-toast'
 
 export default function AdminQuizzesPage() {
   const [quizzes, setQuizzes] = useState<AdminQuiz[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
 
-  useEffect(() => {
+  const loadQuizzes = () => {
+    setIsLoading(true)
     getAdminQuizzes()
       .then(setQuizzes)
       .finally(() => setIsLoading(false))
+  }
+
+  useEffect(() => {
+    loadQuizzes()
   }, [])
+
+  const handleDeleteQuiz = async (quizId: string, quizTitle: string) => {
+    if (!confirm(`Tem certeza que deseja deletar o quiz "${quizTitle}"? Esta ação não pode ser desfeita.`)) {
+      return
+    }
+
+    try {
+      await deleteQuiz(quizId)
+      toast({
+        title: 'Quiz deletado',
+        description: `O quiz "${quizTitle}" foi deletado com sucesso.`,
+      })
+      loadQuizzes()
+    } catch (error) {
+      console.error('Error deleting quiz:', error)
+      toast({
+        title: 'Erro ao deletar',
+        description: 'Não foi possível deletar o quiz. Tente novamente.',
+        variant: 'destructive',
+      })
+    }
+  }
 
   if (isLoading) {
     return <SectionLoader />
@@ -115,7 +144,10 @@ export default function AdminQuizzesPage() {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => handleDeleteQuiz(quiz.id, quiz.title)}
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Deletar
                       </DropdownMenuItem>

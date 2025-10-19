@@ -25,39 +25,61 @@ import {
 import { MoreHorizontal, PlusCircle, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ImportQuestionsDialog } from '@/components/admin/questions/ImportQuestionsDialog'
-import { getAllQuestions } from '@/services/adminQuizService'
+import { getAllQuestions, deleteQuestion } from '@/services/adminQuizService'
+import { useToast } from '@/components/ui/use-toast'
 
 export default function AdminQuestionsPage() {
   const [isImportOpen, setIsImportOpen] = useState(false)
   const [questions, setQuestions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
+
+  const loadQuestions = async () => {
+    try {
+      setLoading(true)
+      const data = await getAllQuestions()
+      setQuestions(data)
+    } catch (error) {
+      console.error('Erro ao carregar questões:', error)
+      toast({
+        title: 'Erro ao carregar',
+        description: 'Não foi possível carregar as questões.',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const loadQuestions = async () => {
-      try {
-        const data = await getAllQuestions()
-        setQuestions(data)
-      } catch (error) {
-        console.error('Erro ao carregar questões:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadQuestions()
   }, [])
 
   const handleImportComplete = () => {
-    // Refetch the questions list
-    const loadQuestions = async () => {
-      try {
-        const data = await getAllQuestions()
-        setQuestions(data)
-      } catch (error) {
-        console.error('Erro ao carregar questões:', error)
-      }
-    }
     loadQuestions()
+  }
+
+  const handleDeleteQuestion = async (questionId: string, questionText: string) => {
+    const truncatedText = questionText.length > 50 ? questionText.substring(0, 50) + '...' : questionText
+    if (!confirm(`Tem certeza que deseja deletar a questão "${truncatedText}"? Esta ação não pode ser desfeita.`)) {
+      return
+    }
+
+    try {
+      await deleteQuestion(questionId)
+      toast({
+        title: 'Questão deletada',
+        description: 'A questão foi deletada com sucesso.',
+      })
+      loadQuestions()
+    } catch (error) {
+      console.error('Error deleting question:', error)
+      toast({
+        title: 'Erro ao deletar',
+        description: 'Não foi possível deletar a questão. Tente novamente.',
+        variant: 'destructive',
+      })
+    }
   }
 
   return (
@@ -136,7 +158,10 @@ export default function AdminQuestionsPage() {
                               Editar
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => handleDeleteQuestion(q.id, q.question_text)}
+                          >
                             Deletar
                           </DropdownMenuItem>
                         </DropdownMenuContent>

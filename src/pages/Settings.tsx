@@ -388,6 +388,55 @@ export default function SettingsPage() {
           </div>
         </MagicCard>
 
+        {/* PWA Settings */}
+        <MagicCard className="p-6" glow>
+          <div className="flex items-center gap-4 mb-6">
+            <Globe className="h-6 w-6 text-primary" />
+            <h2 className="text-xl font-bold">Aplicativo</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="pwa-install">Instalar App</Label>
+                <p className="text-sm text-muted-foreground">Instale o Everest como aplicativo no seu dispositivo</p>
+              </div>
+              <Button
+                id="pwa-install"
+                variant="outline"
+                onClick={() => {
+                  // Trigger PWA install prompt
+                  const event = new Event('beforeinstallprompt')
+                  window.dispatchEvent(event)
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Instalar
+              </Button>
+            </div>
+            
+            <Separator />
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="pwa-status">Status do App</Label>
+                <p className="text-sm text-muted-foreground">
+                  {window.matchMedia('(display-mode: standalone)').matches 
+                    ? 'App instalado e funcionando' 
+                    : 'App não instalado'}
+                </p>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                window.matchMedia('(display-mode: standalone)').matches
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+              }`}>
+                {window.matchMedia('(display-mode: standalone)').matches ? 'Instalado' : 'Não Instalado'}
+              </div>
+            </div>
+          </div>
+        </MagicCard>
+
         {/* Data Management */}
         <MagicCard className="p-6" glow>
           <div className="flex items-center gap-4 mb-6">

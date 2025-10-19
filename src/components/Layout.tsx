@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { Header } from './Header'
 import { SidebarProvider } from './ui/sidebar'
 import { UnifiedSidebar } from './UnifiedSidebar'
+import { OfflineIndicator } from './ui/OfflineIndicator'
 
 export default function Layout() {
   const [isSidebarOpen, setSidebarOpen] = useState(true)
@@ -18,6 +19,7 @@ export default function Layout() {
           </main>
         </div>
       </div>
+      <OfflineIndicator />
     </SidebarProvider>
   )
 }

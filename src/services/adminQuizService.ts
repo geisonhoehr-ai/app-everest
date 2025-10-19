@@ -122,12 +122,87 @@ export const createQuiz = async (
   return data as AdminQuiz
 }
 
+export const getQuizById = async (quizId: string): Promise<AdminQuiz | null> => {
+  const { data, error } = await supabase
+    .from('quizzes')
+    .select(
+      `
+      *,
+      topics ( name ),
+      quiz_questions ( count )
+    `,
+    )
+    .eq('id', quizId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching quiz:', error)
+    throw error
+  }
+
+  return data as AdminQuiz
+}
+
+export const updateQuiz = async (
+  quizId: string,
+  quizData: Partial<QuizInsert>,
+): Promise<AdminQuiz | null> => {
+  const { data, error } = await supabase
+    .from('quizzes')
+    .update(quizData)
+    .eq('id', quizId)
+    .select(`*, topics(name), quiz_questions(count)`)
+    .single()
+
+  if (error) {
+    console.error('Error updating quiz:', error)
+    throw error
+  }
+  return data as AdminQuiz
+}
+
+export const deleteQuiz = async (quizId: string): Promise<void> => {
+  const { error } = await supabase.from('quizzes').delete().eq('id', quizId)
+
+  if (error) {
+    console.error('Error deleting quiz:', error)
+    throw error
+  }
+}
+
 export const bulkInsertQuestions = async (
   questions: QuestionInsert[],
 ): Promise<void> => {
   const { error } = await supabase.from('quiz_questions').insert(questions)
   if (error) {
     console.error('Error bulk inserting questions:', error)
+    throw error
+  }
+}
+
+export const updateQuestion = async (
+  questionId: string,
+  questionData: Partial<QuestionInsert>,
+): Promise<void> => {
+  const { error } = await supabase
+    .from('quiz_questions')
+    .update(questionData)
+    .eq('id', questionId)
+
+  if (error) {
+    console.error('Error updating question:', error)
+    throw error
+  }
+}
+
+export const deleteQuestion = async (questionId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('quiz_questions')
+    .delete()
+    .eq('id', questionId)
+
+  if (error) {
+    console.error('Error deleting question:', error)
     throw error
   }
 }

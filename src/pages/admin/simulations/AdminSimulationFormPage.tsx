@@ -58,7 +58,6 @@ export default function AdminSimulationFormPage() {
 
   const form = useForm<SimulationFormValues>({
     resolver: zodResolver(simulationSchema),
-    
     defaultValues: {
       name: '',
       date: '',

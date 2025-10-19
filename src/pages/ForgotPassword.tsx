@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-
+import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -32,9 +33,10 @@ type FormValues = z.infer<typeof forgotPasswordSchema>
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const { toast } = useToast()
 
   const form = useForm<FormValues>({
-    
+    resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: '' },
   })
 
@@ -43,6 +45,17 @@ export default function ForgotPasswordPage() {
     const { error } = await sendPasswordResetEmail(data.email)
     if (!error) {
       setIsSubmitted(true)
+      toast({
+        title: 'Email Enviado',
+        description: 'Verifique sua caixa de entrada para instruções de recuperação.',
+        variant: 'default',
+      })
+    } else {
+      toast({
+        title: 'Erro ao Enviar Email',
+        description: error.message || 'Ocorreu um erro. Tente novamente.',
+        variant: 'destructive',
+      })
     }
     setIsLoading(false)
   }

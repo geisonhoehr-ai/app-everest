@@ -70,11 +70,18 @@ const TeacherStatsWidget = memo(() => {
     )
   }
 
+  // Criar hooks fixos para evitar problemas de ordem
+  const countAnimation1 = useCountAnimation(stats[0]?.value || 0, 1000)
+  const countAnimation2 = useCountAnimation(stats[1]?.value || 0, 1000)
+  const countAnimation3 = useCountAnimation(stats[2]?.value || 0, 1000)
+  const floatProps = useFloat()
+
+  const countAnimations = [countAnimation1, countAnimation2, countAnimation3]
+
   return (
     <div className="grid gap-4 md:grid-cols-3">
       {stats.map((stat, index) => {
-        const { count, startAnimation } = useCountAnimation(stat.value, 1000)
-        const floatProps = useFloat()
+        const { count, startAnimation } = countAnimations[index]
 
         useEffect(() => {
           const timer = setTimeout(startAnimation, delays[index].delay + 300)

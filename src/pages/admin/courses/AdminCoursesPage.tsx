@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { MagicLayout } from '@/components/ui/magic-layout'
@@ -31,32 +32,62 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-
-const mockCourses = [
-  {
-    id: 'course1',
-    title: 'Matemática para Concursos',
-    modules: 8,
-    lessons: 45,
-    status: 'Published',
-  },
-  {
-    id: 'course2',
-    title: 'Redação Nota Mil',
-    modules: 12,
-    lessons: 60,
-    status: 'Published',
-  },
-  {
-    id: 'course3',
-    title: 'História do Brasil',
-    modules: 10,
-    lessons: 38,
-    status: 'Draft',
-  },
-]
+import { getAllCourses, deleteCourse, type AdminCourse } from '@/services/adminCourseService'
+import { useToast } from '@/components/ui/use-toast'
+import { SectionLoader } from '@/components/SectionLoader'
 
 export default function AdminCoursesPage() {
+  const [courses, setCourses] = useState<AdminCourse[]>([])
+  const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
+
+  const loadCourses = async () => {
+    try {
+      setLoading(true)
+      const data = await getAllCourses()
+      setCourses(data)
+    } catch (error) {
+      console.error('Erro ao carregar cursos:', error)
+      toast({
+        title: 'Erro ao carregar',
+        description: 'Não foi possível carregar os cursos.',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadCourses()
+  }, [])
+
+  const handleDelete = async (courseId: string, courseName: string) => {
+    if (!confirm(`Tem certeza que deseja deletar o curso "${courseName}"? Esta ação não pode ser desfeita.`)) {
+      return
+    }
+
+    try {
+      await deleteCourse(courseId)
+      toast({
+        title: 'Curso deletado',
+        description: 'O curso foi deletado com sucesso.',
+      })
+      loadCourses()
+    } catch (error) {
+      console.error('Error deleting course:', error)
+      toast({
+        title: 'Erro ao deletar',
+        description: 'Não foi possível deletar o curso. Tente novamente.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  if (loading) {
+    return <SectionLoader />
+  }
+
   return (
     <MagicLayout 
       title="Gerenciar Cursos"
@@ -95,13 +126,13 @@ export default function AdminCoursesPage() {
             <div className="grid grid-cols-4 gap-4">
               <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
                 <BookOpen className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-600">{mockCourses.length}</div>
+                <div className="text-2xl font-bold text-blue-600">{courses.length}</div>
                 <div className="text-sm text-muted-foreground">Total de Cursos</div>
               </div>
               <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
                 <Play className="h-6 w-6 text-green-500 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-green-600">
-                  {mockCourses.filter(c => c.status === 'Published').length}
+                  {courses.filter(c => c.is_active).length}
                 </div>
                 <div className="text-sm text-muted-foreground">Publicados</div>
               </div>
@@ -143,86 +174,97 @@ export default function AdminCoursesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockCourses.map((course, index) => (
-                    <TableRow 
-                      key={course.id}
-                      className="hover:bg-muted/20 transition-colors"
-                    >
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                            <BookOpen className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <div className="font-semibold">{course.title}</div>
-                            <div className="text-sm text-muted-foreground">ID: {course.id}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <ListVideo className="h-4 w-4 text-muted-foreground" />
-                          {course.modules}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Play className="h-4 w-4 text-muted-foreground" />
-                          {course.lessons}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={course.status === 'Published' ? 'default' : 'outline'}
-                          className={cn(
-                            "font-semibold",
-                            course.status === 'Published' 
-                              ? "bg-gradient-to-r from-green-500 to-green-600 text-white" 
-                              : "bg-gradient-to-r from-orange-500/10 to-orange-600/5 border-orange-500/20 text-orange-600"
-                          )}
-                        >
-                          {course.status === 'Published' ? 'Publicado' : 'Rascunho'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              aria-haspopup="true" 
-                              size="icon" 
-                              variant="ghost"
-                              className="hover:bg-muted/50"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent 
-                            align="end" 
-                            className="bg-card/95 backdrop-blur-sm border-border/50"
-                          >
-                            <DropdownMenuItem asChild>
-                              <Link to={`/admin/courses/${course.id}/content`} className="hover:bg-muted/50">
-                                <ListVideo className="mr-2 h-4 w-4" />
-                                Gerenciar Conteúdo
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link to={`/admin/courses/${course.id}/edit`} className="hover:bg-muted/50">
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Editar Detalhes
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-border/50" />
-                            <DropdownMenuItem className="text-destructive hover:bg-destructive/10">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Deletar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                  {courses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        Nenhum curso encontrado. Crie seu primeiro curso!
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    courses.map((course) => (
+                      <TableRow
+                        key={course.id}
+                        className="hover:bg-muted/20 transition-colors"
+                      >
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                              <BookOpen className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <div className="font-semibold">{course.name}</div>
+                              <div className="text-sm text-muted-foreground">ID: {course.id.substring(0, 8)}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <ListVideo className="h-4 w-4 text-muted-foreground" />
+                            {course.modules_count || 0}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Play className="h-4 w-4 text-muted-foreground" />
+                            {course.lessons_count || 0}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={course.is_active ? 'default' : 'outline'}
+                            className={cn(
+                              "font-semibold",
+                              course.is_active
+                                ? "bg-gradient-to-r from-green-500 to-green-600 text-white"
+                                : "bg-gradient-to-r from-orange-500/10 to-orange-600/5 border-orange-500/20 text-orange-600"
+                            )}
+                          >
+                            {course.is_active ? 'Publicado' : 'Rascunho'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                                className="hover:bg-muted/50"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="bg-card/95 backdrop-blur-sm border-border/50"
+                            >
+                              <DropdownMenuItem asChild>
+                                <Link to={`/admin/courses/${course.id}/content`} className="hover:bg-muted/50">
+                                  <ListVideo className="mr-2 h-4 w-4" />
+                                  Gerenciar Conteúdo
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link to={`/admin/courses/${course.id}/edit`} className="hover:bg-muted/50">
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Editar Detalhes
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-border/50" />
+                              <DropdownMenuItem
+                                className="text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDelete(course.id, course.name)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Deletar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>

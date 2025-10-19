@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
+import { offlineStorage } from '@/lib/offlineStorage'
+import { syncService } from '@/lib/syncService'
 
 export interface QuizSubject {
   id: string
@@ -160,9 +162,10 @@ export const quizService = {
     }
   },
 
-  // Buscar quiz por ID com questões
+  // Buscar quiz por ID com questões (com suporte offline)
   async getQuizById(quizId: string): Promise<Quiz | null> {
     try {
+      // Tentar buscar do Supabase primeiro
       const { data: quiz, error } = await supabase
         .from('quizzes')
         .select(`
@@ -188,7 +191,7 @@ export const quizService = {
         throw error
       }
 
-      return {
+      const result = {
         id: quiz.id,
         title: quiz.title,
         description: quiz.description,
@@ -203,13 +206,41 @@ export const quizService = {
           points: q.points
         })) || []
       }
+
+      // Cachear para uso offline
+      if (result.questions.length > 0 && syncService.getOnlineStatus()) {
+        await offlineStorage.cacheQuiz({
+          id: result.id,
+          title: result.title,
+          description: result.description,
+          topic_id: undefined,
+          questions: result.questions,
+          duration_minutes: result.duration_minutes,
+          cached_at: Date.now()
+        })
+      }
+
+      return result
     } catch (error) {
-      console.error('Erro ao buscar quiz:', error)
-      return null
+      console.error('Erro ao buscar quiz online:', error)
+
+      // Fallback para cache offline
+      console.log('Tentando buscar quiz do cache offline...')
+      const cachedQuiz = await offlineStorage.getQuizById(quizId)
+
+      if (!cachedQuiz) return null
+
+      return {
+        id: cachedQuiz.id,
+        title: cachedQuiz.title,
+        description: cachedQuiz.description,
+        duration_minutes: cachedQuiz.duration_minutes,
+        questions: cachedQuiz.questions
+      }
     }
   },
 
-  // Salvar tentativa de quiz
+  // Salvar tentativa de quiz (com suporte offline)
   async saveQuizAttempt(
     userId: string,
     quizId: string,
@@ -218,7 +249,31 @@ export const quizService = {
     durationSeconds: number
   ): Promise<string | null> {
     try {
-      // Criar tentativa
+      // Se offline, adicionar à fila de sincronização
+      if (!syncService.getOnlineStatus()) {
+        console.log('Offline - adicionando tentativa à fila de sincronização')
+        const attemptId = `offline_attempt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+        await offlineStorage.addToSyncQueue({
+          id: attemptId,
+          type: 'quiz_attempt',
+          data: {
+            quiz_id: quizId,
+            user_id: userId,
+            answers,
+            score,
+            total_questions: Object.keys(answers).length,
+            duration_seconds: durationSeconds,
+            started_at: Date.now()
+          },
+          timestamp: Date.now(),
+          retries: 0
+        })
+
+        return attemptId
+      }
+
+      // Online - processar normalmente
       const { data: attempt, error: attemptError } = await supabase
         .from('quiz_attempts')
         .insert({

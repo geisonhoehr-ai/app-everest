@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
+import { offlineStorage } from '@/lib/offlineStorage'
+import { syncService } from '@/lib/syncService'
 
 export interface FlashcardSubject {
   id: string
@@ -199,8 +201,35 @@ export const saveFlashcardSession = async (userId: string, payload: SaveSessionP
 export const updateFlashcardProgress = async (userId: string, flashcardId: string, quality: number): Promise<FlashcardProgress> => {
   try {
     console.log('Updating flashcard progress:', { userId, flashcardId, quality })
-    
-    // Buscar progresso existente
+
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+    // Se offline, salvar localmente
+    if (!syncService.getOnlineStatus()) {
+      console.log('Offline - salvando progresso localmente')
+      await offlineStorage.saveFlashcardProgress({
+        flashcard_id: flashcardId,
+        user_id: userId,
+        quality,
+        session_id: sessionId,
+        timestamp: Date.now(),
+        synced: false
+      })
+
+      // Retornar estrutura compatível
+      return {
+        id: `offline_${Date.now()}`,
+        flashcard_id: flashcardId,
+        last_reviewed_at: new Date().toISOString(),
+        next_review_at: new Date(Date.now() + 86400000).toISOString(),
+        interval_days: 1,
+        ease_factor: 2.5,
+        repetitions: 0,
+        quality
+      }
+    }
+
+    // Online - processar normalmente
     const { data: existingProgress, error: fetchError } = await supabase
       .from('flashcard_progress')
       .select('*')
@@ -219,7 +248,6 @@ export const updateFlashcardProgress = async (userId: string, flashcardId: strin
     const now = new Date()
 
     if (!existingProgress) {
-      // Primeira vez vendo este card
       newRepetitions = quality >= 3 ? 1 : 0
       newInterval = quality >= 3 ? 1 : 0
       newEaseFactor = 2.5
@@ -228,11 +256,9 @@ export const updateFlashcardProgress = async (userId: string, flashcardId: strin
       newEaseFactor = existingProgress.ease_factor || 2.5
 
       if (quality < 3) {
-        // Resposta incorreta - resetar
         newRepetitions = 0
         newInterval = 1
       } else {
-        // Resposta correta - calcular novo intervalo
         newEaseFactor = newEaseFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
         if (newEaseFactor < 1.3) newEaseFactor = 1.3
 
@@ -458,9 +484,10 @@ export const flashcardService = {
     }
   },
 
-  // Buscar flashcards de um tópico
+  // Buscar flashcards de um tópico (com suporte offline)
   async getFlashcardsByTopic(topicId: string): Promise<Flashcard[]> {
     try {
+      // Tentar buscar do Supabase primeiro
       const { data: flashcards, error } = await supabase
         .from('flashcards')
         .select('*')
@@ -469,7 +496,7 @@ export const flashcardService = {
 
       if (error) throw error
 
-      return flashcards?.map(flashcard => ({
+      const result = flashcards?.map(flashcard => ({
         id: flashcard.id,
         question: flashcard.question,
         answer: flashcard.answer,
@@ -477,9 +504,40 @@ export const flashcardService = {
         difficulty: flashcard.difficulty,
         external_resource_url: flashcard.external_resource_url
       })) || []
+
+      // Cachear para uso offline
+      if (result.length > 0 && syncService.getOnlineStatus()) {
+        await offlineStorage.cacheFlashcards(
+          result.map(f => ({
+            id: f.id,
+            topic_id: topicId,
+            subject_id: '', // Será preenchido se necessário
+            question: f.question,
+            answer: f.answer,
+            explanation: f.explanation,
+            difficulty_level: f.difficulty,
+            image_url: f.external_resource_url,
+            cached_at: Date.now()
+          }))
+        )
+      }
+
+      return result
     } catch (error) {
-      console.error('Erro ao buscar flashcards do tópico:', error)
-      return []
+      console.error('Erro ao buscar flashcards do tópico online:', error)
+
+      // Fallback para cache offline
+      console.log('Tentando buscar flashcards do cache offline...')
+      const cachedFlashcards = await offlineStorage.getFlashcardsByTopic(topicId)
+
+      return cachedFlashcards.map(f => ({
+        id: f.id,
+        question: f.question,
+        answer: f.answer,
+        explanation: f.explanation,
+        difficulty: f.difficulty_level,
+        external_resource_url: f.image_url
+      }))
     }
   },
 
