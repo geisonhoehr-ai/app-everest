@@ -79,10 +79,70 @@ export default function AudioLessonPlayerPage() {
 
     const handleLoadedMetadata = () => {
       setDuration(audio.duration)
+      
+      // Configurar Media Session API para controles na tela de bloqueio
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: audioLesson.title,
+          artist: audioLesson.series || 'Everest',
+          album: 'Evercast',
+          artwork: [
+            { src: audioLesson.thumbnail_url || '/logo.png', sizes: '96x96', type: 'image/png' },
+            { src: audioLesson.thumbnail_url || '/logo.png', sizes: '128x128', type: 'image/png' },
+            { src: audioLesson.thumbnail_url || '/logo.png', sizes: '192x192', type: 'image/png' },
+            { src: audioLesson.thumbnail_url || '/logo.png', sizes: '256x256', type: 'image/png' },
+            { src: audioLesson.thumbnail_url || '/logo.png', sizes: '384x384', type: 'image/png' },
+            { src: audioLesson.thumbnail_url || '/logo.png', sizes: '512x512', type: 'image/png' },
+          ]
+        })
+
+        // Configurar ações da Media Session
+        navigator.mediaSession.setActionHandler('play', () => {
+          audio.play()
+          setIsPlaying(true)
+        })
+
+        navigator.mediaSession.setActionHandler('pause', () => {
+          audio.pause()
+          setIsPlaying(false)
+        })
+
+        navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+          const skipTime = details.seekOffset || 10
+          audio.currentTime = Math.max(0, audio.currentTime - skipTime)
+        })
+
+        navigator.mediaSession.setActionHandler('seekforward', (details) => {
+          const skipTime = details.seekOffset || 10
+          audio.currentTime = Math.min(duration, audio.currentTime + skipTime)
+        })
+
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+          if (details.seekTime !== undefined) {
+            audio.currentTime = details.seekTime
+          }
+        })
+
+        // Configurar posição do playback
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration,
+          playbackRate: audio.playbackRate,
+          position: audio.currentTime
+        })
+      }
     }
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime)
+      
+      // Atualizar posição na Media Session
+      if ('mediaSession' in navigator && navigator.mediaSession.setPositionState) {
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration,
+          playbackRate: audio.playbackRate,
+          position: audio.currentTime
+        })
+      }
     }
 
     const handleEnded = () => {
@@ -90,16 +150,36 @@ export default function AudioLessonPlayerPage() {
       setCurrentTime(0)
     }
 
+    const handlePlay = () => {
+      setIsPlaying(true)
+      // Atualizar estado da Media Session
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing'
+      }
+    }
+
+    const handlePause = () => {
+      setIsPlaying(false)
+      // Atualizar estado da Media Session
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'paused'
+      }
+    }
+
     audio.addEventListener('loadedmetadata', handleLoadedMetadata)
     audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('play', handlePlay)
+    audio.addEventListener('pause', handlePause)
 
     return () => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('play', handlePlay)
+      audio.removeEventListener('pause', handlePause)
     }
-  }, [audioLesson])
+  }, [audioLesson, duration])
 
   const togglePlayPause = () => {
     const audio = audioRef.current
@@ -322,6 +402,17 @@ export default function AudioLessonPlayerPage() {
                 <Headphones className="h-4 w-4" />
                 <span>{audioLesson.listens_count || 0} ouvintes</span>
               </div>
+            </div>
+
+            {/* Background Playback Info */}
+            <div className="bg-gradient-to-r from-green-500/10 to-green-600/5 border border-green-500/20 rounded-xl p-4">
+              <div className="flex items-center space-x-2 text-green-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">Background Playback Ativo</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                O áudio continuará tocando mesmo com a tela bloqueada. Use os controles na tela de bloqueio ou notificação.
+              </p>
             </div>
           </div>
         </MagicCard>
