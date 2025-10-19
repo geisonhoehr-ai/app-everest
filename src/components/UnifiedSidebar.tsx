@@ -47,7 +47,8 @@ import {
   TrendingUp,
   Zap,
   Trophy,
-  Lock
+  Lock,
+  Plug
 } from 'lucide-react'
 
 // Menu items for students (com feature_key para controle de permissões)
@@ -234,6 +235,13 @@ const adminMenuItems = [
   {
     group: 'Sistema',
     items: [
+      {
+        href: '/admin/integrations',
+        label: 'Integrações',
+        icon: Plug,
+        badge: null,
+        adminOnly: true
+      },
       {
         href: '/admin/settings',
         label: 'Configurações',
