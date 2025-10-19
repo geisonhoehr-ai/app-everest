@@ -1,14 +1,15 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
-import { 
-  MessageSquare, 
-  PlusCircle, 
-  Search, 
-  Users, 
+import {
+  MessageSquare,
+  PlusCircle,
+  Search,
+  Users,
   TrendingUp,
   Clock,
   BookOpen,
@@ -18,60 +19,31 @@ import {
   MessageCircle,
   Heart,
   Share2,
-  MoreHorizontal
+  MoreHorizontal,
+  Lock
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const topics = [
-  {
-    id: 1,
-    title: 'Dúvida sobre a Segunda Lei de Newton',
-    author: 'Ana Clara',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=5',
-    replies: 5,
-    lastReply: '2 horas atrás',
-    category: 'Física',
-  },
-  {
-    id: 2,
-    title: 'Qual a melhor estrutura para a redação do ENEM?',
-    author: 'Lucas Mendes',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=6',
-    replies: 12,
-    lastReply: '5 horas atrás',
-    category: 'Redação',
-  },
-  {
-    id: 3,
-    title: 'Revolução Francesa: principais causas e consequências',
-    author: 'Beatriz Lima',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=7',
-    replies: 8,
-    lastReply: '1 dia atrás',
-    category: 'História',
-  },
-]
+import { SectionLoader } from '@/components/SectionLoader'
 
 export default function ForumPage() {
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'Física':
-        return 'bg-blue-500/10 border-blue-500/20 text-blue-600'
-      case 'Redação':
-        return 'bg-green-500/10 border-green-500/20 text-green-600'
-      case 'História':
-        return 'bg-purple-500/10 border-purple-500/20 text-purple-600'
-      case 'Matemática':
-        return 'bg-orange-500/10 border-orange-500/20 text-orange-600'
-      case 'Química':
-        return 'bg-cyan-500/10 border-cyan-500/20 text-cyan-600'
-      default:
-        return 'bg-muted/10 border-muted/20 text-muted-foreground'
-    }
+  const [topics, setTopics] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Simulando carregamento
+    setTimeout(() => {
+      setIsLoading(false)
+      // Por enquanto, sem dados - aguardando implementação da tabela forum_topics no banco
+      setTopics([])
+    }, 500)
+  }, [])
+
+  if (isLoading) {
+    return <SectionLoader />
   }
 
   return (
-    <MagicLayout 
+    <MagicLayout
       title="Fórum de Dúvidas"
       description="Interaja, tire suas dúvidas e ajude outros estudantes"
     >
@@ -95,7 +67,7 @@ export default function ForumPage() {
               </div>
               <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
                 <Users className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-                <span className="text-xs md:text-sm font-medium">3 Tópicos Ativos</span>
+                <span className="text-xs md:text-sm font-medium">{topics.length} Tópicos Ativos</span>
               </div>
             </div>
 
@@ -103,22 +75,22 @@ export default function ForumPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
                 <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-blue-600">25</div>
+                <div className="text-xl md:text-2xl font-bold text-blue-600">0</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Respostas</div>
               </div>
               <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
                 <Users className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-green-600">12</div>
+                <div className="text-xl md:text-2xl font-bold text-green-600">0</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Participantes</div>
               </div>
               <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
                 <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-purple-600">3</div>
+                <div className="text-xl md:text-2xl font-bold text-purple-600">0</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Categorias</div>
               </div>
               <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
                 <Clock className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-orange-600">2h</div>
+                <div className="text-xl md:text-2xl font-bold text-orange-600">-</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Última Atividade</div>
               </div>
             </div>
@@ -162,8 +134,25 @@ export default function ForumPage() {
               <h2 className="text-2xl font-bold">Tópicos Recentes</h2>
             </div>
 
-            <div className="space-y-4">
-              {topics.map((topic, index) => (
+            {topics.length === 0 ? (
+              <div className="text-center py-24">
+                <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                  <MessageSquare className="w-10 h-10 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold text-foreground mb-4">
+                  Fórum em Breve
+                </h3>
+                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                  O fórum de dúvidas está sendo preparado para você. Em breve você poderá criar tópicos, fazer perguntas e interagir com outros estudantes!
+                </p>
+                <Button disabled className="opacity-50 cursor-not-allowed">
+                  <Lock className="mr-2 h-4 w-4" />
+                  Em Desenvolvimento
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {topics.map((topic, index) => (
                 <div
                   key={topic.id}
                   className="group p-6 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
@@ -241,7 +230,8 @@ export default function ForumPage() {
                   </Link>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
           </div>
         </MagicCard>
 
