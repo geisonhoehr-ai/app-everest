@@ -198,6 +198,9 @@ const MemberkitImportPage = lazy(
 const AdminIntegrationsPage = lazy(
   () => import('@/pages/admin/integrations/AdminIntegrationsPage'),
 )
+const AudioLessonPlayerPage = lazy(
+  () => import('@/pages/AudioLessonPlayerPage'),
+)
 
 const App = () => (
   <BrowserRouter
@@ -288,6 +291,10 @@ const App = () => (
                     element={<QuizResultSummaryPage />}
                   />
                   <Route path="/evercast" element={<EvercastPage />} />
+                  <Route
+                    path="/evercast/:audioId"
+                    element={<AudioLessonPlayerPage />}
+                  />
                   <Route path="/progresso" element={<ProgressPage />} />
                   <Route
                     path="/progresso/historico-flashcards"

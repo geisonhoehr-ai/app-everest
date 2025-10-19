@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MagicLayout } from '@/components/ui/magic-layout'
@@ -251,11 +252,16 @@ export default function EvercastPage() {
 
                 {/* Action Button */}
                 <div className="mt-6">
-                  <Button className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white transition-all duration-300 ease-out py-3 text-sm font-semibold rounded-xl group-hover:scale-105">
-                    <div className="flex items-center justify-center gap-2">
-                      <PlayCircle className="w-4 h-4" />
-                      Ouvir Agora
-                    </div>
+                  <Button 
+                    asChild
+                    className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white transition-all duration-300 ease-out py-3 text-sm font-semibold rounded-xl group-hover:scale-105"
+                  >
+                    <Link to={`/evercast/${audio.id}`}>
+                      <div className="flex items-center justify-center gap-2">
+                        <PlayCircle className="w-4 h-4" />
+                        Ouvir Agora
+                      </div>
+                    </Link>
                   </Button>
                 </div>
               </div>
