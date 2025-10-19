@@ -120,6 +120,7 @@ export const quizService = {
 
       if (error) {
         console.error('❌ Error fetching quiz subjects:', error)
+        console.error('Error details:', JSON.stringify(error, null, 2))
         throw error
       }
 
@@ -168,8 +169,6 @@ export const quizService = {
           id,
           title,
           description,
-          type,
-          status,
           duration_minutes,
           quiz_questions (
             id,
@@ -184,14 +183,15 @@ export const quizService = {
         .eq('id', quizId)
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching quiz by ID:', error)
+        throw error
+      }
 
       return {
         id: quiz.id,
         title: quiz.title,
         description: quiz.description,
-        type: quiz.type,
-        status: quiz.status,
         duration_minutes: quiz.duration_minutes,
         questions: quiz.quiz_questions?.map(q => ({
           id: q.id,
