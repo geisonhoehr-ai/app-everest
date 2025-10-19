@@ -97,7 +97,7 @@ export default function AdminClassStudentsPage() {
           user_id,
           class_id,
           enrolled_at,
-          user:users!user_id (
+          users!student_classes_user_id_fkey (
             id,
             email,
             first_name,
@@ -106,9 +106,20 @@ export default function AdminClassStudentsPage() {
         `)
         .eq('class_id', classId)
 
-      if (studentsError) throw studentsError
+      if (studentsError) {
+        console.error('Error loading students:', studentsError)
+        throw studentsError
+      }
 
-      setStudents(studentsData || [])
+      console.log('Students data from DB:', studentsData)
+
+      // Map the data to ensure 'user' field is properly set
+      const mappedStudents = (studentsData || []).map((item: any) => ({
+        ...item,
+        user: item.users || item.user // Support both 'users' and 'user' field names
+      }))
+
+      setStudents(mappedStudents)
 
       // Carregar todos os usuários para adicionar
       const allUsers = await getUsers()

@@ -103,7 +103,7 @@ export default function AdminStudentClassesPage() {
           user_id,
           class_id,
           enrolled_at,
-          class:classes!class_id (
+          classes!student_classes_class_id_fkey (
             id,
             name,
             description,
@@ -114,9 +114,20 @@ export default function AdminStudentClassesPage() {
         `)
         .eq('user_id', userId)
 
-      if (classesError) throw classesError
+      if (classesError) {
+        console.error('Error loading student classes:', classesError)
+        throw classesError
+      }
 
-      setStudentClasses(classesData || [])
+      console.log('Student classes data from DB:', classesData)
+
+      // Map the data to ensure 'class' field is properly set
+      const mappedClasses = (classesData || []).map((item: any) => ({
+        ...item,
+        class: item.classes || item.class // Support both 'classes' and 'class' field names
+      }))
+
+      setStudentClasses(mappedClasses)
 
       // Carregar turmas disponíveis para adicionar
       const { data: allClasses, error: allClassesError } = await supabase
