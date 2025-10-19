@@ -26,15 +26,33 @@ SELECT id, title, topic_id FROM quizzes ORDER BY title;
 -- 2. CRIAR SUBJECTS (se não existirem)
 -- ============================================
 
--- Inserir Português (se ainda não existir)
-INSERT INTO subjects (name, description, image_url)
-SELECT 'Português', 'Questões de Língua Portuguesa para concursos militares', 'https://img.usecurling.com/p/400/200?q=Portugu%C3%AAs'
-WHERE NOT EXISTS (SELECT 1 FROM subjects WHERE name = 'Português');
+-- Pegar o ID de um usuário admin/teacher para usar como created_by
+DO $$
+DECLARE
+  admin_user_id uuid;
+BEGIN
+  -- Tentar pegar um usuário admin ou teacher
+  SELECT id INTO admin_user_id
+  FROM users
+  WHERE role IN ('administrator', 'teacher')
+  LIMIT 1;
 
--- Inserir Regulamentos (se ainda não existir)
-INSERT INTO subjects (name, description, image_url)
-SELECT 'Regulamentos Militares', 'Questões sobre regulamentos e normas das Forças Armadas', 'https://img.usecurling.com/p/400/200?q=Regulamentos'
-WHERE NOT EXISTS (SELECT 1 FROM subjects WHERE name = 'Regulamentos Militares');
+  -- Se não encontrar, pegar qualquer usuário
+  IF admin_user_id IS NULL THEN
+    SELECT id INTO admin_user_id FROM users LIMIT 1;
+  END IF;
+
+  -- Inserir Português (se ainda não existir)
+  INSERT INTO subjects (name, description, image_url, created_by_user_id)
+  SELECT 'Português', 'Questões de Língua Portuguesa para concursos militares', 'https://img.usecurling.com/p/400/200?q=Portugu%C3%AAs', admin_user_id
+  WHERE NOT EXISTS (SELECT 1 FROM subjects WHERE name = 'Português');
+
+  -- Inserir Regulamentos (se ainda não existir)
+  INSERT INTO subjects (name, description, image_url, created_by_user_id)
+  SELECT 'Regulamentos Militares', 'Questões sobre regulamentos e normas das Forças Armadas', 'https://img.usecurling.com/p/400/200?q=Regulamentos', admin_user_id
+  WHERE NOT EXISTS (SELECT 1 FROM subjects WHERE name = 'Regulamentos Militares');
+
+END $$;
 
 -- ============================================
 -- 3. CRIAR TOPICS DE PORTUGUÊS
@@ -109,42 +127,42 @@ INSERT INTO quiz_questions (quiz_id, question_text, options, correct_answer, exp
 'Concordância verbal',
 'A concordância verbal é a relação de harmonia entre o verbo e o sujeito, de modo que o verbo deve concordar em número e pessoa com o sujeito da oração.', 10),
 
-('quiz-concordancia', 'Em um sujeito simples, o verbo concorda com:',
+(quiz_id, 'Em um sujeito simples, o verbo concorda com:',
 '["Todos os termos do sujeito", "Apenas o núcleo do sujeito", "O termo mais próximo", "O último termo"]',
 'Apenas o núcleo do sujeito',
 'Em um sujeito simples, o verbo concorda em número e pessoa com o núcleo do sujeito, mesmo que haja termos acessórios ligados a ele.', 10),
 
-('quiz-concordancia', 'Quando o sujeito é composto, o verbo fica:',
+(quiz_id, 'Quando o sujeito é composto, o verbo fica:',
 '["No singular", "No plural", "No infinitivo", "No gerúndio"]',
 'No plural',
 'Quando o sujeito é composto, o verbo fica no plural. Se os núcleos do sujeito não estiverem juntos, o verbo concorda com o núcleo mais próximo ou vai para o plural.', 10),
 
-('quiz-concordancia', 'O verbo "haver" quando usado no sentido de existir é:',
+(quiz_id, 'O verbo "haver" quando usado no sentido de existir é:',
 '["Pessoal", "Impersonal", "Transitivo", "Intransitivo"]',
 'Impersonal',
 'O verbo "haver", quando usado no sentido de existir, é impessoal e deve ser empregado sempre na 3ª pessoa do singular.', 10),
 
-('quiz-concordancia', 'A concordância nominal é a relação de harmonia entre:',
+(quiz_id, 'A concordância nominal é a relação de harmonia entre:',
 '["Verbo e sujeito", "Substantivo e seus determinantes", "Preposição e objeto", "Conjunção e oração"]',
 'Substantivo e seus determinantes',
 'A concordância nominal é a relação de harmonia entre o substantivo e seus determinantes e modificadores, que devem concordar em gênero e número.', 10),
 
-('quiz-concordancia', 'Quando o adjetivo se refere a dois ou mais substantivos do mesmo gênero, pode:',
+(quiz_id, 'Quando o adjetivo se refere a dois ou mais substantivos do mesmo gênero, pode:',
 '["Ir apenas para o plural", "Concordar só com o mais próximo", "Ir para o plural ou concordar só com o mais próximo", "Ficar invariável"]',
 'Ir para o plural ou concordar só com o mais próximo',
 'Quando o adjetivo se refere a dois ou mais substantivos do mesmo gênero, pode ir para o plural ou concordar só com o mais próximo.', 10),
 
-('quiz-concordancia', 'A concordância atrativa ocorre quando:',
+(quiz_id, 'A concordância atrativa ocorre quando:',
 '["O verbo concorda com o termo mais próximo", "O verbo concorda com o núcleo do sujeito", "O verbo fica no infinitivo", "O verbo fica no gerúndio"]',
 'O verbo concorda com o termo mais próximo',
 'A concordância atrativa ocorre quando o verbo concorda com o termo mais próximo, mesmo que não seja o núcleo do sujeito, por uma questão estilística.', 10),
 
-('quiz-concordancia', 'Verbos que indicam fenômenos da natureza normalmente são:',
+(quiz_id, 'Verbos que indicam fenômenos da natureza normalmente são:',
 '["Pessoais", "Impersonais", "Transitivos", "Intransitivos"]',
 'Impersonais',
 'Verbos que indicam fenômenos da natureza normalmente são impessoais e empregados na 3ª pessoa do singular, exceto quando usados figuradamente.', 10),
 
-('quiz-concordancia', 'Com expressões quantitativas como "mais de um", geralmente o verbo:',
+(quiz_id, 'Com expressões quantitativas como "mais de um", geralmente o verbo:',
 '["Vai para o plural", "Permanece no singular", "Fica no infinitivo", "Fica no gerúndio"]',
 'Permanece no singular',
 'Com expressões quantitativas como "mais de um", geralmente o verbo permanece no singular, pois a ideia considerada é a de unidade.', 10),
@@ -173,17 +191,17 @@ INSERT INTO quiz_questions (quiz_id, question_text, options, correct_answer, exp
 'Fonema',
 'O fonema é a menor unidade sonora capaz de diferenciar palavras.', 10),
 
-('quiz-fonetica', 'Em qual das palavras abaixo ocorre um ditongo?',
+(quiz_id, 'Em qual das palavras abaixo ocorre um ditongo?',
 '["Saída", "Canoa", "Quase", "Poesia"]',
 'Quase',
 'Em "quase", o "ua" forma um ditongo crescente (semivogal + vogal) na mesma sílaba.', 10),
 
-('quiz-fonetica', 'A palavra "psicologia" possui quantos fonemas?',
+(quiz_id, 'A palavra "psicologia" possui quantos fonemas?',
 '["9", "10", "8", "7"]',
 '9',
 'A palavra "psicologia" tem 9 fonemas: /p/, /s/, /i/, /k/, /o/, /l/, /o/, /ʒ/, /i/. O "ps" inicial representa apenas um som /s/.', 10),
 
-('quiz-fonetica', 'Qual o tipo de encontro vocálico em "saída"?',
+(quiz_id, 'Qual o tipo de encontro vocálico em "saída"?',
 '["Ditongo", "Tritongo", "Hiato", "Dígrafo"]',
 'Hiato',
 'Em "saída", as vogais "a" e "í" ficam em sílabas separadas, formando um hiato.', 10),
@@ -212,17 +230,17 @@ INSERT INTO quiz_questions (quiz_id, question_text, options, correct_answer, exp
 'A + A',
 'A crase é o encontro da preposição "a" com o artigo "a", formando "à".', 10),
 
-('quiz-crase', 'Em qual frase há crase obrigatória?',
+(quiz_id, 'Em qual frase há crase obrigatória?',
 '["Vou a escola", "Vou à escola", "Vou para escola", "Vou na escola"]',
 'Vou à escola',
 'Há crase obrigatória quando a preposição "a" se junta ao artigo "a" antes de substantivo feminino.', 10),
 
-('quiz-crase', 'Antes de verbos no infinitivo, há crase?',
+(quiz_id, 'Antes de verbos no infinitivo, há crase?',
 '["Sempre", "Nunca", "Às vezes", "Depende do verbo"]',
 'Nunca',
 'Antes de verbos no infinitivo não há crase, pois não há artigo definido.', 10),
 
-('quiz-crase', 'Em "às vezes", há crase porque:',
+(quiz_id, 'Em "às vezes", há crase porque:',
 '["É uma expressão fixa", "Há preposição + artigo", "É uma exceção", "É uma regra especial"]',
 'Há preposição + artigo',
 'Em "às vezes" há crase porque há a preposição "a" + o artigo "as" (plural de "a").', 10),
