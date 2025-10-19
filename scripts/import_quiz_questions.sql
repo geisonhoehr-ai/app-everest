@@ -26,53 +26,85 @@ SELECT id, title, topic_id FROM quizzes ORDER BY title;
 -- 2. CRIAR SUBJECTS (se não existirem)
 -- ============================================
 
-INSERT INTO subjects (id, name, description, image_url) VALUES
-('portugues', 'Português', 'Questões de Língua Portuguesa para concursos militares', 'https://img.usecurling.com/p/400/200?q=Portugu%C3%AAs'),
-('regulamentos', 'Regulamentos Militares', 'Questões sobre regulamentos e normas das Forças Armadas', 'https://img.usecurling.com/p/400/200?q=Regulamentos')
-ON CONFLICT (id) DO UPDATE SET
-  name = EXCLUDED.name,
-  description = EXCLUDED.description,
-  image_url = EXCLUDED.image_url;
+-- Inserir Português (se ainda não existir)
+INSERT INTO subjects (name, description, image_url)
+SELECT 'Português', 'Questões de Língua Portuguesa para concursos militares', 'https://img.usecurling.com/p/400/200?q=Portugu%C3%AAs'
+WHERE NOT EXISTS (SELECT 1 FROM subjects WHERE name = 'Português');
+
+-- Inserir Regulamentos (se ainda não existir)
+INSERT INTO subjects (name, description, image_url)
+SELECT 'Regulamentos Militares', 'Questões sobre regulamentos e normas das Forças Armadas', 'https://img.usecurling.com/p/400/200?q=Regulamentos'
+WHERE NOT EXISTS (SELECT 1 FROM subjects WHERE name = 'Regulamentos Militares');
 
 -- ============================================
 -- 3. CRIAR TOPICS DE PORTUGUÊS
 -- ============================================
 
-INSERT INTO topics (id, subject_id, name, description) VALUES
-('concordancia', 'portugues', 'Concordância', 'Concordância verbal e nominal'),
-('fonetica-fonologia', 'portugues', 'Fonética e Fonologia', 'Fonemas, sílabas e encontros vocálicos'),
-('crase', 'portugues', 'Crase', 'Uso correto da crase'),
-('regencia', 'portugues', 'Regência', 'Regência verbal e nominal'),
-('ortografia', 'portugues', 'Ortografia', 'Regras de ortografia'),
-('pontuacao', 'portugues', 'Pontuação', 'Uso correto dos sinais de pontuação'),
-('colocacao-pronominal', 'portugues', 'Colocação Pronominal', 'Próclise, mesóclise e ênclise'),
-('vozes-verbais', 'portugues', 'Vozes Verbais', 'Voz ativa, passiva e reflexiva')
-ON CONFLICT (id) DO UPDATE SET
-  name = EXCLUDED.name,
-  description = EXCLUDED.description;
+-- Primeiro pegamos o ID do subject Português
+DO $$
+DECLARE
+  portugues_id uuid;
+BEGIN
+  SELECT id INTO portugues_id FROM subjects WHERE name = 'Português' LIMIT 1;
+
+  -- Inserir topics
+  INSERT INTO topics (subject_id, name, description) VALUES
+  (portugues_id, 'Concordância', 'Concordância verbal e nominal'),
+  (portugues_id, 'Fonética e Fonologia', 'Fonemas, sílabas e encontros vocálicos'),
+  (portugues_id, 'Crase', 'Uso correto da crase'),
+  (portugues_id, 'Regência', 'Regência verbal e nominal'),
+  (portugues_id, 'Ortografia', 'Regras de ortografia'),
+  (portugues_id, 'Pontuação', 'Uso correto dos sinais de pontuação'),
+  (portugues_id, 'Colocação Pronominal', 'Próclise, mesóclise e ênclise'),
+  (portugues_id, 'Vozes Verbais', 'Voz ativa, passiva e reflexiva')
+  ON CONFLICT DO NOTHING;
+END $$;
 
 -- ============================================
 -- 4. CRIAR QUIZZES DE PORTUGUÊS
 -- ============================================
 
-INSERT INTO quizzes (id, topic_id, title, description, duration_minutes) VALUES
-('quiz-concordancia', 'concordancia', 'Quiz de Concordância Verbal e Nominal', 'Teste seus conhecimentos sobre concordância', 15),
-('quiz-fonetica', 'fonetica-fonologia', 'Quiz de Fonética e Fonologia', 'Teste seus conhecimentos sobre fonemas e sílabas', 10),
-('quiz-crase', 'crase', 'Quiz de Crase', 'Teste seus conhecimentos sobre o uso da crase', 10),
-('quiz-regencia', 'regencia', 'Quiz de Regência', 'Teste seus conhecimentos sobre regência verbal e nominal', 15),
-('quiz-ortografia', 'ortografia', 'Quiz de Ortografia', 'Teste seus conhecimentos sobre ortografia', 12),
-('quiz-pontuacao', 'pontuacao', 'Quiz de Pontuação', 'Teste seus conhecimentos sobre pontuação', 12)
-ON CONFLICT (id) DO UPDATE SET
-  title = EXCLUDED.title,
-  description = EXCLUDED.description,
-  duration_minutes = EXCLUDED.duration_minutes;
+-- Criar quizzes para cada tópico
+DO $$
+DECLARE
+  concordancia_id uuid;
+  fonetica_id uuid;
+  crase_id uuid;
+  regencia_id uuid;
+  ortografia_id uuid;
+  pontuacao_id uuid;
+BEGIN
+  -- Pegar IDs dos topics
+  SELECT id INTO concordancia_id FROM topics WHERE name = 'Concordância' LIMIT 1;
+  SELECT id INTO fonetica_id FROM topics WHERE name = 'Fonética e Fonologia' LIMIT 1;
+  SELECT id INTO crase_id FROM topics WHERE name = 'Crase' LIMIT 1;
+  SELECT id INTO regencia_id FROM topics WHERE name = 'Regência' LIMIT 1;
+  SELECT id INTO ortografia_id FROM topics WHERE name = 'Ortografia' LIMIT 1;
+  SELECT id INTO pontuacao_id FROM topics WHERE name = 'Pontuação' LIMIT 1;
+
+  -- Inserir quizzes
+  INSERT INTO quizzes (topic_id, title, description, duration_minutes) VALUES
+  (concordancia_id, 'Quiz de Concordância Verbal e Nominal', 'Teste seus conhecimentos sobre concordância', 15),
+  (fonetica_id, 'Quiz de Fonética e Fonologia', 'Teste seus conhecimentos sobre fonemas e sílabas', 10),
+  (crase_id, 'Quiz de Crase', 'Teste seus conhecimentos sobre o uso da crase', 10),
+  (regencia_id, 'Quiz de Regência', 'Teste seus conhecimentos sobre regência verbal e nominal', 15),
+  (ortografia_id, 'Quiz de Ortografia', 'Teste seus conhecimentos sobre ortografia', 12),
+  (pontuacao_id, 'Quiz de Pontuação', 'Teste seus conhecimentos sobre pontuação', 12)
+  ON CONFLICT DO NOTHING;
+END $$;
 
 -- ============================================
 -- 5. QUESTÕES - CONCORDÂNCIA (10 questões)
 -- ============================================
 
+DO $$
+DECLARE
+  quiz_id uuid;
+BEGIN
+  SELECT id INTO quiz_id FROM quizzes WHERE title = 'Quiz de Concordância Verbal e Nominal' LIMIT 1;
+
 INSERT INTO quiz_questions (quiz_id, question_text, options, correct_answer, explanation, points) VALUES
-('quiz-concordancia', 'Qual é a relação de harmonia entre o verbo e o sujeito chamada?',
+(quiz_id, 'Qual é a relação de harmonia entre o verbo e o sujeito chamada?',
 '["Concordância verbal", "Concordância nominal", "Regência verbal", "Regência nominal"]',
 'Concordância verbal',
 'A concordância verbal é a relação de harmonia entre o verbo e o sujeito, de modo que o verbo deve concordar em número e pessoa com o sujeito da oração.', 10),
@@ -117,18 +149,26 @@ INSERT INTO quiz_questions (quiz_id, question_text, options, correct_answer, exp
 'Permanece no singular',
 'Com expressões quantitativas como "mais de um", geralmente o verbo permanece no singular, pois a ideia considerada é a de unidade.', 10),
 
-('quiz-concordancia', 'A concordância ideológica, ou silepse, ocorre quando:',
+(quiz_id, 'A concordância ideológica, ou silepse, ocorre quando:',
 '["A concordância se faz com a forma literal", "A concordância se faz com a ideia ou sentido", "A concordância se faz com o termo mais próximo", "A concordância se faz com o núcleo"]',
 'A concordância se faz com a ideia ou sentido',
 'A concordância ideológica, ou silepse, ocorre quando a concordância se faz com a ideia ou sentido, e não com a forma literal.', 10)
 ON CONFLICT DO NOTHING;
 
+END $$;
+
 -- ============================================
 -- 6. QUESTÕES - FONÉTICA E FONOLOGIA (5 questões)
 -- ============================================
 
+DO $$
+DECLARE
+  quiz_id uuid;
+BEGIN
+  SELECT id INTO quiz_id FROM quizzes WHERE title = 'Quiz de Fonética e Fonologia' LIMIT 1;
+
 INSERT INTO quiz_questions (quiz_id, question_text, options, correct_answer, explanation, points) VALUES
-('quiz-fonetica', 'Qual o nome da menor unidade sonora da fala que distingue significados?',
+(quiz_id, 'Qual o nome da menor unidade sonora da fala que distingue significados?',
 '["Fonema", "Letra", "Sílaba", "Morfema"]',
 'Fonema',
 'O fonema é a menor unidade sonora capaz de diferenciar palavras.', 10),
@@ -148,18 +188,26 @@ INSERT INTO quiz_questions (quiz_id, question_text, options, correct_answer, exp
 'Hiato',
 'Em "saída", as vogais "a" e "í" ficam em sílabas separadas, formando um hiato.', 10),
 
-('quiz-fonetica', 'Qual das alternativas apresenta um dígrafo?',
+(quiz_id, 'Qual das alternativas apresenta um dígrafo?',
 '["Planta", "Chuva", "Livro", "Prato"]',
 'Chuva',
 'Em "chuva", o "ch" representa um único som, sendo um dígrafo.', 10)
 ON CONFLICT DO NOTHING;
 
+END $$;
+
 -- ============================================
 -- 7. QUESTÕES - CRASE (5 questões)
 -- ============================================
 
+DO $$
+DECLARE
+  quiz_id uuid;
+BEGIN
+  SELECT id INTO quiz_id FROM quizzes WHERE title = 'Quiz de Crase' LIMIT 1;
+
 INSERT INTO quiz_questions (quiz_id, question_text, options, correct_answer, explanation, points) VALUES
-('quiz-crase', 'A crase é o encontro de:',
+(quiz_id, 'A crase é o encontro de:',
 '["Duas vogais iguais", "Vogal + vogal", "Vogal + semivogal", "A + A"]',
 'A + A',
 'A crase é o encontro da preposição "a" com o artigo "a", formando "à".', 10),
@@ -179,11 +227,13 @@ INSERT INTO quiz_questions (quiz_id, question_text, options, correct_answer, exp
 'Há preposição + artigo',
 'Em "às vezes" há crase porque há a preposição "a" + o artigo "as" (plural de "a").', 10),
 
-('quiz-crase', 'Antes de nomes próprios femininos, há crase?',
+(quiz_id, 'Antes de nomes próprios femininos, há crase?',
 '["Sempre", "Nunca", "Depende do contexto", "Apenas no plural"]',
 'Depende do contexto',
 'Antes de nomes próprios femininos, há crase apenas se a pessoa for de nossa intimidade (admite artigo).', 10)
 ON CONFLICT DO NOTHING;
+
+END $$;
 
 -- ============================================
 -- 8. VERIFICAR RESULTADO
