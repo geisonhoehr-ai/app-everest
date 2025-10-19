@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
+import { testPandaConnection } from '@/services/pandaVideo'
 import { 
   Settings, 
   Bot, 
@@ -61,8 +62,8 @@ export default function AdminIntegrationsPage() {
       name: 'Panda Video',
       description: 'Plataforma de streaming de vídeo para aulas e conteúdo educacional',
       icon: <Video className="h-6 w-6" />,
-      enabled: false,
-      apiKey: '',
+      enabled: true,
+      apiKey: 'panda-7815cbc9c501c0169d429ade132363867425dfb01a258da9a6a894ea8898908e',
       webhookUrl: '',
       status: 'disconnected',
       features: [
@@ -92,7 +93,20 @@ export default function AdminIntegrationsPage() {
 
   useEffect(() => {
     loadIntegrations()
+    // Testar conexão do Panda Video automaticamente
+    testPandaVideoConnection()
   }, [])
+
+  const testPandaVideoConnection = async () => {
+    try {
+      const result = await testPandaConnection()
+      updateIntegration('panda-video', {
+        status: result.success ? 'connected' : 'error'
+      })
+    } catch (error) {
+      updateIntegration('panda-video', { status: 'error' })
+    }
+  }
 
   const loadIntegrations = async () => {
     try {
@@ -120,28 +134,38 @@ export default function AdminIntegrationsPage() {
     setIsLoading(true)
     
     try {
-      // Simular teste de conexão
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      let result: { success: boolean; message: string; videosCount?: number }
       
-      // Simular resultado baseado na configuração
-      const isConnected = integration.apiKey.length > 10
+      if (integration.id === 'panda-video') {
+        // Usar o serviço real do Panda Video
+        result = await testPandaConnection()
+      } else {
+        // Simular teste para outras integrações
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        result = {
+          success: integration.apiKey.length > 10,
+          message: integration.apiKey.length > 10 
+            ? 'Conexão bem-sucedida!' 
+            : 'Verifique suas credenciais'
+        }
+      }
       
       updateIntegration(integration.id, {
-        status: isConnected ? 'connected' : 'error'
+        status: result.success ? 'connected' : 'error'
       })
       
       toast({
-        title: isConnected ? 'Conexão bem-sucedida!' : 'Erro na conexão',
-        description: isConnected 
-          ? `${integration.name} conectado com sucesso`
-          : 'Verifique suas credenciais e tente novamente',
-        variant: isConnected ? 'default' : 'destructive'
+        title: result.success ? 'Conexão bem-sucedida!' : 'Erro na conexão',
+        description: result.success 
+          ? `${integration.name} conectado com sucesso${result.videosCount ? ` (${result.videosCount} vídeos encontrados)` : ''}`
+          : result.message,
+        variant: result.success ? 'default' : 'destructive'
       })
-    } catch (error) {
+    } catch (error: any) {
       updateIntegration(integration.id, { status: 'error' })
       toast({
         title: 'Erro no teste',
-        description: 'Não foi possível testar a conexão',
+        description: error.message || 'Não foi possível testar a conexão',
         variant: 'destructive'
       })
     } finally {
