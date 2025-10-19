@@ -141,6 +141,16 @@ export async function testPandaConnection(): Promise<{
   message: string
   videosCount?: number
 }> {
+  // Modo desenvolvimento - simular resposta se estiver em localhost
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('🔧 Modo desenvolvimento: Simulando conexão Panda Video')
+    return {
+      success: true,
+      message: 'Conexão simulada (modo desenvolvimento)',
+      videosCount: 15, // Simular 15 vídeos
+    }
+  }
+
   try {
     const response = await getPandaVideos({ per_page: 1 })
     return {
