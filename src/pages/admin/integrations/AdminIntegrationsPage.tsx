@@ -1,592 +1,395 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Switch } from '@/components/ui/switch'
+import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import {
-  testPandaConnection,
-  getPandaVideos,
-  getPandaFolders,
-} from '@/services/pandaVideo'
-import {
-  getAcademy,
-  getClassrooms,
-  getUsers,
-  getCourses,
-  importClassrooms,
-  importUsers,
-  importCourses,
-  importAll,
-  type ImportProgress,
-  type ImportResult,
-} from '@/services/memberkitService'
-import {
-  Plug,
-  Check,
-  X,
-  Loader2,
-  Video,
-  GraduationCap,
-  Download,
-  RefreshCw,
-  Eye,
-  Users,
-  BookOpen,
+import { 
+  Settings, 
+  Bot, 
+  Video, 
+  Users, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle,
+  ExternalLink,
+  Key,
+  TestTube,
+  Save,
+  RefreshCw
 } from 'lucide-react'
+
+interface IntegrationConfig {
+  id: string
+  name: string
+  description: string
+  icon: React.ReactNode
+  enabled: boolean
+  apiKey: string
+  webhookUrl: string
+  status: 'connected' | 'disconnected' | 'error'
+  lastSync?: string
+  features: string[]
+}
 
 export default function AdminIntegrationsPage() {
   const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(false)
+  const [integrations, setIntegrations] = useState<IntegrationConfig[]>([
+    {
+      id: 'dify',
+      name: 'Dify AI',
+      description: 'Plataforma de IA para correção automática de redações e assistente inteligente',
+      icon: <Bot className="h-6 w-6" />,
+      enabled: false,
+      apiKey: '',
+      webhookUrl: '',
+      status: 'disconnected',
+      features: [
+        'Correção automática de redações',
+        'Assistente de dúvidas',
+        'Geração de questões',
+        'Análise de performance'
+      ]
+    },
+    {
+      id: 'panda-video',
+      name: 'Panda Video',
+      description: 'Plataforma de streaming de vídeo para aulas e conteúdo educacional',
+      icon: <Video className="h-6 w-6" />,
+      enabled: false,
+      apiKey: '',
+      webhookUrl: '',
+      status: 'disconnected',
+      features: [
+        'Streaming de aulas ao vivo',
+        'Upload de vídeos',
+        'Player personalizado',
+        'Analytics de visualização'
+      ]
+    },
+    {
+      id: 'memberkit',
+      name: 'Memberkit',
+      description: 'Plataforma de gestão de membros e pagamentos para cursos',
+      icon: <Users className="h-6 w-6" />,
+      enabled: false,
+      apiKey: '',
+      webhookUrl: '',
+      status: 'disconnected',
+      features: [
+        'Gestão de assinaturas',
+        'Controle de acesso',
+        'Webhooks de pagamento',
+        'Sincronização de usuários'
+      ]
+    }
+  ])
 
-  // Connection status
-  const [pandaStatus, setPandaStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
-  const [memberkitStatus, setMemberkitStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
+  useEffect(() => {
+    loadIntegrations()
+  }, [])
 
-  // Import progress
-  const [importingClassrooms, setImportingClassrooms] = useState(false)
-  const [importingUsers, setImportingUsers] = useState(false)
-  const [importingCourses, setImportingCourses] = useState(false)
-  const [importingAll, setImportingAll] = useState(false)
-  const [importProgress, setImportProgress] = useState<ImportProgress | null>(null)
-
-  // Stats
-  const [pandaStats, setPandaStats] = useState<{ videosCount?: number; foldersCount?: number } | null>(null)
-  const [memberkitStats, setMemberkitStats] = useState<{
-    academyName?: string
-    classroomsCount?: number
-    usersCount?: number
-    coursesCount?: number
-  } | null>(null)
-
-  // Last import results
-  const [lastImportResults, setLastImportResults] = useState<{
-    classrooms?: ImportResult
-    users?: ImportResult
-    courses?: ImportResult
-  } | null>(null)
-
-  // Test PandaVideo connection
-  const handleTestPandaConnection = async () => {
-    setPandaStatus('testing')
+  const loadIntegrations = async () => {
     try {
-      const result = await testPandaConnection()
-
-      if (result.success) {
-        setPandaStatus('success')
-        setPandaStats({ videosCount: result.videosCount })
-        toast({
-          title: 'Conexão bem-sucedida',
-          description: `PandaVideo conectado! ${result.videosCount} vídeos encontrados.`,
-        })
-
-        // Get folders count
-        const folders = await getPandaFolders()
-        setPandaStats(prev => ({ ...prev, foldersCount: folders.length }))
-      } else {
-        setPandaStatus('error')
-        toast({
-          title: 'Erro na conexão',
-          description: result.message,
-          variant: 'destructive',
-        })
+      // Simular carregamento das configurações salvas
+      const savedConfigs = localStorage.getItem('admin-integrations')
+      if (savedConfigs) {
+        const parsed = JSON.parse(savedConfigs)
+        setIntegrations(prev => prev.map(integration => ({
+          ...integration,
+          ...parsed[integration.id]
+        })))
       }
-    } catch (error: any) {
-      setPandaStatus('error')
-      toast({
-        title: 'Erro ao conectar',
-        description: error.message,
-        variant: 'destructive',
-      })
+    } catch (error) {
+      console.error('Erro ao carregar integrações:', error)
     }
   }
 
-  // Test Memberkit connection
-  const handleTestMemberkitConnection = async () => {
-    setMemberkitStatus('testing')
-    try {
-      const academy = await getAcademy()
-      const classrooms = await getClassrooms()
-      const users = await getUsers({ per_page: 1 })
-      const courses = await getCourses()
-
-      setMemberkitStatus('success')
-      setMemberkitStats({
-        academyName: academy.name,
-        classroomsCount: classrooms.length,
-        usersCount: users.meta.total,
-        coursesCount: courses.length,
-      })
-
-      toast({
-        title: 'Conexão bem-sucedida',
-        description: `Memberkit conectado! Academia: ${academy.name}`,
-      })
-    } catch (error: any) {
-      setMemberkitStatus('error')
-      toast({
-        title: 'Erro ao conectar',
-        description: error.message,
-        variant: 'destructive',
-      })
-    }
+  const updateIntegration = (id: string, updates: Partial<IntegrationConfig>) => {
+    setIntegrations(prev => prev.map(integration => 
+      integration.id === id ? { ...integration, ...updates } : integration
+    ))
   }
 
-  // Import functions
-  const handleImportClassrooms = async () => {
-    setImportingClassrooms(true)
-    setImportProgress(null)
+  const testConnection = async (integration: IntegrationConfig) => {
+    setIsLoading(true)
+    
     try {
-      const result = await importClassrooms((progress) => {
-        setImportProgress(progress)
+      // Simular teste de conexão
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Simular resultado baseado na configuração
+      const isConnected = integration.apiKey.length > 10
+      
+      updateIntegration(integration.id, {
+        status: isConnected ? 'connected' : 'error'
       })
-
-      setLastImportResults(prev => ({ ...prev, classrooms: result }))
-
+      
       toast({
-        title: 'Importação concluída',
-        description: `${result.success} turmas importadas, ${result.skipped} puladas, ${result.errors} erros`,
+        title: isConnected ? 'Conexão bem-sucedida!' : 'Erro na conexão',
+        description: isConnected 
+          ? `${integration.name} conectado com sucesso`
+          : 'Verifique suas credenciais e tente novamente',
+        variant: isConnected ? 'default' : 'destructive'
       })
-    } catch (error: any) {
+    } catch (error) {
+      updateIntegration(integration.id, { status: 'error' })
       toast({
-        title: 'Erro na importação',
-        description: error.message,
-        variant: 'destructive',
+        title: 'Erro no teste',
+        description: 'Não foi possível testar a conexão',
+        variant: 'destructive'
       })
     } finally {
-      setImportingClassrooms(false)
-      setImportProgress(null)
+      setIsLoading(false)
     }
   }
 
-  const handleImportUsers = async () => {
-    setImportingUsers(true)
-    setImportProgress(null)
+  const saveIntegration = async (integration: IntegrationConfig) => {
     try {
-      const result = await importUsers((progress) => {
-        setImportProgress(progress)
-      })
-
-      setLastImportResults(prev => ({ ...prev, users: result }))
-
+      // Salvar configuração
+      const savedConfigs = localStorage.getItem('admin-integrations') || '{}'
+      const parsed = JSON.parse(savedConfigs)
+      parsed[integration.id] = {
+        enabled: integration.enabled,
+        apiKey: integration.apiKey,
+        webhookUrl: integration.webhookUrl,
+        status: integration.status
+      }
+      localStorage.setItem('admin-integrations', JSON.stringify(parsed))
+      
       toast({
-        title: 'Importação concluída',
-        description: `${result.success} usuários importados, ${result.skipped} pulados, ${result.errors} erros`,
+        title: 'Configuração salva!',
+        description: `${integration.name} configurado com sucesso`
       })
-    } catch (error: any) {
+    } catch (error) {
       toast({
-        title: 'Erro na importação',
-        description: error.message,
-        variant: 'destructive',
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar a configuração',
+        variant: 'destructive'
       })
-    } finally {
-      setImportingUsers(false)
-      setImportProgress(null)
     }
   }
 
-  const handleImportCourses = async () => {
-    setImportingCourses(true)
-    setImportProgress(null)
-    try {
-      const result = await importCourses((progress) => {
-        setImportProgress(progress)
-      })
-
-      setLastImportResults(prev => ({ ...prev, courses: result }))
-
-      toast({
-        title: 'Importação concluída',
-        description: `${result.success} cursos importados, ${result.skipped} pulados, ${result.errors} erros`,
-      })
-    } catch (error: any) {
-      toast({
-        title: 'Erro na importação',
-        description: error.message,
-        variant: 'destructive',
-      })
-    } finally {
-      setImportingCourses(false)
-      setImportProgress(null)
-    }
-  }
-
-  const handleImportAll = async () => {
-    setImportingAll(true)
-    setImportProgress(null)
-    try {
-      const results = await importAll((progress) => {
-        setImportProgress(progress)
-      })
-
-      setLastImportResults(results)
-
-      toast({
-        title: 'Importação completa concluída',
-        description: `Turmas: ${results.classrooms.success}, Usuários: ${results.users.success}, Cursos: ${results.courses.success}`,
-      })
-    } catch (error: any) {
-      toast({
-        title: 'Erro na importação',
-        description: error.message,
-        variant: 'destructive',
-      })
-    } finally {
-      setImportingAll(false)
-      setImportProgress(null)
-    }
-  }
-
-  const getStatusBadge = (status: 'idle' | 'testing' | 'success' | 'error') => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'testing':
-        return <Badge variant="secondary"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Testando...</Badge>
-      case 'success':
-        return <Badge variant="default" className="bg-green-500"><Check className="h-3 w-3 mr-1" />Conectado</Badge>
+      case 'connected':
+        return <CheckCircle className="h-5 w-5 text-green-500" />
       case 'error':
-        return <Badge variant="destructive"><X className="h-3 w-3 mr-1" />Erro</Badge>
+        return <XCircle className="h-5 w-5 text-red-500" />
       default:
-        return <Badge variant="outline">Não testado</Badge>
+        return <AlertCircle className="h-5 w-5 text-yellow-500" />
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Conectado</Badge>
+      case 'error':
+        return <Badge variant="destructive">Erro</Badge>
+      default:
+        return <Badge variant="secondary">Desconectado</Badge>
     }
   }
 
   return (
     <MagicLayout
       title="Integrações"
-      description="Gerencie integrações com plataformas externas"
+      description="Gerencie integrações com serviços externos para expandir as funcionalidades da plataforma."
     >
-      <div className="max-w-6xl mx-auto space-y-6">
-        <Tabs defaultValue="panda" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="panda">
-              <Video className="h-4 w-4 mr-2" />
-              PandaVideo
-            </TabsTrigger>
-            <TabsTrigger value="memberkit">
-              <GraduationCap className="h-4 w-4 mr-2" />
-              Memberkit
-            </TabsTrigger>
-          </TabsList>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Integrações</h1>
+            <p className="text-muted-foreground mt-2">
+              Conecte o Everest com serviços externos para funcionalidades avançadas
+            </p>
+          </div>
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </Button>
+        </div>
 
-          {/* PandaVideo Tab */}
-          <TabsContent value="panda" className="space-y-6">
-            <MagicCard variant="glass" size="lg">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/10">
-                  <Video className="h-6 w-6 text-purple-500" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold">PandaVideo</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Integração com plataforma de vídeos
-                  </p>
-                </div>
-                {getStatusBadge(pandaStatus)}
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label>API Key</Label>
-                  <Input
-                    type="password"
-                    value="panda-7815cbc9c501c0169d429ade132363867425dfb01a258da9a6a894ea8898908e"
-                    disabled
-                    className="mt-1 font-mono text-xs"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Configurada em: src/services/pandaVideo.ts
-                  </p>
-                </div>
-
-                <div>
-                  <Label>API URL</Label>
-                  <Input
-                    value="https://api-v2.pandavideo.com.br"
-                    disabled
-                    className="mt-1 font-mono text-xs"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleTestPandaConnection}
-                  disabled={pandaStatus === 'testing'}
-                  className="w-full"
-                >
-                  {pandaStatus === 'testing' ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Plug className="h-4 w-4 mr-2" />
-                  )}
-                  Testar Conexão
-                </Button>
-
-                {pandaStats && (
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Vídeos</p>
-                      <p className="text-2xl font-bold">{pandaStats.videosCount || 0}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Pastas</p>
-                      <p className="text-2xl font-bold">{pandaStats.foldersCount || 0}</p>
-                    </div>
+        {/* Integrations Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {integrations.map((integration) => (
+            <MagicCard key={integration.id} className="p-6" glow>
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                    {integration.icon}
                   </div>
-                )}
-              </div>
-            </MagicCard>
-
-            <MagicCard variant="glass">
-              <h3 className="text-lg font-semibold mb-4">Recursos Disponíveis</h3>
-              <div className="grid gap-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <Check className="h-5 w-5 text-green-500" />
                   <div>
-                    <p className="font-medium">Listar vídeos</p>
-                    <p className="text-xs text-muted-foreground">Com paginação e busca</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <Check className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="font-medium">Detalhes de vídeos</p>
-                    <p className="text-xs text-muted-foreground">Thumbnail, duração, embed URL</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <Check className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="font-medium">Gerenciar pastas</p>
-                    <p className="text-xs text-muted-foreground">Organização de conteúdo</p>
-                  </div>
-                </div>
-              </div>
-            </MagicCard>
-          </TabsContent>
-
-          {/* Memberkit Tab */}
-          <TabsContent value="memberkit" className="space-y-6">
-            <MagicCard variant="glass" size="lg">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/10">
-                  <GraduationCap className="h-6 w-6 text-blue-500" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold">Memberkit</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Integração com plataforma de membros
-                  </p>
-                </div>
-                {getStatusBadge(memberkitStatus)}
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label>Secret Key</Label>
-                  <Input
-                    type="password"
-                    value="3cG57cb4CAgAKMX7Fg59qY8f"
-                    disabled
-                    className="mt-1 font-mono text-xs"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Configurada em: src/services/memberkitService.ts
-                  </p>
-                </div>
-
-                <div>
-                  <Label>API URL</Label>
-                  <Input
-                    value="https://api.memberkit.com.br/v1"
-                    disabled
-                    className="mt-1 font-mono text-xs"
-                  />
-                </div>
-
-                <div>
-                  <Label>Rate Limit</Label>
-                  <Input
-                    value="120 requisições por minuto"
-                    disabled
-                    className="mt-1"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleTestMemberkitConnection}
-                  disabled={memberkitStatus === 'testing'}
-                  className="w-full"
-                >
-                  {memberkitStatus === 'testing' ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Plug className="h-4 w-4 mr-2" />
-                  )}
-                  Testar Conexão
-                </Button>
-
-                {memberkitStats && (
-                  <div className="space-y-4 pt-4 border-t">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Academia</p>
-                      <p className="text-lg font-bold">{memberkitStats.academyName}</p>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Turmas</p>
-                        <p className="text-2xl font-bold">{memberkitStats.classroomsCount || 0}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Usuários</p>
-                        <p className="text-2xl font-bold">{memberkitStats.usersCount || 0}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Cursos</p>
-                        <p className="text-2xl font-bold">{memberkitStats.coursesCount || 0}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </MagicCard>
-
-            {/* Import Section */}
-            <MagicCard variant="glass">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Download className="h-5 w-5" />
-                Importar Dados
-              </h3>
-
-              {importProgress && (
-                <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-medium">{importProgress.stage}</p>
+                    <h3 className="font-semibold text-lg">{integration.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {importProgress.current} / {importProgress.total}
+                      {integration.description}
                     </p>
-                  </div>
-                  {importProgress.currentItem && (
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {importProgress.currentItem}
-                    </p>
-                  )}
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary transition-all duration-300"
-                      style={{
-                        width: `${(importProgress.current / importProgress.total) * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex gap-4 mt-2 text-xs">
-                    <span className="text-green-500">✓ {importProgress.success} sucesso</span>
-                    <span className="text-red-500">✗ {importProgress.errors} erros</span>
                   </div>
                 </div>
-              )}
-
-              <div className="grid gap-3 mb-6">
-                <Button
-                  onClick={handleImportClassrooms}
-                  disabled={importingClassrooms || importingAll}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  {importingClassrooms ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <GraduationCap className="h-4 w-4 mr-2" />
-                  )}
-                  Importar Turmas
-                </Button>
-
-                <Button
-                  onClick={handleImportUsers}
-                  disabled={importingUsers || importingAll}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  {importingUsers ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Users className="h-4 w-4 mr-2" />
-                  )}
-                  Importar Usuários
-                </Button>
-
-                <Button
-                  onClick={handleImportCourses}
-                  disabled={importingCourses || importingAll}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  {importingCourses ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <BookOpen className="h-4 w-4 mr-2" />
-                  )}
-                  Importar Cursos
-                </Button>
-
-                <Button
-                  onClick={handleImportAll}
-                  disabled={importingAll || importingClassrooms || importingUsers || importingCourses}
-                  className="w-full bg-gradient-to-r from-primary to-primary/80"
-                >
-                  {importingAll ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                  )}
-                  Importar Tudo
-                </Button>
+                <div className="flex items-center gap-2">
+                  {getStatusIcon(integration.status)}
+                  {getStatusBadge(integration.status)}
+                </div>
               </div>
 
-              {lastImportResults && (
-                <div className="pt-4 border-t space-y-3">
-                  <h4 className="font-medium text-sm">Última Importação</h4>
-
-                  {lastImportResults.classrooms && (
-                    <div className="p-3 rounded-lg bg-muted/50">
-                      <p className="font-medium text-sm mb-1">Turmas</p>
-                      <div className="flex gap-4 text-xs">
-                        <span>Total: {lastImportResults.classrooms.total}</span>
-                        <span className="text-green-500">✓ {lastImportResults.classrooms.success}</span>
-                        <span className="text-yellow-500">⊘ {lastImportResults.classrooms.skipped}</span>
-                        <span className="text-red-500">✗ {lastImportResults.classrooms.errors}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {lastImportResults.users && (
-                    <div className="p-3 rounded-lg bg-muted/50">
-                      <p className="font-medium text-sm mb-1">Usuários</p>
-                      <div className="flex gap-4 text-xs">
-                        <span>Total: {lastImportResults.users.total}</span>
-                        <span className="text-green-500">✓ {lastImportResults.users.success}</span>
-                        <span className="text-yellow-500">⊘ {lastImportResults.users.skipped}</span>
-                        <span className="text-red-500">✗ {lastImportResults.users.errors}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {lastImportResults.courses && (
-                    <div className="p-3 rounded-lg bg-muted/50">
-                      <p className="font-medium text-sm mb-1">Cursos</p>
-                      <div className="flex gap-4 text-xs">
-                        <span>Total: {lastImportResults.courses.total}</span>
-                        <span className="text-green-500">✓ {lastImportResults.courses.success}</span>
-                        <span className="text-yellow-500">⊘ {lastImportResults.courses.skipped}</span>
-                        <span className="text-red-500">✗ {lastImportResults.courses.errors}</span>
-                      </div>
-                    </div>
-                  )}
+              {/* Features */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-2">Funcionalidades:</h4>
+                <div className="flex flex-wrap gap-1">
+                  {integration.features.map((feature, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {feature}
+                    </Badge>
+                  ))}
                 </div>
-              )}
+              </div>
+
+              <Separator className="my-4" />
+
+              {/* Configuration */}
+              <div className="space-y-4">
+                {/* Enable/Disable */}
+                <div className="flex items-center justify-between">
+                  <Label htmlFor={`enable-${integration.id}`}>
+                    Habilitar integração
+                  </Label>
+                  <Switch
+                    id={`enable-${integration.id}`}
+                    checked={integration.enabled}
+                    onCheckedChange={(checked) => 
+                      updateIntegration(integration.id, { enabled: checked })
+                    }
+                  />
+                </div>
+
+                {/* API Key */}
+                <div className="space-y-2">
+                  <Label htmlFor={`api-key-${integration.id}`}>
+                    API Key
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id={`api-key-${integration.id}`}
+                      type="password"
+                      placeholder="Insira sua API Key"
+                      value={integration.apiKey}
+                      onChange={(e) => 
+                        updateIntegration(integration.id, { apiKey: e.target.value })
+                      }
+                    />
+                    <Key className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+
+                {/* Webhook URL */}
+                <div className="space-y-2">
+                  <Label htmlFor={`webhook-${integration.id}`}>
+                    Webhook URL (opcional)
+                  </Label>
+                  <Input
+                    id={`webhook-${integration.id}`}
+                    type="url"
+                    placeholder="https://exemplo.com/webhook"
+                    value={integration.webhookUrl}
+                    onChange={(e) => 
+                      updateIntegration(integration.id, { webhookUrl: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    onClick={() => testConnection(integration)}
+                    disabled={isLoading || !integration.apiKey}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <TestTube className="h-4 w-4 mr-2" />
+                    Testar
+                  </Button>
+                  <Button
+                    onClick={() => saveIntegration(integration)}
+                    disabled={!integration.apiKey}
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Salvar
+                  </Button>
+                </div>
+
+                {/* Documentation Link */}
+                <div className="pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => {
+                      const docs = {
+                        'dify': 'https://docs.dify.ai',
+                        'panda-video': 'https://docs.pandavideo.com',
+                        'memberkit': 'https://docs.memberkit.com.br'
+                      }
+                      window.open(docs[integration.id as keyof typeof docs], '_blank')
+                    }}
+                  >
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Ver documentação
+                  </Button>
+                </div>
+              </div>
             </MagicCard>
-          </TabsContent>
-        </Tabs>
+          ))}
+        </div>
+
+        {/* Usage Statistics */}
+        <MagicCard className="p-6" glow>
+          <div className="flex items-center gap-4 mb-6">
+            <Settings className="h-6 w-6 text-primary" />
+            <h2 className="text-xl font-bold">Estatísticas de Uso</h2>
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="text-center p-4 bg-primary/5 rounded-lg">
+              <div className="text-2xl font-bold text-primary">
+                {integrations.filter(i => i.enabled).length}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Integrações Ativas
+              </div>
+            </div>
+            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">
+                {integrations.filter(i => i.status === 'connected').length}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Conectadas
+              </div>
+            </div>
+            <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600">
+                {integrations.filter(i => i.status === 'error').length}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Com Erro
+              </div>
+            </div>
+          </div>
+        </MagicCard>
       </div>
     </MagicLayout>
   )

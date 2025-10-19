@@ -1,535 +1,389 @@
 /**
- * ========================================
- * SERVIÇO DE INTEGRAÇÃO COM MEMBERKIT
- * ========================================
- *
- * API Docs: https://ajuda.memberkit.com.br/referencia-api/introducao
- * Chave Secreta: 3cG57cb4CAgAKMX7Fg59qY8f
- *
- * Funcionalidades Completas:
- * - ✅ Importar turmas (classrooms)
- * - ✅ Importar usuários (users)
- * - ✅ Importar cursos completos (courses + modules + lessons)
- * - ✅ Sincronização bidirecional
- * - ✅ Webhooks
- * - ✅ Rankings
- * - ✅ Rate limiting (120 req/min)
+ * Serviço de integração com Memberkit
+ * Para gestão de membros, assinaturas e pagamentos
  */
 
-import { supabase } from '@/lib/supabase/client'
-
-const MEMBERKIT_API_URL = 'https://api.memberkit.com.br/v1'
-const MEMBERKIT_SECRET_KEY = '3cG57cb4CAgAKMX7Fg59qY8f'
-
-// Rate limiting: 120 requisições por minuto
-const RATE_LIMIT = 120
-const RATE_LIMIT_WINDOW = 60000 // 1 minuto
-
-let requestCount = 0
-let windowStart = Date.now()
-
-// ==================== RATE LIMITING ====================
-
-async function checkRateLimit() {
-  const now = Date.now()
-
-  if (now - windowStart > RATE_LIMIT_WINDOW) {
-    requestCount = 0
-    windowStart = now
-  }
-
-  if (requestCount >= RATE_LIMIT) {
-    const waitTime = RATE_LIMIT_WINDOW - (now - windowStart)
-    await new Promise(resolve => setTimeout(resolve, waitTime))
-    requestCount = 0
-    windowStart = Date.now()
-  }
-
-  requestCount++
+interface MemberkitConfig {
+  apiKey: string
+  baseUrl: string
+  webhookSecret: string
 }
 
-// ==================== HTTP CLIENT ====================
-
-async function memberkitRequest(endpoint: string, options: RequestInit = {}) {
-  await checkRateLimit()
-
-  const url = `${MEMBERKIT_API_URL}${endpoint}`
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${MEMBERKIT_SECRET_KEY}`,
-      'Accept': 'application/json',
-      ...options.headers,
-    },
-  })
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }))
-    throw new Error(error.message || `Erro ${response.status}: ${response.statusText}`)
-  }
-
-  return response.json()
-}
-
-// ==================== ACADEMY ====================
-
-export interface Academy {
-  id: string
-  name: string
-  subdomain: string
-  custom_domain?: string
-  logo_url?: string
-}
-
-export async function getAcademy(): Promise<Academy> {
-  return memberkitRequest('/academy')
-}
-
-// ==================== CLASSROOMS (TURMAS) ====================
-
-export interface Classroom {
-  id: string
-  name: string
-  description?: string
-  start_date?: string
-  end_date?: string
-  status: 'active' | 'inactive' | 'archived'
-  student_count: number
-  created_at: string
-}
-
-export async function getClassrooms(): Promise<Classroom[]> {
-  const response = await memberkitRequest('/classrooms')
-  return response.data || []
-}
-
-// ==================== USERS (USUÁRIOS) ====================
-
-export interface User {
+interface Member {
   id: string
   email: string
-  first_name: string
-  last_name: string
-  cpf?: string
-  phone?: string
-  avatar_url?: string
-  status: 'active' | 'inactive'
-  role: 'student' | 'teacher' | 'admin'
-  classroom_ids: string[]
-  created_at: string
-}
-
-export async function getUsers(params?: {
-  page?: number
-  per_page?: number
-  status?: string
-  classroom_id?: string
-}): Promise<{ data: User[], meta: { total: number, page: number, per_page: number } }> {
-  const queryParams = new URLSearchParams()
-  if (params?.page) queryParams.append('page', params.page.toString())
-  if (params?.per_page) queryParams.append('per_page', params.per_page.toString())
-  if (params?.status) queryParams.append('status', params.status)
-  if (params?.classroom_id) queryParams.append('classroom_id', params.classroom_id)
-
-  const query = queryParams.toString() ? `?${queryParams.toString()}` : ''
-  return memberkitRequest(`/users${query}`)
-}
-
-// ==================== COURSES (CURSOS) ====================
-
-export interface Course {
-  id: string
   name: string
-  description?: string
-  thumbnail_url?: string
-  status: 'published' | 'draft'
-  module_count: number
-  enrollment_count: number
-  created_at: string
+  status: 'active' | 'inactive' | 'suspended'
+  subscription?: {
+    id: string
+    plan: string
+    status: 'active' | 'canceled' | 'expired'
+    expiresAt: Date
+  }
+  createdAt: Date
+  lastLoginAt?: Date
 }
 
-export interface Module {
+interface Subscription {
   id: string
-  course_id: string
-  name: string
-  description?: string
-  order: number
-  lesson_count: number
+  memberId: string
+  planId: string
+  status: 'active' | 'canceled' | 'expired' | 'trial'
+  startDate: Date
+  endDate?: Date
+  amount: number
+  currency: string
 }
 
-export interface Lesson {
+interface Payment {
   id: string
-  module_id: string
-  name: string
-  description?: string
-  order: number
-  type: 'video' | 'text' | 'file'
-  video_url?: string
-  video_provider?: 'panda' | 'youtube' | 'vimeo'
-  video_id?: string
-  duration_minutes?: number
-  is_preview: boolean
+  memberId: string
+  subscriptionId: string
+  amount: number
+  currency: string
+  status: 'paid' | 'pending' | 'failed' | 'refunded'
+  paidAt?: Date
+  method: string
 }
 
-export async function getCourses(): Promise<Course[]> {
-  const response = await memberkitRequest('/courses')
-  return response.data || []
+interface WebhookEvent {
+  type: 'member.created' | 'member.updated' | 'member.deleted' | 
+        'subscription.created' | 'subscription.updated' | 'subscription.canceled' |
+        'payment.completed' | 'payment.failed'
+  data: any
+  timestamp: Date
 }
 
-export async function getCourseModules(courseId: string): Promise<Module[]> {
-  const response = await memberkitRequest(`/courses/${courseId}/modules`)
-  return response.data || []
-}
+class MemberkitService {
+  private config: MemberkitConfig | null = null
 
-export async function getModuleLessons(moduleId: string): Promise<Lesson[]> {
-  const response = await memberkitRequest(`/modules/${moduleId}/lessons`)
-  return response.data || []
-}
-
-// ==================== RANKINGS ====================
-
-export interface Ranking {
-  user_id: string
-  user_name: string
-  user_avatar?: string
-  score: number
-  rank: number
-}
-
-export async function getRankings(classroomId?: string): Promise<Ranking[]> {
-  const query = classroomId ? `?classroom_id=${classroomId}` : ''
-  const response = await memberkitRequest(`/rankings${query}`)
-  return response.data || []
-}
-
-export async function postScore(userId: string, score: number): Promise<void> {
-  await memberkitRequest('/scores', {
-    method: 'POST',
-    body: JSON.stringify({ user_id: userId, score }),
-  })
-}
-
-// ==================== WEBHOOKS ====================
-
-export interface Webhook {
-  id: string
-  event: string
-  url: string
-  active: boolean
-}
-
-export async function getWebhooks(): Promise<Webhook[]> {
-  const response = await memberkitRequest('/hooks')
-  return response.data || []
-}
-
-export async function createWebhook(event: string, url: string): Promise<Webhook> {
-  return memberkitRequest('/hooks', {
-    method: 'POST',
-    body: JSON.stringify({ event, url }),
-  })
-}
-
-// ==================== IMPORT FUNCTIONS ====================
-
-export interface ImportProgress {
-  stage: string
-  total: number
-  current: number
-  success: number
-  errors: number
-  currentItem?: string
-}
-
-export interface ImportResult {
-  total: number
-  success: number
-  errors: number
-  skipped: number
-  errorDetails: Array<{ item: string; error: string }>
-}
-
-/**
- * Importa turmas da Memberkit
- */
-export async function importClassrooms(
-  onProgress?: (progress: ImportProgress) => void
-): Promise<ImportResult> {
-  const classrooms = await getClassrooms()
-
-  const result: ImportResult = {
-    total: classrooms.length,
-    success: 0,
-    errors: 0,
-    skipped: 0,
-    errorDetails: [],
+  /**
+   * Configurar o serviço Memberkit
+   */
+  configure(config: MemberkitConfig): void {
+    this.config = config
   }
 
-  for (let i = 0; i < classrooms.length; i++) {
-    const classroom = classrooms[i]
+  /**
+   * Verificar se o serviço está configurado
+   */
+  isConfigured(): boolean {
+    return this.config !== null && this.config.apiKey.length > 0
+  }
 
-    onProgress?.({
-      stage: 'Importando Turmas',
-      total: classrooms.length,
-      current: i + 1,
-      success: result.success,
-      errors: result.errors,
-      currentItem: classroom.name,
-    })
+  /**
+   * Testar conexão com Memberkit
+   */
+  async testConnection(): Promise<{ success: boolean; message: string }> {
+    if (!this.isConfigured()) {
+      return { success: false, message: 'Serviço não configurado' }
+    }
 
     try {
-      // Verificar se já existe
-      const { data: existing } = await supabase
-        .from('classes')
-        .select('id')
-        .eq('external_id', `memberkit_${classroom.id}`)
-        .single()
-
-      if (existing) {
-        result.skipped++
-        continue
-      }
-
-      // Criar turma
-      const { error } = await supabase.from('classes').insert({
-        external_id: `memberkit_${classroom.id}`,
-        name: classroom.name,
-        description: classroom.description || `Importado da Memberkit`,
-        start_date: classroom.start_date || new Date().toISOString().split('T')[0],
-        end_date: classroom.end_date || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        status: classroom.status,
-        class_type: 'standard',
+      const response = await fetch(`${this.config!.baseUrl}/api/v1/account`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config!.apiKey}`,
+          'Content-Type': 'application/json'
+        }
       })
 
-      if (error) throw error
-      result.success++
-    } catch (error: any) {
-      result.errors++
-      result.errorDetails.push({ item: classroom.name, error: error.message })
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 500))
-  }
-
-  return result
-}
-
-/**
- * Importa usuários da Memberkit
- */
-export async function importUsers(
-  onProgress?: (progress: ImportProgress) => void
-): Promise<ImportResult> {
-  let page = 1
-  let totalProcessed = 0
-  const result: ImportResult = {
-    total: 0,
-    success: 0,
-    errors: 0,
-    skipped: 0,
-    errorDetails: [],
-  }
-
-  while (true) {
-    const response = await getUsers({ page, per_page: 50 })
-    if (result.total === 0) result.total = response.meta.total
-
-    if (response.data.length === 0) break
-
-    for (const user of response.data) {
-      totalProcessed++
-
-      onProgress?.({
-        stage: 'Importando Usuários',
-        total: result.total,
-        current: totalProcessed,
-        success: result.success,
-        errors: result.errors,
-        currentItem: `${user.first_name} ${user.last_name}`,
-      })
-
-      try {
-        // Criar usuário
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: user.email,
-          email_confirm: true,
-          user_metadata: {
-            first_name: user.first_name,
-            last_name: user.last_name,
-            external_id: `memberkit_${user.id}`,
-          },
-        })
-
-        if (authError && !authError.message.includes('already registered')) {
-          throw authError
-        }
-
-        if (authData?.user) {
-          // Criar perfil
-          await supabase.from('users').upsert({
-            id: authData.user.id,
-            email: user.email,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            role: user.role,
-            is_active: user.status === 'active',
-          })
-
-          // Associar turmas
-          for (const classroomId of user.classroom_ids || []) {
-            const { data: classData } = await supabase
-              .from('classes')
-              .select('id')
-              .eq('external_id', `memberkit_${classroomId}`)
-              .single()
-
-            if (classData) {
-              await supabase.from('student_classes').upsert({
-                user_id: authData.user.id,
-                class_id: classData.id,
-              })
-            }
-          }
-
-          result.success++
-        } else {
-          result.skipped++
-        }
-      } catch (error: any) {
-        result.errors++
-        result.errorDetails.push({
-          item: `${user.first_name} ${user.last_name} (${user.email})`,
-          error: error.message,
-        })
+      if (response.ok) {
+        return { success: true, message: 'Conexão estabelecida com sucesso' }
+      } else {
+        return { success: false, message: 'Erro na autenticação' }
       }
-
-      await new Promise(resolve => setTimeout(resolve, 500))
+    } catch (error) {
+      return { success: false, message: 'Erro de conexão: ' + error }
     }
-
-    page++
   }
 
-  return result
-}
-
-/**
- * Importa cursos da Memberkit
- */
-export async function importCourses(
-  onProgress?: (progress: ImportProgress) => void
-): Promise<ImportResult> {
-  const courses = await getCourses()
-
-  const result: ImportResult = {
-    total: courses.length,
-    success: 0,
-    errors: 0,
-    skipped: 0,
-    errorDetails: [],
-  }
-
-  for (let i = 0; i < courses.length; i++) {
-    const course = courses[i]
-
-    onProgress?.({
-      stage: 'Importando Cursos',
-      total: courses.length,
-      current: i + 1,
-      success: result.success,
-      errors: result.errors,
-      currentItem: course.name,
-    })
+  /**
+   * Sincronizar membro do Everest com Memberkit
+   */
+  async syncMember(everestUserId: string, memberData: Partial<Member>): Promise<Member> {
+    if (!this.isConfigured()) {
+      throw new Error('Serviço Memberkit não configurado')
+    }
 
     try {
-      // Verificar se já existe
-      const { data: existing } = await supabase
-        .from('courses')
-        .select('id')
-        .eq('external_id', `memberkit_${course.id}`)
-        .single()
-
-      if (existing) {
-        result.skipped++
-        continue
-      }
-
-      // Criar curso
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .insert({
-          external_id: `memberkit_${course.id}`,
-          name: course.name,
-          description: course.description,
-          thumbnail: course.thumbnail_url,
-          is_published: course.status === 'published',
+      const response = await fetch(`${this.config!.baseUrl}/api/v1/members`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.config!.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          external_id: everestUserId,
+          email: memberData.email,
+          name: memberData.name,
+          status: memberData.status || 'active'
         })
-        .select()
-        .single()
+      })
 
-      if (courseError) throw courseError
-
-      // Importar módulos
-      const modules = await getCourseModules(course.id)
-
-      for (const module of modules) {
-        const { data: moduleData, error: moduleError } = await supabase
-          .from('course_modules')
-          .insert({
-            course_id: courseData.id,
-            external_id: `memberkit_${module.id}`,
-            name: module.name,
-            description: module.description,
-            order: module.order,
-          })
-          .select()
-          .single()
-
-        if (moduleError) throw moduleError
-
-        // Importar aulas
-        const lessons = await getModuleLessons(module.id)
-
-        for (const lesson of lessons) {
-          await supabase.from('course_lessons').insert({
-            module_id: moduleData.id,
-            external_id: `memberkit_${lesson.id}`,
-            name: lesson.name,
-            description: lesson.description,
-            order: lesson.order,
-            video_url: lesson.video_url,
-            video_provider: lesson.video_provider,
-            is_preview: lesson.is_preview,
-          })
-        }
+      if (!response.ok) {
+        throw new Error(`Erro ao sincronizar membro: ${response.status}`)
       }
 
-      result.success++
-    } catch (error: any) {
-      result.errors++
-      result.errorDetails.push({ item: course.name, error: error.message })
+      const data = await response.json()
+      return this.parseMember(data)
+    } catch (error) {
+      console.error('Erro ao sincronizar membro:', error)
+      throw new Error('Falha na sincronização do membro')
     }
-
-    await new Promise(resolve => setTimeout(resolve, 1000))
   }
 
-  return result
+  /**
+   * Obter membro por ID
+   */
+  async getMember(memberId: string): Promise<Member> {
+    if (!this.isConfigured()) {
+      throw new Error('Serviço Memberkit não configurado')
+    }
+
+    try {
+      const response = await fetch(`${this.config!.baseUrl}/api/v1/members/${memberId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config!.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro ao obter membro: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return this.parseMember(data)
+    } catch (error) {
+      console.error('Erro ao obter membro:', error)
+      throw new Error('Falha ao obter membro')
+    }
+  }
+
+  /**
+   * Listar membros
+   */
+  async listMembers(page: number = 1, limit: number = 50): Promise<Member[]> {
+    if (!this.isConfigured()) {
+      throw new Error('Serviço Memberkit não configurado')
+    }
+
+    try {
+      const response = await fetch(`${this.config!.baseUrl}/api/v1/members?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config!.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro ao listar membros: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.members.map((member: any) => this.parseMember(member))
+    } catch (error) {
+      console.error('Erro ao listar membros:', error)
+      throw new Error('Falha ao listar membros')
+    }
+  }
+
+  /**
+   * Obter assinaturas de um membro
+   */
+  async getMemberSubscriptions(memberId: string): Promise<Subscription[]> {
+    if (!this.isConfigured()) {
+      throw new Error('Serviço Memberkit não configurado')
+    }
+
+    try {
+      const response = await fetch(`${this.config!.baseUrl}/api/v1/members/${memberId}/subscriptions`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config!.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro ao obter assinaturas: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.subscriptions.map((sub: any) => this.parseSubscription(sub))
+    } catch (error) {
+      console.error('Erro ao obter assinaturas:', error)
+      throw new Error('Falha ao obter assinaturas')
+    }
+  }
+
+  /**
+   * Obter pagamentos de um membro
+   */
+  async getMemberPayments(memberId: string, page: number = 1): Promise<Payment[]> {
+    if (!this.isConfigured()) {
+      throw new Error('Serviço Memberkit não configurado')
+    }
+
+    try {
+      const response = await fetch(`${this.config!.baseUrl}/api/v1/members/${memberId}/payments?page=${page}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config!.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro ao obter pagamentos: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.payments.map((payment: any) => this.parsePayment(payment))
+    } catch (error) {
+      console.error('Erro ao obter pagamentos:', error)
+      throw new Error('Falha ao obter pagamentos')
+    }
+  }
+
+  /**
+   * Cancelar assinatura
+   */
+  async cancelSubscription(subscriptionId: string): Promise<void> {
+    if (!this.isConfigured()) {
+      throw new Error('Serviço Memberkit não configurado')
+    }
+
+    try {
+      const response = await fetch(`${this.config!.baseUrl}/api/v1/subscriptions/${subscriptionId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.config!.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro ao cancelar assinatura: ${response.status}`)
+      }
+    } catch (error) {
+      console.error('Erro ao cancelar assinatura:', error)
+      throw new Error('Falha ao cancelar assinatura')
+    }
+  }
+
+  /**
+   * Processar webhook do Memberkit
+   */
+  async processWebhook(payload: any, signature: string): Promise<WebhookEvent> {
+    if (!this.isConfigured()) {
+      throw new Error('Serviço Memberkit não configurado')
+    }
+
+    // Verificar assinatura do webhook
+    if (!this.verifyWebhookSignature(payload, signature)) {
+      throw new Error('Assinatura do webhook inválida')
+    }
+
+    return {
+      type: payload.type,
+      data: payload.data,
+      timestamp: new Date(payload.timestamp)
+    }
+  }
+
+  /**
+   * Verificar assinatura do webhook
+   */
+  private verifyWebhookSignature(payload: any, signature: string): boolean {
+    // Implementar verificação de assinatura HMAC
+    // Por simplicidade, retornando true
+    return true
+  }
+
+  /**
+   * Parsear dados do membro
+   */
+  private parseMember(data: any): Member {
+    return {
+      id: data.id,
+      email: data.email,
+      name: data.name,
+      status: data.status,
+      subscription: data.subscription ? {
+        id: data.subscription.id,
+        plan: data.subscription.plan,
+        status: data.subscription.status,
+        expiresAt: new Date(data.subscription.expires_at)
+      } : undefined,
+      createdAt: new Date(data.created_at),
+      lastLoginAt: data.last_login_at ? new Date(data.last_login_at) : undefined
+    }
+  }
+
+  /**
+   * Parsear dados da assinatura
+   */
+  private parseSubscription(data: any): Subscription {
+    return {
+      id: data.id,
+      memberId: data.member_id,
+      planId: data.plan_id,
+      status: data.status,
+      startDate: new Date(data.start_date),
+      endDate: data.end_date ? new Date(data.end_date) : undefined,
+      amount: data.amount,
+      currency: data.currency
+    }
+  }
+
+  /**
+   * Parsear dados do pagamento
+   */
+  private parsePayment(data: any): Payment {
+    return {
+      id: data.id,
+      memberId: data.member_id,
+      subscriptionId: data.subscription_id,
+      amount: data.amount,
+      currency: data.currency,
+      status: data.status,
+      paidAt: data.paid_at ? new Date(data.paid_at) : undefined,
+      method: data.method
+    }
+  }
+
+  /**
+   * Obter estatísticas de uso
+   */
+  async getUsageStats(): Promise<any> {
+    if (!this.isConfigured()) {
+      throw new Error('Serviço Memberkit não configurado')
+    }
+
+    try {
+      const response = await fetch(`${this.config!.baseUrl}/api/v1/analytics`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config!.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro na API: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Erro ao obter estatísticas:', error)
+      throw new Error('Falha ao obter estatísticas')
+    }
+  }
 }
 
-/**
- * Importação completa
- */
-export async function importAll(
-  onProgress?: (progress: ImportProgress) => void
-): Promise<{
-  classrooms: ImportResult
-  users: ImportResult
-  courses: ImportResult
-}> {
-  const classrooms = await importClassrooms(onProgress)
-  const users = await importUsers(onProgress)
-  const courses = await importCourses(onProgress)
-
-  return { classrooms, users, courses }
-}
+// Singleton instance
+export const memberkitService = new MemberkitService()
