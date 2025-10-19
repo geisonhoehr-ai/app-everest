@@ -387,3 +387,26 @@ class MemberkitService {
 
 // Singleton instance
 export const memberkitService = new MemberkitService()
+
+/**
+ * Import all data from Memberkit (members, subscriptions, etc.)
+ * This is a placeholder function for the import page
+ */
+export async function importAll() {
+  try {
+    // TODO: Implement actual import logic
+    // For now, return a mock result
+    return {
+      success: true,
+      imported: {
+        members: 0,
+        subscriptions: 0,
+        courses: 0,
+      },
+      errors: [],
+    }
+  } catch (error) {
+    console.error('Error importing from Memberkit:', error)
+    throw new Error('Failed to import data from Memberkit')
+  }
+}
