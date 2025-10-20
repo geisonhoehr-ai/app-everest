@@ -58,13 +58,14 @@ export default function CoursesPage() {
     ? filteredTrails.reduce((sum, trail) => sum + trail.averageProgress, 0) / filteredTrails.length
     : 0
 
+
   if (isLoading) {
     return <SectionLoader />
   }
 
   return (
     <MagicLayout 
-      title="Cursos"
+      title="Meus Cursos"
       description="Aprenda com os melhores professores e domine qualquer assunto com nossos cursos especializados"
     >
       <div className="max-w-7xl mx-auto space-y-8">
@@ -150,6 +151,7 @@ export default function CoursesPage() {
           </div>
         </MagicCard>
 
+        {/* Course Trails */}
         {filteredTrails.length === 0 ? (
           <MagicCard variant="glass" size="lg" className="text-center py-24">
             <div className="max-w-md mx-auto">
@@ -160,17 +162,22 @@ export default function CoursesPage() {
                 Nenhum curso encontrado
               </h3>
               <p className="text-muted-foreground mb-8">
-                Tente ajustar os filtros ou termo de busca para encontrar o que procura.
+                {searchTerm || filterCategory !== 'Todos' 
+                  ? 'Tente ajustar seus filtros de busca' 
+                  : 'Você ainda não tem acesso a nenhum curso. Entre em contato com seu professor.'
+                }
               </p>
-              <Button
-                onClick={() => {
-                  setSearchTerm('')
-                  setFilterCategory('Todos')
-                }}
-                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-8 py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg"
-              >
-                Limpar Filtros
-              </Button>
+              {(searchTerm || filterCategory !== 'Todos') && (
+                <Button 
+                  onClick={() => {
+                    setSearchTerm('')
+                    setFilterCategory('Todos')
+                  }}
+                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-8 py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                >
+                  Limpar Filtros
+                </Button>
+              )}
             </div>
           </MagicCard>
         ) : (

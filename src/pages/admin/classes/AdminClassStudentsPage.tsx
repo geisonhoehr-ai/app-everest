@@ -92,18 +92,7 @@ export default function AdminClassStudentsPage() {
       // Carregar alunos da turma
       const { data: studentsData, error: studentsError} = await supabase
         .from('student_classes')
-        .select(`
-          id,
-          user_id,
-          class_id,
-          enrollment_date,
-          users (
-            id,
-            email,
-            first_name,
-            last_name
-          )
-        `)
+        .select('id, user_id, class_id, enrollment_date')
         .eq('class_id', classId)
 
       if (studentsError) {
@@ -113,18 +102,40 @@ export default function AdminClassStudentsPage() {
 
       console.log('Students data from DB:', studentsData)
 
-      // Map the data to ensure 'user' field is properly set
-      const mappedStudents = (studentsData || []).map((item: any) => ({
-        ...item,
-        user: item.users || item.user // Support both 'users' and 'user' field names
-      }))
+      // Carregar dados dos usuários separadamente
+      if (studentsData && studentsData.length > 0) {
+        const userIds = studentsData.map(s => s.user_id)
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('id, email, first_name, last_name')
+          .in('id', userIds)
 
-      setStudents(mappedStudents)
+        if (usersError) {
+          console.error('Error loading users:', usersError)
+          throw usersError
+        }
+
+        // Mapear os dados combinando student_classes com users
+        const mappedStudents = studentsData.map((student: any) => {
+          const user = usersData?.find(u => u.id === student.user_id)
+          return {
+            ...student,
+            user: user || null
+          }
+        })
+
+        setStudents(mappedStudents)
+      } else {
+        setStudents([])
+      }
 
       // Carregar todos os usuários para adicionar
       const allUsers = await getUsers()
+      console.log('All users:', allUsers)
       const enrolledIds = (studentsData || []).map((s: any) => s.user_id)
+      console.log('Enrolled IDs:', enrolledIds)
       const available = allUsers.filter(u => !enrolledIds.includes(u.id) && u.role === 'student')
+      console.log('Available users:', available)
       setAvailableUsers(available)
 
     } catch (error) {

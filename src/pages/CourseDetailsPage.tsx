@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import {
   Accordion,
   AccordionContent,
@@ -9,7 +10,9 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
-import { courseData } from '@/lib/course-data'
+import { courseService } from '@/services/courseService'
+import { useAuth } from '@/hooks/use-auth'
+import { SectionLoader } from '@/components/SectionLoader'
 import { 
   CheckCircle, 
   PlayCircle, 
@@ -23,27 +26,114 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// Mock user progress data. In a real app, this would be fetched from the `video_progress` table.
-const userProgress = {
-  'licao-101': { is_completed: true },
-  'licao-102': { is_completed: true },
+interface CourseModule {
+  id: string
+  name: string
+  description: string | null
+  order_index: number
+  lessons: CourseLesson[]
+}
+
+interface CourseLesson {
+  id: string
+  title: string
+  description: string | null
+  order_index: number
+  duration_seconds: number | null
+  is_preview: boolean
+  is_completed?: boolean
+  progress_percentage?: number
+}
+
+interface CourseDetails {
+  id: string
+  name: string
+  description: string | null
+  thumbnail_url: string | null
+  modules: CourseModule[]
+  total_lessons: number
+  completed_lessons: number
+  progress_percentage: number
 }
 
 export default function CourseDetailsPage() {
   const { courseId } = useParams()
+  const { user } = useAuth()
+  const [course, setCourse] = useState<CourseDetails | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const totalLessons = courseData.modules.reduce(
-    (acc, mod) => acc + mod.lessons.length,
-    0,
-  )
-  const completedLessons = courseData.modules.reduce(
-    (acc, mod) =>
-      acc +
-      mod.lessons.filter((lesson) => userProgress[lesson.id]?.is_completed)
-        .length,
-    0,
-  )
-  const courseProgress = (completedLessons / totalLessons) * 100
+  useEffect(() => {
+    const fetchCourseDetails = async () => {
+      if (!courseId || !user?.id) return
+
+      try {
+        setIsLoading(true)
+        const courseData = await courseService.getCourseWithModulesAndProgress(courseId, user.id)
+        
+        // Transform the data to match our interface
+        const transformedCourse: CourseDetails = {
+          id: courseData.id,
+          name: courseData.name,
+          description: courseData.description,
+          thumbnail_url: courseData.thumbnail_url,
+          modules: courseData.modules.map(module => ({
+            id: module.id,
+            name: module.name,
+            description: module.description,
+            order_index: module.order_index,
+            lessons: module.lessons.map(lesson => ({
+              id: lesson.id,
+              title: lesson.title,
+              description: lesson.description,
+              order_index: lesson.order_index,
+              duration_seconds: lesson.duration_seconds,
+              is_preview: lesson.is_preview,
+              is_completed: lesson.is_completed || false,
+              progress_percentage: lesson.progress_percentage || 0
+            }))
+          })),
+          total_lessons: courseData.total_lessons,
+          completed_lessons: courseData.completed_lessons,
+          progress_percentage: courseData.progress_percentage
+        }
+
+        setCourse(transformedCourse)
+      } catch (error) {
+        console.error('Error fetching course details:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCourseDetails()
+  }, [courseId, user?.id])
+
+  if (isLoading) {
+    return <SectionLoader />
+  }
+
+  if (!course) {
+    return (
+      <MagicLayout 
+        title="Curso não encontrado"
+        description="O curso solicitado não foi encontrado"
+      >
+        <div className="text-center py-24">
+          <h2 className="text-2xl font-bold mb-4">Curso não encontrado</h2>
+          <p className="text-muted-foreground mb-8">
+            O curso que você está procurando não existe ou não está disponível.
+          </p>
+          <Link to="/meus-cursos">
+            <Button>Voltar aos Cursos</Button>
+          </Link>
+        </div>
+      </MagicLayout>
+    )
+  }
+
+  const totalLessons = course.total_lessons
+  const completedLessons = course.completed_lessons
+  const courseProgress = course.progress_percentage
 
   return (
     <MagicLayout 
@@ -64,10 +154,10 @@ export default function CourseDetailsPage() {
                     </div>
                     <div>
                       <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                        {courseData.title}
+                        {course.name}
                       </h1>
                       <p className="text-muted-foreground text-lg">
-                        {courseData.description}
+                        {course.description || 'Descrição não disponível'}
                       </p>
                     </div>
                   </div>
@@ -83,7 +173,7 @@ export default function CourseDetailsPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">Progresso do Curso</h3>
                   <span className="text-sm text-muted-foreground">
-                    {completedLessons} de {totalLessons} aulas
+                    {completedLessons || 0} de {totalLessons || 0} aulas
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -93,10 +183,10 @@ export default function CourseDetailsPage() {
                   />
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {courseProgress.toFixed(0)}% concluído
+                      {courseProgress?.toFixed(0) || 0}% concluído
                     </span>
                     <span className="font-medium text-primary">
-                      {totalLessons - completedLessons} aulas restantes
+                      {(totalLessons || 0) - (completedLessons || 0)} aulas restantes
                     </span>
                   </div>
                 </div>
@@ -129,13 +219,13 @@ export default function CourseDetailsPage() {
               <h2 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                 Conteúdo do Curso
               </h2>
-              <Accordion type="multiple" defaultValue={['modulo-1']} className="space-y-4">
-                {courseData.modules.map((module, index) => {
+              <Accordion type="multiple" defaultValue={course.modules.length > 0 ? [course.modules[0].id] : []} className="space-y-4">
+                {course.modules.map((module, index) => {
                   const completedInModule = module.lessons.filter(
-                    (l) => userProgress[l.id]?.is_completed,
+                    (l) => l.is_completed,
                   ).length
                   const totalInModule = module.lessons.length
-                  const moduleProgress = (completedInModule / totalInModule) * 100
+                  const moduleProgress = totalInModule > 0 ? (completedInModule / totalInModule) * 100 : 0
                   
                   return (
                     <AccordionItem 
@@ -152,7 +242,7 @@ export default function CourseDetailsPage() {
                               </span>
                             </div>
                             <div>
-                              <span className="text-lg">{module.title}</span>
+                              <span className="text-lg">{module.name}</span>
                               <div className="flex items-center gap-2 mt-1">
                                 <Progress 
                                   value={moduleProgress} 
@@ -175,7 +265,11 @@ export default function CourseDetailsPage() {
                       <AccordionContent className="px-6 pb-4">
                         <div className="space-y-3">
                           {module.lessons.map((lesson, lessonIndex) => {
-                            const isCompleted = userProgress[lesson.id]?.is_completed
+                            const isCompleted = lesson.is_completed
+                            const duration = lesson.duration_seconds 
+                              ? `${Math.floor(lesson.duration_seconds / 60)}:${(lesson.duration_seconds % 60).toString().padStart(2, '0')}`
+                              : 'N/A'
+                            
                             return (
                               <Link
                                 key={lesson.id}
@@ -212,7 +306,7 @@ export default function CourseDetailsPage() {
                                     <div className="flex items-center gap-2 mt-1">
                                       <Clock className="h-3 w-3 text-muted-foreground" />
                                       <span className="text-xs text-muted-foreground">
-                                        {lesson.duration}
+                                        {duration}
                                       </span>
                                     </div>
                                   </div>
@@ -242,8 +336,8 @@ export default function CourseDetailsPage() {
           <MagicCard variant="premium" className="sticky top-24 overflow-hidden">
             <div className="relative">
               <img
-                src={courseData.image}
-                alt={courseData.title}
+                src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516397281156-ca07cf9746fc?w=400&h=200&fit=crop'}
+                alt={course.name}
                 className="w-full h-48 object-cover rounded-t-2xl"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -258,7 +352,7 @@ export default function CourseDetailsPage() {
               <div className="text-center">
                 <h3 className="text-xl font-bold mb-2">Continue seu aprendizado</h3>
                 <p className="text-muted-foreground text-sm">
-                  Você está {courseProgress.toFixed(0)}% do caminho para completar este curso
+                  Você está {courseProgress?.toFixed(0) || 0}% do caminho para completar este curso
                 </p>
               </div>
               
@@ -273,7 +367,7 @@ export default function CourseDetailsPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Progresso</span>
-                  <span className="font-medium">{courseProgress.toFixed(0)}%</span>
+                  <span className="font-medium">{courseProgress?.toFixed(0) || 0}%</span>
                 </div>
                 <Progress 
                   value={courseProgress} 
@@ -284,11 +378,11 @@ export default function CourseDetailsPage() {
               <div className="pt-4 border-t border-border/50">
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
-                    <div className="text-2xl font-bold text-primary">{completedLessons}</div>
+                    <div className="text-2xl font-bold text-primary">{completedLessons || 0}</div>
                     <div className="text-xs text-muted-foreground">Concluídas</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-muted-foreground">{totalLessons - completedLessons}</div>
+                    <div className="text-2xl font-bold text-muted-foreground">{(totalLessons || 0) - (completedLessons || 0)}</div>
                     <div className="text-xs text-muted-foreground">Restantes</div>
                   </div>
                 </div>

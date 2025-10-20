@@ -226,6 +226,8 @@ export const courseService = {
    */
   async getUserCoursesWithDetails(userId: string): Promise<CourseWithProgress[]> {
     try {
+      console.log('🔍 Getting user courses for user:', userId)
+      
       // Get user's classes
       const { data: userClasses, error: classesError } = await supabase
         .from('student_classes')
@@ -235,6 +237,7 @@ export const courseService = {
       if (classesError) throw classesError
 
       const classIds = userClasses?.map(uc => uc.class_id) || []
+      console.log('📚 User class IDs:', classIds)
       if (classIds.length === 0) return []
 
       // Get courses for user's classes
@@ -253,7 +256,10 @@ export const courseService = {
 
       if (coursesError) throw coursesError
 
+      console.log('🎓 Class courses found:', classCourses)
+
       const courseIds = classCourses?.map(cc => cc.course_id) || []
+      console.log('📖 Course IDs:', courseIds)
       if (courseIds.length === 0) return []
 
       // Get modules for each course
@@ -300,7 +306,7 @@ export const courseService = {
           if (lessonsCount > 0 && moduleIds.length > 0) {
             const { data: progressData, error: progressError } = await supabase
               .from('video_progress')
-              .select('lesson_id, progress_percentage, completed_at')
+              .select('lesson_id, progress_percentage, is_completed')
               .eq('user_id', userId)
 
             if (!progressError && progressData) {
@@ -316,7 +322,7 @@ export const courseService = {
               if (courseProgressData.length > 0) {
                 const totalProgress = courseProgressData.reduce((sum, p) => sum + (p.progress_percentage || 0), 0)
                 courseProgress = Math.round(totalProgress / lessonsCount)
-                completedLessonsCount = courseProgressData.filter(p => p.completed_at).length
+                completedLessonsCount = courseProgressData.filter(p => p.is_completed).length
               }
             }
           }
@@ -335,9 +341,10 @@ export const courseService = {
         })
       )
 
+      console.log('✅ Final courses with details:', coursesWithDetails)
       return coursesWithDetails
     } catch (error) {
-      console.error('Error fetching user courses with details:', error)
+      console.error('❌ Error fetching user courses with details:', error)
       return []
     }
   },

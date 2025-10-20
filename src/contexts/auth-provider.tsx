@@ -119,6 +119,44 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
         return null
       }
 
+      // Create student record if role is student
+      if (createdProfile.role === 'student') {
+        const studentData = {
+          user_id: userId,
+          student_id_number: `STU-${userId.substring(0, 8)}`,
+          enrollment_date: new Date().toISOString().split('T')[0]
+        }
+
+        const { error: studentError } = await supabase
+          .from('students')
+          .insert(studentData)
+
+        if (studentError) {
+          console.error('❌ Failed to create student record:', studentError)
+        } else {
+          console.log('✅ Student record created successfully')
+        }
+      }
+
+      // Create teacher record if role is teacher
+      if (createdProfile.role === 'teacher') {
+        const teacherData = {
+          user_id: userId,
+          employee_id_number: `EMP-${userId.substring(0, 8)}`,
+          hire_date: new Date().toISOString().split('T')[0]
+        }
+
+        const { error: teacherError } = await supabase
+          .from('teachers')
+          .insert(teacherData)
+
+        if (teacherError) {
+          console.error('❌ Failed to create teacher record:', teacherError)
+        } else {
+          console.log('✅ Teacher record created successfully')
+        }
+      }
+
       console.log('✅ Profile created successfully:', createdProfile.email)
       return createdProfile
     }

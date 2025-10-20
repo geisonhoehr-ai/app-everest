@@ -255,7 +255,7 @@ export default function AdminClassesPage() {
                             className="h-8 w-8 group/btn"
                             asChild
                           >
-                            <Link to={`/admin/classes/${classItem.id}/permissions`}>
+                            <Link to={`/admin/permissions?classId=${classItem.id}`}>
                               <Lock className="h-4 w-4 group-hover/btn:text-primary transition-colors" />
                             </Link>
                           </Button>

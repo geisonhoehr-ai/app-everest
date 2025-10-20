@@ -89,7 +89,7 @@ export function CourseTrailCard({
             {courses.map((course) => (
               <Link
                 key={course.id}
-                to={`/cursos/${course.id}`}
+                to={`/meus-cursos/${course.id}`}
                 className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
               >
                 <div className="flex items-center gap-3 flex-1">
