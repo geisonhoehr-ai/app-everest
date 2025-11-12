@@ -170,7 +170,9 @@ export default function QuizzesPage() {
 
             {/* Quizzes Grid */}
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {subjects.map((subject, index) => {
+              {subjects
+                .filter(subject => !subject.name.includes('Regulamentos Militares'))
+                .map((subject, index) => {
                 const totalQuestions = subject.topics.reduce((sum, topic) => sum + topic.questionCount, 0)
                 const totalQuizzes = subject.topics.reduce((sum, topic) => sum + topic.quizzes.length, 0)
 

@@ -5,6 +5,8 @@ import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS, type FeatureKey } from '@/services/classPermissionsService'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { rankingService } from '@/services/rankingService'
+import { useState, useEffect } from 'react'
 import {
   Sidebar,
   SidebarContent,
@@ -35,6 +37,8 @@ import {
   Award,
   CalendarDays,
   MessageSquare,
+  GraduationCap,
+  ExternalLink,
 } from 'lucide-react'
 
 type MenuItem = {
@@ -42,6 +46,7 @@ type MenuItem = {
   href: string
   icon: any
   featureKey?: FeatureKey
+  external?: boolean
 }
 
 const menuItems: MenuItem[] = [
@@ -55,6 +60,12 @@ const menuItems: MenuItem[] = [
     href: '/meus-cursos',
     icon: BookOpen,
     featureKey: FEATURE_KEYS.VIDEO_LESSONS,
+  },
+  {
+    label: 'Aulas',
+    href: 'https://alunos.everestpreparatorios.com.br',
+    icon: GraduationCap,
+    external: true,
   },
   {
     label: 'Calendário',
@@ -136,11 +147,30 @@ const bottomMenuItems = [
 
 export function AppSidebar() {
   const location = useLocation()
-  const { profile, signOut, isAdmin, isTeacher, isStudent } = useAuth()
+  const { profile, signOut, isAdmin, isTeacher, isStudent, user } = useAuth()
   const { hasFeature } = useFeaturePermissions()
+  const [userXP, setUserXP] = useState(0)
+
+  useEffect(() => {
+    const fetchUserXP = async () => {
+      if (!user?.id) return
+      try {
+        const position = await rankingService.getUserPosition(user.id)
+        setUserXP(position.total_xp)
+      } catch (error) {
+        logger.error('Error fetching user XP:', error)
+      }
+    }
+    fetchUserXP()
+  }, [user?.id])
 
   const isActive = (href: string) => {
     return location.pathname === href
+  }
+
+  const getUserRankIcon = () => {
+    const levelInfo = rankingService.calculateLevelInfo(userXP)
+    return levelInfo.icon
   }
 
   const handleSignOut = async () => {
@@ -214,35 +244,57 @@ export function AppSidebar() {
                   ]
                 )}
               >
-                <Link to={item.href} className="flex items-center gap-4 w-full">
-                  <div className={cn(
-                    "p-2 rounded-xl transition-all duration-300 ease-out",
-                    "group-hover:bg-gray-100 dark:group-hover:bg-gray-800",
-                    isActive(item.href) && "bg-gray-100 dark:bg-gray-800"
-                  )}>
-                    <item.icon className={cn(
-                      "h-5 w-5 transition-colors duration-300 ease-out",
+                {item.external ? (
+                  <a href={item.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 w-full">
+                    <div className={cn(
+                      "p-2 rounded-xl transition-all duration-300 ease-out",
+                      "group-hover:bg-gray-100 dark:group-hover:bg-gray-800",
+                      isActive(item.href) && "bg-gray-100 dark:bg-gray-800"
+                    )}>
+                      <item.icon className={cn(
+                        "h-5 w-5 transition-colors duration-300 ease-out",
+                        isActive(item.href) && "text-gray-900 dark:text-white"
+                      )} />
+                    </div>
+                    <span className={cn(
+                      "transition-colors duration-300 ease-out font-medium text-sm flex-1",
                       isActive(item.href) && "text-gray-900 dark:text-white"
-                    )} />
-                  </div>
-                  <span className={cn(
-                    "transition-colors duration-300 ease-out font-medium text-sm flex-1",
-                    isActive(item.href) && "text-gray-900 dark:text-white"
-                  )}>
-                    {item.label}
-                  </span>
-                  {item.badge && (
-                    <Badge
-                      variant="default"
-                      className={cn(
-                        "text-xs border-0 px-2 py-1 rounded-full",
-                        "bg-blue-500 text-white"
-                      )}
-                    >
-                      {item.badge}
-                    </Badge>
-                  )}
-                </Link>
+                    )}>
+                      {item.label}
+                    </span>
+                    <ExternalLink className="h-4 w-4 text-gray-400" />
+                  </a>
+                ) : (
+                  <Link to={item.href} className="flex items-center gap-4 w-full">
+                    <div className={cn(
+                      "p-2 rounded-xl transition-all duration-300 ease-out",
+                      "group-hover:bg-gray-100 dark:group-hover:bg-gray-800",
+                      isActive(item.href) && "bg-gray-100 dark:bg-gray-800"
+                    )}>
+                      <item.icon className={cn(
+                        "h-5 w-5 transition-colors duration-300 ease-out",
+                        isActive(item.href) && "text-gray-900 dark:text-white"
+                      )} />
+                    </div>
+                    <span className={cn(
+                      "transition-colors duration-300 ease-out font-medium text-sm flex-1",
+                      isActive(item.href) && "text-gray-900 dark:text-white"
+                    )}>
+                      {item.label}
+                    </span>
+                    {item.badge && (
+                      <Badge
+                        variant="default"
+                        className={cn(
+                          "text-xs border-0 px-2 py-1 rounded-full",
+                          "bg-blue-500 text-white"
+                        )}
+                      >
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </Link>
+                )}
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -314,22 +366,15 @@ export function AppSidebar() {
 
         {/* User Profile - Apple Style */}
         <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-          <Avatar className="h-12 w-12">
-            <AvatarImage
-              src={`https://img.usecurling.com/ppl/medium?seed=${profile?.id}`}
-              alt="Avatar"
-              className="object-cover"
-            />
-            <AvatarFallback className="bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-semibold">
-              {getInitials()}
-            </AvatarFallback>
-          </Avatar>
+          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-2xl border-2 border-primary/20">
+            {getUserRankIcon()}
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {profile?.first_name} {profile?.last_name}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-              {profile?.email}
+              {rankingService.calculateLevelInfo(userXP).title} • {userXP} XP
             </p>
           </div>
         </div>

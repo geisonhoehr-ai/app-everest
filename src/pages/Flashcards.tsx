@@ -191,7 +191,9 @@ export default function FlashcardsPage() {
 
             {/* Subjects Grid */}
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {subjectList.map((subject, index) => {
+              {subjectList
+                .filter(subject => !subject.name.includes('Regulamentos Militares'))
+                .map((subject, index) => {
                 const totalTopics = subject.topics?.length || 0
                 const totalFlashcards = subject.topics?.reduce((sum, topic) => sum + (topic.flashcard_count || 0), 0) || 0
                 // Progress will be calculated from real user data later
