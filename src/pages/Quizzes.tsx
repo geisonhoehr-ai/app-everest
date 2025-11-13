@@ -6,8 +6,9 @@ import { Progress } from '@/components/ui/progress'
 import { useStaggeredAnimation } from '@/hooks/useAnimations'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
+import { QuizzesTutorial } from '@/components/quizzes/QuizzesTutorial'
 import { cn } from '@/lib/utils'
-import { Play, Target, Clock, TrendingUp, ArrowRight, BookOpen, Brain, Star, Award, Users, Zap , Lock } from 'lucide-react'
+import { Play, Target, Clock, TrendingUp, ArrowRight, BookOpen, Brain, Star, Award, Users, Zap, Lock, HelpCircle } from 'lucide-react'
 import { quizService, type QuizSubject } from '@/services/quizService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useAuth } from '@/hooks/use-auth'
@@ -20,6 +21,19 @@ export default function QuizzesPage() {
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [subjects, setSubjects] = useState<QuizSubject[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showTutorial, setShowTutorial] = useState(false)
+
+  useEffect(() => {
+    const hasSeenTutorial = localStorage.getItem('quizzes_tutorial_seen')
+    if (!hasSeenTutorial) {
+      setShowTutorial(true)
+    }
+  }, [])
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false)
+    localStorage.setItem('quizzes_tutorial_seen', 'true')
+  }
 
   useEffect(() => {
     quizService.getQuizSubjects()
@@ -99,9 +113,20 @@ export default function QuizzesPage() {
                   </p>
                 </div>
               </div>
-              <div className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                <Star className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-                <span className="text-xs md:text-sm font-medium">Sistema Inteligente</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTutorial(true)}
+                  className="gap-2"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  <span className="hidden md:inline">Ajuda</span>
+                </Button>
+                <div className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                  <Star className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                  <span className="text-xs md:text-sm font-medium">Sistema Inteligente</span>
+                </div>
               </div>
             </div>
 
@@ -286,6 +311,9 @@ export default function QuizzesPage() {
           </div>
         )}
       </div>
+
+      {/* Tutorial */}
+      {showTutorial && <QuizzesTutorial onClose={handleCloseTutorial} />}
     </MagicLayout>
   )
 }

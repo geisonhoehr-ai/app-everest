@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
+import { SimulationsTutorial } from '@/components/simulations/SimulationsTutorial'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Table,
@@ -31,8 +32,10 @@ import {
   FileCheck,
   Send,
   Monitor,
-  ClipboardList
-, Lock } from 'lucide-react'
+  ClipboardList,
+  Lock,
+  HelpCircle
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -87,6 +90,19 @@ export default function SimulationsPage() {
     average: 0,
     best: 0
   })
+  const [showTutorial, setShowTutorial] = useState(false)
+
+  useEffect(() => {
+    const hasSeenTutorial = localStorage.getItem('simulations_tutorial_seen')
+    if (!hasSeenTutorial) {
+      setShowTutorial(true)
+    }
+  }, [])
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false)
+    localStorage.setItem('simulations_tutorial_seen', 'true')
+  }
 
   useEffect(() => {
     loadData()
@@ -655,6 +671,9 @@ export default function SimulationsPage() {
           </div>
         </MagicCard>
       </div>
+
+      {/* Tutorial */}
+      {showTutorial && <SimulationsTutorial onClose={handleCloseTutorial} />}
     </MagicLayout>
   )
 }
