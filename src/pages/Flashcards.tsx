@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress'
 import { useStaggeredAnimation } from '@/hooks/useAnimations'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
+import { FlashcardsTutorial } from '@/components/flashcards/FlashcardsTutorial'
 import { cn } from '@/lib/utils'
 import {
   Play,
@@ -20,7 +21,8 @@ import {
   Clock,
   Award,
   Users,
-  Lock
+  Lock,
+  HelpCircle
 } from 'lucide-react'
 import { getSubjects } from '@/services/subjectService'
 import { SectionLoader } from '@/components/SectionLoader'
@@ -46,6 +48,19 @@ export default function FlashcardsPage() {
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [subjectList, setSubjectList] = useState<Subject[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showTutorial, setShowTutorial] = useState(false)
+
+  useEffect(() => {
+    const hasSeenTutorial = localStorage.getItem('flashcards_tutorial_seen')
+    if (!hasSeenTutorial) {
+      setShowTutorial(true)
+    }
+  }, [])
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false)
+    localStorage.setItem('flashcards_tutorial_seen', 'true')
+  }
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -115,9 +130,20 @@ export default function FlashcardsPage() {
                   </p>
                 </div>
               </div>
-              <div className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                <Star className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-                <span className="text-xs md:text-sm font-medium">Sistema Inteligente</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTutorial(true)}
+                  className="gap-2"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  <span className="hidden md:inline">Ajuda</span>
+                </Button>
+                <div className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                  <Star className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                  <span className="text-xs md:text-sm font-medium">Sistema Inteligente</span>
+                </div>
               </div>
             </div>
 
@@ -304,6 +330,9 @@ export default function FlashcardsPage() {
           </div>
         )}
       </div>
+
+      {/* Tutorial */}
+      {showTutorial && <FlashcardsTutorial onClose={handleCloseTutorial} />}
     </MagicLayout>
   )
 }

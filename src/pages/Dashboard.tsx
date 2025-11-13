@@ -7,8 +7,9 @@ import {
 import { DEFAULT_LAYOUTS, AVAILABLE_WIDGETS, WIDGETS } from '@/lib/dashboard-config'
 import { WidgetRenderer } from '@/components/dashboard/WidgetRenderer'
 import { CustomizationPanel } from '@/components/dashboard/CustomizationPanel'
+import { DashboardTutorial } from '@/components/dashboard/DashboardTutorial'
 import { Button } from '@/components/ui/button'
-import { Settings, Layout, GripVertical, Star, BookOpen, Brain, Clock, TrendingUp, CheckCircle, Award, Users, Zap } from 'lucide-react'
+import { Settings, Layout, GripVertical, Star, BookOpen, Brain, Clock, TrendingUp, CheckCircle, Award, Users, Zap, HelpCircle } from 'lucide-react'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/components/ui/use-toast'
 import { MagicLayout } from '@/components/ui/magic-layout'
@@ -25,7 +26,21 @@ export default function DashboardPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [draggedWidget, setDraggedWidget] = useState<string | null>(null)
   const [dragOverWidget, setDragOverWidget] = useState<string | null>(null)
+  const [showTutorial, setShowTutorial] = useState(false)
   const dragRef = useRef<HTMLDivElement>(null)
+
+  // Check if tutorial should be shown on first visit
+  useEffect(() => {
+    const hasSeenTutorial = localStorage.getItem('dashboard_tutorial_seen')
+    if (!hasSeenTutorial) {
+      setShowTutorial(true)
+    }
+  }, [])
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false)
+    localStorage.setItem('dashboard_tutorial_seen', 'true')
+  }
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -162,6 +177,15 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 w-full md:w-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowTutorial(true)}
+                  className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 text-xs md:text-sm"
+                  title="Ver tutorial"
+                >
+                  <HelpCircle className="w-3 h-3 md:w-4 md:h-4" />
+                  <span className="hidden md:inline ml-2">Ajuda</span>
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => setIsCustomizing(!isCustomizing)}
@@ -307,6 +331,9 @@ export default function DashboardPage() {
           </MagicCard>
         )}
       </div>
+
+      {/* Tutorial */}
+      {showTutorial && <DashboardTutorial onClose={handleCloseTutorial} />}
     </MagicLayout>
   )
 }
