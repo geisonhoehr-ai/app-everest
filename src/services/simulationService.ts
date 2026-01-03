@@ -1,0 +1,220 @@
+import { supabase } from '@/lib/supabase/client'
+
+export interface SimulationQuestion {
+  id: string
+  question_format: string
+  question_text: string
+  question_html?: string
+  question_image_url?: string
+  question_image_caption?: string
+  options?: string[]
+  options_rich?: Array<{
+    id: string
+    text: string
+    html?: string
+    imageUrl?: string
+    isCorrect?: boolean
+  }>
+  correct_answer?: string
+  correct_answers?: string[]
+  explanation?: string
+  explanation_html?: string
+  difficulty?: string
+  points?: number
+  time_limit_seconds?: number
+  source?: string
+  year?: number
+  subject?: string
+}
+
+export interface Simulation {
+  id: string
+  title: string
+  description?: string
+  duration_minutes?: number
+  questions: SimulationQuestion[]
+}
+
+export async function getSimulation(quizId: string): Promise<Simulation | null> {
+  try {
+    // Buscar quiz
+    const { data: quiz, error: quizError } = await supabase
+      .from('quizzes')
+      .select('id, title, description, duration_minutes')
+      .eq('id', quizId)
+      .single()
+
+    if (quizError) throw quizError
+    if (!quiz) return null
+
+    // Buscar questões do quiz
+    const { data: questions, error: questionsError } = await supabase
+      .from('quiz_questions')
+      .select('*')
+      .eq('quiz_id', quizId)
+      .order('created_at', { ascending: true })
+
+    if (questionsError) throw questionsError
+
+    // Transformar options de JSONB para array de strings
+    const formattedQuestions = questions?.map(q => ({
+      ...q,
+      options: q.options ? (Array.isArray(q.options) ? q.options : JSON.parse(JSON.stringify(q.options))) : undefined,
+    })) || []
+
+    return {
+      id: quiz.id,
+      title: quiz.title,
+      description: quiz.description,
+      duration_minutes: quiz.duration_minutes,
+      questions: formattedQuestions,
+    }
+  } catch (error) {
+    console.error('Error fetching simulation:', error)
+    throw error
+  }
+}
+
+export async function getAvailableSimulations() {
+  try {
+    const { data, error } = await supabase
+      .from('quizzes')
+      .select(`
+        id,
+        title,
+        description,
+        duration_minutes,
+        quiz_questions (count)
+      `)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    return data
+  } catch (error) {
+    console.error('Error fetching simulations:', error)
+    throw error
+  }
+}
+
+
+export async function startSimulationAttempt(quizId: string, userId: string): Promise<string> {
+  try {
+    // Check for existing in-progress attempt
+    const { data: existingAttempt } = await supabase
+      .from('quiz_attempts')
+      .select('id')
+      .eq('quiz_id', quizId)
+      .eq('user_id', userId)
+      .eq('status', 'in_progress')
+      .single()
+
+    if (existingAttempt) {
+      return existingAttempt.id
+    }
+
+
+    // Create new attempt
+    const { data: newAttempt, error } = await supabase
+      .from('quiz_attempts')
+      .insert({
+        quiz_id: quizId,
+        user_id: userId,
+        status: 'in_progress',
+        started_at: new Date().toISOString()
+      })
+      .select('id')
+      .single()
+
+    if (error) throw error
+    return newAttempt.id
+  } catch (error) {
+    console.error('Error starting simulation attempt:', error)
+    throw error
+  }
+}
+
+export async function saveSimulationAnswer(
+  attemptId: string,
+  questionId: string,
+  answer: any
+) {
+  try {
+    const { error } = await supabase
+      .from('quiz_answers')
+      .upsert({
+        attempt_id: attemptId,
+        question_id: questionId,
+        answer_value: typeof answer === 'string' ? answer : JSON.stringify(answer),
+        is_correct: null // Can be calculated later or via trigger
+      }, {
+        onConflict: 'attempt_id,question_id'
+      })
+
+    if (error) throw error
+  } catch (error) {
+    console.error('Error saving answer:', error)
+    throw error
+  }
+}
+
+export async function submitSimulation(attemptId: string) {
+  try {
+    const { data, error } = await supabase.rpc('submit_quiz_attempt', {
+      p_attempt_id: attemptId
+    })
+
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error submitting simulation:', error)
+    throw error
+  }
+}
+
+export async function getSimulationResult(attemptId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('quiz_attempts')
+      .select(`
+        *,
+        quiz:quizzes(title, type),
+        answers:quiz_answers(
+          *,
+          question:quiz_questions(
+            id,
+            subject,
+            difficulty,
+            points
+          )
+        )
+      `)
+      .eq('id', attemptId)
+      .single()
+
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Error fetching simulation result:', error)
+    throw error
+  }
+}
+
+export async function getLastAttempt(quizId: string, userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('quiz_attempts')
+      .select('id, status, submitted_at')
+      .eq('quiz_id', quizId)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error && error.code !== 'PGRST116') throw error
+    return data
+  } catch (error) {
+    console.error('Error fetching last attempt:', error)
+    throw error
+  }
+}
