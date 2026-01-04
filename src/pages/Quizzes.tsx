@@ -91,7 +91,7 @@ export default function QuizzesPage() {
   }
 
   return (
-    <MagicLayout 
+    <MagicLayout
       title="Quizzes"
       description="Teste seus conhecimentos com nossos quizzes interativos e acompanhe seu progresso"
     >
@@ -198,115 +198,118 @@ export default function QuizzesPage() {
               {subjects
                 .filter(subject => !subject.name.includes('Regulamentos Militares'))
                 .map((subject, index) => {
-                const totalQuestions = subject.topics.reduce((sum, topic) => sum + topic.questionCount, 0)
-                const totalQuizzes = subject.topics.reduce((sum, topic) => sum + topic.quizzes.length, 0)
+                  const totalQuestions = subject.topics.reduce((sum, topic) => sum + topic.questionCount, 0)
+                  const totalQuizzes = subject.topics.reduce((sum, topic) => sum + topic.quizzes.length, 0)
 
-                logger.debug(`🎯 Card render - ${subject.name}: Topics=${subject.topics.length}, Quizzes=${totalQuizzes}, Questions=${totalQuestions}`)
+                  logger.debug(`🎯 Card render - ${subject.name}: Topics=${subject.topics.length}, Quizzes=${totalQuizzes}, Questions=${totalQuestions}`)
 
-                // Progress will be calculated from real user data later
-                // For now, showing 0 instead of fake random progress
-                const progress = 0
+                  // Progress will be calculated from real user data later
+                  // For now, showing 0 instead of fake random progress
+                  const progress = 0
 
-                return (
-                  <Link
-                    to={`/quizzes/${subject.id}`}
-                    key={subject.id}
-                    className="group block"
-                  >
-                    <MagicCard
-                      variant="premium"
-                      size="lg"
-                      className="flex flex-col overflow-hidden transition-colors duration-300 hover:scale-[1.02] hover:shadow-2xl h-full"
-                      style={{ animationDelay: `${delays[index]}ms` }}
+                  return (
+                    <Link
+                      to={`/quizzes/${subject.id}`}
+                      key={subject.id}
+                      className="group block"
                     >
-                      {/* Image Header - Reduzida e mais proporcionada */}
-                      <div className="relative h-36 sm:h-40 overflow-hidden">
-                        <img
-                          src={
-                            subject.image ||
-                            `https://img.usecurling.com/p/600/300?q=${encodeURIComponent(
-                              subject.name,
-                            )}`
-                          }
-                          alt={subject.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
+                      <MagicCard
+                        variant="premium"
+                        size="lg"
+                        className="flex flex-col overflow-hidden transition-colors duration-300 hover:scale-[1.02] hover:shadow-2xl h-full"
+                        style={{ animationDelay: `${delays[index]}ms` }}
+                      >
+                        {/* Image Header - Reduzida e mais proporcionada */}
+                        <div className="relative h-36 sm:h-40 overflow-hidden">
+                          <img
+                            src={
+                              subject.name.toLowerCase().includes('português') ||
+                                subject.name.toLowerCase().includes('portugues')
+                                ? '/quiz-cover.png'
+                                : subject.image ||
+                                `https://img.usecurling.com/p/600/300?q=${encodeURIComponent(
+                                  subject.name,
+                                )}`
+                            }
+                            alt={subject.name}
+                            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
+                          />
 
-                        {/* Overlay com gradiente mais suave */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                          {/* Overlay com gradiente mais suave */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-                        {/* Progress Badge - Mais discreto */}
-                        <div className="absolute top-3 right-3">
-                          <div className="px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-sm shadow-lg">
-                            <span className="text-xs font-bold text-gray-900">{Math.round(progress)}%</span>
-                          </div>
-                        </div>
-
-                        {/* Title - Mais limpo */}
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <h3 className="text-white text-lg font-bold mb-0.5 drop-shadow-lg line-clamp-1">
-                            {subject.name}
-                          </h3>
-                          <p className="text-white/90 text-xs line-clamp-1">
-                            {subject.description || `Quizzes sobre ${subject.name}`}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Content - Mais compacto */}
-                      <div className="flex-1 flex flex-col p-4">
-                        {/* Stats - Inline para economizar espaço */}
-                        <div className="flex items-center justify-around gap-2 mb-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                              <Target className="w-4 h-4 text-blue-600" />
-                            </div>
-                            <div>
-                              <div className="text-sm font-bold text-blue-600">{subject.topics.length}</div>
-                              <div className="text-xs text-muted-foreground">Tópicos</div>
+                          {/* Progress Badge - Mais discreto */}
+                          <div className="absolute top-3 right-3">
+                            <div className="px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-sm shadow-lg">
+                              <span className="text-xs font-bold text-gray-900">{Math.round(progress)}%</span>
                             </div>
                           </div>
 
-                          <div className="w-px h-10 bg-border" />
-
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                              <Zap className="w-4 h-4 text-green-600" />
-                            </div>
-                            <div>
-                              <div className="text-sm font-bold text-green-600">{totalQuizzes}</div>
-                              <div className="text-xs text-muted-foreground">Quizzes</div>
-                            </div>
+                          {/* Title - Mais limpo */}
+                          <div className="absolute bottom-3 left-3 right-3">
+                            <h3 className="text-white text-lg font-bold mb-0.5 drop-shadow-lg line-clamp-1">
+                              {subject.name}
+                            </h3>
+                            <p className="text-white/90 text-xs line-clamp-1">
+                              {subject.description || `Quizzes sobre ${subject.name}`}
+                            </p>
                           </div>
                         </div>
 
-                        {/* Progress - Mais limpo */}
-                        <div className="space-y-1.5 mb-4">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-muted-foreground font-medium">Progresso</span>
-                            <span className="text-xs font-bold text-purple-600">{Math.round(progress)}%</span>
-                          </div>
-                          <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-1000 ease-out"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                        </div>
+                        {/* Content - Mais compacto */}
+                        <div className="flex-1 flex flex-col p-4">
+                          {/* Stats - Inline para economizar espaço */}
+                          <div className="flex items-center justify-around gap-2 mb-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                <Target className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-bold text-blue-600">{subject.topics.length}</div>
+                                <div className="text-xs text-muted-foreground">Tópicos</div>
+                              </div>
+                            </div>
 
-                        {/* Action Button - Mais destacado */}
-                        <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white transition-colors duration-300 py-2.5 text-sm font-semibold rounded-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40">
-                          <div className="flex items-center justify-center gap-2">
-                            <Play className="w-4 h-4 fill-current" />
-                            Iniciar Quiz
-                            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                            <div className="w-px h-10 bg-border" />
+
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                                <Zap className="w-4 h-4 text-green-600" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-bold text-green-600">{totalQuizzes}</div>
+                                <div className="text-xs text-muted-foreground">Quizzes</div>
+                              </div>
+                            </div>
                           </div>
-                        </Button>
-                      </div>
-                    </MagicCard>
-                  </Link>
-                )
-              })}
+
+                          {/* Progress - Mais limpo */}
+                          <div className="space-y-1.5 mb-4">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-muted-foreground font-medium">Progresso</span>
+                              <span className="text-xs font-bold text-purple-600">{Math.round(progress)}%</span>
+                            </div>
+                            <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Action Button - Mais destacado */}
+                          <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white transition-colors duration-300 py-2.5 text-sm font-semibold rounded-lg shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40">
+                            <div className="flex items-center justify-center gap-2">
+                              <Play className="w-4 h-4 fill-current" />
+                              Iniciar Quiz
+                              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                            </div>
+                          </Button>
+                        </div>
+                      </MagicCard>
+                    </Link>
+                  )
+                })}
             </div>
           </div>
         )}
