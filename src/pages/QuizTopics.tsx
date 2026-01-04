@@ -142,9 +142,9 @@ export default function QuizTopicsPage() {
                 {/* Image Header */}
                 <div className="relative h-32 sm:h-36 overflow-hidden">
                   <img
-                    src={`https://image.pollinations.ai/prompt/${encodeURIComponent(topic.name + ' education concept 3d render minimal friendly')}?width=600&height=300&nologo=true&seed=${topic.id}`}
+                    src="/quiz-cover.png"
                     alt={topic.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
