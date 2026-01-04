@@ -241,13 +241,16 @@ export default function FlashcardsPage() {
                         <div className="relative h-36 sm:h-40 overflow-hidden">
                           <img
                             src={
-                              subject.image_url ||
-                              `https://img.usecurling.com/p/600/300?q=${encodeURIComponent(
-                                subject.name,
-                              )}`
+                              subject.name.toLowerCase().includes('português') ||
+                                subject.name.toLowerCase().includes('portugues')
+                                ? '/flashcard-cover.png'
+                                : subject.image_url ||
+                                `https://img.usecurling.com/p/600/300?q=${encodeURIComponent(
+                                  subject.name,
+                                )}`
                             }
                             alt={subject.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
                           />
 
                           {/* Overlay com gradiente mais suave */}
