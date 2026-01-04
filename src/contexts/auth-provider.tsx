@@ -205,23 +205,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setProfileFetchAttempted(false)
 
-      // Fetch profile for authenticated user with retry
-      let userProfile = await fetchUserProfile(newSession.user.id)
+      // Fetch profile for authenticated user with robust retry
+      let userProfile = null
+      const maxRetries = 3
 
-      // If failed, retry once after 1 second
-      if (!userProfile) {
-        console.log('🔄 Profile fetch failed, retrying in 1s...')
-        await new Promise(resolve => setTimeout(resolve, 1000))
+      for (let i = 0; i < maxRetries; i++) {
         userProfile = await fetchUserProfile(newSession.user.id)
+        if (userProfile) break
+
+        if (i < maxRetries - 1) {
+          const delay = Math.pow(2, i) * 1000
+          console.log(`🔄 Profile fetch attempt ${i + 1} failed, retrying in ${delay / 1000}s...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
       }
 
       setProfile(userProfile)
       setProfileFetchAttempted(true)
 
-      // Only log the result, don't show error toast
-      // (profile might load on subsequent attempts)
+      // Only log the result
       if (!userProfile) {
-        console.warn('⚠️ Failed to create or fetch user profile after retry')
+        console.warn('⚠️ Failed to create or fetch user profile after multiple retries')
       } else {
         console.log('✅ User authenticated with profile:', userProfile.email)
       }
