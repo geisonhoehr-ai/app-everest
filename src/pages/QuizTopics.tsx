@@ -128,94 +128,89 @@ export default function QuizTopicsPage() {
             return (
               <MagicCard
                 key={topic.id}
-                className="h-full flex flex-col hover:shadow-lg transition-shadow"
-                variant="glass"
+                variant="premium"
+                size="lg"
+                className="flex flex-col overflow-hidden transition-colors duration-300 hover:scale-[1.02] hover:shadow-2xl h-full"
                 led
                 ledColor={
                   index % 4 === 0 ? 'cyan' :
-                  index % 4 === 1 ? 'purple' :
-                  index % 4 === 2 ? 'orange' :
-                  'green'
+                    index % 4 === 1 ? 'purple' :
+                      index % 4 === 2 ? 'orange' :
+                        'green'
                 }
               >
-                <div className="flex-grow flex flex-col p-6 space-y-4">
-                  {/* Header */}
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-lg font-bold text-foreground line-clamp-2">
-                        {topic.name}
-                      </h3>
-                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs shrink-0">
-                        {totalQuizzes} {totalQuizzes === 1 ? 'quiz' : 'quizzes'}
-                      </Badge>
-                    </div>
+                {/* Image Header */}
+                <div className="relative h-32 sm:h-36 overflow-hidden">
+                  <img
+                    src={`https://img.usecurling.com/p/600/300?q=${encodeURIComponent(topic.name)}`}
+                    alt={topic.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                    {topic.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {topic.description}
-                      </p>
-                    )}
+                  <div className="absolute inset-x-3 bottom-3">
+                    <h3 className="text-white text-lg font-bold mb-0.5 drop-shadow-lg line-clamp-1">
+                      {topic.name}
+                    </h3>
+                    <Badge variant="secondary" className="bg-white/90 text-black shadow-sm text-[10px] h-5">
+                      {totalQuizzes} {totalQuizzes === 1 ? 'Quiz' : 'Quizzes'}
+                    </Badge>
                   </div>
+                </div>
+
+                <div className="flex-1 flex flex-col p-4 space-y-4">
+                  {topic.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-2 min-h-[2.5em]">
+                      {topic.description}
+                    </p>
+                  )}
 
                   {/* Stats */}
-                  <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center justify-between text-xs py-2 border-t border-border/50">
                     <div className="flex items-center gap-1.5">
                       <Target className="w-3.5 h-3.5 text-blue-500" />
-                      <span className="text-muted-foreground">
+                      <span className="text-muted-foreground font-medium">
                         {totalQuestions} questões
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-green-500" />
-                      <span className="text-muted-foreground">Disponível</span>
+                      <span className="text-muted-foreground font-medium">Disponível</span>
                     </div>
                   </div>
 
-                  {/* Quizzes List */}
-                  {totalQuizzes > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Quizzes neste tópico:
+                  {/* Quizzes Preview List */}
+                  {totalQuizzes > 0 ? (
+                    <div className="space-y-1.5 flex-1">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                        Disponíveis
                       </p>
-                      <div className="space-y-1.5">
-                        {topic.quizzes.slice(0, 3).map((quiz) => (
-                          <Link
-                            key={quiz.id}
-                            to={`/quiz/${quiz.id}`}
-                            className="block"
-                          >
-                            <div className="text-xs p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="line-clamp-1 font-medium">
-                                  {quiz.title}
-                                </span>
-                                <Play className="h-3 w-3 text-primary shrink-0" />
-                              </div>
-                            </div>
-                          </Link>
+                      <div className="space-y-1">
+                        {topic.quizzes.slice(0, 2).map((quiz) => (
+                          <div key={quiz.id} className="flex items-center gap-2 text-xs text-foreground/80">
+                            <div className="w-1 h-1 rounded-full bg-primary/50" />
+                            <span className="line-clamp-1">{quiz.title}</span>
+                          </div>
                         ))}
-                        {totalQuizzes > 3 && (
-                          <p className="text-xs text-muted-foreground text-center pt-1">
-                            +{totalQuizzes - 3} mais {totalQuizzes - 3 === 1 ? 'quiz' : 'quizzes'}
-                          </p>
-                        )}
                       </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center p-2 rounded-lg bg-muted/20 border border-dashed text-xs text-muted-foreground">
+                      Em breve
                     </div>
                   )}
 
                   {/* Action Button */}
-                  {totalQuizzes === 1 ? (
-                    <Button asChild className="w-full mt-auto">
+                  {totalQuizzes > 0 ? (
+                    <Button asChild className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/20">
                       <Link to={`/quiz/${topic.quizzes[0].id}`}>
-                        <Play className="h-4 w-4 mr-2" />
-                        Iniciar Quiz
+                        <Play className="h-3.5 w-3.5 mr-2" />
+                        Iniciar Agora
                       </Link>
                     </Button>
                   ) : (
-                    <Button asChild variant="outline" className="w-full mt-auto">
-                      <div className="text-center text-sm text-muted-foreground">
-                        Escolha um quiz acima
-                      </div>
+                    <Button disabled variant="outline" className="w-full opacity-50">
+                      Indisponível
                     </Button>
                   )}
                 </div>

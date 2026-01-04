@@ -254,7 +254,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto mt-4 md:mt-0">
                 <Button
                   variant="outline"
                   onClick={() => setShowTutorial(true)}
@@ -267,7 +267,7 @@ export default function DashboardPage() {
                 <Button
                   variant="outline"
                   onClick={() => setIsCustomizing(!isCustomizing)}
-                  className="flex-1 md:flex-none bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 text-xs md:text-sm"
+                  className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 text-xs md:text-sm"
                 >
                   <Layout className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                   <span className="hidden sm:inline">Personalizar</span>
@@ -277,7 +277,7 @@ export default function DashboardPage() {
                 <Button
                   variant="outline"
                   onClick={handleSaveLayout}
-                  className="flex-1 md:flex-none bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 text-xs md:text-sm"
+                  className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 text-xs md:text-sm"
                 >
                   <Settings className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                   Salvar
