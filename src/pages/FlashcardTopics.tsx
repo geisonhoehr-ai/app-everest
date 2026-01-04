@@ -58,7 +58,7 @@ const TopicCard = ({ topic, index, delay, onStudyClick }: TopicCardProps) => {
       <div className="flex flex-col h-full p-6">
         <div className="flex-1 space-y-4">
           <div className="space-y-2">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 line-clamp-2 leading-tight min-h-[3.5rem] flex items-center">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 line-clamp-2 leading-tight min-h-[3rem] flex items-center">
               {topic.name}
             </h3>
             <Badge variant="outline" className="w-fit bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 text-xs">
@@ -66,7 +66,7 @@ const TopicCard = ({ topic, index, delay, onStudyClick }: TopicCardProps) => {
             </Badge>
           </div>
 
-          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
+          <p className="text-[13px] text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
             {topic.description || `Estude ${topic.name} com flashcards interativos`}
           </p>
 
@@ -188,7 +188,7 @@ export default function FlashcardTopicsPage() {
               </p>
             </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
             {topics.map((topic, index) => (
               <TopicCard
                 key={topic.id}
