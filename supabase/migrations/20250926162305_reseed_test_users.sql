@@ -1,10 +1,31 @@
 -- Enable uuid-ossp extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+
+-- Step 0: Ensure unique constraints exist for ON CONFLICT clauses
+DO $$
+BEGIN
+    -- Check and add constraint for students table
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_user_id_key') THEN
+        -- Verify if the table exists first to avoid errors if run in empty db
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'students') THEN
+             ALTER TABLE public.students ADD CONSTRAINT students_user_id_key UNIQUE (user_id);
+        END IF;
+    END IF;
+
+    -- Check and add constraint for teachers table
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'teachers_user_id_key') THEN
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'teachers') THEN
+            ALTER TABLE public.teachers ADD CONSTRAINT teachers_user_id_key UNIQUE (user_id);
+        END IF;
+    END IF;
+END $$;
+
 -- Step 1: Delete existing test users from auth schema.
 -- This will cascade and delete related entries in public.users, students, teachers, etc.,
 -- ensuring a clean state before re-seeding.
 DELETE FROM auth.users WHERE email IN ('aluno@teste.com', 'professor@teste.com', 'admin@teste.com');
+
 
 -- Step 2: Re-create the test users in auth.users. Password for all is 'senha123'.
 INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)

@@ -40,6 +40,7 @@ interface AuthContextType {
   loading: boolean
   profileFetchAttempted: boolean
   refreshProfile: () => Promise<void>
+  getRedirectPath: () => string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -433,6 +434,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const getRedirectPath = () => {
+    if (!profile) return '/login'
+
+    switch (profile.role) {
+      case 'administrator':
+        return '/admin'
+      case 'teacher':
+        return '/admin' // Teachers also go to admin area for content management
+      case 'student':
+      default:
+        return '/dashboard'
+    }
+  }
+
   const value = {
     user: session?.user ?? null,
     session,
@@ -443,6 +458,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loading,
     profileFetchAttempted,
     refreshProfile,
+    getRedirectPath,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

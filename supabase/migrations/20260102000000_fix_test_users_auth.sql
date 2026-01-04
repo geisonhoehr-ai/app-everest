@@ -7,9 +7,30 @@
 -- Solução: Recriar usuários com todos os campos necessários
 -- =====================================================
 
--- 1. DELETAR USUÁRIOS EXISTENTES
+
+-- 1. GARANTIR RESTRIÇÕES ÚNICAS (NECESSÁRIO PARA ON CONFLICT)
+-- =====================================================
+DO $$
+BEGIN
+    -- Check and add constraint for students table
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'students_user_id_key') THEN
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'students') THEN
+             ALTER TABLE public.students ADD CONSTRAINT students_user_id_key UNIQUE (user_id);
+        END IF;
+    END IF;
+
+    -- Check and add constraint for teachers table
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'teachers_user_id_key') THEN
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'teachers') THEN
+            ALTER TABLE public.teachers ADD CONSTRAINT teachers_user_id_key UNIQUE (user_id);
+        END IF;
+    END IF;
+END $$;
+
+-- 2. DELETAR USUÁRIOS EXISTENTES
 -- =====================================================
 DELETE FROM auth.users WHERE email IN ('aluno@teste.com', 'professor@teste.com', 'admin@teste.com');
+
 
 -- 2. CRIAR USUÁRIOS COM TODOS OS CAMPOS NECESSÁRIOS
 -- =====================================================

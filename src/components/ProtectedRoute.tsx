@@ -60,6 +60,34 @@ export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps
 
   // Redirect to appropriate dashboard if user doesn't have required role
   const fallbackPath = redirectTo || getRedirectPath()
+
+  // Prevent infinite redirect loops
+  if (location.pathname === fallbackPath) {
+    console.warn('⚠️ Infinite redirect loop detected in ProtectedRoute')
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+        <h2 className="text-2xl font-bold mb-2">Acesso Negado</h2>
+        <p className="text-muted-foreground mb-4">
+          Você não tem permissão para acessar esta página e não foi possível redirecioná-lo.
+        </p>
+        <div className="flex gap-4">
+          <button
+            onClick={() => window.location.href = '/login'}
+            className="px-4 py-2 border rounded-md hover:bg-muted"
+          >
+            Voltar para Login
+          </button>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90"
+          >
+            Ir para Início
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return <Navigate to={fallbackPath} state={{ from: location }} replace />
 }
 

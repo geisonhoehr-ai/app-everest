@@ -359,7 +359,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                        {widget.icon}
+                        {widget.icon && <widget.icon className="h-6 w-6 text-primary" />}
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold">{widget.name}</h3>

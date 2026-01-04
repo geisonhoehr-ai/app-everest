@@ -45,14 +45,20 @@ export const useAuth = () => {
   const getRedirectPath = () => {
     if (!auth.profile) return '/login'
 
-    switch (auth.profile.role) {
-      case 'administrator':
-        return '/admin'
-      case 'teacher':
-      case 'student':
-      default:
-        return '/dashboard'
+    const role = auth.profile.role.toLowerCase()
+
+    // Handle specific admin paths
+    if (role === 'administrator' || role === 'admin') {
+      return '/admin'
     }
+
+    // Teachers go to admin area for content management
+    if (role === 'teacher') {
+      return '/admin' // Or /dashboard if they have a student view too, but usually admin
+    }
+
+    // Default student path
+    return '/dashboard'
   }
 
   return {
