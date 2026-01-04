@@ -152,18 +152,23 @@ export default function QuizTopicsPage() {
                     <h3 className="text-white text-lg font-bold mb-0.5 drop-shadow-lg line-clamp-1">
                       {topic.name}
                     </h3>
-                    <Badge variant="secondary" className="bg-white/90 text-black shadow-sm text-[10px] h-5">
-                      {totalQuizzes} {totalQuizzes === 1 ? 'Quiz' : 'Quizzes'}
-                    </Badge>
                   </div>
                 </div>
 
                 <div className="flex-1 flex flex-col p-4 space-y-4">
-                  {topic.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 min-h-[2.5em]">
-                      {topic.description}
-                    </p>
-                  )}
+                  <div className="space-y-2">
+                    {/* Badge moved here for consistency */}
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-[10px] h-5">
+                        {totalQuizzes} {totalQuizzes === 1 ? 'Quiz' : 'Quizzes'}
+                      </Badge>
+                    </div>
+                    {topic.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2 min-h-[2.5em]">
+                        {topic.description}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Stats */}
                   <div className="flex items-center justify-between text-xs py-2 border-t border-border/50">
