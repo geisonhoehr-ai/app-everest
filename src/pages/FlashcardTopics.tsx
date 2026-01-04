@@ -66,7 +66,7 @@ const TopicCard = ({ topic, index, delay, onStudyClick }: TopicCardProps) => {
             </Badge>
           </div>
 
-          <p className="text-[13px] text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
+          <p className="text-[13px] text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed min-h-[4rem]">
             {topic.description || `Estude ${topic.name} com flashcards interativos`}
           </p>
 

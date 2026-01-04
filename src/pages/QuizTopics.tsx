@@ -164,7 +164,7 @@ export default function QuizTopicsPage() {
                       </Badge>
                     </div>
                     {topic.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2 min-h-[2.5em]">
+                      <p className="text-xs text-muted-foreground line-clamp-2 min-h-[3rem]">
                         {topic.description}
                       </p>
                     )}
