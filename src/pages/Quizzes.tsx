@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -7,6 +7,7 @@ import { useStaggeredAnimation } from '@/hooks/useAnimations'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { QuizzesTutorial } from '@/components/quizzes/QuizzesTutorial'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { Play, Target, Clock, TrendingUp, ArrowRight, BookOpen, Brain, Star, Award, Users, Zap, Lock, HelpCircle } from 'lucide-react'
 import { quizService, type QuizSubject } from '@/services/quizService'
@@ -17,7 +18,9 @@ import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { logger } from '@/lib/logger'
 
 export default function QuizzesPage() {
-  const { isStudent } = useAuth()
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const { isStudent, isAdmin, isTeacher } = useAuth()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [subjects, setSubjects] = useState<QuizSubject[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -169,7 +172,17 @@ export default function QuizzesPage() {
                 Parece que não há quizzes disponíveis no momento. Que tal criar um novo?
               </p>
               <Button
-                onClick={() => logger.info('Criar novo quiz - Feature em desenvolvimento')}
+                onClick={() => {
+                  if (isAdmin || isTeacher) {
+                    navigate('/admin/quizzes/new')
+                  } else {
+                    toast({
+                      title: 'Acesso Restrito',
+                      description: 'Apenas professores e administradores podem criar novos quizzes.',
+                      variant: 'default',
+                    })
+                  }
+                }}
                 className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-8 py-3 rounded-2xl font-medium transition-transform duration-300 hover:scale-105 hover:shadow-lg inline-flex items-center justify-center"
               >
                 Criar Primeiro Quiz

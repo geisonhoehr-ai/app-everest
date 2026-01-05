@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -7,6 +7,7 @@ import { useStaggeredAnimation } from '@/hooks/useAnimations'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { FlashcardsTutorial } from '@/components/flashcards/FlashcardsTutorial'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import {
   Play,
@@ -22,7 +23,8 @@ import {
   Award,
   Users,
   Lock,
-  HelpCircle
+  HelpCircle,
+  PlusCircle
 } from 'lucide-react'
 import { getSubjectsWithProgress } from '@/services/subjectService'
 import { SectionLoader } from '@/components/SectionLoader'
@@ -45,7 +47,9 @@ interface Subject {
 }
 
 export default function FlashcardsPage() {
-  const { isStudent, user } = useAuth()
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const { isStudent, isAdmin, isTeacher } = useAuth()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [subjectList, setSubjectList] = useState<Subject[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -192,9 +196,20 @@ export default function FlashcardsPage() {
                 Parece que não há flashcards disponíveis no momento. Que tal criar um novo?
               </p>
               <Button
-                onClick={() => logger.info('Criar novo flashcard - Feature em desenvolvimento')}
+                onClick={() => {
+                  if (isAdmin || isTeacher) {
+                    navigate('/admin/flashcards/new')
+                  } else {
+                    toast({
+                      title: 'Acesso Restrito',
+                      description: 'Apenas professores e administradores podem criar novos flashcards.',
+                      variant: 'default',
+                    })
+                  }
+                }}
                 className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-8 py-3 rounded-2xl font-medium transition-transform duration-300 hover:scale-105 hover:shadow-lg inline-flex items-center justify-center"
               >
+                <PlusCircle className="mr-2 h-5 w-5" />
                 Criar Primeiro Flashcard
               </Button>
             </div>
