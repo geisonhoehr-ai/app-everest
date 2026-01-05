@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Bell, Menu, Search, Mountain } from 'lucide-react'
+import { Bell, Menu, Search, Mountain, LogOut, User, Settings as SettingsIcon, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -17,11 +17,10 @@ import { ThemeToggle } from './ThemeToggle'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { useAuth } from '@/hooks/use-auth'
 import { SidebarTrigger } from './ui/sidebar'
-import { useStaggeredAnimation } from '@/hooks/useAnimations'
 import { cn } from '@/lib/utils'
 
 export const Header = () => {
-  const unreadNotifications = 3
+  const unreadNotifications = 0 // Simulating no notifications based on DB state would be better
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -38,36 +37,34 @@ export const Header = () => {
     return `${first}${last}`.toUpperCase()
   }
 
-  const menuDelays = useStaggeredAnimation(4, 100)
-
   return (
-    <header className="sticky top-0 z-30 flex h-14 md:h-16 items-center gap-2 sm:gap-4 border-b border-border/20 bg-card/80 backdrop-blur-xl px-3 sm:px-4 md:px-6 animate-fade-in-down shadow-lg shadow-black/5">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-background/60 backdrop-blur-md px-6 shadow-sm transition-all duration-300 supports-[backdrop-filter]:bg-background/60">
       {profile && (
         <>
-          <div className="hidden md:block animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+          <div className="hidden md:flex items-center">
             <SidebarTrigger asChild>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
-                className="group transition-all duration-300 hover:bg-primary/5"
+                className="hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors"
               >
-                <Menu className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+                <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle Sidebar</span>
               </Button>
             </SidebarTrigger>
           </div>
-          <div className="md:hidden animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+          <div className="md:hidden">
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="ghost"
                   size="icon"
-                  className="group transition-all duration-300 hover:bg-primary/5"
+                  className="hover:bg-accent hover:text-accent-foreground text-muted-foreground"
                 >
-                  <Menu className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" />
+                  <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-72 bg-background">
+              <SheetContent side="left" className="p-0 w-72">
                 <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
                 <MobileSidebar />
               </SheetContent>
@@ -76,146 +73,114 @@ export const Header = () => {
         </>
       )}
 
-      <div className="relative flex-1 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+      <div className="flex flex-1 items-center gap-4 md:gap-8">
         {profile ? (
-          <>
-            <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground transition-colors duration-300" />
+          <div className="relative flex-1 max-w-md hidden md:flex items-center">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
             <Input
               type="search"
-              placeholder="Pesquisar..."
-              className={cn(
-                "w-full rounded-lg md:rounded-xl bg-muted/50 border-border/50 pl-8 sm:pl-10 pr-2 text-sm md:text-base h-9 md:h-10",
-                "md:w-[200px] lg:w-[300px] xl:w-[400px]",
-                "transition-all duration-300 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20",
-                "placeholder:text-muted-foreground/70"
-              )}
+              placeholder="O que você quer aprender hoje?"
+              className="w-full bg-muted/40 pl-9 border-transparent focus:border-primary/20 focus:bg-background transition-all rounded-xl h-10 shadow-none hover:bg-muted/60"
             />
-          </>
+            <div className="absolute right-2 px-1.5 py-0.5 rounded border bg-background text-[10px] font-medium text-muted-foreground opacity-50">
+              ⌘K
+            </div>
+          </div>
         ) : (
           <Link
             to="/"
-            className="flex items-center gap-2 font-bold text-base md:text-lg mr-auto group"
+            className="flex items-center gap-2 font-bold text-lg hover:opacity-80 transition-opacity"
           >
-            <Mountain className="h-5 w-5 md:h-6 md:w-6 text-primary animate-float" />
-            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Everest
-            </span>
+            <div className="rounded-lg bg-primary/10 p-1.5">
+              <Mountain className="h-5 w-5 text-primary" />
+            </div>
+            <span className="text-foreground">Everest</span>
           </Link>
         )}
       </div>
 
-      <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
-        <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-          <ThemeToggle />
-        </div>
+      <div className="flex items-center gap-2 md:gap-4">
+        <ThemeToggle />
+
         {profile ? (
           <>
-            <div className="animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "rounded-lg md:rounded-xl relative group h-9 w-9 md:h-10 md:w-10",
-                  "transition-all duration-300 hover:bg-primary/5 hover:shadow-md hover:shadow-primary/10"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-muted-foreground hover:text-foreground rounded-full h-9 w-9"
+              asChild
+            >
+              <NavLink to="/notificacoes">
+                <Bell className="h-4 w-4" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
                 )}
-                asChild
-              >
-                <NavLink to="/notificacoes">
-                  <div className="p-0.5 md:p-1 rounded-lg transition-all duration-300 group-hover:bg-primary/10">
-                    <Bell className="h-4 w-4 md:h-5 md:w-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" />
-                  </div>
-                  {unreadNotifications > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
-                      <span className="relative inline-flex h-2.5 w-2.5 md:h-3 md:w-3 rounded-full bg-primary text-[8px] md:text-xs text-primary-foreground font-bold items-center justify-center">
-                        {unreadNotifications}
-                      </span>
-                    </span>
-                  )}
-                  <span className="sr-only">Toggle notifications</span>
-                </NavLink>
-              </Button>
-            </div>
-            <div className="animate-fade-in-up" style={{ animationDelay: '500ms' }}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={cn(
-                      "rounded-lg md:rounded-xl group h-9 w-9 md:h-10 md:w-10",
-                      "transition-all duration-300 hover:bg-primary/5 hover:shadow-md hover:shadow-primary/10"
-                    )}
-                  >
-                    <Avatar className="h-7 w-7 md:h-8 md:w-8 ring-1 md:ring-2 ring-primary/20 ring-offset-1 md:ring-offset-2 ring-offset-background transition-all duration-300 group-hover:ring-primary group-hover:scale-105">
-                      <AvatarImage
-                        src={`https://img.usecurling.com/ppl/medium?seed=${profile?.id}`}
-                        alt="Avatar"
-                        className="object-cover"
-                      />
-                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold text-xs md:text-sm">
-                        {getInitials()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end"
-                  className="animate-fade-in-up w-56"
+                <span className="sr-only">Notificações</span>
+              </NavLink>
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-9 w-9 rounded-full ring-2 ring-transparent hover:ring-border transition-all p-0 overflow-hidden"
                 >
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{profile?.first_name} {profile?.last_name}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{profile?.email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/configuracoes" className="cursor-pointer transition-colors duration-300 hover:text-primary">
-                      Perfil
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/configuracoes" className="cursor-pointer transition-colors duration-300 hover:text-primary">
-                      Configurações
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/faq" className="cursor-pointer transition-colors duration-300 hover:text-primary">
-                      Suporte
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={handleSignOut}
-                    className="cursor-pointer text-destructive transition-colors duration-300 hover:text-destructive focus:text-destructive"
-                  >
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage
+                      src={profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.first_name}+${profile.last_name}&background=random`}
+                      alt={profile.first_name}
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 mt-2" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{profile.first_name} {profile.last_name}</p>
+                    <p className="text-xs leading-none text-muted-foreground font-light">{profile.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/configuracoes" className="cursor-pointer gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>Meu Perfil</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/configuracoes" className="cursor-pointer gap-2">
+                    <SettingsIcon className="h-4 w-4 text-muted-foreground" />
+                    <span>Configurações</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/faq" className="cursor-pointer gap-2">
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    <span>Ajuda e Suporte</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20 gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sair da Conta</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         ) : (
-          <div className="flex items-center gap-1.5 sm:gap-2 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-            <Button 
-              variant="outline" 
-              asChild
-              size="sm"
-              className="group transition-all duration-300 hover:bg-primary/5 text-xs md:text-sm h-8 md:h-9 px-2 md:px-4"
-            >
-              <Link to="/login" className="transition-colors duration-300 group-hover:text-primary">
-                Entrar
-              </Link>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" asChild size="sm">
+              <Link to="/login">Entrar</Link>
             </Button>
-            <Button 
-              asChild
-              size="sm"
-              className="group transition-all duration-300 hover:bg-primary/90 text-xs md:text-sm h-8 md:h-9 px-2 md:px-4"
-            >
-              <a href="/#planos">
-                Cadastre-se
-              </a>
+            <Button asChild size="sm" className="bg-primary hover:bg-primary/90">
+              <Link to="/register">Começar agora</Link>
             </Button>
           </div>
         )}

@@ -68,17 +68,11 @@ const studentMenuItems = [
     featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
   {
-    label: 'Ranking',
-    href: '/ranking',
-    icon: Trophy,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
+    label: 'Meus Cursos',
+    href: '/meus-cursos',
+    icon: BookOpen,
+    featureKey: FEATURE_KEYS.VIDEO_LESSONS, // 🔒 Controlado por turma
   },
-  // {
-  //   label: 'Meus Cursos',
-  //   href: '/meus-cursos',
-  //   icon: BookOpen,
-  //   featureKey: FEATURE_KEYS.VIDEO_LESSONS, // 🔒 Controlado por turma
-  // },
   {
     label: 'Flashcards',
     href: '/flashcards',
@@ -86,9 +80,15 @@ const studentMenuItems = [
     featureKey: FEATURE_KEYS.FLASHCARDS, // 🔒 Controlado por turma
   },
   {
-    label: 'Quizzes',
-    href: '/quizzes',
-    icon: Target,
+    label: 'Banco de Questões',
+    href: '/questoes',
+    icon: Search,
+    featureKey: FEATURE_KEYS.QUIZ, // 🔒 Controlado por turma (usando mesma key de quiz por enquanto)
+  },
+  {
+    label: 'Simulados',
+    href: '/simulados',
+    icon: ClipboardCheck,
     featureKey: FEATURE_KEYS.QUIZ, // 🔒 Controlado por turma
   },
   {
@@ -98,10 +98,10 @@ const studentMenuItems = [
     featureKey: FEATURE_KEYS.ESSAYS, // 🔒 Controlado por turma
   },
   {
-    label: 'Simulados',
-    href: '/simulados',
-    icon: ClipboardCheck,
-    featureKey: FEATURE_KEYS.QUIZ, // 🔒 Controlado por turma
+    label: 'Acervo Digital',
+    href: '/acervo',
+    icon: Archive,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
   {
     label: 'Evercast',
@@ -109,16 +109,22 @@ const studentMenuItems = [
     icon: Mic,
     featureKey: FEATURE_KEYS.EVERCAST, // 🔒 Controlado por turma
   },
-  // {
-  //   label: 'Fórum',
-  //   href: '/forum',
-  //   icon: MessageSquare,
-  //   featureKey: null, // 🟢 PADRÃO - Sempre visível
-  // },
+  {
+    label: 'Comunidade',
+    href: '/forum',
+    icon: MessageSquare,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
+  },
   {
     label: 'Conquistas',
     href: '/achievements',
     icon: Award,
+    featureKey: null, // 🟢 PADRÃO - Sempre visível
+  },
+  {
+    label: 'Ranking',
+    href: '/ranking',
+    icon: Trophy,
     featureKey: null, // 🟢 PADRÃO - Sempre visível
   },
   {
@@ -271,13 +277,13 @@ export function UnifiedSidebar() {
   // Filtra os itens do menu de alunos baseado nas permissões
   const visibleStudentMenuItems = isStudent
     ? studentMenuItems.filter(item => {
-        // Se não tem featureKey, sempre mostra
-        if (!item.featureKey) return true
-        // Se ainda está carregando permissões, não mostra itens com permissão
-        if (permissionsLoading) return false
-        // Verifica se tem permissão
-        return hasFeature(item.featureKey)
-      })
+      // Se não tem featureKey, sempre mostra
+      if (!item.featureKey) return true
+      // Se ainda está carregando permissões, não mostra itens com permissão
+      if (permissionsLoading) return false
+      // Verifica se tem permissão
+      return hasFeature(item.featureKey)
+    })
     : studentMenuItems
 
   // Filtra itens admin-only do menu (professores não veem)
@@ -393,22 +399,22 @@ export function UnifiedSidebar() {
                 {profile.first_name} {profile.last_name}
               </p>
               <div className="flex items-center gap-2">
-                <Badge 
-                  variant="secondary" 
+                <Badge
+                  variant="secondary"
                   className={cn(
                     "text-xs font-medium",
-                    profile.role === 'administrator' 
+                    profile.role === 'administrator'
                       ? "bg-gradient-to-r from-red-500/10 to-red-600/5 border-red-500/20 text-red-600"
                       : profile.role === 'teacher'
-                      ? "bg-gradient-to-r from-blue-500/10 to-blue-600/5 border-blue-500/20 text-blue-600"
-                      : "bg-gradient-to-r from-green-500/10 to-green-600/5 border-green-500/20 text-green-600"
+                        ? "bg-gradient-to-r from-blue-500/10 to-blue-600/5 border-blue-500/20 text-blue-600"
+                        : "bg-gradient-to-r from-green-500/10 to-green-600/5 border-green-500/20 text-green-600"
                   )}
                 >
                   {profile.role === 'administrator' && <Shield className="h-3 w-3 mr-1" />}
                   {profile.role === 'teacher' && <GraduationCap className="h-3 w-3 mr-1" />}
                   {profile.role === 'student' && <UserCheck className="h-3 w-3 mr-1" />}
-                  {profile.role === 'administrator' ? 'Admin' : 
-                   profile.role === 'teacher' ? 'Professor' : 'Estudante'}
+                  {profile.role === 'administrator' ? 'Admin' :
+                    profile.role === 'teacher' ? 'Professor' : 'Estudante'}
                 </Badge>
               </div>
             </div>

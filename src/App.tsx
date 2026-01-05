@@ -57,6 +57,7 @@ const QuizzesPage = lazy(() => import('@/pages/Quizzes'))
 const QuizTopicsPage = lazy(() => import('@/pages/QuizTopics'))
 const EvercastPage = lazy(() => import('@/pages/Evercast'))
 const QuestionBankPage = lazy(() => import('@/pages/QuestionBank'))
+const AcervoDigitalPage = lazy(() => import('@/pages/AcervoDigital'))
 const MyFlashcardSetsPage = lazy(() => import('@/pages/MyFlashcardSets'))
 const FlashcardSetEditorPage = lazy(() => import('@/pages/FlashcardSetEditor'))
 const FlashcardSetCollaboratorsPage = lazy(
