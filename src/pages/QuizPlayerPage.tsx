@@ -15,7 +15,8 @@ import {
   Trophy,
   Target,
   Brain,
-  ArrowRight
+  ArrowRight,
+  BookOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { quizService, type Quiz } from '@/services/quizService'
@@ -284,105 +285,127 @@ export default function QuizPlayerPage() {
           </div>
         </MagicCard>
 
-        {/* Question Card */}
-        <MagicCard variant="glass" size="lg">
-          <div className="space-y-8">
-            {/* Question Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                  <HelpCircle className="h-5 w-5 text-primary" />
+        {/* Question Area */}
+        <div className={cn(
+          "grid gap-6 transition-all",
+          currentQuestion.reading_text ? "lg:grid-cols-2" : "grid-cols-1"
+        )}>
+
+          {/* Base Text Column (Only if exists) */}
+          {currentQuestion.reading_text && (
+            <MagicCard variant="glass" size="lg" className="h-full max-h-[600px] overflow-y-auto custom-scrollbar">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur z-10 w-full">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-lg">{currentQuestion.reading_text.title || 'Texto de Apoio'}</h3>
                 </div>
-                <h2 className="text-xl font-bold">Questão {currentIndex + 1}</h2>
+                <div className="prose dark:prose-invert max-w-none text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {currentQuestion.reading_text.content}
+                </div>
               </div>
-            </div>
+            </MagicCard>
+          )}
 
-            {/* Question Text */}
-            <div className="p-6 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50">
-              <p className="text-lg font-medium leading-relaxed">
-                {currentQuestion.question_text}
-              </p>
-            </div>
-
-            {/* Answer Options */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Selecione sua resposta:</h3>
-              <RadioGroup
-                value={selectedAnswers[currentQuestion.id] || ''}
-                onValueChange={handleAnswerSelect}
-                className="space-y-3"
-              >
-                {currentQuestion.options.map((option, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "group relative flex items-center space-x-4 p-4 rounded-xl border transition-all duration-300 cursor-pointer",
-                      "hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10",
-                      "hover:border-primary/30 hover:scale-[1.02] hover:shadow-lg",
-                      "has-[:checked]:bg-gradient-to-r has-[:checked]:from-primary/10 has-[:checked]:to-primary/5",
-                      "has-[:checked]:border-primary/50 has-[:checked]:shadow-primary/20"
-                    )}
-                  >
-                    <RadioGroupItem
-                      value={option}
-                      id={`option-${index}`}
-                      className="text-primary border-2"
-                    />
-                    <Label
-                      htmlFor={`option-${index}`}
-                      className="cursor-pointer flex-1 text-base font-medium group-hover:text-primary transition-colors"
-                    >
-                      {option}
-                    </Label>
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ArrowRight className="h-4 w-4 text-primary" />
-                    </div>
+          {/* Question Card */}
+          <MagicCard variant="glass" size="lg" className="h-full">
+            <div className="space-y-8">
+              {/* Question Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
+                    <HelpCircle className="h-5 w-5 text-primary" />
                   </div>
-                ))}
-              </RadioGroup>
-            </div>
-
-            {/* Navigation */}
-            <div className="flex items-center justify-between pt-6 border-t border-border/50">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={currentIndex === 0}
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Anterior
-              </Button>
-
-              <div className="flex items-center gap-2">
-                {questions.map((_, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "w-3 h-3 rounded-full transition-all duration-300",
-                      index === currentIndex
-                        ? "bg-primary scale-125"
-                        : selectedAnswers[questions[index].id]
-                          ? "bg-green-500"
-                          : "bg-muted/50"
-                    )}
-                  />
-                ))}
+                  <h2 className="text-xl font-bold">Questão {currentIndex + 1}</h2>
+                </div>
               </div>
 
-              <Button
-                onClick={handleNext}
-                disabled={!selectedAnswers[currentQuestion.id]}
-                className={cn(
-                  "bg-gradient-to-r from-primary to-primary/80",
-                  !selectedAnswers[currentQuestion.id] && "opacity-50"
-                )}
-              >
-                {isLastQuestion ? 'Finalizar' : 'Próxima'}
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
+              {/* Question Text */}
+              <div className="p-6 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50">
+                <p className="text-lg font-medium leading-relaxed">
+                  {currentQuestion.question_text}
+                </p>
+              </div>
+
+              {/* Answer Options */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Selecione sua resposta:</h3>
+                <RadioGroup
+                  value={selectedAnswers[currentQuestion.id] || ''}
+                  onValueChange={handleAnswerSelect}
+                  className="space-y-3"
+                >
+                  {currentQuestion.options.map((option, index) => (
+                    <div
+                      key={index}
+                      className={cn(
+                        "group relative flex items-center space-x-4 p-4 rounded-xl border transition-all duration-300 cursor-pointer",
+                        "hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10",
+                        "hover:border-primary/30 hover:scale-[1.02] hover:shadow-lg",
+                        "has-[:checked]:bg-gradient-to-r has-[:checked]:from-primary/10 has-[:checked]:to-primary/5",
+                        "has-[:checked]:border-primary/50 has-[:checked]:shadow-primary/20"
+                      )}
+                    >
+                      <RadioGroupItem
+                        value={option}
+                        id={`option-${index}`}
+                        className="text-primary border-2"
+                      />
+                      <Label
+                        htmlFor={`option-${index}`}
+                        className="cursor-pointer flex-1 text-base font-medium group-hover:text-primary transition-colors"
+                      >
+                        {option}
+                      </Label>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ArrowRight className="h-4 w-4 text-primary" />
+                      </div>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-6 border-t border-border/50">
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={currentIndex === 0}
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Anterior
+                </Button>
+
+                <div className="flex items-center gap-2">
+                  {questions.map((_, index) => (
+                    <div
+                      key={index}
+                      className={cn(
+                        "w-3 h-3 rounded-full transition-all duration-300",
+                        index === currentIndex
+                          ? "bg-primary scale-125"
+                          : selectedAnswers[questions[index].id]
+                            ? "bg-green-500"
+                            : "bg-muted/50"
+                      )}
+                    />
+                  ))}
+                </div>
+
+                <Button
+                  onClick={handleNext}
+                  disabled={!selectedAnswers[currentQuestion.id]}
+                  className={cn(
+                    "bg-gradient-to-r from-primary to-primary/80",
+                    !selectedAnswers[currentQuestion.id] && "opacity-50"
+                  )}
+                >
+                  {isLastQuestion ? 'Finalizar' : 'Próxima'}
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-        </MagicCard>
+          </MagicCard>
+        </div>
       </div>
     </MagicLayout>
   )

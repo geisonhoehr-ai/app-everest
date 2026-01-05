@@ -348,6 +348,68 @@ export type QuestionUpsert = Database['public']['Tables']['quiz_questions']['Ins
   id?: string
 }
 
+/* ==================================================================================
+ *  READING TEXTS (TEXTOS DE APOIO)
+ * ================================================================================== */
+
+export type ReadingText = Database['public']['Tables']['quiz_reading_texts']['Row']
+export type ReadingTextInsert = Database['public']['Tables']['quiz_reading_texts']['Insert']
+
+export const getReadingTexts = async (quizId: string): Promise<ReadingText[]> => {
+  const { data, error } = await supabase
+    .from('quiz_reading_texts')
+    .select('*')
+    .eq('quiz_id', quizId)
+    .order('display_order', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching reading texts:', error)
+    throw error
+  }
+  return data
+}
+
+export const createReadingText = async (textData: ReadingTextInsert): Promise<ReadingText> => {
+  const { data, error } = await supabase
+    .from('quiz_reading_texts')
+    .insert(textData)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating reading text:', error)
+    throw error
+  }
+  return data
+}
+
+export const updateReadingText = async (
+  id: string,
+  textData: Partial<ReadingTextInsert>,
+): Promise<ReadingText> => {
+  const { data, error } = await supabase
+    .from('quiz_reading_texts')
+    .update(textData)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating reading text:', error)
+    throw error
+  }
+  return data
+}
+
+export const deleteReadingText = async (id: string): Promise<void> => {
+  const { error } = await supabase.from('quiz_reading_texts').delete().eq('id', id)
+
+  if (error) {
+    console.error('Error deleting reading text:', error)
+    throw error
+  }
+}
+
 export const saveQuizQuestions = async (
   quizId: string,
   questions: QuestionUpsert[],

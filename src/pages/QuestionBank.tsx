@@ -16,7 +16,13 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
-import { Search, Lightbulb, CheckCircle2, XCircle } from 'lucide-react'
+import { Search, Lightbulb, CheckCircle2, XCircle, BookOpen } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { supabase } from '@/lib/supabase/client'
 import { SectionLoader } from '@/components/SectionLoader'
 import { cn } from '@/lib/utils'
@@ -36,6 +42,11 @@ interface Question {
       name: string
     } | null
   } | null
+  reading_text?: {
+    id: string
+    title: string
+    content: string
+  } | null
 }
 
 export default function QuestionBankPage() {
@@ -48,6 +59,7 @@ export default function QuestionBankPage() {
   // State to track user interactions
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({})
   const [showExplanation, setShowExplanation] = useState<Record<string, boolean>>({})
+  const [readingTextDialog, setReadingTextDialog] = useState<{ title: string, content: string } | null>(null)
 
   useEffect(() => {
     fetchQuestions()
@@ -65,6 +77,11 @@ export default function QuestionBankPage() {
             subjects (
               name
             )
+          ),
+          reading_text:quiz_reading_texts (
+            id,
+            title,
+            content
           )
         `)
         .limit(100) // Limit initial load for performance
@@ -142,6 +159,21 @@ export default function QuestionBankPage() {
         </div>
       </MagicCard>
 
+      <Dialog open={!!readingTextDialog} onOpenChange={(open) => !open && setReadingTextDialog(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              {readingTextDialog?.title || 'Texto de Apoio'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="prose dark:prose-invert max-w-none hover:prose-a:text-primary leading-relaxed whitespace-pre-wrap">
+            {readingTextDialog?.content}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       <div className="space-y-6">
         {filteredQuestions.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
@@ -173,6 +205,24 @@ export default function QuestionBankPage() {
                   <div className="text-foreground font-medium text-lg leading-relaxed">
                     {q.question_text}
                   </div>
+
+                  {q.reading_text && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 w-full sm:w-auto my-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setReadingTextDialog({
+                          title: q.reading_text!.title,
+                          content: q.reading_text!.content
+                        })
+                      }}
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      Ler Texto de Apoio
+                    </Button>
+                  )}
 
                   <div className="grid gap-2 mt-4">
                     {q.options?.map((option, optIndex) => {

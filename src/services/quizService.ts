@@ -37,6 +37,11 @@ export interface QuizQuestion {
   correct_answer: string
   explanation?: string
   points: number
+  reading_text?: {
+    id: string
+    title: string
+    content: string
+  } | null
 }
 
 export interface QuizAttempt {
@@ -181,7 +186,13 @@ export const quizService = {
             options,
             correct_answer,
             explanation,
-            points
+            points,
+            reading_text_id
+          ),
+          quiz_reading_texts (
+            id,
+            title,
+            content
           )
         `)
         .eq('id', quizId)
@@ -191,6 +202,11 @@ export const quizService = {
         logger.error('Error fetching quiz by ID:', error)
         throw error
       }
+
+      const readingTextsMap = (quiz.quiz_reading_texts || []).reduce((acc: any, text: any) => {
+        acc[text.id] = text;
+        return acc;
+      }, {});
 
       const result = {
         id: quiz.id,
@@ -204,7 +220,8 @@ export const quizService = {
           options: (Array.isArray(q.options) ? q.options : []) as string[],
           correct_answer: q.correct_answer,
           explanation: q.explanation || '',
-          points: q.points
+          points: q.points,
+          reading_text: q.reading_text_id ? readingTextsMap[q.reading_text_id] : null
         })) || []
       }
 
