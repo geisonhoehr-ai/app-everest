@@ -329,3 +329,67 @@ export const getAttemptDetails = async (
     is_correct: item.is_correct,
   }))
 }
+
+export const getQuizQuestions = async (quizId: string) => {
+  const { data, error } = await supabase
+    .from('quiz_questions')
+    .select('*')
+    .eq('quiz_id', quizId)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching quiz questions:', error)
+    throw error
+  }
+  return data
+}
+
+export type QuestionUpsert = Database['public']['Tables']['quiz_questions']['Insert'] & {
+  id?: string
+}
+
+export const saveQuizQuestions = async (
+  quizId: string,
+  questions: QuestionUpsert[],
+): Promise<void> => {
+  // 1. Get existing questions to determine deletes
+  const existingQuestions = await getQuizQuestions(quizId)
+  const existingIds = new Set(existingQuestions.map((q) => q.id))
+  const newIds = new Set(questions.filter((q) => q.id).map((q) => q.id))
+
+  // 2. Determine questions to delete
+  const infoToDelete = existingQuestions
+    .filter((q) => !newIds.has(q.id))
+    .map((q) => q.id)
+
+  if (infoToDelete.length > 0) {
+    const { error } = await supabase
+      .from('quiz_questions')
+      .delete()
+      .in('id', infoToDelete)
+
+    if (error) {
+      console.error('Error deleting questions:', error)
+      throw error
+    }
+  }
+
+  // 3. Upsert (Insert or Update)
+  for (const question of questions) {
+    const { id, ...data } = question
+    if (id) {
+      // Update
+      const { error } = await supabase
+        .from('quiz_questions')
+        .update(data)
+        .eq('id', id)
+      if (error) throw error
+    } else {
+      // Insert
+      const { error } = await supabase
+        .from('quiz_questions')
+        .insert({ ...data, quiz_id: quizId })
+      if (error) throw error
+    }
+  }
+}

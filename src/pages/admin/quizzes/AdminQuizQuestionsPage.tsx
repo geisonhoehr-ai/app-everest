@@ -16,8 +16,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { ArrowLeft, Trash, Upload, Download } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { ArrowLeft, Trash, Upload, Download, Loader2 } from 'lucide-react'
+import { useRef, useState, useEffect } from 'react'
 import { useToast } from '@/components/ui/use-toast'
 import {
   formatQuizQuestionsForExport,
@@ -26,8 +26,11 @@ import {
   type ImportError,
 } from '@/lib/importExport'
 import { ImportErrorsDialog } from '@/components/admin/ImportErrorsDialog'
+import { getQuizQuestions, saveQuizQuestions } from '@/services/adminQuizService'
+import { SectionLoader } from '@/components/SectionLoader'
 
 const questionSchema = z.object({
+  id: z.string().optional(),
   question_text: z.string().min(1, 'A pergunta é obrigatória.'),
   options: z.array(z.string().min(1)).length(4, 'Deve haver 4 opções.'),
   correct_answer: z.string().min(1, 'Selecione a resposta correta.'),
@@ -48,6 +51,8 @@ export default function AdminQuizQuestionsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importErrors, setImportErrors] = useState<ImportError[]>([])
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   const form = useForm<QuizQuestionsFormValues>({
     resolver: zodResolver(quizQuestionsSchema),
@@ -61,10 +66,63 @@ export default function AdminQuizQuestionsPage() {
     name: 'questions',
   })
 
-  const onSubmit = (data: QuizQuestionsFormValues) => {
-    logger.debug('Saving questions for quiz:', quizId, data)
-    toast({ title: 'Sucesso!', description: 'Questões salvas.' })
-    navigate(`/admin/quizzes`)
+  useEffect(() => {
+    if (quizId) {
+      loadQuestions()
+    }
+  }, [quizId])
+
+  const loadQuestions = async () => {
+    try {
+      setIsLoading(true)
+      const data = await getQuizQuestions(quizId!)
+      const formatted = data.map((q) => ({
+        id: q.id,
+        question_text: q.question_text,
+        options: (Array.isArray(q.options) ? q.options : []) as string[],
+        correct_answer: q.correct_answer,
+        explanation: q.explanation || '',
+        points: q.points,
+      }))
+      form.reset({ questions: formatted })
+    } catch (error) {
+      logger.error('Error loading questions:', error)
+      toast({
+        title: 'Erro',
+        description: 'Erro ao carregar questões.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const onSubmit = async (data: QuizQuestionsFormValues) => {
+    if (!quizId) return
+
+    try {
+      setIsSaving(true)
+      const questionsToSave = data.questions.map((q) => ({
+        ...q,
+        quiz_id: quizId,
+        question_type: 'multiple_choice',
+      }))
+
+      await saveQuizQuestions(quizId, questionsToSave)
+
+      toast({ title: 'Sucesso!', description: 'Questões salvas com sucesso.' })
+      // Reload to ensure IDs are synced/updated
+      loadQuestions()
+    } catch (error) {
+      logger.error('Error saving questions:', error)
+      toast({
+        title: 'Erro',
+        description: 'Erro ao salvar questões.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleExport = () => {
@@ -112,6 +170,10 @@ export default function AdminQuizQuestionsPage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  if (isLoading) {
+    return <SectionLoader />
+  }
+
   return (
     <>
       <ImportErrorsDialog
@@ -151,7 +213,10 @@ export default function AdminQuizQuestionsPage() {
               <Button type="button" variant="outline" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" /> Exportar
               </Button>
-              <Button type="submit">Salvar Questões</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Questões
+              </Button>
             </div>
           </div>
           {fields.map((field, index) => (

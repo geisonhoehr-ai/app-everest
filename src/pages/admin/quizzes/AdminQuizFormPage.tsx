@@ -29,8 +29,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useToast } from '@/components/ui/use-toast'
-import { getTopics, type AdminTopic } from '@/services/adminQuizService'
+import { useToast } from '@/hooks/use-toast'
+import {
+  getTopics,
+  createQuiz,
+  updateQuiz,
+  getQuizById,
+  type AdminTopic,
+} from '@/services/adminQuizService'
+import { SectionLoader } from '@/components/SectionLoader'
 
 const quizSchema = z.object({
   title: z.string().min(3, 'O título é muito curto.'),
@@ -47,25 +54,88 @@ export default function AdminQuizFormPage() {
   const isEditing = !!quizId
   const { toast } = useToast()
   const [topics, setTopics] = useState<AdminTopic[]>([])
-
-  useEffect(() => {
-    getTopics().then(setTopics)
-  }, [])
+  const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<QuizFormValues>({
     resolver: zodResolver(quizSchema),
     defaultValues: {
       title: '',
       description: '',
+      topic_id: '',
     },
   })
 
-  const onSubmit = (data: QuizFormValues) => {
-    logger.debug(data)
-    toast({
-      title: `Quiz ${isEditing ? 'atualizado' : 'criado'} com sucesso!`,
-    })
-    navigate('/admin/quizzes')
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        setIsLoading(true)
+        const topicsData = await getTopics()
+        setTopics(topicsData)
+
+        if (isEditing && quizId) {
+          const quiz = await getQuizById(quizId)
+          if (quiz) {
+            form.reset({
+              title: quiz.title,
+              description: quiz.description || '',
+              duration_minutes: quiz.duration_minutes || undefined,
+              topic_id: quiz.topic_id,
+            })
+          }
+        }
+      } catch (error) {
+        logger.error('Error loading data:', error)
+        toast({
+          title: 'Erro ao carregar dados',
+          variant: 'destructive',
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadInitialData()
+  }, [quizId, isEditing, form, toast])
+
+  const onSubmit = async (data: QuizFormValues) => {
+    try {
+      setIsLoading(true)
+      if (isEditing && quizId) {
+        await updateQuiz(quizId, {
+          title: data.title,
+          description: data.description,
+          duration_minutes: data.duration_minutes,
+          topic_id: data.topic_id,
+        })
+        toast({
+          title: 'Quiz atualizado com sucesso!',
+        })
+      } else {
+        await createQuiz({
+          title: data.title,
+          description: data.description,
+          duration_minutes: data.duration_minutes,
+          topic_id: data.topic_id,
+        })
+        toast({
+          title: 'Quiz criado com sucesso!',
+        })
+      }
+      navigate('/admin/quizzes')
+    } catch (error) {
+      logger.error('Error saving quiz:', error)
+      toast({
+        title: 'Erro ao salvar quiz',
+        description: 'Tente novamente mais tarde',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return <SectionLoader />
   }
 
   return (
@@ -128,7 +198,7 @@ export default function AdminQuizFormPage() {
                     <FormLabel>Tópico Associado</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>

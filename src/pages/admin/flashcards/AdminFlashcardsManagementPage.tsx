@@ -17,11 +17,11 @@ import {
 } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
-import { 
-  ArrowLeft, 
-  Trash, 
-  Upload, 
-  Download, 
+import {
+  ArrowLeft,
+  Trash,
+  Upload,
+  Download,
   Plus,
   FileText,
   Layers,
@@ -37,14 +37,14 @@ import {
   type ImportError,
 } from '@/lib/importExport'
 import { ImportErrorsDialog } from '@/components/admin/ImportErrorsDialog'
-import { getSubjectById } from '@/services/flashcardService'
-import { getTopicWithCards } from '@/services/flashcardService'
+import { getSubjectById, getTopicWithCards, saveFlashcards } from '@/services/flashcardService'
 import type { Subject, TopicWithSubjectAndCards } from '@/services/flashcardService'
 import { supabase } from '@/lib/supabase/client'
 
 const flashcardsSchema = z.object({
   flashcards: z.array(
     z.object({
+      id: z.string().optional(),
       question: z.string().min(1, 'A pergunta é obrigatória.'),
       answer: z.string().min(1, 'A resposta é obrigatória.'),
       external_resource_url: z
@@ -75,13 +75,13 @@ export default function AdminFlashcardsManagementPage() {
   useEffect(() => {
     const loadData = async () => {
       if (!subjectId || !topicId) return
-      
+
       try {
         const [subjectData, topicData] = await Promise.all([
           getSubjectById(subjectId),
           getTopicWithCards(topicId)
         ])
-        
+
         setSubject(subjectData)
         setTopic(topicData)
       } catch (error) {
@@ -111,6 +111,7 @@ export default function AdminFlashcardsManagementPage() {
     if (topic?.flashcards) {
       form.reset({
         flashcards: topic.flashcards.map((f) => ({
+          id: f.id,
           question: f.question,
           answer: f.answer,
           external_resource_url: f.external_resource_url || '',
@@ -186,44 +187,30 @@ export default function AdminFlashcardsManagementPage() {
         count: data.flashcards.length
       })
 
-      // Deletar todos os flashcards existentes do tópico
-      const { error: deleteError } = await supabase
-        .from('flashcards')
-        .delete()
-        .eq('topic_id', topicId)
+      const flashcardsToSave = data.flashcards.map((fc, index) => ({
+        id: fc.id,
+        topic_id: topicId,
+        question: fc.question,
+        answer: fc.answer,
+        external_resource_url: fc.external_resource_url || null,
+        difficulty: 0,
+        order_index: index
+      }))
 
-      if (deleteError) {
-        logger.error('Erro ao deletar flashcards antigos:', deleteError)
-        throw deleteError
-      }
-
-      // Inserir novos flashcards
-      if (data.flashcards.length > 0) {
-        const flashcardsToInsert = data.flashcards.map((fc, index) => ({
-          topic_id: topicId,
-          question: fc.question,
-          answer: fc.answer,
-          external_resource_url: fc.external_resource_url || null,
-          difficulty: 0,
-          order_index: index
-        }))
-
-        const { error: insertError } = await supabase
-          .from('flashcards')
-          .insert(flashcardsToInsert)
-
-        if (insertError) {
-          logger.error('Erro ao inserir flashcards:', insertError)
-          throw insertError
-        }
-      }
+      await saveFlashcards(topicId, flashcardsToSave)
 
       logger.success('✅ Flashcards salvos com sucesso!')
       toast({
         title: 'Sucesso!',
         description: `${data.flashcards.length} flashcards salvos com sucesso.`
       })
-      navigate(`/admin/flashcards/${subjectId}`)
+
+      // Reload to ensure we get IDs for new cards
+      const updatedTopic = await getTopicWithCards(topicId)
+      if (updatedTopic) {
+        setTopic(updatedTopic)
+      }
+
     } catch (error) {
       logger.error('❌ Erro ao salvar flashcards:', error)
       toast({
@@ -281,7 +268,7 @@ export default function AdminFlashcardsManagementPage() {
         onOpenChange={setIsErrorDialogOpen}
         errors={importErrors}
       />
-      
+
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -384,9 +371,9 @@ export default function AdminFlashcardsManagementPage() {
                         <FormItem>
                           <FormLabel className="text-sm font-medium">Pergunta</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              {...field} 
-                              placeholder="Digite a pergunta do flashcard..." 
+                            <Textarea
+                              {...field}
+                              placeholder="Digite a pergunta do flashcard..."
                               className="min-h-[100px] resize-none"
                             />
                           </FormControl>
@@ -401,9 +388,9 @@ export default function AdminFlashcardsManagementPage() {
                         <FormItem>
                           <FormLabel className="text-sm font-medium">Resposta</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              {...field} 
-                              placeholder="Digite a resposta do flashcard..." 
+                            <Textarea
+                              {...field}
+                              placeholder="Digite a resposta do flashcard..."
                               className="min-h-[100px] resize-none"
                             />
                           </FormControl>
@@ -418,9 +405,9 @@ export default function AdminFlashcardsManagementPage() {
                         <FormItem>
                           <FormLabel className="text-sm font-medium">URL de Recurso (Opcional)</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
-                              placeholder="https://exemplo.com/recurso" 
+                            <Input
+                              {...field}
+                              placeholder="https://exemplo.com/recurso"
                               type="url"
                             />
                           </FormControl>

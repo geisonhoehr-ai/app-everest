@@ -122,13 +122,31 @@ export default function EssaySubmissionPage() {
               <span className="bg-card px-2 text-muted-foreground">Ou</span>
             </div>
           </div>
+          <div className="space-y-4 rounded-lg border p-4 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-base">Folha de Redação Modelo</Label>
+                <p className="text-sm text-muted-foreground">
+                  Baixe a folha oficial para imprimir e escrever sua redação à mão.
+                </p>
+              </div>
+              <Button asChild variant="outline" className="gap-2">
+                <a href="/modelo-redacao.pdf" download="Folha_Redacao_Everest.pdf" target="_blank" rel="noopener noreferrer">
+                  <Upload className="h-4 w-4 rotate-180" /> {/* Using Upload rotated as Download since Download icon is not imported yet, or we can import Download */}
+                  Baixar Modelo
+                </a>
+              </Button>
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="file-upload">Fazer upload de arquivo</Label>
+            <Label htmlFor="file-upload">Fazer upload de arquivo (Foto ou PDF)</Label>
             <Input
               id="file-upload"
               type="file"
               accept=".pdf,.docx,.doc,.txt,.jpg,.jpeg,.png"
               onChange={handleFileChange}
+              className="cursor-pointer file:cursor-pointer"
             />
             <p className="text-xs text-muted-foreground">
               Formatos aceitos: PDF, DOCX, Imagens. Tamanho máximo: 5MB.

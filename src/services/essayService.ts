@@ -10,12 +10,15 @@ export type ErrorCategory =
 
 export type EssayForCorrection = Essay & {
   essay_prompts: Pick<EssayPrompt, 'title' | 'evaluation_criteria'> | null
-  users: { first_name: string; last_name: string } | null
-}
-
-export type StudentEssayDetails = Essay & {
-  essay_prompts: Pick<EssayPrompt, 'title' | 'evaluation_criteria'> | null
-  essay_annotations: EssayAnnotation[]
+  users: {
+    first_name: string
+    last_name: string
+    student_classes: {
+      classes: {
+        name: string
+      }
+    }[]
+  } | null
 }
 
 export const getEssayForCorrection = async (
@@ -27,7 +30,15 @@ export const getEssayForCorrection = async (
       `
       *,
       essay_prompts ( title, evaluation_criteria ),
-      users ( first_name, last_name )
+      users ( 
+        first_name, 
+        last_name,
+        student_classes (
+          classes (
+            name
+          )
+        )
+      )
     `,
     )
     .eq('id', submissionId)

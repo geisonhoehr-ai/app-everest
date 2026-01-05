@@ -1,51 +1,85 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import {
+  Search,
+  Play,
+  Clock,
+  Mic,
+  Headphones,
+  Volume2,
+  Calendar,
+  MoreHorizontal,
+  Pause,
+  ListMusic,
+  Lock
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { Badge } from '@/components/ui/badge'
 import {
-  Search,
-  PlayCircle,
-  Clock,
-  Mic,
-  Headphones,
-  Volume2,
-  Star,
-  TrendingUp,
-  Award,
-  Users,
-  Zap,
-  Lock
-} from 'lucide-react'
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { audioLessonService, type AudioLesson } from '@/services/audioLessonService'
+import { AudioPlayer } from '@/components/AudioPlayer'
 
 export default function EvercastPage() {
   const { isStudent } = useAuth()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [audioLessons, setAudioLessons] = useState<AudioLesson[]>([])
+  const [filteredLessons, setFilteredLessons] = useState<AudioLesson[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [currentTrack, setCurrentTrack] = useState<AudioLesson | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     loadAudioLessons()
   }, [])
+
+  useEffect(() => {
+    if (searchTerm) {
+      setFilteredLessons(
+        audioLessons.filter(lesson =>
+          lesson.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          lesson.series?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      )
+    } else {
+      setFilteredLessons(audioLessons)
+    }
+  }, [searchTerm, audioLessons])
 
   const loadAudioLessons = async () => {
     try {
       setIsLoading(true)
       const lessons = await audioLessonService.getAudioLessons()
       setAudioLessons(lessons)
+      setFilteredLessons(lessons)
     } catch (error) {
       console.error('Error loading audio lessons:', error)
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handlePlay = (lesson: AudioLesson) => {
+    setCurrentTrack(lesson)
   }
 
   // Verificação de permissões para alunos
@@ -81,231 +115,153 @@ export default function EvercastPage() {
     <MagicLayout
       title="Evercast"
       description="Suas aulas em áudio para ouvir onde e quando quiser"
+      showHeader={false}
+      className={cn("pb-32", currentTrack ? "mb-20" : "")} // Add padding for player
     >
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header Stats */}
-        <MagicCard variant="premium" size="lg">
-          <div className="space-y-4 md:space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <Headphones className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                    Evercast
-                  </h1>
-                  <p className="text-muted-foreground text-sm md:text-lg">
-                    Aulas em áudio onde quiser
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                <Volume2 className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-                <span className="text-xs md:text-sm font-medium">Áudio Premium</span>
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                <Mic className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-blue-600">{audioLessons.length}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Aulas</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                <Clock className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-green-600">
-                  {audioLessons.reduce((total, lesson) => total + (lesson.duration_minutes || 0), 0)}min
-                </div>
-                <div className="text-xs md:text-sm text-muted-foreground">Total</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                <Star className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-purple-600">
-                  {audioLessons.length > 0
-                    ? (audioLessons.reduce((sum, l) => sum + (l.rating || 0), 0) / audioLessons.length).toFixed(1)
-                    : '0'}
-                </div>
-                <div className="text-xs md:text-sm text-muted-foreground">Avaliação</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
-                <Users className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-orange-600">
-                  {audioLessons.reduce((total, lesson) => total + (lesson.listens_count || 0), 0)}
-                </div>
-                <div className="text-xs md:text-sm text-muted-foreground">Ouvintes</div>
-              </div>
-            </div>
+      {/* Hero Section (Spotify Header Style) */}
+      <div className="flex flex-col md:flex-row gap-8 items-end p-8 bg-gradient-to-b from-primary/20 to-background/0">
+        <div className="w-52 h-52 shadow-2xl rounded-md bg-gradient-to-br from-primary to-purple-700 flex items-center justify-center shrink-0">
+          <Headphones className="w-24 h-24 text-white" />
+        </div>
+        <div className="flex flex-col gap-4">
+          <span className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Playlist Oficial</span>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight">Evercast</h1>
+          <p className="text-muted-foreground max-w-2xl">
+            Todas as suas aulas em áudio, podcasts exclusivos e conteúdos complementares para você estudar em qualquer lugar.
+          </p>
+          <div className="flex items-center gap-4 mt-4">
+            <span className="text-sm font-medium">{audioLessons.length} episódios</span>
+            <span className="text-sm text-muted-foreground">•</span>
+            <span className="text-sm text-muted-foreground">
+              {Math.floor(audioLessons.reduce((acc, curr) => acc + (curr.duration_minutes || 0), 0) / 60)}h {audioLessons.reduce((acc, curr) => acc + (curr.duration_minutes || 0), 0) % 60}min
+            </span>
           </div>
-        </MagicCard>
-
-        {/* Search and Filter */}
-        <MagicCard variant="glass" size="lg">
-          <div className="flex flex-col md:flex-row gap-3 md:gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search"
-                placeholder="Buscar áudio-aulas..." 
-                className="pl-10 bg-card/50 backdrop-blur-sm border-border/50"
-              />
-            </div>
-            <div className="flex gap-2 w-full md:w-auto">
-              <Button variant="outline" size="sm" className="flex-1 md:flex-none bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Populares</span>
-                <span className="sm:hidden">Pop</span>
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1 md:flex-none bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80">
-                <Award className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Recomendados</span>
-                <span className="sm:hidden">Rec</span>
-              </Button>
-            </div>
-          </div>
-        </MagicCard>
-
-        {/* Audio Classes Grid */}
-        {audioLessons.length === 0 ? (
-          <MagicCard variant="glass" size="lg" className="text-center py-24">
-            <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                <Headphones className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Nenhuma áudio-aula encontrada
-              </h3>
-              <p className="text-muted-foreground mb-8">
-                Não há áudio-aulas disponíveis no momento. Volte em breve!
-              </p>
-            </div>
-          </MagicCard>
-        ) : (
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {audioLessons.map((audio, index) => (
-            <MagicCard
-              key={audio.id}
-              variant="premium"
-              size="lg"
-              className="h-[400px] flex flex-col overflow-hidden transition-all duration-500 ease-out hover:scale-105 hover:shadow-2xl cursor-pointer group"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              {/* Image Header */}
-              <div className="relative h-48 overflow-hidden rounded-t-2xl">
-                <img
-                  src={audio.thumbnail_url}
-                  alt={audio.title}
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                />
-
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-                {/* Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center group-hover:bg-white/30 group-hover:scale-110 transition-colors duration-300">
-                    <PlayCircle className="h-8 w-8 text-white" />
-                  </div>
-                </div>
-
-                {/* Duration Badge */}
-                <div className="absolute top-4 right-4">
-                  <div className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-white/20">
-                    <span className="text-sm font-semibold text-gray-900">
-                      {audio.duration_minutes ? `${audio.duration_minutes} min` : '-'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 flex flex-col p-6">
-                <div className="flex-1 flex flex-col space-y-4">
-                  {/* Series Badge */}
-                  {audio.series && (
-                    <Badge
-                      variant="secondary"
-                      className="w-fit bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 text-primary"
-                    >
-                      {audio.series}
-                    </Badge>
-                  )}
-
-                  {/* Title */}
-                  <h3 className="font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                    {audio.title}
-                  </h3>
-
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-yellow-500" />
-                      <span>{audio.rating?.toFixed(1) || '0.0'}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      <span>{audio.listens_count || 0}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Button */}
-                <div className="mt-6">
-                  <Button 
-                    asChild
-                    className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white transition-colors duration-300 ease-out py-3 text-sm font-semibold rounded-xl group-hover:scale-105 inline-flex items-center justify-center"
-                  >
-                    <Link to={`/evercast/${audio.id}`}>
-                      <div className="flex items-center justify-center gap-2">
-                        <PlayCircle className="w-4 h-4" />
-                        Ouvir Agora
-                      </div>
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </MagicCard>
-          ))}
-          </div>
-        )}
-
-        {/* Features Section */}
-        <MagicCard variant="glass" size="lg">
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold mb-2">Por que escolher o Evercast?</h3>
-              <p className="text-muted-foreground">
-                Aprenda de forma mais eficiente com nossas aulas em áudio
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                <Headphones className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold mb-2">Ouvir em Qualquer Lugar</h4>
-                <p className="text-sm text-muted-foreground">
-                  Acesse suas aulas durante o trânsito, exercícios ou em casa
-                </p>
-              </div>
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                <Zap className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold mb-2">Aprendizado Acelerado</h4>
-                <p className="text-sm text-muted-foreground">
-                  Conteúdo condensado e direto ao ponto para máximo aproveitamento
-                </p>
-              </div>
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                <Volume2 className="h-12 w-12 text-purple-500 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold mb-2">Áudio de Qualidade</h4>
-                <p className="text-sm text-muted-foreground">
-                  Gravações profissionais com clareza e nitidez excepcionais
-                </p>
-              </div>
-            </div>
-          </div>
-        </MagicCard>
+        </div>
       </div>
-    </MagicLayout>
+
+      <div className="max-w-7xl mx-auto space-y-8 px-4 md:px-8">
+        {/* Controls Bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-10 bg-background/95 backdrop-blur py-4 border-b">
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <Button
+              size="lg"
+              className="rounded-full w-14 h-14 bg-green-500 hover:bg-green-600 text-black shadow-lg hover:scale-105 transition-transform"
+              onClick={() => filteredLessons.length > 0 && handlePlay(filteredLessons[0])}
+            >
+              {currentTrack && filteredLessons[0]?.id === currentTrack.id ? <Pause className="h-6 w-6 ml-0.5 fill-black" /> : <Play className="h-6 w-6 ml-1 fill-black" />}
+            </Button>
+          </div>
+
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar episódios..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-muted/50 border-none rounded-full"
+            />
+          </div>
+        </div>
+
+        {/* Tracks List */}
+        <div className="rounded-md border-none">
+          <Table>
+            <TableHeader className="bg-transparent border-b border-white/10 hover:bg-transparent">
+              <TableRow className="hover:bg-transparent border-white/5">
+                <TableHead className="w-12 text-center">#</TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead className="hidden md:table-cell">Série/Álbum</TableHead>
+                <TableHead className="hidden md:table-cell">Adicionado em</TableHead>
+                <TableHead className="text-right"><Clock className="h-4 w-4 ml-auto" /></TableHead>
+                <TableHead className="w-12"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredLessons.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    Nenhum episódio encontrado.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredLessons.map((lesson, index) => (
+                  <TableRow
+                    key={lesson.id}
+                    className={cn(
+                      "group hover:bg-white/5 border-transparent transition-colors cursor-pointer",
+                      currentTrack?.id === lesson.id ? "bg-white/5 text-green-500" : ""
+                    )}
+                    onClick={() => handlePlay(lesson)}
+                  >
+                    <TableCell className="font-medium text-center relative w-12 text-muted-foreground group-hover:text-white">
+                      <span className={cn("absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 group-hover:hidden", currentTrack?.id === lesson.id ? "hidden" : "block")}>
+                        {index + 1}
+                      </span>
+                      <Play className={cn("h-4 w-4 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden group-hover:block fill-white text-white", currentTrack?.id === lesson.id ? "hidden" : "")} />
+
+                      {currentTrack?.id === lesson.id && (
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 flex items-end justify-between gap-[2px]">
+                          <div className="w-1 bg-green-500 animate-[music-bar_0.6s_ease-in-out_infinite] h-full" />
+                          <div className="w-1 bg-green-500 animate-[music-bar_0.8s_ease-in-out_infinite_0.1s] h-2/3" />
+                          <div className="w-1 bg-green-500 animate-[music-bar_1.0s_ease-in-out_infinite_0.2s] h-1/2" />
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={lesson.thumbnail_url || "/logo.png"}
+                          alt={lesson.title}
+                          className="h-10 w-10 rounded object-cover"
+                        />
+                        <div className="flex flex-col">
+                          <span className={cn("font-medium", currentTrack?.id === lesson.id ? "text-green-500" : "text-white")}>
+                            {lesson.title}
+                          </span>
+                          <span className="text-xs text-muted-foreground md:hidden">{lesson.series || "Single"}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">{lesson.series || "Single"}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {new Date(lesson.created_at || Date.now()).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {lesson.duration_minutes ? `${lesson.duration_minutes} min` : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="md:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); /* Add to favs logic */ }}>
+                            Adicionar aos Favoritos
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); /* Share logic */ }}>
+                            Compartilhar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Persistent Audio Player */}
+      <AudioPlayer
+        currentTrack={currentTrack}
+        playlist={filteredLessons}
+        onTrackChange={setCurrentTrack}
+      />
+    </MagicLayout >
   )
 }
+

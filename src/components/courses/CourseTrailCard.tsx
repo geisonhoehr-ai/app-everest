@@ -42,7 +42,7 @@ export function CourseTrailCard({
         className="p-6 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-wrap gap-2 items-start justify-between mb-4">
           <div className="flex-1">
             <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
               {trailName}

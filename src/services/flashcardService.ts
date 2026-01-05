@@ -313,7 +313,7 @@ export const updateFlashcardProgress = async (userId: string, flashcardId: strin
 export const getDifficultFlashcardsForTopic = async (userId: string, topicId: string, limit: number = 10): Promise<Flashcard[]> => {
   try {
     logger.debug('Getting difficult flashcards for topic:', { userId, topicId })
-    
+
     const { data: flashcards, error } = await supabase
       .from('flashcards')
       .select(`
@@ -556,7 +556,7 @@ export const flashcardService = {
           .from('flashcards')
           .select('id')
           .eq('topic_id', topicId)
-        
+
         if (flashcardIds && flashcardIds.length > 0) {
           query = query.in('flashcard_id', flashcardIds.map(f => f.id))
         }
@@ -592,7 +592,7 @@ export const flashcardService = {
   async getFlashcardsForReview(userId: string, topicId?: string): Promise<Flashcard[]> {
     try {
       const now = new Date().toISOString()
-      
+
       let query = supabase
         .from('flashcards')
         .select(`
@@ -641,10 +641,10 @@ export const flashcardService = {
   async getSubjectById(subjectId: string): Promise<Subject | null> {
     try {
       const { data: subject, error } = await supabase
-    .from('subjects')
-    .select('*')
-    .eq('id', subjectId)
-    .single()
+        .from('subjects')
+        .select('*')
+        .eq('id', subjectId)
+        .single()
 
       if (error) throw error
 
@@ -664,14 +664,14 @@ export const flashcardService = {
   async getTopicsBySubjectId(subjectId: string): Promise<TopicWithCardCount[]> {
     try {
       const { data: topics, error } = await supabase
-    .from('topics')
+        .from('topics')
         .select(`
           id,
           name,
           description,
           flashcards (id)
         `)
-    .eq('subject_id', subjectId)
+        .eq('subject_id', subjectId)
         .order('name')
 
       if (error) throw error
@@ -692,7 +692,7 @@ export const flashcardService = {
   async getTopicWithCards(topicId: string): Promise<TopicWithSubjectAndCards | null> {
     try {
       const { data: topic, error } = await supabase
-    .from('topics')
+        .from('topics')
         .select(`
           id,
           name,
@@ -712,8 +712,8 @@ export const flashcardService = {
             external_resource_url
           )
         `)
-    .eq('id', topicId)
-    .single()
+        .eq('id', topicId)
+        .single()
 
       if (error) throw error
 
@@ -738,16 +738,16 @@ export const flashcardService = {
       }
     } catch (error) {
       logger.error('Erro ao buscar tópico com flashcards:', error)
-    return null
-  }
+      return null
+    }
   },
 
   // Salvar sessão de flashcards
   async saveFlashcardSession(userId: string, payload: SaveSessionPayload): Promise<string | null> {
     try {
-  const { data: session, error } = await supabase
-    .from('flashcard_session_history')
-    .insert({
+      const { data: session, error } = await supabase
+        .from('flashcard_session_history')
+        .insert({
           user_id: userId,
           topic_id: payload.topicId,
           session_mode: payload.sessionMode,
@@ -755,9 +755,9 @@ export const flashcardService = {
           correct_answers: payload.correctAnswers,
           incorrect_answers: payload.incorrectAnswers,
           ended_at: new Date().toISOString()
-    })
-    .select('id')
-    .single()
+        })
+        .select('id')
+        .single()
 
       if (error) throw error
 
@@ -801,6 +801,66 @@ export const flashcardService = {
     } catch (error) {
       logger.error('Erro ao buscar flashcards difíceis:', error)
       return []
+    }
+  },
+}
+
+export type FlashcardUpsert = {
+  id?: string
+  topic_id: string
+  question: string
+  answer: string
+  external_resource_url?: string | null
+  difficulty?: number
+  explanation?: string
+  order_index?: number
+}
+
+export const saveFlashcards = async (
+  topicId: string,
+  flashcards: FlashcardUpsert[]
+): Promise<void> => {
+  // 1. Get existing to determine deletes
+  const { data: existing, error: fetchError } = await supabase
+    .from('flashcards')
+    .select('id')
+    .eq('topic_id', topicId)
+
+  if (fetchError) throw fetchError
+
+  const existingIds = new Set(existing?.map(f => f.id) || [])
+  const newIds = new Set(flashcards.filter(f => f.id).map(f => f.id))
+
+  // 2. Delete removed
+  const toDelete = [...existingIds].filter(id => !newIds.has(id))
+
+  if (toDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('flashcards')
+      .delete()
+      .in('id', toDelete)
+
+    if (deleteError) throw deleteError
+  }
+
+  // 3. Upsert
+  for (const fc of flashcards) {
+    const { id, ...data } = fc
+
+    // Ensure we don't send undefined fields that shouldn't be touched if not present
+    // But for a form replacement, we usually want to overwrite.
+
+    if (id) {
+      const { error } = await supabase
+        .from('flashcards')
+        .update(data)
+        .eq('id', id)
+      if (error) throw error
+    } else {
+      const { error } = await supabase
+        .from('flashcards')
+        .insert(data)
+      if (error) throw error
     }
   }
 }

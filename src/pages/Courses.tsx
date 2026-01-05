@@ -92,7 +92,7 @@ export default function CoursesPage() {
   }
 
   return (
-    <MagicLayout 
+    <MagicLayout
       title="Meus Cursos"
       description="Aprenda com os melhores professores e domine qualquer assunto com nossos cursos especializados"
     >
@@ -151,8 +151,8 @@ export default function CoursesPage() {
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Buscar cursos..." 
+              <Input
+                placeholder="Buscar cursos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-card/50 backdrop-blur-sm border-border/50"
@@ -167,8 +167,8 @@ export default function CoursesPage() {
                   onClick={() => setFilterCategory(category)}
                   className={cn(
                     "transition-colors duration-300 whitespace-nowrap flex-shrink-0",
-                    filterCategory === category 
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-white" 
+                    filterCategory === category
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-white"
                       : "bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
                   )}
                 >
@@ -190,13 +190,13 @@ export default function CoursesPage() {
                 Nenhum curso encontrado
               </h3>
               <p className="text-muted-foreground mb-8">
-                {searchTerm || filterCategory !== 'Todos' 
-                  ? 'Tente ajustar seus filtros de busca' 
+                {searchTerm || filterCategory !== 'Todos'
+                  ? 'Tente ajustar seus filtros de busca'
                   : 'Você ainda não tem acesso a nenhum curso. Entre em contato com seu professor.'
                 }
               </p>
               {(searchTerm || filterCategory !== 'Todos') && (
-                <Button 
+                <Button
                   onClick={() => {
                     setSearchTerm('')
                     setFilterCategory('Todos')
@@ -209,49 +209,86 @@ export default function CoursesPage() {
             </div>
           </MagicCard>
         ) : (
-          <div className="space-y-8">
-            {/* Header */}
-            <MagicCard variant="glass" size="lg">
-              <div className="flex items-center gap-4">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                  <Award className="h-6 w-6 text-primary" />
+          <div className="space-y-12 pb-24">
+            {filteredTrails.map((trail, index) => (
+              <div key={index} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: `${index * 150}ms` }}>
+                <div className="flex items-end justify-between border-b pb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                      {trail.name}
+                      <span className="text-muted-foreground font-normal text-sm ml-2 px-2 py-0.5 rounded-full bg-muted">
+                        Trilha
+                      </span>
+                    </h2>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      {trail.courses.length} curso{trail.courses.length !== 1 ? 's' : ''} • {Math.round(trail.averageProgress)}% concluído
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold">Cursos por Trilha</h2>
-                  <p className="text-muted-foreground">
-                    {filteredTrails.length} trilha{filteredTrails.length !== 1 ? 's' : ''} disponível{filteredTrails.length !== 1 ? 'eis' : ''}
-                  </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {trail.courses.map((course) => (
+                    <Link key={course.id} to={`/meus-cursos/${course.id}`} className="group block h-full">
+                      <MagicCard
+                        className="h-full flex flex-col overflow-hidden border-border/50 bg-card/50 hover:bg-card/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl group-hover:border-primary/50 p-0"
+                        variant="glass"
+                      >
+                        {/* Course Thumbnail */}
+                        <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                          <img
+                            src={course.image_url || "/placeholder.svg"}
+                            alt={course.title}
+                            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                          />
+                          {/* Overlay Play Button */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                            <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300 delay-75 shadow-2xl">
+                              <Play className="w-6 h-6 text-white ml-1" fill="currentColor" />
+                            </div>
+                          </div>
+                          {/* Tags/Badges */}
+                          <div className="absolute top-2 right-2 flex gap-1 z-10">
+                            {course.progress === 100 && (
+                              <div className="px-2 py-1 rounded-md bg-green-500/90 text-white text-xs font-bold backdrop-blur-sm shadow-sm flex items-center gap-1">
+                                <Award className="w-3 h-3" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex-1 p-5 flex flex-col space-y-3">
+                          <h3 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                            {course.title}
+                          </h3>
+
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-auto pt-2">
+                            <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
+                              <BookOpen className="w-3.5 h-3.5" />
+                              <span>{course.lessons_count || 0} aulas</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>{course.total_hours || 0}h</span>
+                            </div>
+                          </div>
+
+                          {/* Progress Bar */}
+                          <div className="space-y-2 pt-3 border-t mt-4">
+                            <div className="flex justify-between text-xs font-medium">
+                              <span className="text-muted-foreground">Progresso</span>
+                              <span className={cn(course.progress === 100 ? "text-green-500" : "text-primary")}>
+                                {course.progress === 100 ? "100%" : `${Math.round(course.progress)}%`}
+                              </span>
+                            </div>
+                            <Progress value={course.progress} className={cn("h-1.5", course.progress === 100 ? "[&>div]:bg-green-500" : "")} />
+                          </div>
+                        </div>
+                      </MagicCard>
+                    </Link>
+                  ))}
                 </div>
               </div>
-            </MagicCard>
-
-            {/* Course Trails */}
-            <div className="space-y-6">
-              {filteredTrails.map((trail, index) => (
-                <div
-                  key={trail.trailName}
-                  style={{ animationDelay: `${delays[index]}ms` }}
-                  className="animate-fade-in"
-                >
-                  <CourseTrailCard
-                    trailName={trail.trailName}
-                    totalCourses={trail.totalCourses}
-                    totalLessons={trail.totalLessons}
-                    completedLessons={trail.completedLessons}
-                    averageProgress={trail.averageProgress}
-                    completedCourses={trail.completedCourses}
-                    courses={trail.courses.map(course => ({
-                      id: course.id,
-                      title: course.title,
-                      progress: course.progress,
-                      modules_count: course.modules_count,
-                      lessons_count: course.lessons_count,
-                      total_hours: course.total_hours
-                    }))}
-                  />
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         )}
       </div>

@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,8 @@ export default function AdminEssayCorrectionPage() {
     useState<EssayAnnotation | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAILoading, setIsAILoading] = useState(false)
+
+  const [fileUrl, setFileUrl] = useState<string | null>(null)
 
   const handleAICorrection = async () => {
     if (!essay || !user) return
@@ -97,11 +100,24 @@ export default function AdminEssayCorrectionPage() {
         ])
         setEssay(essayData)
         setErrorCategories(categoriesData)
+
         if (essayData?.ai_analysis) {
           const aiAnnotations = (essayData.ai_analysis as any)
             .annotations as EssayAnnotation[]
           setAnnotations(aiAnnotations)
         }
+
+        // Get signed URL if file exists
+        if ((essayData as any)?.file_url) {
+          const { data } = await supabase.storage
+            .from('essays')
+            .createSignedUrl((essayData as any).file_url, 3600) // 1 hour validity
+
+          if (data?.signedUrl) {
+            setFileUrl(data.signedUrl)
+          }
+        }
+
       } catch (error) {
         toast({
           title: 'Erro ao carregar redação',
@@ -183,6 +199,8 @@ export default function AdminEssayCorrectionPage() {
   if (isLoading) return <SectionLoader />
   if (!essay) return <div>Redação não encontrada.</div>
 
+  const isImageObserved = fileUrl && ((essay as any).file_url?.toLowerCase().endsWith('.jpg') || (essay as any).file_url?.toLowerCase().endsWith('.png') || (essay as any).file_url?.toLowerCase().endsWith('.jpeg'))
+
   return (
     <div className="flex flex-col gap-6 h-[calc(100vh-8rem)]">
       <div className="flex items-center gap-4">
@@ -197,9 +215,16 @@ export default function AdminEssayCorrectionPage() {
         </Button>
         <div>
           <h1 className="text-xl font-semibold">Corrigir Redação</h1>
-          <p className="text-sm text-muted-foreground">
-            Aluno(a):{' '}
-            {`${essay.users?.first_name || ''} ${essay.users?.last_name || ''}`}
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <span>
+              Aluno(a):{' '}
+              {`${essay.users?.first_name || ''} ${essay.users?.last_name || ''}`}
+            </span>
+            {essay.users?.student_classes?.[0]?.classes?.name && (
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                {essay.users.student_classes[0].classes.name}
+              </span>
+            )}
           </p>
         </div>
         <div className="ml-auto flex gap-2">
@@ -225,16 +250,26 @@ export default function AdminEssayCorrectionPage() {
           )}
         </div>
       </div>
-      <div className="grid lg:grid-cols-3 gap-6 flex-grow">
-        <div className="lg:col-span-2 h-full">
-          <InteractiveEssayEditor
-            text={essay.submission_text}
-            annotations={annotations}
-            onTextSelect={handleTextSelect}
-            onAnnotationClick={handleAnnotationClick}
-          />
+      <div className="grid lg:grid-cols-3 gap-6 flex-grow overflow-hidden">
+        <div className="lg:col-span-2 h-full flex flex-col overflow-hidden">
+          {fileUrl ? (
+            <div className="flex-1 border rounded-lg overflow-auto bg-muted/20">
+              {isImageObserved ? (
+                <img src={fileUrl} alt="Redação Digitalizada" className="max-w-full h-auto mx-auto" />
+              ) : (
+                <iframe src={fileUrl} className="w-full h-full" title="Redação PDF" />
+              )}
+            </div>
+          ) : (
+            <InteractiveEssayEditor
+              text={essay.submission_text}
+              annotations={annotations}
+              onTextSelect={handleTextSelect}
+              onAnnotationClick={handleAnnotationClick}
+            />
+          )}
         </div>
-        <div className="lg:col-span-1 h-full">
+        <div className="lg:col-span-1 h-full overflow-auto">
           <CorrectionPanel
             key={essay.updated_at || Date.now()}
             essay={essay}
@@ -249,3 +284,4 @@ export default function AdminEssayCorrectionPage() {
     </div>
   )
 }
+
