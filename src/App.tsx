@@ -342,6 +342,7 @@ const App = () => (
                     path="/banco-de-questoes"
                     element={<QuestionBankPage />}
                   />
+                  <Route path="/acervo" element={<AcervoDigitalPage />} />
                   <Route path="/forum" element={<ForumPage />} />
                   <Route path="/forum/:topicId" element={<ForumTopicPage />} />
                   <Route path="/configuracoes" element={<SettingsPage />} />

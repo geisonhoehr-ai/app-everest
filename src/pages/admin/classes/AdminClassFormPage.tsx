@@ -37,15 +37,19 @@ const classSchema = z.object({
   end_date: z.string().min(1, 'A data de término é obrigatória'),
   status: z.enum(['active', 'inactive', 'archived']),
   class_type: z.enum(['standard', 'trial']).default('standard'),
+  teacher_id: z.string().min(1, 'O professor é obrigatório'),
 })
 
 type ClassFormValues = z.infer<typeof classSchema>
+
+import { getTeachers, Teacher } from '@/services/teacherService'
 
 export default function AdminClassFormPage() {
   const { classId } = useParams<{ classId: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
-  const [loading, setLoading] = useState(!!classId)
+  const [loading, setLoading] = useState(true)
+  const [teachers, setTeachers] = useState<Teacher[]>([])
 
   const isEditing = !!classId
 
@@ -58,14 +62,41 @@ export default function AdminClassFormPage() {
       end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'active',
       class_type: 'standard',
+      teacher_id: '',
     },
   })
 
   useEffect(() => {
-    if (isEditing) {
-      loadClass()
+    const init = async () => {
+      setLoading(true)
+      await loadTeachers()
+      if (isEditing) {
+        await loadClass()
+      }
+      setLoading(false)
     }
+    init()
   }, [classId])
+
+  const loadTeachers = async () => {
+    try {
+      const data = await getTeachers()
+      setTeachers(data)
+
+      // If not editing, try to find current user in teachers list to set as default
+      if (!isEditing) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const currentTeacher = data.find(t => t.user_id === user.id)
+          if (currentTeacher) {
+            form.setValue('teacher_id', currentTeacher.id)
+          }
+        }
+      }
+    } catch (error) {
+      logger.error('Erro ao carregar professores:', error)
+    }
+  }
 
   const loadClass = async () => {
     try {
@@ -77,14 +108,16 @@ export default function AdminClassFormPage() {
 
       if (error) throw error
 
-      if (data) {
+      const classData = data as any
+      if (classData) {
         form.reset({
-          name: data.name,
-          description: data.description || '',
-          start_date: data.start_date,
-          end_date: data.end_date,
-          status: data.status || 'active',
-          class_type: data.class_type || 'standard',
+          name: classData.name,
+          description: classData.description || '',
+          start_date: classData.start_date,
+          end_date: classData.end_date,
+          status: classData.status || 'active',
+          class_type: classData.class_type || 'standard',
+          teacher_id: classData.teacher_id || '',
         })
       }
     } catch (error) {
@@ -102,7 +135,7 @@ export default function AdminClassFormPage() {
   const onSubmit = async (values: ClassFormValues) => {
     try {
       if (isEditing) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('classes')
           .update({
             name: values.name,
@@ -111,6 +144,7 @@ export default function AdminClassFormPage() {
             end_date: values.end_date,
             status: values.status,
             class_type: values.class_type,
+            teacher_id: values.teacher_id,
           })
           .eq('id', classId)
 
@@ -121,7 +155,7 @@ export default function AdminClassFormPage() {
           description: 'Turma atualizada com sucesso',
         })
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('classes')
           .insert({
             name: values.name,
@@ -130,6 +164,7 @@ export default function AdminClassFormPage() {
             end_date: values.end_date,
             status: values.status,
             class_type: values.class_type,
+            teacher_id: values.teacher_id,
           })
 
         if (error) throw error
@@ -275,11 +310,48 @@ export default function AdminClassFormPage() {
 
                 <FormField
                   control={form.control}
+                  name="teacher_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Professor Responsável *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um professor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {teachers.length === 0 ? (
+                            <SelectItem value="none" disabled>Nenhum professor encontrado</SelectItem>
+                          ) : (
+                            teachers.map((teacher) => (
+                              <SelectItem key={teacher.id} value={teacher.id}>
+                                {teacher.first_name} {teacher.last_name} ({teacher.email})
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="status"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o status" />

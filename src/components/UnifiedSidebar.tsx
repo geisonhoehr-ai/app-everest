@@ -82,7 +82,7 @@ const studentMenuItems = [
   },
   {
     label: 'Banco de Questões',
-    href: '/questoes',
+    href: '/banco-de-questoes',
     icon: Search,
     featureKey: FEATURE_KEYS.QUIZ, // 🔒 Controlado por turma (usando mesma key de quiz por enquanto)
   },

@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { FilePlus2, Eye, FileDown, FileText, Calendar, Clock, TrendingUp, Lock } from 'lucide-react'
+import { FilePlus2, Eye, FileDown, FileText, Calendar, Clock, TrendingUp, Lock, Star } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { getUserEssaysList, getUserEssayStats, type EssayListItem, type EssayStatsData } from '@/services/essayService'
 import { useAuth } from '@/hooks/use-auth'
@@ -91,38 +91,55 @@ export default function EssaysPage() {
       title="Minhas Redações"
       description="Envie suas redações e acompanhe suas correções e notas."
     >
-      <div className="space-y-8">
-        {/* Stats Cards */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <MagicCard className="p-4 md:p-6 text-center" glow>
-            <div className="space-y-1 md:space-y-2">
-              <FileText className="h-6 w-6 md:h-8 md:w-8 text-primary mx-auto" />
-              <div className="text-xl md:text-2xl font-bold">{stats.totalEssays}</div>
-              <div className="text-xs md:text-sm text-muted-foreground">Redações Enviadas</div>
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header Stats */}
+        <MagicCard variant="premium" size="lg">
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <FileText className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    Minhas Redações
+                  </h1>
+                  <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
+                    Envie suas redações e acompanhe correções e notas
+                  </p>
+                </div>
+              </div>
+              <div className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <Star className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                <span className="text-xs md:text-sm font-medium">Correção Detalhada</span>
+              </div>
             </div>
-          </MagicCard>
-          <MagicCard className="p-4 md:p-6 text-center" glow>
-            <div className="space-y-1 md:space-y-2">
-              <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-green-500 mx-auto" />
-              <div className="text-xl md:text-2xl font-bold">{stats.averageGrade}</div>
-              <div className="text-xs md:text-sm text-muted-foreground">Nota Média</div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <FileText className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.totalEssays}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Redações Enviadas</div>
+              </div>
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-green-600">{stats.averageGrade}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Nota Média</div>
+              </div>
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <Clock className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-purple-600">{stats.averageDays}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Dias Médio</div>
+              </div>
+              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+                <Calendar className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
+                <div className="text-xl md:text-2xl font-bold text-orange-600">{stats.pending}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Pendentes</div>
+              </div>
             </div>
-          </MagicCard>
-          <MagicCard className="p-4 md:p-6 text-center" glow>
-            <div className="space-y-1 md:space-y-2">
-              <Clock className="h-6 w-6 md:h-8 md:w-8 text-blue-500 mx-auto" />
-              <div className="text-xl md:text-2xl font-bold">{stats.averageDays}</div>
-              <div className="text-xs md:text-sm text-muted-foreground">Dias Médio</div>
-            </div>
-          </MagicCard>
-          <MagicCard className="p-4 md:p-6 text-center" glow>
-            <div className="space-y-1 md:space-y-2">
-              <Calendar className="h-6 w-6 md:h-8 md:w-8 text-orange-500 mx-auto" />
-              <div className="text-xl md:text-2xl font-bold">{stats.pending}</div>
-              <div className="text-xs md:text-sm text-muted-foreground">Pendentes</div>
-            </div>
-          </MagicCard>
-        </div>
+          </div>
+        </MagicCard>
 
         {/* Actions Bar */}
         <MagicCard className="p-6" glow>
