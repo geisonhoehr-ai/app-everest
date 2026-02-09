@@ -48,7 +48,8 @@ import {
   Zap,
   Trophy,
   Lock,
-  Plug
+  Plug,
+  Search
 } from 'lucide-react'
 
 // Menu items for students (com feature_key para controle de permissões)

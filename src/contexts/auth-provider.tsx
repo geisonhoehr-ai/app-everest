@@ -59,7 +59,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
   try {
     console.log('🔍 Fetching profile for user:', userId)
 
-    // First try to fetch existing profile (timeout: 10s is enough)
+    // First try to fetch existing profile
     const { data: existingProfile, error: fetchError } = await Promise.race([
       supabase
         .from('users')
@@ -76,7 +76,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
         .eq('id', userId)
         .single(),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 20000)
       )
     ])
 
@@ -246,11 +246,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         console.log('🚀 Initializing authentication...')
 
-        // Get initial session with shorter timeout (5s is enough)
+        // Get initial session with reasonable timeout
         const { data: { session: initialSession } } = await Promise.race([
           supabase.auth.getSession(),
           new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Auth timeout')), 5000)
+            setTimeout(() => reject(new Error('Auth timeout')), 15000)
           )
         ])
 
