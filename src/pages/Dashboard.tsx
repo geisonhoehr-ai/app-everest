@@ -163,9 +163,13 @@ export default function DashboardPage() {
 
     if (user) {
       loadDashboard();
-    } else if (!isLoading) {
-      // Se não tem user e parou de carregar, algo está errado com a auth
+    } else {
+      // Se não tem user, libera o loading com layout padrão
       console.warn('⚠️ Dashboard carregado sem usuário autenticado');
+      const userRole = profile?.role || 'student';
+      const defaultLayout = DEFAULT_LAYOUTS[userRole] || DEFAULT_LAYOUTS.student;
+      setWidgets(defaultLayout.order || []);
+      setIsLoading(false);
     }
   }, [user?.id, profile?.role])
 
@@ -253,11 +257,11 @@ export default function DashboardPage() {
     }
   }
 
+  const delays = useStaggeredAnimation(widgets.length, 100)
+
   if (isLoading) {
     return <SectionLoader />
   }
-
-  const delays = useStaggeredAnimation(widgets.length, 100)
 
   return (
     <MagicLayout
