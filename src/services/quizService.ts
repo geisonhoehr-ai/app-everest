@@ -82,7 +82,7 @@ export const getQuizzes = async (): Promise<Quiz[]> => {
       title: quiz.title,
       description: quiz.description || '',
       duration_minutes: quiz.duration_minutes,
-      questions: quiz.quiz_questions?.map(q => ({
+      questions: (quiz as any).quiz_questions?.map((q: any) => ({
         id: q.id,
         question_text: q.question_text,
         question_type: q.question_type,
@@ -128,37 +128,25 @@ export const quizService = {
 
       if (error) {
         logger.error('❌ Error fetching quiz subjects:', error)
-        logger.error('Error details:', JSON.stringify(error, null, 2))
         throw error
       }
-
-      logger.debug('✅ Found subjects:', subjects?.length || 0)
-      subjects?.forEach(subject => {
-        logger.debug(`📚 Subject: ${subject.name}, Topics: ${subject.topics?.length || 0}`)
-        subject.topics?.forEach(topic => {
-          logger.debug(`  📖 Topic: ${topic.name}, Quizzes: ${topic.quizzes?.length || 0}`)
-          if (topic.quizzes?.length === 0) {
-            logger.warn(`  ⚠️ No quizzes found for topic: ${topic.name} in subject: ${subject.name}`)
-          }
-        })
-      })
 
       return subjects?.map(subject => ({
         id: subject.id,
         name: subject.name,
         description: subject.description,
         image: subject.image_url || `https://img.usecurling.com/p/400/200?q=${encodeURIComponent(subject.name)}`,
-        topics: subject.topics?.map(topic => ({
+        topics: (subject as any).topics?.map((topic: any) => ({
           id: topic.id,
           name: topic.name,
           description: topic.description,
-          questionCount: topic.quizzes?.reduce((total, quiz) => total + (quiz.quiz_questions?.length || 0), 0) || 0,
-          quizzes: topic.quizzes?.map(quiz => ({
+          questionCount: topic.quizzes?.reduce((total: number, quiz: any) => total + (quiz.quiz_questions?.length || 0), 0) || 0,
+          quizzes: topic.quizzes?.map((quiz: any) => ({
             id: quiz.id,
             title: quiz.title,
             description: quiz.description,
             duration_minutes: quiz.duration_minutes,
-            questions: [] // Será carregado quando necessário
+            questions: []
           })) || []
         })) || []
       })) || []
@@ -171,49 +159,40 @@ export const quizService = {
   // Buscar quiz por ID com questões (com suporte offline)
   async getQuizById(quizId: string): Promise<Quiz | null> {
     try {
-      // Tentar buscar do Supabase primeiro
-      const { data: quiz, error } = await supabase
+      // Buscar metadados do quiz
+      const { data: quiz, error: quizError } = await (supabase as any)
         .from('quizzes')
-        .select(`
-          id,
-          title,
-          description,
-          duration_minutes,
-          quiz_questions (
-            id,
-            question_text,
-            question_type,
-            options,
-            correct_answer,
-            explanation,
-            points,
-            reading_text_id
-          ),
-          quiz_reading_texts (
-            id,
-            title,
-            content
-          )
-        `)
+        .select('id, title, description, duration_minutes')
         .eq('id', quizId)
         .single()
 
-      if (error) {
-        logger.error('Error fetching quiz by ID:', error)
-        throw error
-      }
+      if (quizError) throw quizError
 
-      const readingTextsMap = (quiz.quiz_reading_texts || []).reduce((acc: any, text: any) => {
-        acc[text.id] = text;
-        return acc;
-      }, {});
+      // Buscar questões separadamente para evitar problemas de relação no join
+      const { data: questions, error: questionsError } = await (supabase as any)
+        .from('quiz_questions')
+        .select('id, question_text, question_type, options, correct_answer, explanation, points, reading_text_id')
+        .eq('quiz_id', quizId)
+
+      if (questionsError) throw questionsError
+
+      // Buscar textos de leitura
+      const { data: readingTexts } = await (supabase as any)
+        .from('quiz_reading_texts')
+        .select('*')
+        .eq('quiz_id', quizId)
+
+      const readingTextsMap = (readingTexts || []).reduce((acc: any, text: any) => {
+        acc[text.id] = text
+        return acc
+      }, {})
 
       const result = {
         id: quiz.id,
         title: quiz.title,
-        description: quiz.description,
-        duration_minutes: quiz.duration_minutes,
-        questions: quiz.quiz_questions?.map(q => ({
+        description: quiz.description || '',
+        duration_minutes: quiz.duration_minutes || 0,
+        questions: questions?.map((q: any) => ({
           id: q.id,
           question_text: q.question_text,
           question_type: q.question_type,
@@ -231,7 +210,7 @@ export const quizService = {
           id: result.id,
           title: result.title,
           description: result.description,
-          topic_id: undefined,
+          topic_id: undefined as any,
           questions: result.questions,
           duration_minutes: result.duration_minutes,
           cached_at: Date.now()
@@ -243,33 +222,33 @@ export const quizService = {
       logger.error('Erro ao buscar quiz online:', error)
 
       // Fallback para cache offline
-      logger.debug('Tentando buscar quiz do cache offline...')
       const cachedQuiz = await offlineStorage.getQuizById(quizId)
-
       if (!cachedQuiz) return null
 
       return {
         id: cachedQuiz.id,
         title: cachedQuiz.title,
-        description: cachedQuiz.description,
-        duration_minutes: cachedQuiz.duration_minutes,
+        description: (cachedQuiz as any).description || '',
+        duration_minutes: (cachedQuiz as any).duration_minutes,
         questions: cachedQuiz.questions
       }
     }
   },
 
-  // Salvar tentativa de quiz (com suporte offline)
-  async saveQuizAttempt(
+  // Salvar tentativa e resposta do quiz (Gabarito)
+  async submitQuizAttempt(
     userId: string,
     quizId: string,
     answers: Record<string, string>,
-    score: number,
     durationSeconds: number
   ): Promise<string | null> {
     try {
+      // S1 Protection: Validate current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (!currentUser || currentUser.id !== userId) throw new Error('Acesso não autorizado')
+
       // Se offline, adicionar à fila de sincronização
       if (!syncService.getOnlineStatus()) {
-        logger.debug('Offline - adicionando tentativa à fila de sincronização')
         const attemptId = `offline_attempt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
         await offlineStorage.addToSyncQueue({
@@ -279,7 +258,6 @@ export const quizService = {
             quiz_id: quizId,
             user_id: userId,
             answers,
-            score,
             total_questions: Object.keys(answers).length,
             duration_seconds: durationSeconds,
             started_at: Date.now()
@@ -291,14 +269,12 @@ export const quizService = {
         return attemptId
       }
 
-      // Online - processar normalmente
-      const { data: attempt, error: attemptError } = await supabase
+      // 1. Criar a tentativa via Supabase (S2 Protection: Ignoramos score do cliente)
+      const { data: attempt, error: attemptError } = await (supabase as any)
         .from('quiz_attempts')
         .insert({
           user_id: userId,
           quiz_id: quizId,
-          score: score,
-          total_questions: Object.keys(answers).length,
           duration_seconds: durationSeconds,
           status: 'submitted',
           submitted_at: new Date().toISOString()
@@ -308,38 +284,27 @@ export const quizService = {
 
       if (attemptError) throw attemptError
 
-      // Salvar respostas
+      // 2. Salvar respostas
       const answerInserts = Object.entries(answers).map(([questionId, answer]) => ({
-        quiz_attempt_id: attempt.id,
-        quiz_question_id: questionId,
-        user_answer: answer,
-        is_correct: false // Será calculado baseado na resposta correta
+        attempt_id: attempt.id,
+        question_id: questionId,
+        answer_value: answer
       }))
 
-      // Buscar respostas corretas para calcular is_correct
-      const { data: questions, error: questionsError } = await supabase
-        .from('quiz_questions')
-        .select('id, correct_answer')
-        .eq('quiz_id', quizId)
-
-      if (questionsError) throw questionsError
-
-      // Atualizar is_correct baseado nas respostas corretas
-      const correctAnswers = questions?.reduce((acc, q) => {
-        acc[q.id] = q.correct_answer
-        return acc
-      }, {} as Record<string, string>) || {}
-
-      const finalAnswerInserts = answerInserts.map(answer => ({
-        ...answer,
-        is_correct: correctAnswers[answer.quiz_question_id] === answer.user_answer
-      }))
-
-      const { error: answersError } = await supabase
-        .from('quiz_attempt_answers')
-        .insert(finalAnswerInserts)
+      const { error: answersError } = await (supabase as any)
+        .from('quiz_answers')
+        .insert(answerInserts)
 
       if (answersError) throw answersError
+
+      // 3. Chamar RPC para calcular nota e estatísticas no servidor (S2 Protection)
+      const { error: rpcError } = await (supabase as any).rpc('submit_quiz_attempt', {
+        p_attempt_id: attempt.id
+      })
+
+      if (rpcError) {
+        logger.warn('Erro ao chamar RPC de submissão, mas tentativa foi salva:', rpcError)
+      }
 
       return attempt.id
     } catch (error) {
@@ -351,7 +316,10 @@ export const quizService = {
   // Buscar histórico de tentativas do usuário
   async getUserQuizAttempts(userId: string): Promise<QuizAttempt[]> {
     try {
-      const { data: attempts, error } = await supabase
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (!currentUser || currentUser.id !== userId) return []
+
+      const { data: attempts, error } = await (supabase as any)
         .from('quiz_attempts')
         .select(`
           id,
@@ -369,7 +337,7 @@ export const quizService = {
 
       if (error) throw error
 
-      return attempts?.map(attempt => ({
+      return attempts?.map((attempt: any) => ({
         id: attempt.id,
         quiz_id: attempt.quiz_id,
         score: attempt.score,
@@ -391,7 +359,12 @@ export const quizService = {
     totalQuestions: number
   }> {
     try {
-      const { data: attempts, error } = await supabase
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (!currentUser || currentUser.id !== userId) {
+        return { totalAttempts: 0, averageScore: 0, bestScore: 0, totalQuestions: 0 }
+      }
+
+      const { data: attempts, error } = await (supabase as any)
         .from('quiz_attempts')
         .select('score, total_questions')
         .eq('user_id', userId)
@@ -399,10 +372,10 @@ export const quizService = {
       if (error) throw error
 
       const totalAttempts = attempts?.length || 0
-      const totalScore = attempts?.reduce((sum, attempt) => sum + attempt.score, 0) || 0
+      const totalScore = attempts?.reduce((sum: number, attempt: any) => sum + (attempt.score || 0), 0) || 0
       const averageScore = totalAttempts > 0 ? Math.round(totalScore / totalAttempts) : 0
-      const bestScore = attempts?.reduce((max, attempt) => Math.max(max, attempt.score), 0) || 0
-      const totalQuestions = attempts?.reduce((sum, attempt) => sum + attempt.total_questions, 0) || 0
+      const bestScore = attempts?.reduce((max: number, attempt: any) => Math.max(max, attempt.score || 0), 0) || 0
+      const totalQuestions = attempts?.reduce((sum: number, attempt: any) => sum + (attempt.total_questions || 0), 0) || 0
 
       return {
         totalAttempts,

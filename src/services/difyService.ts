@@ -7,228 +7,160 @@ interface EssayCorrectionRequest {
   criteria: 'ENEM' | 'VESTIBULAR'
 }
 
-interface EssayCorrectionResponse {
-  totalScore: number
-  competencies: {
-    structure: { score: number; feedback: string }
-    language: { score: number; feedback: string }
-    theme: { score: number; feedback: string }
-    argumentation: { score: number; feedback: string }
-    intervention: { score: number; feedback: string }
+export interface EssayCorrectionResponse {
+  score: number
+  feedback: string
+  criteriaScores: {
+    c1: number
+    c2: number
+    c3: number
+    c4: number
+    c5: number
   }
   suggestions: string[]
-  strengths: string[]
-  improvements: string[]
+  correctionId?: string
 }
 
 interface ChatRequest {
   message: string
   context?: string
-  userId: string
+  history?: { role: 'user' | 'assistant'; content: string }[]
 }
 
 interface ChatResponse {
-  response: string
-  sources?: string[]
+  answer: string
   suggestions?: string[]
+}
+
+interface PerformanceAnalysisRequest {
+  studentId: string
+  period: 'week' | 'month' | 'all'
+}
+
+interface PerformanceAnalysisResponse {
+  strengths: string[]
+  weaknesses: string[]
+  recommendations: string[]
 }
 
 class DifyService {
   /**
-   * Verificar se o serviço está disponível (via Edge Function)
+   * Verificar se o serviço está configurado (Gerenciado pelo backend via secrets)
    */
   isConfigured(): boolean {
-    return true // Agora é gerenciado pelo backend
+    return true
   }
 
   /**
-   * Testar conexão com Dify via Proxy
+   * Auxiliar para invocar o proxy do Dify
    */
-  async testConnection(): Promise<{ success: boolean; message: string }> {
-    try {
-      const { data, error } = await supabase.functions.invoke('dify-proxy', {
-        body: { action: 'stats' }
-      })
-
-      if (error) throw error
-
-      return { success: true, message: 'Conexão estabelecida com sucesso via Edge Function' }
-    } catch (error) {
-      logger.error('Erro de conexão Dify:', error)
-      return { success: false, message: 'Erro de conexão: ' + error }
-    }
+  private async invokeProxy(action: string, payload: any) {
+    const { data, error } = await supabase.functions.invoke('dify-proxy', {
+      body: { action, payload }
+    })
+    if (error) throw error
+    return data
   }
 
   /**
-   * Corrigir redação usando IA via Edge Function
+   * Corrigir redação usando IA via Proxy
    */
   async correctEssay(request: EssayCorrectionRequest): Promise<EssayCorrectionResponse> {
     try {
-      const { data, error } = await supabase.functions.invoke('dify-proxy', {
-        body: {
-          action: 'workflow',
-          payload: {
-            inputs: {
-              redacao: request.essay,
-              tema: request.theme,
-              criterios: request.criteria,
-              tipo_correcao: 'completa'
-            }
-          }
+      const data = await this.invokeProxy('workflow', {
+        inputs: {
+          redacao: request.essay,
+          tema: request.theme,
+          criterios: request.criteria,
+          tipo_correcao: 'completa'
         }
       })
 
-      if (error) throw error
+      // O Dify Workflow retorna o output dentro de data.outputs
+      const outputs = data.outputs || {}
 
-      return this.parseEssayCorrection(data)
+      return {
+        score: Number(outputs.nota_final || 0),
+        feedback: outputs.feedback_geral || 'Processando correção...',
+        criteriaScores: {
+          c1: Number(outputs.nota_c1 || 0),
+          c2: Number(outputs.nota_c2 || 0),
+          c3: Number(outputs.nota_c3 || 0),
+          c4: Number(outputs.nota_c4 || 0),
+          c5: Number(outputs.nota_c5 || 0)
+        },
+        suggestions: Array.isArray(outputs.sugestoes) ? outputs.sugestoes : [],
+        correctionId: data.workflow_run_id
+      }
     } catch (error) {
       logger.error('Erro ao corrigir redação:', error)
-      throw new Error('Falha na correção da redação')
+      throw new Error('Falha na correção da redação via Proxy')
     }
   }
 
   /**
-   * Chat com assistente inteligente via Edge Function
+   * Chat interativo via Proxy
    */
   async chat(request: ChatRequest): Promise<ChatResponse> {
     try {
-      const { data, error } = await supabase.functions.invoke('dify-proxy', {
-        body: {
-          action: 'chat',
-          payload: {
-            inputs: {
-              message: request.message,
-              context: request.context || '',
-              user_id: request.userId
-            },
-            query: request.message,
-            response_mode: 'blocking',
-            user: request.userId
-          }
-        }
+      const data = await this.invokeProxy('chat', {
+        query: request.message,
+        user: 'everest_student',
+        conversation_id: request.context,
+        inputs: {}
       })
 
-      if (error) throw error
-
       return {
-        response: data.answer,
-        sources: data.metadata?.sources || [],
-        suggestions: data.suggestions || []
+        answer: data.answer || 'Desculpe, não consegui processar sua dúvida agora.',
+        suggestions: data.metadata?.suggestions || []
       }
     } catch (error) {
       logger.error('Erro no chat:', error)
-      throw new Error('Falha na comunicação com o assistente')
+      throw new Error('Falha na comunicação com o assistente via Proxy')
     }
   }
 
   /**
-   * Gerar questões baseadas em conteúdo via Edge Function
+   * Gerar questões automáticas via Proxy
    */
-  async generateQuestions(content: string, subject: string, difficulty: 'easy' | 'medium' | 'hard'): Promise<any[]> {
+  async generateQuestions(topic: string, count: number = 5): Promise<any[]> {
     try {
-      const { data, error } = await supabase.functions.invoke('dify-proxy', {
-        body: {
-          action: 'workflow',
-          payload: {
-            inputs: {
-              conteudo: content,
-              materia: subject,
-              dificuldade: difficulty,
-              quantidade: 5
-            }
-          }
+      const data = await this.invokeProxy('workflow', {
+        inputs: {
+          tema: topic,
+          quantidade: count,
+          nivel: 'médio'
         }
       })
 
-      if (error) throw error
-      return data.questions || []
+      return data.outputs?.questoes || []
     } catch (error) {
       logger.error('Erro ao gerar questões:', error)
-      throw new Error('Falha na geração de questões')
+      throw new Error('Falha na geração de questões via Proxy')
     }
   }
 
   /**
-   * Analisar performance do aluno via Edge Function
+   * Analisar desempenho do aluno via Proxy
    */
-  async analyzePerformance(userId: string, subject: string): Promise<any> {
+  async analyzePerformance(request: PerformanceAnalysisRequest): Promise<PerformanceAnalysisResponse> {
     try {
-      const { data, error } = await supabase.functions.invoke('dify-proxy', {
-        body: {
-          action: 'workflow',
-          payload: {
-            inputs: {
-              user_id: userId,
-              materia: subject,
-              tipo_analise: 'performance'
-            }
-          }
-        }
+      const data = await this.invokeProxy('stats', {
+        student_id: request.studentId,
+        period: request.period
       })
 
-      if (error) throw error
-      return data.analysis || {}
+      return {
+        strengths: data.outputs?.pontos_fortes || [],
+        weaknesses: data.outputs?.pontos_fracos || [],
+        recommendations: data.outputs?.recomendacoes || []
+      }
     } catch (error) {
-      logger.error('Erro na análise:', error)
-      throw new Error('Falha na análise de performance')
-    }
-  }
-
-  /**
-   * Parsear resposta de correção de redação
-   */
-  private parseEssayCorrection(data: any): EssayCorrectionResponse {
-    // Se vier do workflow do Dify, os dados podem estar dentro de 'data' ou 'outputs'
-    const result = data.data || data.outputs || data;
-
-    return {
-      totalScore: result.total_score || 0,
-      competencies: {
-        structure: {
-          score: result.competencies?.structure?.score || 0,
-          feedback: result.competencies?.structure?.feedback || ''
-        },
-        language: {
-          score: result.competencies?.language?.score || 0,
-          feedback: result.competencies?.language?.feedback || ''
-        },
-        theme: {
-          score: result.competencies?.theme?.score || 0,
-          feedback: result.competencies?.theme?.feedback || ''
-        },
-        argumentation: {
-          score: result.competencies?.argumentation?.score || 0,
-          feedback: result.competencies?.argumentation?.feedback || ''
-        },
-        intervention: {
-          score: result.competencies?.intervention?.score || 0,
-          feedback: result.competencies?.intervention?.feedback || ''
-        }
-      },
-      suggestions: result.suggestions || [],
-      strengths: result.strengths || [],
-      improvements: result.improvements || []
-    }
-  }
-
-  /**
-   * Obter estatísticas de uso via Edge Function
-   */
-  async getUsageStats(): Promise<any> {
-    try {
-      const { data, error } = await supabase.functions.invoke('dify-proxy', {
-        body: { action: 'stats' }
-      })
-
-      if (error) throw error
-      return data
-    } catch (error) {
-      logger.error('Erro ao obter estatísticas:', error)
-      throw new Error('Falha ao obter estatísticas')
+      logger.error('Erro ao analisar desempenho:', error)
+      throw new Error('Falha na análise de desempenho via Proxy')
     }
   }
 }
 
 // Singleton instance
 export const difyService = new DifyService()
-

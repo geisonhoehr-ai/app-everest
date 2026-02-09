@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 export interface SimulationQuestion {
   id: string
@@ -59,18 +60,19 @@ export async function getSimulation(quizId: string): Promise<Simulation | null> 
     // Transformar options de JSONB para array de strings
     const formattedQuestions = questions?.map(q => ({
       ...q,
+      question_format: (q as any).question_type || 'multiple_choice',
       options: q.options ? (Array.isArray(q.options) ? q.options : JSON.parse(JSON.stringify(q.options))) : undefined,
-    })) || []
+    })) as unknown as SimulationQuestion[]
 
     return {
       id: quiz.id,
       title: quiz.title,
-      description: quiz.description,
-      duration_minutes: quiz.duration_minutes,
-      questions: formattedQuestions,
+      description: quiz.description || '',
+      duration_minutes: quiz.duration_minutes || 0,
+      questions: formattedQuestions || [],
     }
   } catch (error) {
-    console.error('Error fetching simulation:', error)
+    logger.error('Error fetching simulation:', error)
     throw error
   }
 }
@@ -89,19 +91,20 @@ export async function getAvailableSimulations() {
       .order('created_at', { ascending: false })
 
     if (error) throw error
-
     return data
   } catch (error) {
-    console.error('Error fetching simulations:', error)
+    logger.error('Error fetching simulations:', error)
     throw error
   }
 }
 
-
 export async function startSimulationAttempt(quizId: string, userId: string): Promise<string> {
   try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser || currentUser.id !== userId) throw new Error('Não autorizado')
+
     // Check for existing in-progress attempt
-    const { data: existingAttempt } = await supabase
+    const { data: existingAttempt } = await (supabase as any)
       .from('quiz_attempts')
       .select('id')
       .eq('quiz_id', quizId)
@@ -113,9 +116,8 @@ export async function startSimulationAttempt(quizId: string, userId: string): Pr
       return existingAttempt.id
     }
 
-
     // Create new attempt
-    const { data: newAttempt, error } = await supabase
+    const { data: newAttempt, error } = await (supabase as any)
       .from('quiz_attempts')
       .insert({
         quiz_id: quizId,
@@ -129,7 +131,7 @@ export async function startSimulationAttempt(quizId: string, userId: string): Pr
     if (error) throw error
     return newAttempt.id
   } catch (error) {
-    console.error('Error starting simulation attempt:', error)
+    logger.error('Error starting simulation attempt:', error)
     throw error
   }
 }
@@ -140,41 +142,57 @@ export async function saveSimulationAnswer(
   answer: any
 ) {
   try {
-    const { error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Não autorizado')
+
+    // Validar se o attempt pertence ao usuário
+    const { data: attempt } = await (supabase as any)
+      .from('quiz_attempts')
+      .select('user_id')
+      .eq('id', attemptId)
+      .single()
+
+    const ifAttempt = attempt as any
+    if (!ifAttempt || ifAttempt.user_id !== user.id) throw new Error('Não autorizado')
+
+    const { error } = await (supabase as any)
       .from('quiz_answers')
       .upsert({
         attempt_id: attemptId,
         question_id: questionId,
         answer_value: typeof answer === 'string' ? answer : JSON.stringify(answer),
-        is_correct: null // Can be calculated later or via trigger
+        is_correct: null
       }, {
         onConflict: 'attempt_id,question_id'
       })
 
     if (error) throw error
   } catch (error) {
-    console.error('Error saving answer:', error)
+    logger.error('Error saving answer:', error)
     throw error
   }
 }
 
 export async function submitSimulation(attemptId: string) {
   try {
-    const { data, error } = await supabase.rpc('submit_quiz_attempt', {
+    const { data, error } = await supabase.rpc('submit_quiz_attempt' as any, {
       p_attempt_id: attemptId
     })
 
     if (error) throw error
     return data
   } catch (error) {
-    console.error('Error submitting simulation:', error)
+    logger.error('Error submitting simulation:', error)
     throw error
   }
 }
 
 export async function getSimulationResult(attemptId: string) {
   try {
-    const { data, error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Não autorizado')
+
+    const { data, error } = await (supabase as any)
       .from('quiz_attempts')
       .select(`
         *,
@@ -190,12 +208,13 @@ export async function getSimulationResult(attemptId: string) {
         )
       `)
       .eq('id', attemptId)
+      .eq('user_id', user.id)
       .single()
 
     if (error) throw error
     return data
   } catch (error) {
-    console.error('Error fetching simulation result:', error)
+    logger.error('Error fetching simulation result:', error)
     throw error
   }
 }
@@ -214,7 +233,7 @@ export async function getLastAttempt(quizId: string, userId: string) {
     if (error && error.code !== 'PGRST116') throw error
     return data
   } catch (error) {
-    console.error('Error fetching last attempt:', error)
+    logger.error('Error fetching last attempt:', error)
     throw error
   }
 }

@@ -178,11 +178,33 @@ export const courseService = {
   // Buscar progresso do usuário em um curso
   async getUserCourseProgress(userId: string, courseId: string): Promise<Record<string, number>> {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || user.id !== userId) return {}
+
+      // Primeiro pegamos todos os módulos do curso
+      const { data: modules } = await supabase
+        .from('video_modules')
+        .select('id')
+        .eq('course_id', courseId)
+
+      const moduleIds = modules?.map(m => m.id) || []
+      if (moduleIds.length === 0) return {}
+
+      // Depois pegamos todas as aulas desses módulos
+      const { data: lessons } = await supabase
+        .from('video_lessons')
+        .select('id')
+        .in('module_id', moduleIds)
+
+      const lessonIds = lessons?.map(l => l.id) || []
+      if (lessonIds.length === 0) return {}
+
+      // Agora sim buscamos o progresso nessas aulas
       const { data: progress, error } = await supabase
         .from('video_progress')
         .select('lesson_id, progress_percentage')
         .eq('user_id', userId)
-        .in('lesson_id', [courseId]) // Assumindo que lesson_id corresponde ao course_id
+        .in('lesson_id', lessonIds)
 
       if (error) throw error
 
@@ -228,7 +250,7 @@ export const courseService = {
   async getUserCoursesWithDetails(userId: string): Promise<CourseWithProgress[]> {
     try {
       logger.debug('🔍 Getting user courses for user:', userId)
-      
+
       // Get user's classes
       const { data: userClasses, error: classesError } = await supabase
         .from('student_classes')

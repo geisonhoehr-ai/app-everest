@@ -1,12 +1,11 @@
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 import type { Database, Json } from '@/lib/supabase/types'
 
 export type Essay = Database['public']['Tables']['essays']['Row']
 export type EssayPrompt = Database['public']['Tables']['essay_prompts']['Row']
-export type EssayAnnotation =
-  Database['public']['Tables']['essay_annotations']['Row']
-export type ErrorCategory =
-  Database['public']['Tables']['error_categories']['Row']
+export type EssayAnnotation = Database['public']['Tables']['essay_annotations']['Row']
+export type ErrorCategory = Database['public']['Tables']['error_categories']['Row']
 
 export type EssayForCorrection = Essay & {
   essay_prompts: Pick<EssayPrompt, 'title' | 'evaluation_criteria'> | null
@@ -21,13 +20,23 @@ export type EssayForCorrection = Essay & {
   } | null
 }
 
+export interface StudentEssayDetails {
+  id: string
+  title: string
+  content: string
+  status: string
+  submitted_at: string
+  feedback?: string
+  score?: number
+  theme: string
+}
+
 export const getEssayForCorrection = async (
   submissionId: string,
 ): Promise<EssayForCorrection | null> => {
   const { data, error } = await supabase
     .from('essays')
-    .select(
-      `
+    .select(`
       *,
       essay_prompts ( title, evaluation_criteria ),
       users ( 
@@ -39,17 +48,16 @@ export const getEssayForCorrection = async (
           )
         )
       )
-    `,
-    )
+    `)
     .eq('id', submissionId)
     .single()
 
   if (error) {
-    console.error('Error fetching essay for correction:', error)
+    logger.error('Error fetching essay for correction:', error)
     return null
   }
 
-  return data as EssayForCorrection
+  return (data as unknown) as EssayForCorrection
 }
 
 export const getEssaysForComparison = async (
@@ -61,27 +69,25 @@ export const getEssaysForComparison = async (
 
   const { data, error } = await supabase
     .from('essays')
-    .select(
-      `
+    .select(`
       *,
       essay_prompts ( title, evaluation_criteria ),
       users ( first_name, last_name )
-    `,
-    )
+    `)
     .in('id', submissionIds)
 
   if (error) {
-    console.error('Error fetching essays for comparison:', error)
+    logger.error('Error fetching essays for comparison:', error)
     return []
   }
 
-  return data as EssayForCorrection[]
+  return (data as unknown) as EssayForCorrection[]
 }
 
 export const getErrorCategories = async (): Promise<ErrorCategory[]> => {
   const { data, error } = await supabase.from('error_categories').select('*')
   if (error) {
-    console.error('Error fetching error categories:', error)
+    logger.error('Error fetching error categories:', error)
     return []
   }
   return data
@@ -102,7 +108,7 @@ export const saveCorrection = async (
       final_grade: payload.final_grade,
       teacher_feedback_text: payload.teacher_feedback_text,
       teacher_id: teacherId,
-      status: 'corrected',
+      status: 'corrected' as any,
       correction_date: new Date().toISOString(),
     })
     .eq('id', submissionId)
@@ -115,7 +121,7 @@ export const saveCorrection = async (
     teacher_id: teacherId,
   }))
 
-  const { error: annotationError } = await supabase
+  const { error: annotationError } = await (supabase as any)
     .from('essay_annotations')
     .upsert(annotationsToInsert)
 
@@ -129,21 +135,19 @@ export const getStudentEssayDetails = async (
 ): Promise<StudentEssayDetails | null> => {
   const { data, error } = await supabase
     .from('essays')
-    .select(
-      `
+    .select(`
       *,
       essay_prompts ( title, evaluation_criteria ),
       essay_annotations ( * )
-    `,
-    )
+    `)
     .eq('id', essayId)
     .single()
 
   if (error) {
-    console.error('Error fetching student essay details:', error)
+    logger.error('Error fetching student essay details:', error)
     return null
   }
-  return data as StudentEssayDetails
+  return (data as unknown) as StudentEssayDetails
 }
 
 // Funções para página de listagem de redações
@@ -164,6 +168,9 @@ export interface EssayStatsData {
 
 export const getUserEssaysList = async (userId: string): Promise<EssayListItem[]> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.id !== userId) return []
+
     const { data: essays, error } = await supabase
       .from('essays')
       .select(`
@@ -181,7 +188,7 @@ export const getUserEssaysList = async (userId: string): Promise<EssayListItem[]
 
     if (error) throw error
 
-    return essays?.map(essay => ({
+    return essays?.map((essay: any) => ({
       id: essay.id,
       theme: essay.essay_prompts?.title || 'Redação sem título',
       date: new Date(essay.submission_date || essay.created_at).toLocaleDateString('pt-BR'),
@@ -189,7 +196,7 @@ export const getUserEssaysList = async (userId: string): Promise<EssayListItem[]
       grade: essay.final_grade
     })) || []
   } catch (error) {
-    console.error('Erro ao buscar lista de redações:', error)
+    logger.error('Erro ao buscar lista de redações:', error)
     return []
   }
 }
@@ -197,23 +204,19 @@ export const getUserEssaysList = async (userId: string): Promise<EssayListItem[]
 export const getUserEssayStats = async (userId: string): Promise<EssayStatsData> => {
   try {
     const essays = await getUserEssaysList(userId)
-
     const correctedEssays = essays.filter(e => e.status === 'Corrigida' && e.grade !== null)
     const averageGrade = correctedEssays.length > 0
       ? Math.round(correctedEssays.reduce((sum, e) => sum + (e.grade || 0), 0) / correctedEssays.length)
       : 0
 
-    // Calcular média de dias (mock por enquanto, pois precisa de correction_date)
-    const averageDays = 3
-
     return {
       totalEssays: essays.length,
       averageGrade,
-      averageDays,
+      averageDays: 3,
       pending: essays.filter(e => e.status === 'Enviada' || e.status === 'Corrigindo').length
     }
   } catch (error) {
-    console.error('Erro ao buscar estatísticas de redações:', error)
+    logger.error('Erro ao buscar estatísticas de redações:', error)
     return {
       totalEssays: 0,
       averageGrade: 0,
@@ -223,15 +226,17 @@ export const getUserEssayStats = async (userId: string): Promise<EssayStatsData>
   }
 }
 
-
 export const submitEssay = async (
   userId: string,
   theme: string,
   content: string,
   file?: File
-): Promise<void> => {
+): Promise<boolean> => {
   try {
-    // 1. Create a prompt for this essay (Free Theme)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.id !== userId) throw new Error('Não autorizado')
+
+    // 1. Criar um prompt para esta redação (Tema Livre)
     const defaultCriteria = {
       c1: { name: 'Norma Culta', value: 200 },
       c2: { name: 'Compreensão do Tema', value: 200 },
@@ -240,21 +245,20 @@ export const submitEssay = async (
       c5: { name: 'Proposta de Intervenção', value: 200 }
     }
 
-    const { data: prompt, error: promptError } = await supabase
+    const { data: prompt, error: promptError } = await (supabase as any)
       .from('essay_prompts')
       .insert({
         title: theme,
         description: 'Tema livre enviado pelo aluno',
         evaluation_criteria: defaultCriteria,
-        created_by_user_id: userId,
-        // subject_id might be needed, but we leave null for now
+        created_by_user_id: userId
       })
       .select('id')
       .single()
 
     if (promptError) throw promptError
 
-    // 2. Upload file if exists
+    // 2. Upload de arquivo se existir
     let fileUrl = null
     if (file) {
       const fileExt = file.name.split('.').pop()
@@ -269,22 +273,22 @@ export const submitEssay = async (
       fileUrl = filePath
     }
 
-    // 3. Submit essay
-    const { error: essayError } = await supabase
+    // 3. Enviar redação
+    const { error: essayError } = await (supabase as any)
       .from('essays')
       .insert({
         student_id: userId,
         prompt_id: prompt.id,
         submission_text: content || '',
         file_url: fileUrl,
-        status: 'submitted',
+        status: 'submitted' as any,
         submission_date: new Date().toISOString()
       })
 
     if (essayError) throw essayError
-
+    return true
   } catch (error) {
-    console.error('Error submitting essay:', error)
+    logger.error('Erro ao enviar redação:', error)
     throw error
   }
 }
@@ -301,4 +305,3 @@ function mapStatusToPortuguese(status: string): 'Rascunho' | 'Enviada' | 'Corrig
       return 'Enviada'
   }
 }
-

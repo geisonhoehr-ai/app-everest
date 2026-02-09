@@ -16,6 +16,12 @@ import type { UserProfile } from '@/contexts/auth-provider'
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser || currentUser.id !== userId) {
+      console.warn(`Unauthorized profile access attempt for userId: ${userId}`)
+      return null
+    }
+
     console.log('🔍 Fetching user profile for:', userId)
 
     const { data, error } = await supabase
