@@ -1,0 +1,155 @@
+/* Mobile Sidebar Fix - Ensure proper background (não preto) */
+[data-sidebar="sidebar"][data-mobile="true"] {
+  background: hsl(var(--sidebar-background)) !important;
+}
+
+[data-sidebar="sidebar"][data-mobile="true"] > div {
+  background: hsl(var(--sidebar-background)) !important;
+}
+
+/* Apple-style Drawer animations and styles */
+
+/* Drawer com animação suave estilo iOS */
+[data-vaul-drawer] {
+  touch-action: none;
+  will-change: transform;
+}
+
+[data-vaul-drawer][data-vaul-drawer-visible='true'] {
+  animation: drawer-slide-up 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes drawer-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Handle estilo iOS - mais elegante e responsivo */
+[data-vaul-drawer] .h-2 {
+  background: hsl(var(--muted-foreground) / 0.3);
+  width: 40px;
+  height: 5px;
+  border-radius: 100px;
+  margin: 16px auto 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Handle fica mais visível ao tocar/arrastar */
+[data-vaul-drawer][data-vaul-drawer-dragging='true'] .h-2 {
+  background: hsl(var(--muted-foreground) / 0.5);
+  width: 48px;
+  height: 6px;
+}
+
+/* Overlay com blur forte estilo Apple */
+[data-vaul-drawer-overlay] {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(0, 0, 0, 0.5);
+  animation: drawer-overlay-fade-in 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes drawer-overlay-fade-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* Conteúdo do drawer com sombra sutil Apple */
+[data-vaul-drawer] > div:first-child {
+  box-shadow: 
+    0 -8px 32px -4px rgba(0, 0, 0, 0.12),
+    0 -4px 16px -4px rgba(0, 0, 0, 0.08),
+    0 -2px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Bordas arredondadas superiores estilo iOS */
+[data-vaul-drawer] {
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  overflow: hidden;
+}
+
+/* Scrollbar suave dentro do drawer */
+[data-vaul-drawer] ::-webkit-scrollbar {
+  width: 6px;
+}
+
+[data-vaul-drawer] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-vaul-drawer] ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 100px;
+}
+
+[data-vaul-drawer] ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.3);
+}
+
+/* Padding responsivo no conteúdo */
+[data-vaul-drawer] [data-vaul-drawer-content] {
+  padding: 0 20px 20px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Animação de fechamento */
+[data-vaul-drawer][data-state='closed'] {
+  animation: drawer-slide-down 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes drawer-slide-down {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+/* Safe area para iPhone com notch */
+@supports (padding: max(0px)) {
+  [data-vaul-drawer] {
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Melhor touch feedback */
+[data-vaul-drawer] button,
+[data-vaul-drawer] a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Botões dentro do drawer com espaçamento mobile-friendly */
+[data-vaul-drawer] button {
+  min-height: 44px; /* Apple HIG minimum touch target */
+}
+
+/* Grid de botões responsivo no drawer */
+[data-vaul-drawer] .grid {
+  gap: 12px;
+}
+
+[data-vaul-drawer] .space-y-3 {
+  gap: 12px;
+}
+
