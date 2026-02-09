@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   ReactNode,
 } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
@@ -182,62 +183,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isSigningOut, setIsSigningOut] = useState(false)
   const { toast } = useToast()
 
+  // Use refs to avoid dependency cycles in useCallback/useEffect
+  const profileRef = useRef<UserProfile | null>(null)
+  const profileFetchAttemptedRef = useRef(false)
+  const isFetchingProfileRef = useRef(false)
+
+  // Keep refs in sync with state
+  profileRef.current = profile
+  profileFetchAttemptedRef.current = profileFetchAttempted
+
   // Refresh profile function
-  const refreshProfile = async () => {
-    if (!session?.user?.id) return
+  const refreshProfile = useCallback(async () => {
+    const currentSession = session
+    if (!currentSession?.user?.id) return
 
     console.log('🔄 Refreshing profile...')
-    const userProfile = await fetchUserProfile(session.user.id)
+    const userProfile = await fetchUserProfile(currentSession.user.id)
     setProfile(userProfile)
-  }
+  }, [session])
 
-  // Handle session changes
+  // Handle session changes - stable callback using refs
   const handleSessionChange = useCallback(async (newSession: Session | null) => {
     console.log('🔄 Session changed:', !!newSession)
     setSession(newSession)
 
     if (newSession?.user) {
-      // Evita buscar perfil novamente se já estamos tentando
-      if (profileFetchAttempted && profile) {
+      // Skip if already fetched or currently fetching
+      if (profileFetchAttemptedRef.current && profileRef.current) {
         console.log('⏭️ Profile already fetched, skipping...')
         return
       }
 
-      setProfileFetchAttempted(false)
-
-      // Fetch profile for authenticated user with robust retry
-      let userProfile = null
-      const maxRetries = 3
-
-      for (let i = 0; i < maxRetries; i++) {
-        userProfile = await fetchUserProfile(newSession.user.id)
-        if (userProfile) break
-
-        if (i < maxRetries - 1) {
-          const delay = Math.pow(2, i) * 1000
-          console.log(`🔄 Profile fetch attempt ${i + 1} failed, retrying in ${delay / 1000}s...`)
-          await new Promise(resolve => setTimeout(resolve, delay))
-        }
+      if (isFetchingProfileRef.current) {
+        console.log('⏭️ Profile fetch already in progress, skipping...')
+        return
       }
 
+      isFetchingProfileRef.current = true
+      setProfileFetchAttempted(false)
+
+      // Single attempt - no retries to keep login fast
+      const userProfile = await fetchUserProfile(newSession.user.id)
+
+      isFetchingProfileRef.current = false
       setProfile(userProfile)
       setProfileFetchAttempted(true)
 
-      // Only log the result
       if (!userProfile) {
-        console.warn('⚠️ Failed to create or fetch user profile after multiple retries')
+        console.warn('⚠️ Failed to fetch user profile')
       } else {
         console.log('✅ User authenticated with profile:', userProfile.email)
       }
     } else {
       // Clear profile for unauthenticated state
+      isFetchingProfileRef.current = false
       setProfile(null)
       setProfileFetchAttempted(false)
       console.log('🔓 User logged out, profile cleared')
     }
-  }, [profile, profileFetchAttempted])
+  }, []) // No dependencies - uses refs for state checks
 
-  // Initialize auth
+  // Initialize auth - runs only once
   useEffect(() => {
     let mounted = true
     let refreshInterval: NodeJS.Timeout | null = null
@@ -246,7 +252,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         console.log('🚀 Initializing authentication...')
 
-        // Get initial session with reasonable timeout
+        // Get initial session
         const { data: { session: initialSession } } = await Promise.race([
           supabase.auth.getSession(),
           new Promise<any>((_, reject) =>
@@ -267,13 +273,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               const expiresAt = currentSession.expires_at
               const now = Math.floor(Date.now() / 1000)
 
-              // Refresh if less than 10 minutes until expiration
               if (expiresAt && (expiresAt - now) < 600) {
                 console.log('🔄 Refreshing auth token...')
                 await supabase.auth.refreshSession()
               }
             }
-          }, 5 * 60 * 1000) // Check every 5 minutes
+          }, 5 * 60 * 1000)
         }
 
       } catch (error) {
@@ -281,8 +286,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         console.error('💥 Auth initialization failed:', error)
 
-        // Don't show toast for timeout on landing page - just continue
-        // This is normal when user is not logged in
         const isTimeout = error instanceof Error && error.message.includes('timeout')
 
         if (!isTimeout) {
@@ -295,7 +298,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.log('⏭️ Auth timeout (user not logged in) - continuing...')
         }
 
-        // Ensure clean state
         setSession(null)
         setProfile(null)
       } finally {
@@ -315,41 +317,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         console.log('🔔 Auth event:', event)
 
-        // Ignore duplicate events
-        if (event === 'SIGNED_OUT' && !session) {
-          console.log('⏭️ Ignoring duplicate SIGNED_OUT event')
+        // Only handle meaningful events
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('✅ Token refreshed successfully')
+          setSession(newSession)
           return
         }
 
-        // Handle token refresh
-        if (event === 'TOKEN_REFRESHED') {
-          console.log('✅ Token refreshed successfully')
-        }
-
-        // Handle signed out
         if (event === 'SIGNED_OUT') {
           console.log('🚪 User signed out')
           if (refreshInterval) {
             clearInterval(refreshInterval)
             refreshInterval = null
           }
+          setSession(null)
+          setProfile(null)
+          setProfileFetchAttempted(false)
+          isFetchingProfileRef.current = false
+          return
         }
 
-        // Handle signed in
-        if (event === 'SIGNED_IN' && !refreshInterval) {
-          // Set up token refresh check
-          refreshInterval = setInterval(async () => {
-            const { data: { session: currentSession } } = await supabase.auth.getSession()
-            if (currentSession) {
-              const expiresAt = currentSession.expires_at
-              const now = Math.floor(Date.now() / 1000)
-
-              if (expiresAt && (expiresAt - now) < 600) {
-                console.log('🔄 Refreshing auth token...')
-                await supabase.auth.refreshSession()
+        if (event === 'SIGNED_IN') {
+          // Set up token refresh if not already running
+          if (!refreshInterval) {
+            refreshInterval = setInterval(async () => {
+              const { data: { session: currentSession } } = await supabase.auth.getSession()
+              if (currentSession) {
+                const expiresAt = currentSession.expires_at
+                const now = Math.floor(Date.now() / 1000)
+                if (expiresAt && (expiresAt - now) < 600) {
+                  console.log('🔄 Refreshing auth token...')
+                  await supabase.auth.refreshSession()
+                }
               }
-            }
-          }, 5 * 60 * 1000)
+            }, 5 * 60 * 1000)
+          }
         }
 
         await handleSessionChange(newSession)
@@ -363,10 +365,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         clearInterval(refreshInterval)
       }
     }
-  }, [toast, handleSessionChange])
+  }, [handleSessionChange, toast])
 
   // Auth methods
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     console.log('🔐 Signing in user:', email)
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -381,9 +383,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return { error }
-  }
+  }, [])
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string) => {
     console.log('📝 Signing up user:', email)
 
     const { error } = await supabase.auth.signUp({
@@ -398,26 +400,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return { error }
-  }
+  }, [])
 
-  const signOut = async () => {
-    // Prevent multiple simultaneous signOut calls
+  const signOut = useCallback(async () => {
     if (isSigningOut) {
       console.log('⏸️ SignOut already in progress, skipping...')
       return { error: null }
     }
 
-    // Get stack trace to see who called signOut
-    const stack = new Error().stack
-    console.log('🚪 Signing out user - Called from:', stack?.split('\n')[2]?.trim())
-
+    console.log('🚪 Signing out user...')
     setIsSigningOut(true)
 
     try {
       const { error } = await supabase.auth.signOut()
 
       if (error) {
-        // Ignore 403 errors - session already ended
         if (error.status !== 403) {
           console.error('❌ Sign out error:', error)
         } else {
@@ -427,30 +424,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('✅ Sign out successful')
       }
 
-      // Always clear profile on signout attempt
       setProfile(null)
       setProfileFetchAttempted(false)
 
       return { error }
     } finally {
-      // Reset flag after a delay to allow the process to complete
       setTimeout(() => setIsSigningOut(false), 2000)
     }
-  }
+  }, [isSigningOut])
 
-  const getRedirectPath = () => {
+  const getRedirectPath = useCallback(() => {
     if (!profile) return '/login'
 
     switch (profile.role) {
       case 'administrator':
         return '/admin'
       case 'teacher':
-        return '/admin' // Teachers also go to admin area for content management
+        return '/admin'
       case 'student':
       default:
         return '/dashboard'
     }
-  }
+  }, [profile])
 
   const value = {
     user: session?.user ?? null,
