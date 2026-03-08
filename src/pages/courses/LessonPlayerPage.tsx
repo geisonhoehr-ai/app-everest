@@ -19,6 +19,7 @@ import {
   Play,
   ChevronDown,
   ChevronLeft,
+  ChevronRight,
   Download,
   FileText,
   Paperclip,
