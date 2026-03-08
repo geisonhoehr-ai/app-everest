@@ -836,23 +836,31 @@ export default function LessonPlayerPage() {
                 </div>
 
                 {/* Navigation */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border">
                   {prevLesson ? (
                     <Link to={`/courses/${courseId}/lessons/${prevLesson.id}`}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group min-h-[44px]">
-                      <SkipBack className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
-                      <span className="hidden sm:inline max-w-[200px] truncate">{cleanTitle(prevLesson.title)}</span>
-                      <span className="sm:hidden">Anterior</span>
+                      className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-muted/20 hover:bg-muted/50 hover:border-primary/30 transition-all duration-200 group min-h-[56px]">
+                      <div className="w-8 h-8 rounded-full bg-muted/60 group-hover:bg-primary/15 flex items-center justify-center shrink-0 transition-colors">
+                        <SkipBack className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:-translate-x-0.5 transition-all" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">Anterior</span>
+                        <p className="text-xs font-medium text-foreground truncate mt-0.5">{cleanTitle(prevLesson.title)}</p>
+                      </div>
                     </Link>
-                  ) : <div />}
+                  ) : <div className="flex-1" />}
                   {nextLesson ? (
                     <Link to={`/courses/${courseId}/lessons/${nextLesson.id}`}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group min-h-[44px]">
-                      <span className="hidden sm:inline max-w-[200px] truncate">{cleanTitle(nextLesson.title)}</span>
-                      <span className="sm:hidden">Proxima</span>
-                      <SkipForward className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-muted/20 hover:bg-muted/50 hover:border-primary/30 transition-all duration-200 group min-h-[56px] justify-end text-right">
+                      <div className="min-w-0">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">Proxima</span>
+                        <p className="text-xs font-medium text-foreground truncate mt-0.5">{cleanTitle(nextLesson.title)}</p>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-muted/60 group-hover:bg-primary/15 flex items-center justify-center shrink-0 transition-colors">
+                        <SkipForward className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                      </div>
                     </Link>
-                  ) : <div />}
+                  ) : <div className="flex-1" />}
                 </div>
               </div>
 
