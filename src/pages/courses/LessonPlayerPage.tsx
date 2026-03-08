@@ -17,7 +17,6 @@ import {
   ChevronLeft,
   Download,
   FileText,
-  MessageSquare,
   Paperclip,
   Clock,
   Menu,
@@ -28,12 +27,11 @@ import {
   Sun,
   PanelRightOpen,
   PanelRightClose,
-  BookOpen,
   Eye,
-  Send,
   GripVertical,
   Maximize2,
   Minimize2,
+  ListVideo,
 } from 'lucide-react'
 
 /* ------------------------------------------------------------------ */
@@ -112,7 +110,6 @@ export default function LessonPlayerPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
   const [showModuleSelector, setShowModuleSelector] = useState(false)
-  const [showComments, setShowComments] = useState(false)
   const [showResources, setShowResources] = useState(false)
 
   // Theater mode
@@ -120,7 +117,7 @@ export default function LessonPlayerPage() {
 
   // PDF split view
   const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null)
-  const [splitRatio, setSplitRatio] = useState(55) // % for video side
+  const [splitRatio, setSplitRatio] = useState(55)
   const isDragging = useRef(false)
   const splitContainerRef = useRef<HTMLDivElement>(null)
 
@@ -128,7 +125,6 @@ export default function LessonPlayerPage() {
   const [desktopSidebarVisible, setDesktopSidebarVisible] = useState(false)
 
   const currentLessonRef = useRef<HTMLAnchorElement>(null)
-  const videoContainerRef = useRef<HTMLDivElement>(null)
   const mainContentRef = useRef<HTMLDivElement>(null)
 
   /* ---- flat lesson list for prev / next ---- */
@@ -172,73 +168,48 @@ export default function LessonPlayerPage() {
       try {
         setIsLoading(true)
 
-        const course = await courseService.getCourseWithModulesAndProgress(
-          courseId,
-          user.id,
-        )
+        const course = await courseService.getCourseWithModulesAndProgress(courseId, user.id)
         if (!course) {
-          toast({
-            title: 'Curso nao encontrado',
-            description: 'O curso que voce esta procurando nao existe.',
-            variant: 'destructive',
-          })
+          toast({ title: 'Curso nao encontrado', variant: 'destructive' })
           navigate('/courses')
           return
         }
 
         setCourseData(course as CourseData)
 
-        // Select the module containing current lesson
         const activeModuleId = (course.modules || []).find((m: ModuleData) =>
           m.lessons.some((l) => l.id === lessonId)
         )?.id
         if (activeModuleId) setSelectedModuleId(activeModuleId)
 
-        // find lesson
         let foundLesson: LessonData | null = null
         for (const mod of course.modules) {
-          const lesson = (mod.lessons as LessonData[]).find(
-            (l) => l.id === lessonId,
-          )
-          if (lesson) {
-            foundLesson = lesson
-            break
-          }
+          const lesson = (mod.lessons as LessonData[]).find((l) => l.id === lessonId)
+          if (lesson) { foundLesson = lesson; break }
         }
 
         if (!foundLesson) {
-          toast({
-            title: 'Aula nao encontrada',
-            description: 'A aula que voce esta procurando nao existe.',
-            variant: 'destructive',
-          })
+          toast({ title: 'Aula nao encontrada', variant: 'destructive' })
           navigate(`/courses/${courseId}`)
           return
         }
 
         setLessonData(foundLesson)
 
-        // fetch attachments
         const { data: attData } = await supabase
           .from('lesson_attachments')
           .select('*')
           .eq('lesson_id', lessonId)
 
         setAttachments((attData as Attachment[]) || [])
-        // Reset PDF viewer when changing lesson
         setPdfViewerUrl(null)
       } catch (error) {
         console.error('Error fetching lesson data:', error)
-        toast({
-          title: 'Erro ao carregar aula',
-          description: 'Ocorreu um erro ao carregar os dados da aula.',
-          variant: 'destructive',
-        })
+        toast({ title: 'Erro ao carregar aula', variant: 'destructive' })
       } finally {
         setIsLoading(false)
       }
     }
-
     fetchData()
   }, [courseId, lessonId, user?.id, navigate, toast])
 
@@ -252,49 +223,37 @@ export default function LessonPlayerPage() {
   /* ---- auto-scroll sidebar to current lesson ---- */
   useEffect(() => {
     if (!isLoading && currentLessonRef.current) {
-      currentLessonRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      })
+      currentLessonRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }, [isLoading, lessonId])
 
-  /* ---- Escape key exits theater mode ---- */
+  /* ---- Escape exits theater ---- */
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && theaterMode) {
-        setTheaterMode(false)
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape' && theaterMode) setTheaterMode(false) }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
   }, [theaterMode])
 
-  /* ---- Resizable split drag handlers ---- */
+  /* ---- Resizable split ---- */
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     isDragging.current = true
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
-
-    const handleMouseMove = (ev: MouseEvent) => {
+    const onMove = (ev: MouseEvent) => {
       if (!isDragging.current || !splitContainerRef.current) return
       const rect = splitContainerRef.current.getBoundingClientRect()
-      const x = ev.clientX - rect.left
-      const pct = Math.max(25, Math.min(75, (x / rect.width) * 100))
-      setSplitRatio(pct)
+      setSplitRatio(Math.max(25, Math.min(75, ((ev.clientX - rect.left) / rect.width) * 100)))
     }
-
-    const handleMouseUp = () => {
+    const onUp = () => {
       isDragging.current = false
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
     }
-
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
   }, [])
 
   /* ---- mark complete ---- */
@@ -302,85 +261,49 @@ export default function LessonPlayerPage() {
     if (!user?.id || !lessonId || !lessonData) return
     try {
       const { error } = await supabase.from('video_progress').upsert({
-        user_id: user.id,
-        lesson_id: lessonId,
-        progress_percentage: 100,
-        is_completed: true,
+        user_id: user.id, lesson_id: lessonId,
+        progress_percentage: 100, is_completed: true,
         current_time_seconds: lessonData.duration_seconds || 0,
       })
       if (error) throw error
-
       setLessonData({ ...lessonData, completed: true, progress: 100 })
-
-      // update in courseData too
       setCourseData((prev) => {
         if (!prev) return prev
-        return {
-          ...prev,
-          modules: prev.modules.map((m) => ({
-            ...m,
-            lessons: m.lessons.map((l) =>
-              l.id === lessonId ? { ...l, completed: true } : l,
-            ),
-          })),
-        }
+        return { ...prev, modules: prev.modules.map((m) => ({
+          ...m, lessons: m.lessons.map((l) => l.id === lessonId ? { ...l, completed: true } : l),
+        }))}
       })
-
-      toast({
-        title: 'Aula concluida!',
-        description: 'Parabens! Continue seu progresso.',
-      })
-
-      // Auto-navigate to next lesson
-      if (nextLesson) {
-        setTimeout(() => {
-          navigate(`/courses/${courseId}/lessons/${nextLesson.id}`)
-        }, 1500)
-      }
-    } catch (error) {
-      console.error('Error marking lesson as complete:', error)
-      toast({
-        title: 'Erro',
-        description: 'Nao foi possivel marcar a aula como concluida.',
-        variant: 'destructive',
-      })
+      toast({ title: 'Aula concluida!', description: 'Parabens! Continue seu progresso.' })
+      if (nextLesson) setTimeout(() => navigate(`/courses/${courseId}/lessons/${nextLesson.id}`), 1500)
+    } catch {
+      toast({ title: 'Erro', description: 'Nao foi possivel marcar a aula como concluida.', variant: 'destructive' })
     }
   }, [user?.id, lessonId, lessonData, toast, nextLesson, courseId, navigate])
 
-  /* ---- sorted modules for selector ---- */
+  /* ---- module helpers ---- */
   const sortedModules = useMemo(() => {
     if (!courseData) return []
     return [...courseData.modules].sort((a, b) => a.order_index - b.order_index)
   }, [courseData])
 
-  /* ---- current module and its lessons ---- */
   const currentModule = useMemo(
     () => sortedModules.find((m) => m.id === selectedModuleId) || sortedModules[0] || null,
     [sortedModules, selectedModuleId],
   )
-
   const currentModuleLessons = useMemo(() => {
     if (!currentModule) return []
     return [...currentModule.lessons].sort((a, b) => a.order_index - b.order_index)
   }, [currentModule])
-
   const currentModuleIndex = useMemo(
     () => sortedModules.findIndex((m) => m.id === currentModule?.id),
     [sortedModules, currentModule],
   )
 
-  /* ---- open PDF in split view ---- */
   const openPdfViewer = (url: string) => {
-    if (pdfViewerUrl === url) {
-      // Toggle off
-      setPdfViewerUrl(null)
-    } else {
-      setPdfViewerUrl(url)
-      setSplitRatio(55)
-    }
+    if (pdfViewerUrl === url) { setPdfViewerUrl(null) }
+    else { setPdfViewerUrl(url); setSplitRatio(55) }
   }
 
-  /* ---- video embed URL ---- */
   const videoEmbedUrl = useMemo(() => {
     if (!lessonData) return ''
     const { video_source_type, video_source_id } = lessonData
@@ -394,24 +317,21 @@ export default function LessonPlayerPage() {
   }, [lessonData])
 
   /* ---------------------------------------------------------------- */
-  /*  Loading state                                                    */
+  /*  Loading                                                          */
   /* ---------------------------------------------------------------- */
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen bg-background">
-        {/* Skeleton top bar */}
-        <div className="h-14 border-b border-border/50 bg-card/80 flex items-center px-4 gap-3">
-          <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
-          <div className="h-4 w-48 rounded bg-muted animate-pulse" />
+      <div className="flex flex-col min-h-screen bg-[#09090b] dark:bg-[#09090b] bg-white dark:[&]:bg-[#09090b]">
+        <div className="h-12 border-b border-white/[0.06] flex items-center px-4 gap-3">
+          <div className="h-6 w-6 rounded bg-white/[0.06] animate-pulse" />
+          <div className="h-3 w-40 rounded bg-white/[0.06] animate-pulse" />
         </div>
-        <div className="flex flex-1">
-          <div className="flex-1 p-4">
-            <div className="w-full rounded-xl bg-muted animate-pulse" style={{ paddingBottom: '56.25%' }} />
-            <div className="mt-4 space-y-3">
-              <div className="h-6 w-2/3 rounded bg-muted animate-pulse" />
-              <div className="h-4 w-1/3 rounded bg-muted animate-pulse" />
-            </div>
+        <div className="flex-1 p-0">
+          <div className="w-full bg-white/[0.04] animate-pulse" style={{ paddingBottom: '56.25%' }} />
+          <div className="p-6 space-y-3">
+            <div className="h-5 w-2/3 rounded bg-white/[0.06] animate-pulse" />
+            <div className="h-4 w-1/3 rounded bg-white/[0.04] animate-pulse" />
           </div>
         </div>
       </div>
@@ -420,155 +340,18 @@ export default function LessonPlayerPage() {
 
   if (!lessonData || !courseData) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="text-6xl">📚</div>
-        <h2 className="text-2xl font-bold text-foreground">Aula nao encontrada</h2>
-        <p className="text-muted-foreground">
-          A aula que voce esta procurando nao existe ou foi removida.
-        </p>
-        <Button
-          variant="outline"
-          onClick={() => navigate(`/courses/${courseId}`)}
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Voltar ao Curso
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 bg-[#09090b]">
+        <h2 className="text-xl font-semibold text-white">Aula nao encontrada</h2>
+        <Button variant="outline" onClick={() => navigate(`/courses/${courseId}`)}>
+          <ChevronLeft className="mr-2 h-4 w-4" /> Voltar ao Curso
         </Button>
       </div>
     )
   }
 
-  const sanitizedDescription = lessonData.description
-    ? DOMPurify.sanitize(lessonData.description)
-    : ''
-
-  /* ---------------------------------------------------------------- */
-  /*  Sidebar content (shared between desktop and mobile)              */
-  /* ---------------------------------------------------------------- */
-
-  const renderLessonList = (isMobile = false) => {
-    if (!currentModule) return null
-    const modCompleted = currentModule.lessons.filter((l) => l.completed).length
-    const modTotal = currentModule.lessons.length
-
-    return (
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Module selector */}
-        <div className="shrink-0 relative">
-          <button
-            onClick={() => setShowModuleSelector((v) => !v)}
-            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/20 transition-colors border-b border-border/30"
-          >
-            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <span className="text-xs font-bold text-primary">{currentModuleIndex + 1}</span>
-            </div>
-            <div className="flex-1 text-left min-w-0">
-              <div className="text-xs font-semibold text-foreground/80 truncate">
-                {currentModule.name}
-              </div>
-              <div className="text-[10px] text-muted-foreground">
-                {modCompleted}/{modTotal} aulas concluidas
-              </div>
-            </div>
-            <ChevronDown className={cn(
-              "h-4 w-4 text-muted-foreground/50 shrink-0 transition-transform duration-200",
-              showModuleSelector ? "rotate-180" : ""
-            )} />
-          </button>
-
-          {/* Module dropdown */}
-          {showModuleSelector && (
-            <div className="absolute left-0 right-0 top-full z-20 bg-card border border-border/50 shadow-xl rounded-b-lg max-h-[300px] overflow-y-auto">
-              {sortedModules.map((mod, idx) => {
-                const mc = mod.lessons.filter((l) => l.completed).length
-                const mt = mod.lessons.length
-                const isSelected = mod.id === currentModule.id
-                return (
-                  <button
-                    key={mod.id}
-                    onClick={() => {
-                      setSelectedModuleId(mod.id)
-                      setShowModuleSelector(false)
-                    }}
-                    className={cn(
-                      "w-full px-4 py-2.5 flex items-center gap-3 transition-colors text-left border-b border-border/20 last:border-b-0",
-                      isSelected ? "bg-primary/10" : "hover:bg-muted/30"
-                    )}
-                  >
-                    <div className={cn(
-                      "w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold",
-                      isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                    )}>
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={cn(
-                        "text-xs font-medium truncate",
-                        isSelected ? "text-primary" : "text-foreground/70"
-                      )}>
-                        {mod.name}
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{mc}/{mt}</span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Lessons list (only current module) */}
-        <div className="flex-1 overflow-y-auto">
-          {currentModuleLessons.map((lesson) => {
-            const isCurrent = lesson.id === lessonId
-            return (
-              <Link
-                key={lesson.id}
-                ref={isCurrent ? currentLessonRef : undefined}
-                to={`/courses/${courseId}/lessons/${lesson.id}`}
-                onClick={() => {
-                  if (isMobile) setIsSidebarOpen(false)
-                }}
-                className={cn(
-                  "flex items-center gap-3 py-2.5 px-4 transition-all duration-150 border-l-2",
-                  isCurrent
-                    ? "bg-primary/10 border-l-primary"
-                    : "border-l-transparent hover:bg-muted/20"
-                )}
-              >
-                <div className="shrink-0">
-                  {lesson.completed ? (
-                    <CheckCircle className="h-4 w-4 text-emerald-500" />
-                  ) : isCurrent ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    </div>
-                  ) : (
-                    <Circle className="h-4 w-4 text-muted-foreground/30" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className={cn(
-                    "text-xs font-medium truncate",
-                    isCurrent ? "text-primary" : lesson.completed ? "text-emerald-500/70" : "text-foreground/50"
-                  )}>
-                    {lesson.title}
-                  </div>
-                  {lesson.duration_seconds != null && lesson.duration_seconds > 0 && (
-                    <div className="text-[10px] text-muted-foreground/50 mt-0.5 tabular-nums">
-                      {formatDuration(lesson.duration_seconds)}
-                    </div>
-                  )}
-                </div>
-                {isCurrent && (
-                  <ChevronRight className="h-3 w-3 text-primary/50 shrink-0" />
-                )}
-              </Link>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
+  const sanitizedDescription = lessonData.description ? DOMPurify.sanitize(lessonData.description) : ''
+  const modCompleted = currentModule?.lessons.filter((l) => l.completed).length || 0
+  const modTotal = currentModule?.lessons.length || 0
 
   /* ---------------------------------------------------------------- */
   /*  Render                                                           */
@@ -576,621 +359,555 @@ export default function LessonPlayerPage() {
 
   return (
     <>
-      {/* Theater mode overlay */}
+      {/* Theater overlay */}
       {theaterMode && (
         <div
-          className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm transition-opacity duration-500"
+          className="fixed inset-0 z-[60] bg-black/92 backdrop-blur-md"
           onClick={() => setTheaterMode(false)}
-          style={{ animation: 'fadeIn 0.4s ease-out' }}
+          style={{ animation: 'lp-fade-in 0.3s ease-out' }}
         />
       )}
 
-      <div className={cn(
-        "flex flex-col min-h-screen transition-colors duration-300",
-        theaterMode ? "bg-black" : "bg-background"
-      )}>
+      <div className={cn("flex flex-col min-h-screen", theaterMode ? "bg-black" : "bg-[#09090b]")}>
+
         {/* ============================================================ */}
-        {/* Top bar                                                       */}
+        {/* Top bar — ultra compact                                       */}
         {/* ============================================================ */}
-        <div className={cn(
-          "sticky top-0 z-[70] border-b transition-all duration-300",
-          theaterMode
-            ? "bg-black/60 backdrop-blur-xl border-white/5"
-            : "bg-card/95 backdrop-blur-xl border-border/50"
+        <header className={cn(
+          "sticky top-0 z-[70] h-12 flex items-center gap-2 px-3 border-b transition-colors duration-300",
+          theaterMode ? "bg-black/50 backdrop-blur-xl border-white/[0.04]" : "bg-[#09090b] border-white/[0.06]"
         )}>
-          <div className="flex items-center h-14 px-4 gap-2">
-            {/* Back button */}
-            <button
-              onClick={() => navigate(`/courses/${courseId}`)}
-              className={cn(
-                "flex items-center gap-2 transition-colors shrink-0 group",
-                theaterMode ? "text-white/50 hover:text-white" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-              <span className="text-sm hidden sm:inline">Voltar</span>
-            </button>
+          <button
+            onClick={() => navigate(`/courses/${courseId}`)}
+            className="p-1.5 -ml-1 rounded-md text-zinc-500 hover:text-white hover:bg-white/[0.06] transition-all group"
+          >
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+          </button>
 
-            {/* Divider */}
-            <div className={cn("h-5 w-px mx-1 hidden sm:block", theaterMode ? "bg-white/10" : "bg-border")} />
+          <div className="h-4 w-px bg-white/[0.08] mx-0.5" />
 
-            {/* Course name */}
-            <h1 className={cn(
-              "text-sm font-medium truncate flex-1",
-              theaterMode ? "text-white/70" : "text-foreground/70"
-            )}>
-              {courseData.name}
-            </h1>
+          <span className="text-[13px] text-zinc-500 truncate flex-1 font-medium">
+            {courseData.name}
+          </span>
 
-            {/* Progress pill */}
-            <div className={cn(
-              "hidden md:flex items-center gap-2 rounded-full px-3 py-1.5 border",
-              theaterMode ? "bg-white/[0.04] border-white/[0.06]" : "bg-muted/50 border-border/50"
-            )}>
-              <div className={cn("w-20 h-1.5 rounded-full overflow-hidden", theaterMode ? "bg-white/10" : "bg-muted")}>
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all duration-700"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <span className={cn(
-                "text-xs font-medium tabular-nums",
-                theaterMode ? "text-white/50" : "text-muted-foreground"
-              )}>
-                {completedCount}/{totalCount}
+          {/* Progress ring */}
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="relative w-7 h-7">
+              <svg className="w-7 h-7 -rotate-90" viewBox="0 0 28 28">
+                <circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/[0.06]" />
+                <circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" strokeWidth="2"
+                  className="text-primary" strokeDasharray={`${2 * Math.PI * 11}`}
+                  strokeDashoffset={`${2 * Math.PI * 11 * (1 - progressPercent / 100)}`}
+                  strokeLinecap="round" />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-zinc-400 tabular-nums">
+                {progressPercent}
               </span>
             </div>
-
-            {/* Theater mode toggle */}
-            <button
-              onClick={() => setTheaterMode(!theaterMode)}
-              className={cn(
-                "p-2 rounded-lg transition-all duration-200",
-                theaterMode
-                  ? "bg-primary/20 text-primary hover:bg-primary/30"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-              title={theaterMode ? 'Acender Luz' : 'Apagar Luz'}
-            >
-              {theaterMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-
-            {/* Desktop sidebar toggle */}
-            <button
-              onClick={() => setDesktopSidebarVisible(!desktopSidebarVisible)}
-              className={cn(
-                "hidden lg:flex p-2 rounded-lg transition-all",
-                theaterMode
-                  ? "text-white/40 hover:text-white/80 hover:bg-white/[0.06]"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-              title={desktopSidebarVisible ? 'Esconder painel' : 'Mostrar painel'}
-            >
-              {desktopSidebarVisible ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-            </button>
-
-            {/* Mobile sidebar toggle */}
-            <button
-              className={cn(
-                "lg:hidden p-2 rounded-lg transition-all",
-                theaterMode
-                  ? "text-white/40 hover:text-white/80 hover:bg-white/[0.06]"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-              onClick={() => setIsSidebarOpen(true)}
-            >
-              <Menu className="h-4 w-4" />
-            </button>
+            <span className="text-[11px] text-zinc-600 tabular-nums">{completedCount}/{totalCount}</span>
           </div>
-        </div>
+
+          {/* Apagar Luz */}
+          <button
+            onClick={() => setTheaterMode(!theaterMode)}
+            className={cn(
+              "p-1.5 rounded-md transition-all",
+              theaterMode ? "bg-primary/20 text-primary" : "text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.06]"
+            )}
+            title={theaterMode ? 'Acender Luz' : 'Apagar Luz'}
+          >
+            {theaterMode ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+          </button>
+
+          {/* Sidebar toggle */}
+          <button
+            onClick={() => setDesktopSidebarVisible(!desktopSidebarVisible)}
+            className="hidden lg:block p-1.5 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.06] transition-all"
+          >
+            {desktopSidebarVisible ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRightOpen className="h-3.5 w-3.5" />}
+          </button>
+
+          <button
+            className="lg:hidden p-1.5 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.06] transition-all"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu className="h-3.5 w-3.5" />
+          </button>
+        </header>
 
         {/* ============================================================ */}
         {/* Main layout                                                    */}
         {/* ============================================================ */}
         <div className="flex flex-1 overflow-hidden">
-          {/* ---- Main content area ---- */}
           <div ref={mainContentRef} className="flex-1 overflow-y-auto">
             <div className={cn(
               "mx-auto transition-all duration-300",
-              theaterMode ? "max-w-none" : desktopSidebarVisible ? "max-w-[1100px]" : "max-w-[1400px]"
+              theaterMode ? "max-w-none" : desktopSidebarVisible ? "max-w-none" : "max-w-[1400px]"
             )}>
+
               {/* ======================================================== */}
-              {/* Video + PDF Split Area                                     */}
+              {/* Video + PDF                                                */}
               {/* ======================================================== */}
               <div
                 ref={splitContainerRef}
-                className={cn(
-                  "relative transition-all duration-300",
-                  theaterMode ? "z-[65]" : ""
-                )}
+                className={cn("relative", theaterMode ? "z-[65]" : "")}
               >
                 {pdfViewerUrl ? (
-                  /* ---- Split view: Video + PDF side by side ---- */
                   <>
                     {/* Desktop split */}
-                    <div className="hidden md:flex w-full" style={{ minHeight: '50vh' }}>
-                      {/* Video side */}
-                      <div style={{ width: `${splitRatio}%` }} className="relative shrink-0">
-                        <div className="relative w-full h-full bg-black">
-                          {videoEmbedUrl ? (
-                            <iframe
-                              src={videoEmbedUrl}
-                              title={lessonData.title}
-                              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                              allowFullScreen
-                              className="absolute inset-0 w-full h-full"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
-                              <Play className="h-8 w-8 mb-2" />
-                              <p className="text-sm">Video nao disponivel</p>
-                            </div>
-                          )}
-                        </div>
+                    <div className="hidden md:flex w-full" style={{ height: '70vh' }}>
+                      <div style={{ width: `${splitRatio}%` }} className="relative shrink-0 bg-black">
+                        {videoEmbedUrl ? (
+                          <iframe src={videoEmbedUrl} title={lessonData.title}
+                            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                            allowFullScreen className="absolute inset-0 w-full h-full" />
+                        ) : <VideoPlaceholder />}
                       </div>
-
-                      {/* Drag handle */}
                       <div
                         onMouseDown={handleDragStart}
-                        className="w-2 bg-border/50 hover:bg-primary/50 cursor-col-resize flex items-center justify-center transition-colors group relative z-10 shrink-0"
-                        title="Arraste para redimensionar"
+                        className="w-1.5 bg-white/[0.04] hover:bg-primary/60 cursor-col-resize flex items-center justify-center transition-colors group shrink-0"
                       >
-                        <GripVertical className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+                        <div className="w-0.5 h-8 rounded-full bg-white/10 group-hover:bg-primary/80 transition-colors" />
                       </div>
-
-                      {/* PDF side */}
-                      <div className="flex-1 flex flex-col bg-card/30 min-w-0">
-                        {/* PDF header */}
-                        <div className={cn(
-                          "flex items-center justify-between px-3 py-2 border-b shrink-0",
-                          theaterMode ? "bg-black/40 border-white/10" : "bg-card/80 border-border/50"
-                        )}>
+                      <div className="flex-1 flex flex-col min-w-0 bg-[#0c0c0f]">
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] shrink-0">
                           <div className="flex items-center gap-2 min-w-0">
                             <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                            <span className={cn(
-                              "text-xs font-medium truncate",
-                              theaterMode ? "text-white/60" : "text-foreground/60"
-                            )}>
-                              {pdfAttachments.find(p => p.file_url === pdfViewerUrl)?.file_name || 'Material PDF'}
+                            <span className="text-xs text-zinc-400 truncate">
+                              {pdfAttachments.find(p => p.file_url === pdfViewerUrl)?.file_name || 'PDF'}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <a
-                              href={pdfViewerUrl}
-                              download
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1.5 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-all"
-                              title="Baixar PDF"
-                            >
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <a href={pdfViewerUrl} download target="_blank" rel="noopener noreferrer"
+                              className="p-1 rounded text-zinc-600 hover:text-zinc-300 transition-colors">
                               <Download className="h-3.5 w-3.5" />
                             </a>
-                            <button
-                              onClick={() => setPdfViewerUrl(null)}
-                              className="p-1.5 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-all"
-                              title="Fechar PDF"
-                            >
+                            <button onClick={() => setPdfViewerUrl(null)}
+                              className="p-1 rounded text-zinc-600 hover:text-zinc-300 transition-colors">
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         </div>
-                        {/* PDF iframe */}
                         <div className="flex-1 relative">
-                          <iframe
-                            src={pdfViewerUrl}
-                            title="PDF Viewer"
-                            className="absolute inset-0 w-full h-full border-0"
-                          />
+                          <iframe src={pdfViewerUrl} title="PDF" className="absolute inset-0 w-full h-full border-0" />
                         </div>
                       </div>
                     </div>
-
-                    {/* Mobile: stacked (video on top, PDF below) */}
+                    {/* Mobile stacked */}
                     <div className="md:hidden">
                       <div className="relative w-full bg-black" style={{ paddingBottom: '56.25%' }}>
                         {videoEmbedUrl ? (
-                          <iframe
-                            src={videoEmbedUrl}
-                            title={lessonData.title}
+                          <iframe src={videoEmbedUrl} title={lessonData.title}
                             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                            allowFullScreen
-                            className="absolute inset-0 w-full h-full"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
-                            <Play className="h-8 w-8 mb-2" />
-                            <p className="text-sm">Video nao disponivel</p>
-                          </div>
-                        )}
+                            allowFullScreen className="absolute inset-0 w-full h-full" />
+                        ) : <VideoPlaceholder />}
                       </div>
-                      {/* Mobile PDF */}
-                      <div className="border-t border-border/50">
-                        <div className="flex items-center justify-between px-3 py-2 bg-card/80 border-b border-border/50">
+                      <div className="border-t border-white/[0.06]">
+                        <div className="flex items-center justify-between px-3 py-2 bg-[#0c0c0f] border-b border-white/[0.06]">
                           <div className="flex items-center gap-2 min-w-0">
-                            <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                            <span className="text-xs font-medium text-foreground/60 truncate">
+                            <FileText className="h-3.5 w-3.5 text-primary" />
+                            <span className="text-xs text-zinc-400 truncate">
                               {pdfAttachments.find(p => p.file_url === pdfViewerUrl)?.file_name || 'PDF'}
                             </span>
                           </div>
-                          <button
-                            onClick={() => setPdfViewerUrl(null)}
-                            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-                          >
+                          <button onClick={() => setPdfViewerUrl(null)} className="p-1 rounded text-zinc-600 hover:text-zinc-300">
                             <X className="h-3.5 w-3.5" />
                           </button>
                         </div>
                         <div style={{ height: '50vh' }}>
-                          <iframe
-                            src={pdfViewerUrl}
-                            title="PDF Viewer"
-                            className="w-full h-full border-0"
-                          />
+                          <iframe src={pdfViewerUrl} title="PDF" className="w-full h-full border-0" />
                         </div>
                       </div>
                     </div>
                   </>
                 ) : (
-                  /* ---- Normal video (no PDF) ---- */
-                  <>
+                  /* Normal video */
+                  <div className={cn("relative w-full bg-black", theaterMode ? "" : "")}>
                     {videoEmbedUrl ? (
-                      <div className={cn(
-                        "relative w-full bg-black overflow-hidden",
-                        theaterMode ? "rounded-none" : "lg:rounded-b-xl"
-                      )}
-                        style={{ paddingBottom: theaterMode ? '50%' : '56.25%' }}
-                      >
-                        <iframe
-                          src={videoEmbedUrl}
-                          title={lessonData.title}
+                      <div style={{ paddingBottom: theaterMode ? '48%' : '56.25%' }} className="relative">
+                        <iframe src={videoEmbedUrl} title={lessonData.title}
                           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                          allowFullScreen
-                          className="absolute inset-0 w-full h-full"
-                        />
+                          allowFullScreen className="absolute inset-0 w-full h-full" />
                       </div>
                     ) : (
-                      <div
-                        className={cn(
-                          "relative w-full overflow-hidden",
-                          theaterMode ? "bg-black" : "bg-muted/20 lg:rounded-b-xl"
-                        )}
-                        style={{ paddingBottom: '56.25%' }}
-                      >
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
-                          <div className="w-20 h-20 rounded-full bg-muted/20 flex items-center justify-center mb-4">
-                            <Play className="h-8 w-8 ml-1" />
-                          </div>
-                          <p className="text-sm font-medium">Video nao disponivel</p>
-                        </div>
+                      <div style={{ paddingBottom: '56.25%' }} className="relative">
+                        <VideoPlaceholder />
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
 
               {/* ======================================================== */}
-              {/* Action Bar                                                 */}
+              {/* Below video — info + actions                               */}
               {/* ======================================================== */}
               <div className={cn(
-                "px-4 sm:px-6 py-4 transition-all duration-300",
+                "px-4 sm:px-6 lg:px-8 py-5",
                 theaterMode ? "relative z-[65]" : ""
               )}>
-                {/* Lesson title + Actions */}
-                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                {/* Title row */}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                   <div className="flex-1 min-w-0">
-                    <h2 className={cn(
-                      "text-xl sm:text-2xl font-bold leading-tight",
-                      theaterMode ? "text-white" : "text-foreground"
-                    )}>
+                    <h2 className="text-lg sm:text-xl font-semibold text-white leading-snug tracking-tight">
                       {lessonData.title}
                     </h2>
-                    {lessonData.duration_seconds != null && lessonData.duration_seconds > 0 && (
-                      <div className={cn(
-                        "flex items-center gap-2 mt-2 text-sm",
-                        theaterMode ? "text-white/40" : "text-muted-foreground"
-                      )}>
-                        <Clock className="h-3.5 w-3.5" />
-                        <span>{formatDuration(lessonData.duration_seconds)}</span>
-                        {lessonData.completed && (
-                          <>
-                            <span className="mx-1">·</span>
-                            <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
-                            <span className="text-emerald-500">Concluida</span>
-                          </>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3 mt-1.5">
+                      {lessonData.duration_seconds != null && lessonData.duration_seconds > 0 && (
+                        <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+                          <Clock className="h-3 w-3" />
+                          {formatDuration(lessonData.duration_seconds)}
+                        </span>
+                      )}
+                      {lessonData.completed && (
+                        <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                          <CheckCircle className="h-3 w-3" />
+                          Concluida
+                        </span>
+                      )}
+                      {currentModule && (
+                        <span className="text-xs text-zinc-600">
+                          Modulo {currentModuleIndex + 1} · {currentModule.name}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Action buttons */}
+                  {/* Actions */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={handleMarkComplete}
-                      disabled={lessonData.completed}
+                    {/* PDF button */}
+                    {pdfAttachments.length > 0 && pdfAttachments.map((pdf) => (
+                      <button key={pdf.id} onClick={() => openPdfViewer(pdf.file_url)}
+                        className={cn(
+                          "flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-medium transition-all border",
+                          pdfViewerUrl === pdf.file_url
+                            ? "bg-primary/10 text-primary border-primary/30"
+                            : "text-zinc-400 border-white/[0.08] hover:border-white/[0.15] hover:text-white bg-white/[0.03] hover:bg-white/[0.06]"
+                        )}
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline max-w-[100px] truncate">PDF</span>
+                        {pdfViewerUrl === pdf.file_url ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+                      </button>
+                    ))}
+
+                    {/* Mark complete */}
+                    <button onClick={handleMarkComplete} disabled={lessonData.completed}
                       className={cn(
-                        "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300",
+                        "flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-semibold transition-all",
                         lessonData.completed
-                          ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 cursor-default"
-                          : "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98]"
+                          ? "bg-emerald-500/10 text-emerald-400 cursor-default"
+                          : "bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.97]"
                       )}
                     >
-                      <CheckCircle className="h-4 w-4" />
-                      {lessonData.completed ? 'Concluida' : 'Marcar como Concluida'}
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      {lessonData.completed ? 'Concluida' : 'Concluir aula'}
                     </button>
                   </div>
                 </div>
 
-                {/* Navigation row */}
-                <div className={cn(
-                  "flex items-center justify-between mt-4 pt-4 border-t",
-                  theaterMode ? "border-white/[0.06]" : "border-border/50"
-                )}>
-                  <div>
-                    {prevLesson ? (
-                      <Link
-                        to={`/courses/${courseId}/lessons/${prevLesson.id}`}
-                        className={cn(
-                          "flex items-center gap-2 text-sm transition-colors group",
-                          theaterMode ? "text-white/40 hover:text-white" : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <SkipBack className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-                        <span className="hidden sm:inline">Anterior</span>
-                      </Link>
-                    ) : (
-                      <div />
-                    )}
-                  </div>
-
-                  {/* PDF quick access buttons */}
-                  {pdfAttachments.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      {pdfAttachments.map((pdf) => (
-                        <button
-                          key={pdf.id}
-                          onClick={() => openPdfViewer(pdf.file_url)}
-                          className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                            pdfViewerUrl === pdf.file_url
-                              ? "bg-primary/15 text-primary border border-primary/30"
-                              : theaterMode
-                                ? "bg-white/[0.04] text-white/50 hover:text-white/80 hover:bg-white/[0.08] border border-white/[0.06]"
-                                : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border border-border/50"
-                          )}
-                        >
-                          <FileText className="h-3.5 w-3.5" />
-                          <span className="max-w-[120px] truncate hidden sm:inline">{pdf.file_name}</span>
-                          <span className="sm:hidden">PDF</span>
-                          {pdfViewerUrl === pdf.file_url ? (
-                            <Minimize2 className="h-3 w-3" />
-                          ) : (
-                            <Maximize2 className="h-3 w-3" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <div>
-                    {nextLesson ? (
-                      <Link
-                        to={`/courses/${courseId}/lessons/${nextLesson.id}`}
-                        className={cn(
-                          "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all group",
-                          theaterMode
-                            ? "bg-white/[0.04] text-white/70 hover:text-white hover:bg-white/[0.08] border-white/[0.06]"
-                            : "bg-muted/30 text-foreground/70 hover:text-foreground hover:bg-muted/60 border-border/50"
-                        )}
-                      >
-                        <span>Proxima</span>
-                        <SkipForward className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-                      </Link>
-                    ) : (
-                      <div />
-                    )}
-                  </div>
+                {/* Navigation */}
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/[0.06]">
+                  {prevLesson ? (
+                    <Link to={`/courses/${courseId}/lessons/${prevLesson.id}`}
+                      className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors group">
+                      <SkipBack className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                      <span className="hidden sm:inline max-w-[200px] truncate">{prevLesson.title}</span>
+                      <span className="sm:hidden">Anterior</span>
+                    </Link>
+                  ) : <div />}
+                  {nextLesson ? (
+                    <Link to={`/courses/${courseId}/lessons/${nextLesson.id}`}
+                      className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors group">
+                      <span className="hidden sm:inline max-w-[200px] truncate">{nextLesson.title}</span>
+                      <span className="sm:hidden">Proxima</span>
+                      <SkipForward className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  ) : <div />}
                 </div>
               </div>
 
               {/* ======================================================== */}
-              {/* Below-video content                                        */}
+              {/* Description + Resources                                    */}
               {/* ======================================================== */}
-              <div className={cn(
-                "px-4 sm:px-6 pb-8 space-y-4",
-                theaterMode ? "relative z-[65]" : ""
-              )}>
-                {/* Description */}
+              <div className={cn("px-4 sm:px-6 lg:px-8 pb-8 space-y-4", theaterMode ? "relative z-[65]" : "")}>
                 {sanitizedDescription && (
-                  <div className={cn(
-                    "rounded-xl border p-5",
-                    theaterMode ? "bg-white/[0.02] border-white/[0.06]" : "bg-card/50 border-border/50"
-                  )}>
-                    <div
-                      className="prose prose-sm prose-neutral dark:prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
-                    />
+                  <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] p-5">
+                    <div className="prose prose-sm prose-invert max-w-none prose-p:text-zinc-400 prose-headings:text-zinc-200 prose-a:text-primary prose-strong:text-zinc-300"
+                      dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />
                   </div>
                 )}
 
-                {/* Expandable sections */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Comments */}
-                  <div className={cn(
-                    "rounded-xl border overflow-hidden",
-                    theaterMode ? "bg-white/[0.02] border-white/[0.06]" : "bg-card/50 border-border/50"
-                  )}>
-                    <button
-                      onClick={() => setShowComments((v) => !v)}
-                      className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                          <MessageSquare className="h-4 w-4 text-blue-500" />
-                        </div>
-                        <span className="font-semibold text-sm text-foreground/80">Comentarios</span>
+                {/* Resources */}
+                {attachments.length > 0 && (
+                  <div className="rounded-lg border border-white/[0.06] overflow-hidden">
+                    <button onClick={() => setShowResources((v) => !v)}
+                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Paperclip className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-sm font-medium text-zinc-300">Recursos</span>
+                        <span className="text-[10px] font-bold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">{attachments.length}</span>
                       </div>
-                      <ChevronDown className={cn(
-                        "h-4 w-4 text-muted-foreground/50 transition-transform duration-200",
-                        showComments ? "rotate-180" : ""
-                      )} />
-                    </button>
-                    {showComments && (
-                      <div className="px-4 pb-4 border-t border-border/30">
-                        <div className="mt-4 rounded-lg bg-muted/20 border border-border/30 p-3">
-                          <textarea
-                            placeholder="Compartilhe sua duvida ou comentario..."
-                            className="w-full bg-transparent text-sm text-foreground/70 placeholder:text-muted-foreground/40 resize-none focus:outline-none min-h-[80px]"
-                          />
-                          <div className="flex justify-end mt-2">
-                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors">
-                              <Send className="h-3 w-3" />
-                              Enviar
-                            </button>
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground/40 text-center mt-3">
-                          Comentarios em breve.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Resources */}
-                  <div className={cn(
-                    "rounded-xl border overflow-hidden",
-                    theaterMode ? "bg-white/[0.02] border-white/[0.06]" : "bg-card/50 border-border/50"
-                  )}>
-                    <button
-                      onClick={() => setShowResources((v) => !v)}
-                      className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Paperclip className="h-4 w-4 text-primary" />
-                        </div>
-                        <span className="font-semibold text-sm text-foreground/80">Recursos</span>
-                        {attachments.length > 0 && (
-                          <span className="text-[10px] font-bold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">
-                            {attachments.length}
-                          </span>
-                        )}
-                      </div>
-                      <ChevronDown className={cn(
-                        "h-4 w-4 text-muted-foreground/50 transition-transform duration-200",
-                        showResources ? "rotate-180" : ""
-                      )} />
+                      <ChevronDown className={cn("h-3.5 w-3.5 text-zinc-600 transition-transform", showResources ? "rotate-180" : "")} />
                     </button>
                     {showResources && (
-                      <div className="px-4 pb-4 border-t border-border/30">
-                        {attachments.length === 0 ? (
-                          <p className="text-sm text-muted-foreground/40 py-6 text-center">
-                            Nenhum recurso disponivel.
-                          </p>
-                        ) : (
-                          <div className="space-y-2 mt-3">
-                            {attachments.map((att) => {
-                              const isPdf = att.file_type?.includes('pdf') || att.file_name?.endsWith('.pdf')
-                              return (
-                                <div
-                                  key={att.id}
-                                  className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/30 hover:bg-muted/40 transition-colors group"
-                                >
-                                  <div className="flex items-center gap-3 min-w-0">
-                                    <div className={cn(
-                                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                                      isPdf ? "bg-red-500/10" : "bg-muted/30"
-                                    )}>
-                                      <FileText className={cn("h-4 w-4", isPdf ? "text-red-500" : "text-muted-foreground")} />
-                                    </div>
-                                    <span className="text-sm text-foreground/60 truncate group-hover:text-foreground/80 transition-colors">
-                                      {att.file_name}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    {isPdf && (
-                                      <button
-                                        onClick={() => openPdfViewer(att.file_url)}
-                                        className="p-1.5 rounded-md text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-all"
-                                        title="Abrir ao lado"
-                                      >
-                                        <Eye className="h-3.5 w-3.5" />
-                                      </button>
-                                    )}
-                                    <a
-                                      href={att.file_url}
-                                      download
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="p-1.5 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-all"
-                                      title="Baixar"
-                                    >
-                                      <Download className="h-3.5 w-3.5" />
-                                    </a>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
+                      <div className="px-4 pb-3 space-y-1.5 border-t border-white/[0.04]">
+                        {attachments.map((att) => {
+                          const isPdf = att.file_type?.includes('pdf') || att.file_name?.endsWith('.pdf')
+                          return (
+                            <div key={att.id} className="flex items-center justify-between p-2.5 rounded-md bg-white/[0.02] hover:bg-white/[0.04] transition-colors group mt-2">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <FileText className={cn("h-4 w-4 shrink-0", isPdf ? "text-red-400" : "text-zinc-500")} />
+                                <span className="text-xs text-zinc-400 truncate group-hover:text-zinc-200">{att.file_name}</span>
+                              </div>
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                {isPdf && (
+                                  <button onClick={() => openPdfViewer(att.file_url)}
+                                    className="p-1 rounded text-zinc-600 hover:text-primary transition-colors" title="Abrir ao lado">
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                                <a href={att.file_url} download target="_blank" rel="noopener noreferrer"
+                                  className="p-1 rounded text-zinc-600 hover:text-zinc-300 transition-colors" title="Baixar">
+                                  <Download className="h-3.5 w-3.5" />
+                                </a>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* ============================================================ */}
-          {/* Desktop Sidebar (right)                                       */}
+          {/* Desktop Sidebar                                               */}
           {/* ============================================================ */}
           <aside className={cn(
-            "hidden lg:flex flex-col border-l overflow-hidden transition-all duration-300",
-            theaterMode ? "bg-black/50 border-white/[0.06]" : "bg-card/50 border-border/50",
-            desktopSidebarVisible ? "w-[340px] min-w-[340px]" : "w-0 min-w-0 border-l-0"
+            "hidden lg:flex flex-col overflow-hidden transition-all duration-300 border-l",
+            "bg-[#0c0c0f] border-white/[0.06]",
+            desktopSidebarVisible ? "w-[320px] min-w-[320px]" : "w-0 min-w-0 border-l-0"
           )}>
-            {desktopSidebarVisible && renderLessonList(false)}
+            {desktopSidebarVisible && (
+              <>
+                {/* Module selector */}
+                <div className="shrink-0 relative">
+                  <button onClick={() => setShowModuleSelector((v) => !v)}
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/[0.03] transition-colors border-b border-white/[0.06]">
+                    <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-[11px] font-bold text-primary">{currentModuleIndex + 1}</span>
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <div className="text-[13px] font-medium text-zinc-200 truncate">{currentModule?.name}</div>
+                      <div className="text-[11px] text-zinc-600 mt-0.5">{modCompleted}/{modTotal} concluidas</div>
+                    </div>
+                    <ChevronDown className={cn(
+                      "h-3.5 w-3.5 text-zinc-600 shrink-0 transition-transform",
+                      showModuleSelector ? "rotate-180" : ""
+                    )} />
+                  </button>
+                  {showModuleSelector && (
+                    <div className="absolute left-0 right-0 top-full z-20 bg-[#111114] border border-white/[0.08] shadow-2xl shadow-black/50 max-h-[280px] overflow-y-auto">
+                      {sortedModules.map((mod, idx) => {
+                        const mc = mod.lessons.filter((l) => l.completed).length
+                        const mt = mod.lessons.length
+                        const isSel = mod.id === currentModule?.id
+                        return (
+                          <button key={mod.id}
+                            onClick={() => { setSelectedModuleId(mod.id); setShowModuleSelector(false) }}
+                            className={cn(
+                              "w-full px-4 py-2.5 flex items-center gap-3 text-left border-b border-white/[0.04] last:border-b-0 transition-colors",
+                              isSel ? "bg-primary/[0.08]" : "hover:bg-white/[0.03]"
+                            )}>
+                            <div className={cn(
+                              "w-5 h-5 rounded flex items-center justify-center shrink-0 text-[10px] font-bold",
+                              isSel ? "bg-primary text-white" : "bg-white/[0.06] text-zinc-500"
+                            )}>{idx + 1}</div>
+                            <span className={cn("text-xs truncate flex-1", isSel ? "text-primary font-medium" : "text-zinc-400")}>{mod.name}</span>
+                            <span className="text-[10px] text-zinc-600 tabular-nums shrink-0">{mc}/{mt}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Lesson list */}
+                <div className="flex-1 overflow-y-auto">
+                  {currentModuleLessons.map((lesson, idx) => {
+                    const isCurrent = lesson.id === lessonId
+                    return (
+                      <Link key={lesson.id}
+                        ref={isCurrent ? currentLessonRef : undefined}
+                        to={`/courses/${courseId}/lessons/${lesson.id}`}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-2.5 transition-all border-l-2",
+                          isCurrent
+                            ? "bg-primary/[0.06] border-l-primary"
+                            : "border-l-transparent hover:bg-white/[0.03]"
+                        )}>
+                        {/* Lesson number or status */}
+                        <div className="shrink-0 w-5 flex justify-center">
+                          {lesson.completed ? (
+                            <CheckCircle className="h-4 w-4 text-emerald-400" />
+                          ) : isCurrent ? (
+                            <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center">
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                            </div>
+                          ) : (
+                            <span className="text-[11px] font-medium text-zinc-600 tabular-nums">{idx + 1}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className={cn(
+                            "text-[13px] truncate leading-tight",
+                            isCurrent ? "text-white font-medium" : lesson.completed ? "text-zinc-500" : "text-zinc-400"
+                          )}>
+                            {lesson.title}
+                          </div>
+                          {lesson.duration_seconds != null && lesson.duration_seconds > 0 && (
+                            <div className="text-[11px] text-zinc-700 mt-0.5 tabular-nums">
+                              {formatDuration(lesson.duration_seconds)}
+                            </div>
+                          )}
+                        </div>
+                        {isCurrent && <div className="w-1 h-1 rounded-full bg-primary shrink-0" />}
+                      </Link>
+                    )
+                  })}
+                </div>
+
+                {/* Module progress bar at bottom */}
+                <div className="shrink-0 px-4 py-3 border-t border-white/[0.06]">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] text-zinc-600">Progresso do modulo</span>
+                    <span className="text-[11px] font-medium text-primary tabular-nums">
+                      {modTotal > 0 ? Math.round((modCompleted / modTotal) * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all duration-500"
+                      style={{ width: `${modTotal > 0 ? (modCompleted / modTotal) * 100 : 0}%` }} />
+                  </div>
+                </div>
+              </>
+            )}
           </aside>
 
           {/* ============================================================ */}
-          {/* Mobile sidebar overlay                                        */}
+          {/* Mobile sidebar                                                */}
           {/* ============================================================ */}
           {isSidebarOpen && (
             <>
-              <div
-                className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"
-                onClick={() => setIsSidebarOpen(false)}
-              />
-              <aside className="fixed inset-y-0 right-0 z-50 w-[85%] max-w-[380px] lg:hidden bg-background border-l border-border/50 shadow-2xl flex flex-col">
-                {/* Mobile header */}
-                <div className="flex items-center justify-between p-4 border-b border-border/50 shrink-0">
-                  <div>
-                    <h3 className="font-bold text-sm text-foreground/90">Aulas</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {progressPercent}% concluido
-                    </p>
+              <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden"
+                onClick={() => setIsSidebarOpen(false)} />
+              <aside className="fixed inset-y-0 right-0 z-50 w-[85%] max-w-[360px] lg:hidden bg-[#0c0c0f] border-l border-white/[0.06] shadow-2xl flex flex-col">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">
+                  <div className="flex items-center gap-2">
+                    <ListVideo className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-zinc-200">Aulas</span>
                   </div>
-                  <button
-                    onClick={() => setIsSidebarOpen(false)}
-                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-                  >
+                  <button onClick={() => setIsSidebarOpen(false)}
+                    className="p-1.5 rounded-md text-zinc-600 hover:text-white hover:bg-white/[0.06] transition-all">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
 
-                {/* Mobile lesson list */}
-                {renderLessonList(true)}
+                {/* Module selector (mobile) */}
+                <div className="shrink-0 relative">
+                  <button onClick={() => setShowModuleSelector((v) => !v)}
+                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/[0.03] transition-colors border-b border-white/[0.06]">
+                    <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-[10px] font-bold text-primary">{currentModuleIndex + 1}</span>
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <div className="text-xs font-medium text-zinc-300 truncate">{currentModule?.name}</div>
+                    </div>
+                    <ChevronDown className={cn("h-3 w-3 text-zinc-600 transition-transform", showModuleSelector ? "rotate-180" : "")} />
+                  </button>
+                  {showModuleSelector && (
+                    <div className="absolute left-0 right-0 top-full z-20 bg-[#111114] border border-white/[0.08] shadow-2xl max-h-[250px] overflow-y-auto">
+                      {sortedModules.map((mod, idx) => {
+                        const isSel = mod.id === currentModule?.id
+                        return (
+                          <button key={mod.id}
+                            onClick={() => { setSelectedModuleId(mod.id); setShowModuleSelector(false) }}
+                            className={cn(
+                              "w-full px-4 py-2 flex items-center gap-2.5 text-left border-b border-white/[0.04] last:border-b-0",
+                              isSel ? "bg-primary/[0.08]" : "hover:bg-white/[0.03]"
+                            )}>
+                            <div className={cn(
+                              "w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold",
+                              isSel ? "bg-primary text-white" : "bg-white/[0.06] text-zinc-500"
+                            )}>{idx + 1}</div>
+                            <span className={cn("text-xs truncate", isSel ? "text-primary" : "text-zinc-400")}>{mod.name}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Lessons */}
+                <div className="flex-1 overflow-y-auto">
+                  {currentModuleLessons.map((lesson, idx) => {
+                    const isCurrent = lesson.id === lessonId
+                    return (
+                      <Link key={lesson.id}
+                        ref={isCurrent ? currentLessonRef : undefined}
+                        to={`/courses/${courseId}/lessons/${lesson.id}`}
+                        onClick={() => setIsSidebarOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-2.5 border-l-2 transition-all",
+                          isCurrent ? "bg-primary/[0.06] border-l-primary" : "border-l-transparent hover:bg-white/[0.03]"
+                        )}>
+                        <div className="shrink-0 w-5 flex justify-center">
+                          {lesson.completed ? (
+                            <CheckCircle className="h-4 w-4 text-emerald-400" />
+                          ) : isCurrent ? (
+                            <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center">
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-zinc-600 tabular-nums">{idx + 1}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className={cn(
+                            "text-xs truncate",
+                            isCurrent ? "text-white font-medium" : lesson.completed ? "text-zinc-500" : "text-zinc-400"
+                          )}>{lesson.title}</div>
+                          {lesson.duration_seconds != null && lesson.duration_seconds > 0 && (
+                            <div className="text-[10px] text-zinc-700 mt-0.5">{formatDuration(lesson.duration_seconds)}</div>
+                          )}
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
               </aside>
             </>
           )}
         </div>
       </div>
 
-      {/* Inline animation */}
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
+        @keyframes lp-fade-in { from { opacity: 0 } to { opacity: 1 } }
       `}</style>
     </>
+  )
+}
+
+/* Small presentational sub-component */
+function VideoPlaceholder() {
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#09090b]">
+      <div className="w-16 h-16 rounded-full bg-white/[0.04] flex items-center justify-center mb-3">
+        <Play className="h-6 w-6 text-zinc-600 ml-0.5" />
+      </div>
+      <p className="text-xs text-zinc-600">Video nao disponivel</p>
+    </div>
   )
 }
