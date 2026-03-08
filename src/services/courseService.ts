@@ -469,7 +469,7 @@ export const courseService = {
                 .select('*')
                 .eq('user_id', userId)
                 .eq('lesson_id', lesson.id)
-                .single()
+                .maybeSingle()
 
               return {
                 ...lesson,
