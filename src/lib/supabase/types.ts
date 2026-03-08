@@ -1,4 +1,3 @@
-// AVOID UPDATING THIS FILE DIRECTLY. It is automatically generated.
 export type Json =
   | string
   | number
@@ -11,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '12.2.3 (519615d)'
+    PostgrestVersion: "12.2.3 (519615d)"
   }
   public: {
     Tables: {
@@ -76,20 +75,12 @@ export type Database = {
           total_duration_seconds?: number | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: 'public_audio_courses_created_by_user_id_fkey'
-            columns: ['created_by_user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
       audio_lessons: {
         Row: {
           audio_source_type:
-            | Database['public']['Enums']['audio_source_provider']
+            | Database["public"]["Enums"]["audio_source_provider"]
             | null
           audio_source_url: string
           created_at: string
@@ -105,7 +96,7 @@ export type Database = {
         }
         Insert: {
           audio_source_type?:
-            | Database['public']['Enums']['audio_source_provider']
+            | Database["public"]["Enums"]["audio_source_provider"]
             | null
           audio_source_url: string
           created_at?: string
@@ -121,7 +112,7 @@ export type Database = {
         }
         Update: {
           audio_source_type?:
-            | Database['public']['Enums']['audio_source_provider']
+            | Database["public"]["Enums"]["audio_source_provider"]
             | null
           audio_source_url?: string
           created_at?: string
@@ -137,11 +128,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_audio_lessons_module_id_fkey'
-            columns: ['module_id']
+            foreignKeyName: "public_audio_lessons_module_id_fkey"
+            columns: ["module_id"]
             isOneToOne: false
-            referencedRelation: 'audio_modules'
-            referencedColumns: ['id']
+            referencedRelation: "audio_modules"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -181,11 +172,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_audio_modules_course_id_fkey'
-            columns: ['course_id']
+            foreignKeyName: "public_audio_modules_course_id_fkey"
+            columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: 'audio_courses'
-            referencedColumns: ['id']
+            referencedRelation: "audio_courses"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -225,18 +216,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_audio_progress_lesson_id_fkey'
-            columns: ['lesson_id']
+            foreignKeyName: "public_audio_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
             isOneToOne: false
-            referencedRelation: 'audio_lessons'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_audio_progress_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "audio_lessons"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -246,7 +230,7 @@ export type Database = {
           created_at: string
           description: string | null
           end_time: string | null
-          event_type: Database['public']['Enums']['calendar_event_type']
+          event_type: Database["public"]["Enums"]["calendar_event_type"]
           id: string
           related_entity_id: string | null
           start_time: string
@@ -258,7 +242,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_time?: string | null
-          event_type: Database['public']['Enums']['calendar_event_type']
+          event_type: Database["public"]["Enums"]["calendar_event_type"]
           id?: string
           related_entity_id?: string | null
           start_time: string
@@ -270,7 +254,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_time?: string | null
-          event_type?: Database['public']['Enums']['calendar_event_type']
+          event_type?: Database["public"]["Enums"]["calendar_event_type"]
           id?: string
           related_entity_id?: string | null
           start_time?: string
@@ -279,11 +263,70 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'calendar_events_class_id_fkey'
-            columns: ['class_id']
+            foreignKeyName: "calendar_events_class_id_fkey"
+            columns: ["class_id"]
             isOneToOne: false
-            referencedRelation: 'classes'
-            referencedColumns: ['id']
+            referencedRelation: "class_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_courses: {
+        Row: {
+          assigned_at: string
+          assigned_by_user_id: string | null
+          class_id: string
+          course_id: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by_user_id?: string | null
+          class_id: string
+          course_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by_user_id?: string | null
+          class_id?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_courses_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "class_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_courses_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "video_courses"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -311,62 +354,32 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'class_feature_permissions_class_id_fkey'
-            columns: ['class_id']
+            foreignKeyName: "class_feature_permissions_class_id_fkey"
+            columns: ["class_id"]
             isOneToOne: false
-            referencedRelation: 'classes'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      class_topics: {
-        Row: {
-          class_id: string
-          created_at: string
-          id: string
-          topic_id: string
-          updated_at: string
-        }
-        Insert: {
-          class_id: string
-          created_at?: string
-          id?: string
-          topic_id: string
-          updated_at?: string
-        }
-        Update: {
-          class_id?: string
-          created_at?: string
-          id?: string
-          topic_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'public_class_topics_class_id_fkey'
-            columns: ['class_id']
-            isOneToOne: false
-            referencedRelation: 'classes'
-            referencedColumns: ['id']
+            referencedRelation: "class_stats"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'public_class_topics_topic_id_fkey'
-            columns: ['topic_id']
+            foreignKeyName: "class_feature_permissions_class_id_fkey"
+            columns: ["class_id"]
             isOneToOne: false
-            referencedRelation: 'topics'
-            referencedColumns: ['id']
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
           },
         ]
       }
       classes: {
         Row: {
-          class_type: Database['public']['Enums']['class_type']
+          class_type: Database["public"]["Enums"]["class_type"]
           created_at: string
           description: string | null
           end_date: string | null
+          external_id: string | null
           id: string
           name: string
           start_date: string
+          status: string
           teacher_id: string
           trial_duration_days: number | null
           trial_essay_submission_limit: number | null
@@ -375,13 +388,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          class_type?: Database['public']['Enums']['class_type']
+          class_type?: Database["public"]["Enums"]["class_type"]
           created_at?: string
           description?: string | null
           end_date?: string | null
+          external_id?: string | null
           id?: string
           name: string
           start_date: string
+          status?: string
           teacher_id: string
           trial_duration_days?: number | null
           trial_essay_submission_limit?: number | null
@@ -390,13 +405,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          class_type?: Database['public']['Enums']['class_type']
+          class_type?: Database["public"]["Enums"]["class_type"]
           created_at?: string
           description?: string | null
           end_date?: string | null
+          external_id?: string | null
           id?: string
           name?: string
           start_date?: string
+          status?: string
           teacher_id?: string
           trial_duration_days?: number | null
           trial_essay_submission_limit?: number | null
@@ -406,11 +423,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_classes_teacher_id_fkey'
-            columns: ['teacher_id']
+            foreignKeyName: "public_classes_teacher_id_fkey"
+            columns: ["teacher_id"]
             isOneToOne: false
-            referencedRelation: 'teachers'
-            referencedColumns: ['id']
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -474,25 +491,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_essay_annotations_error_category_id_fkey'
-            columns: ['error_category_id']
+            foreignKeyName: "public_essay_annotations_error_category_id_fkey"
+            columns: ["error_category_id"]
             isOneToOne: false
-            referencedRelation: 'error_categories'
-            referencedColumns: ['id']
+            referencedRelation: "error_categories"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'public_essay_annotations_essay_id_fkey'
-            columns: ['essay_id']
+            foreignKeyName: "public_essay_annotations_essay_id_fkey"
+            columns: ["essay_id"]
             isOneToOne: false
-            referencedRelation: 'essays'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_essay_annotations_teacher_id_fkey'
-            columns: ['teacher_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "essays"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -547,32 +557,32 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'essay_prompts_criteria_template_id_fkey'
-            columns: ['criteria_template_id']
+            foreignKeyName: "essay_prompts_criteria_template_id_fkey"
+            columns: ["criteria_template_id"]
             isOneToOne: false
-            referencedRelation: 'evaluation_criteria_templates'
-            referencedColumns: ['id']
+            referencedRelation: "evaluation_criteria_templates"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'public_essay_prompts_course_id_fkey'
-            columns: ['course_id']
+            foreignKeyName: "public_essay_prompts_course_id_fkey"
+            columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: 'classes'
-            referencedColumns: ['id']
+            referencedRelation: "class_stats"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'public_essay_prompts_created_by_user_id_fkey'
-            columns: ['created_by_user_id']
+            foreignKeyName: "public_essay_prompts_course_id_fkey"
+            columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'public_essay_prompts_subject_id_fkey'
-            columns: ['subject_id']
+            foreignKeyName: "public_essay_prompts_subject_id_fkey"
+            columns: ["subject_id"]
             isOneToOne: false
-            referencedRelation: 'subjects'
-            referencedColumns: ['id']
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -585,7 +595,7 @@ export type Database = {
           final_grade: number | null
           id: string
           prompt_id: string
-          status: Database['public']['Enums']['essay_status_enum'] | null
+          status: Database["public"]["Enums"]["essay_status_enum"] | null
           student_id: string
           submission_date: string
           submission_text: string
@@ -602,7 +612,7 @@ export type Database = {
           final_grade?: number | null
           id?: string
           prompt_id: string
-          status?: Database['public']['Enums']['essay_status_enum'] | null
+          status?: Database["public"]["Enums"]["essay_status_enum"] | null
           student_id: string
           submission_date?: string
           submission_text: string
@@ -619,7 +629,7 @@ export type Database = {
           final_grade?: number | null
           id?: string
           prompt_id?: string
-          status?: Database['public']['Enums']['essay_status_enum'] | null
+          status?: Database["public"]["Enums"]["essay_status_enum"] | null
           student_id?: string
           submission_date?: string
           submission_text?: string
@@ -630,25 +640,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_essays_prompt_id_fkey'
-            columns: ['prompt_id']
+            foreignKeyName: "public_essays_prompt_id_fkey"
+            columns: ["prompt_id"]
             isOneToOne: false
-            referencedRelation: 'essay_prompts'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_essays_student_id_fkey'
-            columns: ['student_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_essays_teacher_id_fkey'
-            columns: ['teacher_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "essay_prompts"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -681,108 +677,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      flashcard_categories: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      flashcard_flashcard_categories: {
-        Row: {
-          category_id: string
-          created_at: string
-          flashcard_id: string
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          category_id: string
-          created_at?: string
-          flashcard_id: string
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          category_id?: string
-          created_at?: string
-          flashcard_id?: string
-          id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'public_flashcard_flashcard_categories_category_id_fkey'
-            columns: ['category_id']
-            isOneToOne: false
-            referencedRelation: 'flashcard_categories'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_flashcard_flashcard_categories_flashcard_id_fkey'
-            columns: ['flashcard_id']
-            isOneToOne: false
-            referencedRelation: 'flashcards'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      flashcard_flashcard_tags: {
-        Row: {
-          created_at: string
-          flashcard_id: string
-          id: string
-          tag_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          flashcard_id: string
-          id?: string
-          tag_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          flashcard_id?: string
-          id?: string
-          tag_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'public_flashcard_flashcard_tags_flashcard_id_fkey'
-            columns: ['flashcard_id']
-            isOneToOne: false
-            referencedRelation: 'flashcards'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_flashcard_flashcard_tags_tag_id_fkey'
-            columns: ['tag_id']
-            isOneToOne: false
-            referencedRelation: 'flashcard_tags'
-            referencedColumns: ['id']
-          },
-        ]
       }
       flashcard_progress: {
         Row: {
@@ -832,18 +726,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_flashcard_progress_flashcard_id_fkey'
-            columns: ['flashcard_id']
+            foreignKeyName: "public_flashcard_progress_flashcard_id_fkey"
+            columns: ["flashcard_id"]
             isOneToOne: false
-            referencedRelation: 'flashcards'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_flashcard_progress_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "flashcards"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -886,103 +773,13 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'flashcard_session_history_group_session_id_fkey'
-            columns: ['group_session_id']
+            foreignKeyName: "flashcard_session_history_topic_id_fkey"
+            columns: ["topic_id"]
             isOneToOne: false
-            referencedRelation: 'group_study_sessions'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'flashcard_session_history_topic_id_fkey'
-            columns: ['topic_id']
-            isOneToOne: false
-            referencedRelation: 'topics'
-            referencedColumns: ['id']
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
           },
         ]
-      }
-      flashcard_set_collaborators: {
-        Row: {
-          created_at: string
-          id: string
-          permission_level: Database['public']['Enums']['collaborator_permission']
-          set_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          permission_level?: Database['public']['Enums']['collaborator_permission']
-          set_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          permission_level?: Database['public']['Enums']['collaborator_permission']
-          set_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'flashcard_set_collaborators_set_id_fkey'
-            columns: ['set_id']
-            isOneToOne: false
-            referencedRelation: 'flashcard_sets'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      flashcard_sets: {
-        Row: {
-          created_at: string
-          created_by_user_id: string
-          description: string | null
-          id: string
-          is_public: boolean | null
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by_user_id: string
-          description?: string | null
-          id?: string
-          is_public?: boolean | null
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by_user_id?: string
-          description?: string | null
-          id?: string
-          is_public?: boolean | null
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      flashcard_tags: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       flashcards: {
         Row: {
@@ -1026,117 +823,145 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'flashcards_flashcard_set_id_fkey'
-            columns: ['flashcard_set_id']
+            foreignKeyName: "public_flashcards_topic_id_fkey"
+            columns: ["topic_id"]
             isOneToOne: false
-            referencedRelation: 'flashcard_sets'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_flashcards_created_by_user_id_fkey'
-            columns: ['created_by_user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_flashcards_topic_id_fkey'
-            columns: ['topic_id']
-            isOneToOne: false
-            referencedRelation: 'topics'
-            referencedColumns: ['id']
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
           },
         ]
       }
-      group_session_participants: {
+      forum_categories: {
         Row: {
           created_at: string
+          description: string | null
           id: string
-          joined_at: string
-          left_at: string | null
-          score_in_session: number | null
-          session_id: string
-          user_id: string
+          name: string
+          slug: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
-          joined_at?: string
-          left_at?: string | null
-          score_in_session?: number | null
-          session_id: string
-          user_id: string
+          name: string
+          slug: string
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
-          joined_at?: string
-          left_at?: string | null
-          score_in_session?: number | null
-          session_id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      forum_posts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          topic_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          topic_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          topic_id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'group_session_participants_session_id_fkey'
-            columns: ['session_id']
+            foreignKeyName: "forum_posts_topic_id_fkey"
+            columns: ["topic_id"]
             isOneToOne: false
-            referencedRelation: 'group_study_sessions'
-            referencedColumns: ['id']
+            referencedRelation: "forum_topics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forum_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forum_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
           },
         ]
       }
-      group_study_sessions: {
+      forum_topics: {
         Row: {
+          category_id: string | null
+          content: string
           created_at: string
-          created_by_user_id: string
-          ended_at: string | null
-          flashcard_set_id: string | null
           id: string
-          name: string | null
-          started_at: string | null
-          status: Database['public']['Enums']['session_status']
-          topic_id: string | null
+          is_locked: boolean | null
+          is_pinned: boolean | null
+          title: string
           updated_at: string
+          user_id: string
+          views: number | null
         }
         Insert: {
+          category_id?: string | null
+          content: string
           created_at?: string
-          created_by_user_id: string
-          ended_at?: string | null
-          flashcard_set_id?: string | null
           id?: string
-          name?: string | null
-          started_at?: string | null
-          status?: Database['public']['Enums']['session_status']
-          topic_id?: string | null
+          is_locked?: boolean | null
+          is_pinned?: boolean | null
+          title: string
           updated_at?: string
+          user_id: string
+          views?: number | null
         }
         Update: {
+          category_id?: string | null
+          content?: string
           created_at?: string
-          created_by_user_id?: string
-          ended_at?: string | null
-          flashcard_set_id?: string | null
           id?: string
-          name?: string | null
-          started_at?: string | null
-          status?: Database['public']['Enums']['session_status']
-          topic_id?: string | null
+          is_locked?: boolean | null
+          is_pinned?: boolean | null
+          title?: string
           updated_at?: string
+          user_id?: string
+          views?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: 'group_study_sessions_flashcard_set_id_fkey'
-            columns: ['flashcard_set_id']
+            foreignKeyName: "forum_topics_category_id_fkey"
+            columns: ["category_id"]
             isOneToOne: false
-            referencedRelation: 'flashcard_sets'
-            referencedColumns: ['id']
+            referencedRelation: "forum_categories"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'group_study_sessions_topic_id_fkey'
-            columns: ['topic_id']
+            foreignKeyName: "forum_topics_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: 'topics'
-            referencedColumns: ['id']
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forum_topics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1167,11 +992,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'lesson_attachments_lesson_id_fkey'
-            columns: ['lesson_id']
+            foreignKeyName: "lesson_attachments_lesson_id_fkey"
+            columns: ["lesson_id"]
             isOneToOne: false
-            referencedRelation: 'video_lessons'
-            referencedColumns: ['id']
+            referencedRelation: "video_lessons"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1211,35 +1036,102 @@ export type Database = {
         }
         Relationships: []
       }
-      password_reset_tokens: {
+      pomodoro_sessions: {
         Row: {
-          created_at: string
-          expires_at: string
+          completed: boolean
+          created_at: string | null
+          duration_minutes: number
           id: string
-          token: string
+          topic_id: string | null
+          topic_title: string
           user_id: string
         }
         Insert: {
-          created_at?: string
-          expires_at: string
+          completed?: boolean
+          created_at?: string | null
+          duration_minutes?: number
           id?: string
-          token: string
+          topic_id?: string | null
+          topic_title: string
           user_id: string
         }
         Update: {
-          created_at?: string
-          expires_at?: string
+          completed?: boolean
+          created_at?: string | null
+          duration_minutes?: number
           id?: string
-          token?: string
+          topic_id?: string | null
+          topic_title?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'public_password_reset_tokens_user_id_fkey'
-            columns: ['user_id']
+            foreignKeyName: "pomodoro_sessions_topic_id_fkey"
+            columns: ["topic_id"]
             isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "study_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_answers: {
+        Row: {
+          answer_json: Json | null
+          answer_value: string | null
+          attempt_id: string
+          created_at: string | null
+          id: string
+          is_correct: boolean | null
+          points_earned: number | null
+          question_id: string
+          time_spent_seconds: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          answer_json?: Json | null
+          answer_value?: string | null
+          attempt_id: string
+          created_at?: string | null
+          id?: string
+          is_correct?: boolean | null
+          points_earned?: number | null
+          question_id: string
+          time_spent_seconds?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          answer_json?: Json | null
+          answer_value?: string | null
+          attempt_id?: string
+          created_at?: string | null
+          id?: string
+          is_correct?: boolean | null
+          points_earned?: number | null
+          question_id?: string
+          time_spent_seconds?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_answers_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_questions_legacy"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1276,18 +1168,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_quiz_attempt_answers_quiz_attempt_id_fkey'
-            columns: ['quiz_attempt_id']
+            foreignKeyName: "public_quiz_attempt_answers_quiz_attempt_id_fkey"
+            columns: ["quiz_attempt_id"]
             isOneToOne: false
-            referencedRelation: 'quiz_attempts'
-            referencedColumns: ['id']
+            referencedRelation: "quiz_attempts"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'public_quiz_attempt_answers_quiz_question_id_fkey'
-            columns: ['quiz_question_id']
+            foreignKeyName: "public_quiz_attempt_answers_quiz_question_id_fkey"
+            columns: ["quiz_question_id"]
             isOneToOne: false
-            referencedRelation: 'quiz_questions'
-            referencedColumns: ['id']
+            referencedRelation: "quiz_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_quiz_attempt_answers_quiz_question_id_fkey"
+            columns: ["quiz_question_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_questions_legacy"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1327,116 +1226,379 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_quiz_attempts_quiz_id_fkey'
-            columns: ['quiz_id']
+            foreignKeyName: "public_quiz_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
             isOneToOne: false
-            referencedRelation: 'quizzes'
-            referencedColumns: ['id']
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'public_quiz_attempts_user_id_fkey'
-            columns: ['user_id']
+            foreignKeyName: "quiz_attempts_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_classes: {
+        Row: {
+          class_id: string
+          created_at: string | null
+          id: string
+          quiz_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string | null
+          id?: string
+          quiz_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string | null
+          id?: string
+          quiz_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_classes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "class_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_classes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_classes_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_question_stats: {
+        Row: {
+          average_time_seconds: number | null
+          correct_answers: number | null
+          difficulty_level: string | null
+          id: string
+          incorrect_answers: number | null
+          question_id: string
+          quiz_id: string
+          total_answers: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          average_time_seconds?: number | null
+          correct_answers?: number | null
+          difficulty_level?: string | null
+          id?: string
+          incorrect_answers?: number | null
+          question_id: string
+          quiz_id: string
+          total_answers?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          average_time_seconds?: number | null
+          correct_answers?: number | null
+          difficulty_level?: string | null
+          id?: string
+          incorrect_answers?: number | null
+          question_id?: string
+          quiz_id?: string
+          total_answers?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_question_stats_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: true
+            referencedRelation: "quiz_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_question_stats_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: true
+            referencedRelation: "quiz_questions_legacy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_question_stats_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
           },
         ]
       }
       quiz_questions: {
         Row: {
           correct_answer: string
+          correct_answers: Json | null
           created_at: string
           created_by_user_id: string | null
+          difficulty: string | null
+          display_order: number | null
           explanation: string | null
+          explanation_html: string | null
           id: string
+          matching_pairs: Json | null
           options: Json | null
+          options_rich: Json | null
+          ordering_items: Json | null
           points: number
+          question_format: string
+          question_html: string | null
+          question_image_caption: string | null
+          question_image_url: string | null
+          question_number: string | null
           question_text: string
           question_type: string
           quiz_id: string
+          reading_text_id: string | null
+          tags: string[] | null
+          time_limit_seconds: number | null
+          topic_id: string | null
           updated_at: string
         }
         Insert: {
           correct_answer: string
+          correct_answers?: Json | null
           created_at?: string
           created_by_user_id?: string | null
+          difficulty?: string | null
+          display_order?: number | null
           explanation?: string | null
+          explanation_html?: string | null
           id?: string
+          matching_pairs?: Json | null
           options?: Json | null
+          options_rich?: Json | null
+          ordering_items?: Json | null
           points?: number
+          question_format?: string
+          question_html?: string | null
+          question_image_caption?: string | null
+          question_image_url?: string | null
+          question_number?: string | null
           question_text: string
           question_type: string
           quiz_id: string
+          reading_text_id?: string | null
+          tags?: string[] | null
+          time_limit_seconds?: number | null
+          topic_id?: string | null
           updated_at?: string
         }
         Update: {
           correct_answer?: string
+          correct_answers?: Json | null
           created_at?: string
           created_by_user_id?: string | null
+          difficulty?: string | null
+          display_order?: number | null
           explanation?: string | null
+          explanation_html?: string | null
           id?: string
+          matching_pairs?: Json | null
           options?: Json | null
+          options_rich?: Json | null
+          ordering_items?: Json | null
           points?: number
+          question_format?: string
+          question_html?: string | null
+          question_image_caption?: string | null
+          question_image_url?: string | null
+          question_number?: string | null
           question_text?: string
           question_type?: string
           quiz_id?: string
+          reading_text_id?: string | null
+          tags?: string[] | null
+          time_limit_seconds?: number | null
+          topic_id?: string | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'public_quiz_questions_quiz_id_fkey'
-            columns: ['quiz_id']
+            foreignKeyName: "public_quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
             isOneToOne: false
-            referencedRelation: 'quizzes'
-            referencedColumns: ['id']
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_questions_reading_text_id_fkey"
+            columns: ["reading_text_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_reading_texts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_reading_texts: {
+        Row: {
+          author: string | null
+          content: string
+          content_html: string | null
+          created_at: string | null
+          display_order: number | null
+          id: string
+          quiz_id: string
+          source: string | null
+          title: string | null
+          updated_at: string | null
+          word_count: number | null
+        }
+        Insert: {
+          author?: string | null
+          content: string
+          content_html?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          quiz_id: string
+          source?: string | null
+          title?: string | null
+          updated_at?: string | null
+          word_count?: number | null
+        }
+        Update: {
+          author?: string | null
+          content?: string
+          content_html?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          quiz_id?: string
+          source?: string | null
+          title?: string | null
+          updated_at?: string | null
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_reading_texts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
           },
         ]
       }
       quizzes: {
         Row: {
+          allow_review: boolean | null
           created_at: string
+          created_by: string | null
           created_by_user_id: string
           description: string | null
           duration_minutes: number | null
           id: string
+          instructions: string | null
+          passing_score: number | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          show_results_immediately: boolean | null
+          shuffle_options: boolean | null
+          shuffle_questions: boolean | null
+          status: string | null
           title: string
           topic_id: string
+          total_points: number | null
+          type: string | null
           updated_at: string
         }
         Insert: {
+          allow_review?: boolean | null
           created_at?: string
+          created_by?: string | null
           created_by_user_id: string
           description?: string | null
           duration_minutes?: number | null
           id?: string
+          instructions?: string | null
+          passing_score?: number | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          show_results_immediately?: boolean | null
+          shuffle_options?: boolean | null
+          shuffle_questions?: boolean | null
+          status?: string | null
           title: string
           topic_id: string
+          total_points?: number | null
+          type?: string | null
           updated_at?: string
         }
         Update: {
+          allow_review?: boolean | null
           created_at?: string
+          created_by?: string | null
           created_by_user_id?: string
           description?: string | null
           duration_minutes?: number | null
           id?: string
+          instructions?: string | null
+          passing_score?: number | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          show_results_immediately?: boolean | null
+          shuffle_options?: boolean | null
+          shuffle_questions?: boolean | null
+          status?: string | null
           title?: string
           topic_id?: string
+          total_points?: number | null
+          type?: string | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'public_quizzes_created_by_user_id_fkey'
-            columns: ['created_by_user_id']
+            foreignKeyName: "public_quizzes_topic_id_fkey"
+            columns: ["topic_id"]
             isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'public_quizzes_topic_id_fkey'
-            columns: ['topic_id']
+            foreignKeyName: "quizzes_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: 'topics'
-            referencedColumns: ['id']
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quizzes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1498,15 +1660,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: 'public_scores_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
       student_classes: {
         Row: {
@@ -1514,6 +1668,7 @@ export type Database = {
           created_at: string
           enrollment_date: string
           id: string
+          subscription_expires_at: string | null
           updated_at: string
           user_id: string
         }
@@ -1522,6 +1677,7 @@ export type Database = {
           created_at?: string
           enrollment_date: string
           id?: string
+          subscription_expires_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1530,60 +1686,62 @@ export type Database = {
           created_at?: string
           enrollment_date?: string
           id?: string
+          subscription_expires_at?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'public_student_classes_class_id_fkey'
-            columns: ['class_id']
+            foreignKeyName: "public_student_classes_class_id_fkey"
+            columns: ["class_id"]
             isOneToOne: false
-            referencedRelation: 'classes'
-            referencedColumns: ['id']
+            referencedRelation: "class_stats"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'public_student_classes_user_id_fkey'
-            columns: ['user_id']
+            foreignKeyName: "public_student_classes_class_id_fkey"
+            columns: ["class_id"]
             isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
           },
         ]
       }
-      students: {
+      study_topics: {
         Row: {
-          created_at: string
-          enrollment_date: string
+          category: string
+          created_at: string | null
           id: string
-          student_id_number: string
-          updated_at: string
+          pomodoros: number
+          status: string
+          title: string
+          type: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string
-          enrollment_date: string
+          category: string
+          created_at?: string | null
           id?: string
-          student_id_number: string
-          updated_at?: string
+          pomodoros?: number
+          status?: string
+          title: string
+          type: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string
-          enrollment_date?: string
+          category?: string
+          created_at?: string | null
           id?: string
-          student_id_number?: string
-          updated_at?: string
+          pomodoros?: number
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: 'public_students_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: true
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
       subjects: {
         Row: {
@@ -1616,22 +1774,14 @@ export type Database = {
           name?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: 'public_subjects_created_by_user_id_fkey'
-            columns: ['created_by_user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
       teachers: {
         Row: {
           created_at: string
           department: string | null
           employee_id_number: string
-          hire_date: string
+          hire_date: string | null
           id: string
           updated_at: string
           user_id: string
@@ -1640,7 +1790,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           employee_id_number: string
-          hire_date: string
+          hire_date?: string | null
           id?: string
           updated_at?: string
           user_id: string
@@ -1649,20 +1799,12 @@ export type Database = {
           created_at?: string
           department?: string | null
           employee_id_number?: string
-          hire_date?: string
+          hire_date?: string | null
           id?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: 'public_teachers_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: true
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
       topics: {
         Row: {
@@ -1694,18 +1836,53 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_topics_created_by_user_id_fkey'
-            columns: ['created_by_user_id']
+            foreignKeyName: "public_topics_subject_id_fkey"
+            columns: ["subject_id"]
             isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trial_allowed_content: {
+        Row: {
+          class_id: string
+          content_id: string
+          content_type: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          class_id: string
+          content_id: string
+          content_type: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          class_id?: string
+          content_id?: string
+          content_type?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trial_allowed_content_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "class_stats"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'public_topics_subject_id_fkey'
-            columns: ['subject_id']
+            foreignKeyName: "trial_allowed_content_class_id_fkey"
+            columns: ["class_id"]
             isOneToOne: false
-            referencedRelation: 'subjects'
-            referencedColumns: ['id']
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1730,11 +1907,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'user_achievements_achievement_id_fkey'
-            columns: ['achievement_id']
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
             isOneToOne: false
-            referencedRelation: 'achievements'
-            referencedColumns: ['id']
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1765,47 +1942,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_user_downloaded_audio_lessons_lesson_id_fkey'
-            columns: ['lesson_id']
+            foreignKeyName: "public_user_downloaded_audio_lessons_lesson_id_fkey"
+            columns: ["lesson_id"]
             isOneToOne: false
-            referencedRelation: 'audio_lessons'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_user_downloaded_audio_lessons_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      user_favorite_flashcards: {
-        Row: {
-          created_at: string
-          flashcard_id: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          flashcard_id: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          flashcard_id?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'user_favorite_flashcards_flashcard_id_fkey'
-            columns: ['flashcard_id']
-            isOneToOne: false
-            referencedRelation: 'flashcards'
-            referencedColumns: ['id']
+            referencedRelation: "audio_lessons"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1836,18 +1977,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_user_incorrect_flashcards_flashcard_id_fkey'
-            columns: ['flashcard_id']
+            foreignKeyName: "public_user_incorrect_flashcards_flashcard_id_fkey"
+            columns: ["flashcard_id"]
             isOneToOne: false
-            referencedRelation: 'flashcards'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_user_incorrect_flashcards_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "flashcards"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1881,18 +2015,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'public_user_progress_topic_id_fkey'
-            columns: ['topic_id']
+            foreignKeyName: "public_user_progress_topic_id_fkey"
+            columns: ["topic_id"]
             isOneToOne: false
-            referencedRelation: 'topics'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'public_user_progress_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1933,15 +2060,7 @@ export type Database = {
           user_agent?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: 'public_user_sessions_user_id_fkey'
-            columns: ['user_id']
-            isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
       user_settings: {
         Row: {
@@ -1988,41 +2107,47 @@ export type Database = {
       users: {
         Row: {
           created_at: string
+          department: string | null
           email: string
+          employee_id_number: string | null
+          enrollment_date: string | null
           first_name: string
+          hire_date: string | null
           id: string
           is_active: boolean
-          last_login_at: string | null
           last_name: string
-          password_hash: string
-          role: Database['public']['Enums']['user_role']
-          subscription_end_date: string | null
+          role: string
+          student_id_number: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          department?: string | null
           email: string
-          first_name: string
-          id?: string
+          employee_id_number?: string | null
+          enrollment_date?: string | null
+          first_name?: string
+          hire_date?: string | null
+          id: string
           is_active?: boolean
-          last_login_at?: string | null
-          last_name: string
-          password_hash: string
-          role?: Database['public']['Enums']['user_role']
-          subscription_end_date?: string | null
+          last_name?: string
+          role?: string
+          student_id_number?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          department?: string | null
           email?: string
+          employee_id_number?: string | null
+          enrollment_date?: string | null
           first_name?: string
+          hire_date?: string | null
           id?: string
           is_active?: boolean
-          last_login_at?: string | null
           last_name?: string
-          password_hash?: string
-          role?: Database['public']['Enums']['user_role']
-          subscription_end_date?: string | null
+          role?: string
+          student_id_number?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -2076,7 +2201,7 @@ export type Database = {
           updated_at: string
           video_source_id: string | null
           video_source_type:
-            | Database['public']['Enums']['video_source_provider']
+            | Database["public"]["Enums"]["video_source_provider"]
             | null
         }
         Insert: {
@@ -2094,7 +2219,7 @@ export type Database = {
           updated_at?: string
           video_source_id?: string | null
           video_source_type?:
-            | Database['public']['Enums']['video_source_provider']
+            | Database["public"]["Enums"]["video_source_provider"]
             | null
         }
         Update: {
@@ -2112,30 +2237,30 @@ export type Database = {
           updated_at?: string
           video_source_id?: string | null
           video_source_type?:
-            | Database['public']['Enums']['video_source_provider']
+            | Database["public"]["Enums"]["video_source_provider"]
             | null
         }
         Relationships: [
           {
-            foreignKeyName: 'video_lessons_accompanying_pdf_attachment_id_fkey'
-            columns: ['accompanying_pdf_attachment_id']
+            foreignKeyName: "video_lessons_accompanying_pdf_attachment_id_fkey"
+            columns: ["accompanying_pdf_attachment_id"]
             isOneToOne: false
-            referencedRelation: 'lesson_attachments'
-            referencedColumns: ['id']
+            referencedRelation: "lesson_attachments"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'video_lessons_module_id_fkey'
-            columns: ['module_id']
+            foreignKeyName: "video_lessons_module_id_fkey"
+            columns: ["module_id"]
             isOneToOne: false
-            referencedRelation: 'video_modules'
-            referencedColumns: ['id']
+            referencedRelation: "video_modules"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'video_lessons_quiz_id_fkey'
-            columns: ['quiz_id']
+            foreignKeyName: "video_lessons_quiz_id_fkey"
+            columns: ["quiz_id"]
             isOneToOne: false
-            referencedRelation: 'quizzes'
-            referencedColumns: ['id']
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2175,18 +2300,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'video_modules_course_id_fkey'
-            columns: ['course_id']
+            foreignKeyName: "video_modules_course_id_fkey"
+            columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: 'video_courses'
-            referencedColumns: ['id']
+            referencedRelation: "video_courses"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'video_modules_quiz_id_fkey'
-            columns: ['quiz_id']
+            foreignKeyName: "video_modules_quiz_id_fkey"
+            columns: ["quiz_id"]
             isOneToOne: false
-            referencedRelation: 'quizzes'
-            referencedColumns: ['id']
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2223,17 +2348,122 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'video_progress_lesson_id_fkey'
-            columns: ['lesson_id']
+            foreignKeyName: "video_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
             isOneToOne: false
-            referencedRelation: 'video_lessons'
-            referencedColumns: ['id']
+            referencedRelation: "video_lessons"
+            referencedColumns: ["id"]
           },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      class_stats: {
+        Row: {
+          class_type: Database["public"]["Enums"]["class_type"] | null
+          created_at: string | null
+          description: string | null
+          enabled_features_count: number | null
+          end_date: string | null
+          id: string | null
+          name: string | null
+          start_date: string | null
+          status: string | null
+          student_count: number | null
+          teacher_id: string | null
+          trial_duration_days: number | null
+          trial_essay_submission_limit: number | null
+          trial_flashcard_limit_per_day: number | null
+          trial_quiz_limit_per_day: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_classes_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_questions_legacy: {
+        Row: {
+          correct_answer: string | null
+          created_at: string | null
+          explanation: string | null
+          id: string | null
+          options: Json | null
+          points: number | null
+          question: string | null
+          quiz_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          correct_answer?: string | null
+          created_at?: string | null
+          explanation?: never
+          id?: string | null
+          options?: Json | null
+          points?: number | null
+          question?: never
+          quiz_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          correct_answer?: string | null
+          created_at?: string | null
+          explanation?: never
+          id?: string | null
+          options?: Json | null
+          points?: number | null
+          question?: never
+          quiz_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          first_name: string | null
+          id: string | null
+          is_active: boolean | null
+          last_name: string | null
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_name?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          last_name?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_user_score: {
@@ -2245,6 +2475,31 @@ export type Database = {
         }
         Returns: string
       }
+      calculate_subscription_expiration: {
+        Args: { p_class_id: string; p_enrollment_date: string }
+        Returns: string
+      }
+      check_auth_status: {
+        Args: never
+        Returns: {
+          auth_users_count: number
+          missing_profiles: number
+          public_users_count: number
+          status: string
+          user_profiles_count: number
+        }[]
+      }
+      downgrade_expired_subscriptions: {
+        Args: never
+        Returns: {
+          expired_at: string
+          new_class_name: string
+          old_class_name: string
+          user_email: string
+          user_id: string
+        }[]
+      }
+      get_auth_user_role: { Args: never; Returns: string }
       get_question_performance_for_quiz: {
         Args: { p_quiz_id: string }
         Returns: {
@@ -2254,16 +2509,60 @@ export type Database = {
           question_text: string
         }[]
       }
-      get_ranking_by_activity_type: {
-        Args: { p_activity_type: string; p_limit?: number }
+      get_ranking_by_activity_type:
+        | {
+            Args: { p_activity_type: string; p_limit?: number }
+            Returns: {
+              email: string
+              first_name: string
+              last_name: string
+              rank_position: number
+              total_xp_activity: number
+              total_xp_general: number
+              user_id: string
+            }[]
+          }
+        | {
+            Args: { p_activity_type: string; p_limit?: number }
+            Returns: {
+              email: string
+              first_name: string
+              last_name: string
+              rank_position: number
+              total_xp_activity: number
+              total_xp_general: number
+              user_id: string
+            }[]
+          }
+      get_study_stats: {
+        Args: { user_id: string }
         Returns: {
-          email: string
-          first_name: string
-          last_name: string
-          rank_position: number
-          total_xp_activity: number
-          total_xp_general: number
-          user_id: string
+          completed_topics: number
+          current_week_pomodoros: number
+          total_minutes: number
+          total_pomodoros: number
+          total_topics: number
+        }[]
+      }
+      get_subjects_with_quiz_counts: {
+        Args: never
+        Returns: {
+          category: string
+          created_at: string
+          created_by_user_id: string
+          description: string
+          id: string
+          image_url: string
+          name: string
+          quiz_count: number
+          updated_at: string
+        }[]
+      }
+      get_trial_allowed_content_for_user: {
+        Args: { user_id: string }
+        Returns: {
+          content_id: string
+          content_type: string
         }[]
       }
       get_user_rank_position: {
@@ -2273,7 +2572,7 @@ export type Database = {
           first_name: string
           last_name: string
           rank_position: number
-          role: Database['public']['Enums']['user_role']
+          role: string
           total_xp: number
           user_id: string
         }[]
@@ -2285,11 +2584,12 @@ export type Database = {
           first_name: string
           last_name: string
           rank_position: number
-          role: Database['public']['Enums']['user_role']
+          role: string
           total_xp: number
           user_id: string
         }[]
       }
+      get_user_role: { Args: never; Returns: string }
       get_user_score_history: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
@@ -2301,7 +2601,7 @@ export type Database = {
         }[]
       }
       get_xp_statistics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           average_xp: number
           max_xp: number
@@ -2310,20 +2610,29 @@ export type Database = {
           total_xp_distributed: number
         }[]
       }
+      increment_topic_pomodoros: {
+        Args: { topic_id: string }
+        Returns: undefined
+      }
+      is_admin: { Args: never; Returns: boolean }
+      is_admin_or_teacher: { Args: never; Returns: boolean }
+      is_authenticated: { Args: never; Returns: boolean }
+      is_teacher: { Args: never; Returns: boolean }
+      is_trial_user: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
-      audio_source_provider: 'panda_video_hls' | 'mp3_url'
+      audio_source_provider: "panda_video_hls" | "mp3_url"
       calendar_event_type:
-        | 'SIMULATION'
-        | 'ESSAY_DEADLINE'
-        | 'LIVE_CLASS'
-        | 'GENERAL'
-      class_type: 'standard' | 'trial'
-      collaborator_permission: 'viewer' | 'editor'
-      essay_status_enum: 'draft' | 'correcting' | 'corrected'
-      session_status: 'pending' | 'active' | 'completed'
-      user_role: 'student' | 'teacher' | 'administrator'
-      video_source_provider: 'panda_video' | 'youtube' | 'vimeo'
+        | "SIMULATION"
+        | "ESSAY_DEADLINE"
+        | "LIVE_CLASS"
+        | "GENERAL"
+      class_type: "standard" | "trial"
+      collaborator_permission: "viewer" | "editor"
+      essay_status_enum: "draft" | "correcting" | "corrected"
+      session_status: "pending" | "active" | "completed"
+      user_role: "student" | "teacher" | "administrator"
+      video_source_provider: "panda_video" | "youtube" | "vimeo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2331,33 +2640,33 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] &
-        DefaultSchema['Views'])
-    ? (DefaultSchema['Tables'] &
-        DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -2366,23 +2675,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -2391,23 +2700,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -2416,54 +2725,54 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
-    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema['CompositeTypes']
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
-    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
     Enums: {
-      audio_source_provider: ['panda_video_hls', 'mp3_url'],
+      audio_source_provider: ["panda_video_hls", "mp3_url"],
       calendar_event_type: [
-        'SIMULATION',
-        'ESSAY_DEADLINE',
-        'LIVE_CLASS',
-        'GENERAL',
+        "SIMULATION",
+        "ESSAY_DEADLINE",
+        "LIVE_CLASS",
+        "GENERAL",
       ],
-      class_type: ['standard', 'trial'],
-      collaborator_permission: ['viewer', 'editor'],
-      essay_status_enum: ['draft', 'correcting', 'corrected'],
-      session_status: ['pending', 'active', 'completed'],
-      user_role: ['student', 'teacher', 'administrator'],
-      video_source_provider: ['panda_video', 'youtube', 'vimeo'],
+      class_type: ["standard", "trial"],
+      collaborator_permission: ["viewer", "editor"],
+      essay_status_enum: ["draft", "correcting", "corrected"],
+      session_status: ["pending", "active", "completed"],
+      user_role: ["student", "teacher", "administrator"],
+      video_source_provider: ["panda_video", "youtube", "vimeo"],
     },
   },
 } as const
