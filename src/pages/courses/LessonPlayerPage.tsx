@@ -837,11 +837,10 @@ export default function LessonPlayerPage() {
                 </div>
 
                 {/* Navigation */}
-                <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-border">
-                  {prevLesson ? (
+                <div className="flex gap-3 mt-5 pt-5 border-t border-border">
+                  {prevLesson && (
                     <Link to={`/courses/${courseId}/lessons/${prevLesson.id}`}
-                      className="relative flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-border/60 bg-gradient-to-r from-muted/40 to-muted/20 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group overflow-hidden">
-                      {/* Decorative gradient blob */}
+                      className="relative flex-1 flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-border/60 bg-gradient-to-r from-muted/40 to-muted/20 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group overflow-hidden">
                       <div className="absolute -left-4 -top-4 w-20 h-20 rounded-full bg-primary/5 group-hover:bg-primary/10 blur-2xl transition-colors duration-300" />
                       <div className="relative w-11 h-11 rounded-xl bg-muted group-hover:bg-primary group-hover:shadow-md group-hover:shadow-primary/30 flex items-center justify-center shrink-0 transition-all duration-300">
                         <ChevronLeft className="h-5 w-5 text-muted-foreground group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
@@ -851,11 +850,10 @@ export default function LessonPlayerPage() {
                         <p className="text-sm font-semibold text-foreground truncate mt-1 group-hover:text-primary transition-colors duration-300">{cleanTitle(prevLesson.title)}</p>
                       </div>
                     </Link>
-                  ) : <div />}
-                  {nextLesson ? (
+                  )}
+                  {nextLesson && (
                     <Link to={`/courses/${courseId}/lessons/${nextLesson.id}`}
-                      className="relative flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-border/60 bg-gradient-to-l from-muted/40 to-muted/20 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group overflow-hidden text-right justify-end">
-                      {/* Decorative gradient blob */}
+                      className="relative flex-1 flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-border/60 bg-gradient-to-l from-muted/40 to-muted/20 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group overflow-hidden text-right justify-end">
                       <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-primary/5 group-hover:bg-primary/10 blur-2xl transition-colors duration-300" />
                       <div className="relative min-w-0 flex-1">
                         <span className="text-[10px] uppercase tracking-widest text-muted-foreground/50 font-semibold block">Proxima aula</span>
@@ -865,7 +863,7 @@ export default function LessonPlayerPage() {
                         <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
                       </div>
                     </Link>
-                  ) : <div />}
+                  )}
                 </div>
               </div>
 
