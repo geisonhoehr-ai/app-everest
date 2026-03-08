@@ -58,8 +58,6 @@ export const useAuth = () => {
 // Centralized profile fetching with automatic profile creation
 const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
-    console.log('🔍 Fetching profile for user:', userId)
-
     // First try to fetch existing profile
     const { data: existingProfile, error: fetchError } = await Promise.race([
       supabase
@@ -83,19 +81,16 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
 
     // If profile exists, return it
     if (!fetchError && existingProfile) {
-      console.log('✅ Profile fetched successfully:', existingProfile.email)
       return existingProfile
     }
 
     // If profile doesn't exist (PGRST116 = no rows returned), try to create one
     if (fetchError && fetchError.code === 'PGRST116') {
-      console.log('📝 Profile not found, attempting to create from auth data...')
-
       // Get user data from Supabase Auth
       const { data: { user }, error: userError } = await supabase.auth.getUser()
 
       if (userError || !user) {
-        console.error('❌ Could not get user data for profile creation:', userError)
+        console.error('Could not get user data for profile creation:', userError)
         return null
       }
 
@@ -119,7 +114,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
         .single()
 
       if (createError) {
-        console.error('❌ Failed to create profile:', createError)
+        console.error('Failed to create profile:', createError)
         return null
       }
 
@@ -136,9 +131,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
           .insert(studentData)
 
         if (studentError) {
-          console.error('❌ Failed to create student record:', studentError)
-        } else {
-          console.log('✅ Student record created successfully')
+          console.error('Failed to create student record:', studentError)
         }
       }
 
@@ -155,22 +148,19 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
           .insert(teacherData)
 
         if (teacherError) {
-          console.error('❌ Failed to create teacher record:', teacherError)
-        } else {
-          console.log('✅ Teacher record created successfully')
+          console.error('Failed to create teacher record:', teacherError)
         }
       }
 
-      console.log('✅ Profile created successfully:', createdProfile.email)
       return createdProfile
     }
 
     // For other errors, log and return null
-    console.error('❌ Profile fetch error:', fetchError)
+    console.error('Profile fetch error:', fetchError)
     return null
 
   } catch (error) {
-    console.error('💥 Network error fetching profile:', error)
+    console.error('Network error fetching profile:', error)
     return null
   }
 }
@@ -187,6 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const profileRef = useRef<UserProfile | null>(null)
   const profileFetchAttemptedRef = useRef(false)
   const isFetchingProfileRef = useRef(false)
+  const initCompleteRef = useRef(false)
 
   // Keep refs in sync with state
   profileRef.current = profile
@@ -197,25 +188,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const currentSession = session
     if (!currentSession?.user?.id) return
 
-    console.log('🔄 Refreshing profile...')
     const userProfile = await fetchUserProfile(currentSession.user.id)
     setProfile(userProfile)
   }, [session])
 
   // Handle session changes - stable callback using refs
   const handleSessionChange = useCallback(async (newSession: Session | null) => {
-    console.log('🔄 Session changed:', !!newSession)
     setSession(newSession)
 
     if (newSession?.user) {
       // Skip if already fetched or currently fetching
       if (profileFetchAttemptedRef.current && profileRef.current) {
-        console.log('⏭️ Profile already fetched, skipping...')
         return
       }
 
       if (isFetchingProfileRef.current) {
-        console.log('⏭️ Profile fetch already in progress, skipping...')
         return
       }
 
@@ -228,18 +215,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isFetchingProfileRef.current = false
       setProfile(userProfile)
       setProfileFetchAttempted(true)
-
-      if (!userProfile) {
-        console.warn('⚠️ Failed to fetch user profile')
-      } else {
-        console.log('✅ User authenticated with profile:', userProfile.email)
-      }
     } else {
       // Clear profile for unauthenticated state
       isFetchingProfileRef.current = false
       setProfile(null)
       setProfileFetchAttempted(false)
-      console.log('🔓 User logged out, profile cleared')
     }
   }, []) // No dependencies - uses refs for state checks
 
@@ -250,19 +230,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        console.log('🚀 Initializing authentication...')
-
-        // Get initial session
+        // Get initial session - use getSession() as the primary method.
+        // This reads from localStorage first, so it resolves fast on page reload.
+        // Use a generous timeout (30s) to avoid falsely logging users out on slow connections.
         const { data: { session: initialSession } } = await Promise.race([
           supabase.auth.getSession(),
           new Promise<any>((_, reject) =>
-            setTimeout(() => reject(new Error('Auth timeout')), 15000)
+            setTimeout(() => reject(new Error('Auth timeout')), 30000)
           )
         ])
 
         if (!mounted) return
 
-        console.log('📋 Initial session:', !!initialSession)
         await handleSessionChange(initialSession)
 
         // Set up token refresh check every 5 minutes
@@ -274,7 +253,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               const now = Math.floor(Date.now() / 1000)
 
               if (expiresAt && (expiresAt - now) < 600) {
-                console.log('🔄 Refreshing auth token...')
                 await supabase.auth.refreshSession()
               }
             }
@@ -284,7 +262,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         if (!mounted) return
 
-        console.error('💥 Auth initialization failed:', error)
+        console.error('Auth initialization failed:', error)
 
         const isTimeout = error instanceof Error && error.message.includes('timeout')
 
@@ -294,16 +272,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             description: 'Problemas na conexão. Tente recarregar a página.',
             variant: 'destructive',
           })
-        } else {
-          console.log('⏭️ Auth timeout (user not logged in) - continuing...')
         }
 
-        setSession(null)
-        setProfile(null)
+        // On timeout, do NOT clear session — the user may still be authenticated.
+        // Only clear if it was a non-timeout error (actual auth failure).
+        if (!isTimeout) {
+          setSession(null)
+          setProfile(null)
+        }
+        // For timeouts, leave current state as-is and let onAuthStateChange handle it
       } finally {
         if (mounted) {
+          initCompleteRef.current = true
           setLoading(false)
-          console.log('✅ Auth initialization completed')
         }
       }
     }
@@ -315,17 +296,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (event, newSession) => {
         if (!mounted) return
 
-        console.log('🔔 Auth event:', event)
-
         // Only handle meaningful events
         if (event === 'TOKEN_REFRESHED') {
-          console.log('✅ Token refreshed successfully')
           setSession(newSession)
           return
         }
 
         if (event === 'SIGNED_OUT') {
-          console.log('🚪 User signed out')
           if (refreshInterval) {
             clearInterval(refreshInterval)
             refreshInterval = null
@@ -346,7 +323,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const expiresAt = currentSession.expires_at
                 const now = Math.floor(Date.now() / 1000)
                 if (expiresAt && (expiresAt - now) < 600) {
-                  console.log('🔄 Refreshing auth token...')
                   await supabase.auth.refreshSession()
                 }
               }
@@ -355,6 +331,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         await handleSessionChange(newSession)
+
+        // If init hasn't completed yet but we got a valid session from the listener,
+        // make sure loading is turned off so the UI isn't stuck
+        if (!initCompleteRef.current && newSession) {
+          initCompleteRef.current = true
+          setLoading(false)
+        }
       }
     )
 
@@ -369,34 +352,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Auth methods
   const signIn = useCallback(async (email: string, password: string) => {
-    console.log('🔐 Signing in user:', email)
-
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     if (error) {
-      console.error('❌ Sign in error:', error)
-    } else {
-      console.log('✅ Sign in successful')
+      console.error('Sign in error:', error)
     }
 
     return { error }
   }, [])
 
   const signUp = useCallback(async (email: string, password: string) => {
-    console.log('📝 Signing up user:', email)
-
     const { error } = await supabase.auth.signUp({
       email,
       password,
     })
 
     if (error) {
-      console.error('❌ Sign up error:', error)
-    } else {
-      console.log('✅ Sign up successful')
+      console.error('Sign up error:', error)
     }
 
     return { error }
@@ -404,11 +379,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(async () => {
     if (isSigningOut) {
-      console.log('⏸️ SignOut already in progress, skipping...')
       return { error: null }
     }
 
-    console.log('🚪 Signing out user...')
     setIsSigningOut(true)
 
     try {
@@ -416,12 +389,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         if (error.status !== 403) {
-          console.error('❌ Sign out error:', error)
-        } else {
-          console.log('⚠️ Sign out 403 ignored (session already ended)')
+          console.error('Sign out error:', error)
         }
-      } else {
-        console.log('✅ Sign out successful')
       }
 
       setProfile(null)
