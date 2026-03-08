@@ -32,10 +32,15 @@ export const PandaVideoPickerModal = ({
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true)
-      getPandaVideos(debouncedSearchTerm).then((data) => {
-        setVideos(data)
-        setIsLoading(false)
-      })
+      getPandaVideos(debouncedSearchTerm ? { search: debouncedSearchTerm } : undefined)
+        .then((data) => {
+          setVideos(data.videos || [])
+          setIsLoading(false)
+        })
+        .catch(() => {
+          setVideos([])
+          setIsLoading(false)
+        })
     }
   }, [isOpen, debouncedSearchTerm])
 
