@@ -245,7 +245,7 @@ const App = () => (
               >
                 <Route element={<Layout />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/meus-cursos" element={<CoursesPage />} />
+                  <Route path="/meus-cursos" element={<MyCoursesPage />} />
                   <Route path="/courses" element={<MyCoursesPage />} />
                   <Route
                     path="/courses/:courseId"
@@ -257,11 +257,11 @@ const App = () => (
                   />
                   <Route
                     path="/meus-cursos/:courseId"
-                    element={<CourseDetailsPage />}
+                    element={<CourseDetailPage />}
                   />
                   <Route
                     path="/meus-cursos/:courseId/lesson/:lessonId"
-                    element={<CourseLessonPage />}
+                    element={<LessonPlayerPage />}
                   />
                   <Route path="/calendario" element={<CalendarPage />} />
                   <Route path="/flashcards" element={<FlashcardsPage />} />
