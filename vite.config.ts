@@ -14,6 +14,11 @@ export default defineConfig(({ mode }) => ({
         target: 'https://api-v2.pandavideo.com.br',
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/panda-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('Authorization', 'panda-7815cbc9c501c0169d429ade132363867425dfb01a258da9a6a894ea8898908e')
+          })
+        },
       },
     },
   },
