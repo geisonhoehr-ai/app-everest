@@ -13,7 +13,8 @@
  * - ✅ Obter embed URL
  */
 
-const PANDA_API_URL = 'https://api-v2.pandavideo.com.br'
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+const PANDA_API_URL = isLocalhost ? '/panda-api' : 'https://api-v2.pandavideo.com.br'
 const PANDA_API_KEY = 'panda-7815cbc9c501c0169d429ade132363867425dfb01a258da9a6a894ea8898908e'
 
 export interface PandaVideo {

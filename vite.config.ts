@@ -9,6 +9,13 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: 'localhost',
     port: 3000,
+    proxy: {
+      '/panda-api': {
+        target: 'https://api-v2.pandavideo.com.br',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/panda-api/, ''),
+      },
+    },
   },
   experimental: {
     enableNativePlugin: true
