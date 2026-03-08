@@ -169,4 +169,41 @@ export const lessonInteractionService = {
       return false
     }
   },
+
+  // ---- NOTES ----
+
+  async getNote(lessonId: string, userId: string): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .from('lesson_notes')
+        .select('content')
+        .eq('lesson_id', lessonId)
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (error) throw error
+      return data?.content || ''
+    } catch (error) {
+      logger.error('Error fetching note:', error)
+      return ''
+    }
+  },
+
+  async saveNote(lessonId: string, userId: string, content: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('lesson_notes')
+        .upsert({
+          lesson_id: lessonId,
+          user_id: userId,
+          content,
+        }, { onConflict: 'lesson_id,user_id' })
+
+      if (error) throw error
+      return true
+    } catch (error) {
+      logger.error('Error saving note:', error)
+      return false
+    }
+  },
 }

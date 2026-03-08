@@ -7,6 +7,7 @@ import { courseService } from '@/services/courseService'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { RichTextEditor } from '@/components/RichTextEditor'
 import { rankingService } from '@/services/rankingService'
 import {
   lessonInteractionService,
@@ -41,6 +42,10 @@ import {
   Send,
   Trash2,
   Reply,
+  StickyNote,
+  Search,
+  Save,
+  Loader2,
 } from 'lucide-react'
 
 /* ------------------------------------------------------------------ */
@@ -150,7 +155,21 @@ export default function LessonPlayerPage() {
   const [replyText, setReplyText] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
   const [hoverRating, setHoverRating] = useState(0)
-  const [activeTab, setActiveTab] = useState<'comments' | 'resources'>('comments')
+  const [activeTab, setActiveTab] = useState<'comments' | 'resources' | 'notes'>('comments')
+
+  // Notes
+  const [noteContent, setNoteContent] = useState('')
+  const [noteSaving, setNoteSaving] = useState(false)
+  const [noteLastSaved, setNoteLastSaved] = useState<string | null>(null)
+  const noteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Auto-play next lesson
+  const [autoPlayNext, setAutoPlayNext] = useState(() => {
+    return localStorage.getItem('everest-autoplay') !== 'false'
+  })
+
+  // Search in sidebar
+  const [lessonSearch, setLessonSearch] = useState('')
 
   const currentLessonRef = useRef<HTMLAnchorElement>(null)
   const mainContentRef = useRef<HTMLDivElement>(null)
@@ -232,13 +251,16 @@ export default function LessonPlayerPage() {
         setAttachments((attData as Attachment[]) || [])
         setPdfViewerUrl(null)
 
-        // Fetch comments and ratings
-        const [commentsData, ratingsData] = await Promise.all([
+        // Fetch comments, ratings, and notes
+        const [commentsData, ratingsData, noteData] = await Promise.all([
           lessonInteractionService.getComments(lessonId),
           lessonInteractionService.getRatingStats(lessonId, user.id),
+          lessonInteractionService.getNote(lessonId, user.id),
         ])
         setComments(commentsData)
         setRatingStats(ratingsData)
+        setNoteContent(noteData)
+        setNoteLastSaved(noteData ? 'Salvo' : null)
       } catch (error) {
         console.error('Error fetching lesson data:', error)
         toast({ title: 'Erro ao carregar aula', variant: 'destructive' })
@@ -375,6 +397,45 @@ export default function LessonPlayerPage() {
     }
   }, [user?.id, lessonId, ratingStats.userRating, toast])
 
+  /* ---- notes auto-save (debounced) ---- */
+  const handleNoteChange = useCallback((value: string) => {
+    setNoteContent(value)
+    setNoteLastSaved('Salvando...')
+    if (noteTimerRef.current) clearTimeout(noteTimerRef.current)
+    noteTimerRef.current = setTimeout(async () => {
+      if (!user?.id || !lessonId) return
+      setNoteSaving(true)
+      const ok = await lessonInteractionService.saveNote(lessonId, user.id, value)
+      setNoteSaving(false)
+      setNoteLastSaved(ok ? 'Salvo' : 'Erro ao salvar')
+    }, 1500)
+  }, [user?.id, lessonId])
+
+  /* ---- auto-play toggle ---- */
+  const toggleAutoPlay = useCallback(() => {
+    setAutoPlayNext(prev => {
+      const next = !prev
+      localStorage.setItem('everest-autoplay', String(next))
+      return next
+    })
+  }, [])
+
+  /* ---- listen for video end (Panda Video postMessage) ---- */
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data
+        if (data?.event === 'onEnded' || data?.message === 'ended' || data?.type === 'ended') {
+          if (autoPlayNext && nextLesson) {
+            navigate(`/courses/${courseId}/lessons/${nextLesson.id}`)
+          }
+        }
+      } catch { /* ignore non-JSON messages */ }
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [autoPlayNext, nextLesson, courseId, navigate])
+
   /* ---- module helpers ---- */
   const sortedModules = useMemo(() => {
     if (!courseData) return []
@@ -393,6 +454,13 @@ export default function LessonPlayerPage() {
     () => sortedModules.findIndex((m) => m.id === currentModule?.id),
     [sortedModules, currentModule],
   )
+
+  /* ---- filtered lessons for search ---- */
+  const filteredLessons = useMemo(() => {
+    if (!lessonSearch.trim()) return currentModuleLessons
+    const q = lessonSearch.toLowerCase()
+    return currentModuleLessons.filter(l => l.title.toLowerCase().includes(q))
+  }, [currentModuleLessons, lessonSearch])
 
   const openPdfViewer = (url: string) => {
     if (pdfViewerUrl === url) { setPdfViewerUrl(null) }
@@ -460,10 +528,10 @@ export default function LessonPlayerPage() {
           isMobile ? "py-2.5" : "py-3"
         )}>
         <div className={cn(
-          "rounded-md bg-primary/10 flex items-center justify-center shrink-0",
+          "rounded-md bg-primary flex items-center justify-center shrink-0",
           isMobile ? "w-6 h-6 rounded" : "w-7 h-7"
         )}>
-          <span className={cn("font-bold text-primary", isMobile ? "text-[10px]" : "text-[11px]")}>
+          <span className={cn("font-bold text-primary-foreground", isMobile ? "text-[10px]" : "text-[11px]")}>
             {currentModuleIndex + 1}
           </span>
         </div>
@@ -496,7 +564,7 @@ export default function LessonPlayerPage() {
                 className={cn(
                   "w-full px-4 flex items-center gap-3 text-left border-b border-border/50 last:border-b-0 transition-colors",
                   isMobile ? "py-2 gap-2.5" : "py-2.5",
-                  isSel ? "bg-primary/10" : "hover:bg-muted/40"
+                  isSel ? "bg-primary/20 border-l-primary" : "hover:bg-muted/40"
                 )}>
                 <div className={cn(
                   "w-5 h-5 rounded flex items-center justify-center shrink-0 text-[10px] font-bold",
@@ -513,8 +581,22 @@ export default function LessonPlayerPage() {
   )
 
   const renderLessonList = (isMobile: boolean) => (
-    <div className="flex-1 overflow-y-auto">
-      {currentModuleLessons.map((lesson, idx) => {
+    <div className="flex-1 overflow-y-auto flex flex-col">
+      {/* Search */}
+      <div className="px-3 py-2.5 shrink-0 border-b border-border/50">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+          <input
+            type="text"
+            value={lessonSearch}
+            onChange={(e) => setLessonSearch(e.target.value)}
+            placeholder="Buscar aula..."
+            className="w-full pl-8 pr-3 py-2 text-xs bg-muted/40 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-muted/60 text-foreground placeholder:text-muted-foreground/50 transition-all"
+          />
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto">
+      {filteredLessons.map((lesson, idx) => {
         const isCurrent = lesson.id === lessonId
         return (
           <Link key={lesson.id}
@@ -522,9 +604,9 @@ export default function LessonPlayerPage() {
             to={`/courses/${courseId}/lessons/${lesson.id}`}
             onClick={isMobile ? () => setIsSidebarOpen(false) : undefined}
             className={cn(
-              "flex items-center gap-3 px-4 py-2.5 transition-all border-l-2",
+              "flex items-center gap-3 px-4 py-2.5 transition-all border-l-[3px]",
               isCurrent
-                ? "bg-primary/15 border-l-primary"
+                ? "bg-primary/20 border-l-primary shadow-[inset_0_0_12px_rgba(var(--primary-rgb,249,115,22),0.08)]"
                 : "border-l-transparent hover:bg-muted/40"
             )}>
             {/* Lesson number or status */}
@@ -543,7 +625,7 @@ export default function LessonPlayerPage() {
               <div className={cn(
                 "truncate leading-tight",
                 isMobile ? "text-xs" : "text-[13px]",
-                isCurrent ? "text-foreground font-medium" : lesson.completed ? "text-muted-foreground" : "text-foreground/80"
+                isCurrent ? "text-primary font-semibold" : lesson.completed ? "text-muted-foreground" : "text-foreground/80"
               )}>
                 {cleanTitle(lesson.title)}
               </div>
@@ -557,6 +639,10 @@ export default function LessonPlayerPage() {
           </Link>
         )
       })}
+      {filteredLessons.length === 0 && (
+        <div className="px-4 py-6 text-center text-xs text-muted-foreground/60">Nenhuma aula encontrada</div>
+      )}
+      </div>
     </div>
   )
 
@@ -836,8 +922,30 @@ export default function LessonPlayerPage() {
                   </div>
                 </div>
 
+                {/* Auto-play toggle */}
+                <div className="flex items-center justify-end mt-4">
+                  <button
+                    onClick={toggleAutoPlay}
+                    className={cn(
+                      "flex items-center gap-2 text-xs transition-colors",
+                      autoPlayNext ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <div className={cn(
+                      "relative w-8 h-[18px] rounded-full transition-colors",
+                      autoPlayNext ? "bg-primary" : "bg-muted"
+                    )}>
+                      <div className={cn(
+                        "absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-all",
+                        autoPlayNext ? "left-[15px]" : "left-[2px]"
+                      )} />
+                    </div>
+                    Auto-play
+                  </button>
+                </div>
+
                 {/* Navigation */}
-                <div className="flex gap-3 mt-5 pt-5 border-t border-border">
+                <div className="flex gap-3 mt-3 pt-5 border-t border-border">
                   {prevLesson && (
                     <Link to={`/courses/${courseId}/lessons/${prevLesson.id}`}
                       className="relative flex-1 flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-border/60 bg-gradient-to-r from-muted/40 to-muted/20 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group overflow-hidden">
@@ -946,6 +1054,18 @@ export default function LessonPlayerPage() {
                       <span className="text-[10px] font-bold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">{attachments.length}</span>
                     </button>
                   )}
+                  <button
+                    onClick={() => setActiveTab('notes')}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
+                      activeTab === 'notes'
+                        ? "border-primary text-primary"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <StickyNote className="h-4 w-4" />
+                    Anotacoes
+                  </button>
                 </div>
 
                 {/* Tab content: Comments */}
@@ -1125,6 +1245,32 @@ export default function LessonPlayerPage() {
                         </div>
                       )
                     })}
+                  </div>
+                )}
+
+                {/* Tab content: Notes */}
+                {activeTab === 'notes' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">Suas anotacoes pessoais sobre esta aula. Apenas voce pode ve-las.</p>
+                      {noteLastSaved && (
+                        <span className={cn(
+                          "flex items-center gap-1 text-[11px] transition-colors",
+                          noteLastSaved === 'Salvando...' ? "text-muted-foreground" :
+                          noteLastSaved === 'Erro ao salvar' ? "text-red-400" :
+                          "text-emerald-500"
+                        )}>
+                          {noteSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                          {noteLastSaved}
+                        </span>
+                      )}
+                    </div>
+                    <RichTextEditor
+                      content={noteContent}
+                      onChange={handleNoteChange}
+                      placeholder="Escreva suas anotacoes aqui... (salva automaticamente)"
+                      minHeight="180px"
+                    />
                   </div>
                 )}
               </div>

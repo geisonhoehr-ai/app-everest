@@ -212,6 +212,9 @@ const CourseDetailPage = lazy(
 const LessonPlayerPage = lazy(
   () => import('@/pages/courses/LessonPlayerPage'),
 )
+const MyNotesPage = lazy(
+  () => import('@/pages/MyNotesPage'),
+)
 
 const App = () => (
   <ErrorBoundary>
@@ -265,6 +268,7 @@ const App = () => (
                     path="/meus-cursos/:courseId"
                     element={<CourseDetailPage />}
                   />
+                  <Route path="/anotacoes" element={<MyNotesPage />} />
                   <Route path="/calendario" element={<CalendarPage />} />
                   <Route path="/flashcards" element={<FlashcardsPage />} />
                   <Route

@@ -39,6 +39,7 @@ import {
   MessageSquare,
   GraduationCap,
   ExternalLink,
+  StickyNote,
 } from 'lucide-react'
 
 type MenuItem = {
@@ -107,6 +108,11 @@ const menuItems: MenuItem[] = [
     label: 'Meu Progresso',
     href: '/progresso',
     icon: TrendingUp,
+  },
+  {
+    label: 'Anotacoes',
+    href: '/anotacoes',
+    icon: StickyNote,
   },
   {
     label: 'Ranking',
