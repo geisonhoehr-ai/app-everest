@@ -34,19 +34,25 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { getAllCourses, deleteCourse, type AdminCourse } from '@/services/adminCourseService'
+import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { SectionLoader } from '@/components/SectionLoader'
 
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<AdminCourse[]>([])
   const [loading, setLoading] = useState(true)
+  const [totalStudents, setTotalStudents] = useState(0)
   const { toast } = useToast()
 
   const loadCourses = async () => {
     try {
       setLoading(true)
-      const data = await getAllCourses()
+      const [data, studentsResult] = await Promise.all([
+        getAllCourses(),
+        supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'student')
+      ])
       setCourses(data)
+      setTotalStudents(studentsResult.count || 0)
     } catch (error) {
       logger.error('Erro ao carregar cursos:', error)
       toast({
@@ -139,13 +145,15 @@ export default function AdminCoursesPage() {
               </div>
               <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
                 <Users className="h-6 w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-600">1,247</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {totalStudents.toLocaleString('pt-BR')}
+                </div>
                 <div className="text-sm text-muted-foreground">Estudantes</div>
               </div>
               <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
                 <Award className="h-6 w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-orange-600">4.8</div>
-                <div className="text-sm text-muted-foreground">Avaliação Média</div>
+                <div className="text-2xl font-bold text-orange-600">&mdash;</div>
+                <div className="text-sm text-muted-foreground">Avaliacao Media</div>
               </div>
             </div>
           </div>
