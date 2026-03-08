@@ -4,7 +4,7 @@
  * ========================================
  *
  * API Docs: https://pandavideo.readme.io/reference/list-videos
- * API Key: panda-7815cbc9c501c0169d429ade132363867425dfb01a258da9a6a894ea8898908e
+ * API Key: panda-33e2092c0e0334f9a6b353db3ce0ccf89d46dbe076b0aaabd3a88ac1a4ecfd6d
  *
  * Funcionalidades:
  * - ✅ Listar vídeos
@@ -15,7 +15,7 @@
 
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 const PANDA_API_URL = isLocalhost ? '/panda-api' : 'https://api-v2.pandavideo.com.br'
-const PANDA_API_KEY = 'panda-7815cbc9c501c0169d429ade132363867425dfb01a258da9a6a894ea8898908e'
+const PANDA_API_KEY = 'panda-33e2092c0e0334f9a6b353db3ce0ccf89d46dbe076b0aaabd3a88ac1a4ecfd6d'
 
 export interface PandaVideo {
   id: string
