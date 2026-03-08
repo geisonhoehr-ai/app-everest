@@ -13,36 +13,43 @@ export interface Teacher {
 
 export async function getTeachers(): Promise<Teacher[]> {
     try {
-        const { data, error } = await (supabase as any)
+        // Fetch teachers and users separately because of PGRST200 error (missing relationship in cache)
+        const { data: teachersData, error: teachersError } = await (supabase as any)
             .from('teachers')
-            .select(`
-        id,
-        user_id,
-        employee_id_number,
-        hire_date,
-        department,
-        users:users (
-          first_name,
-          last_name,
-          email
-        )
-      `)
+            .select('id, user_id, employee_id_number, hire_date, department')
 
-        if (error) {
-            console.error('Error fetching teachers:', error)
+        if (teachersError) {
+            console.error('Error fetching teachers:', teachersError)
             return []
         }
 
-        return (data || []).map((t: any) => ({
-            id: t.id,
-            user_id: t.user_id,
-            employee_id_number: t.employee_id_number,
-            hire_date: t.hire_date,
-            department: t.department,
-            first_name: t.users?.first_name || '',
-            last_name: t.users?.last_name || '',
-            email: t.users?.email || ''
-        }))
+        if (!teachersData || teachersData.length === 0) return []
+
+        const userIds = teachersData.map((t: any) => t.user_id)
+        const { data: usersData, error: usersError } = await (supabase as any)
+            .from('users')
+            .select('id, first_name, last_name, email')
+            .in('id', userIds)
+
+        if (usersError) {
+            console.error('Error fetching users for teachers:', usersError)
+        }
+
+        const userMap = new Map((usersData || []).map((u: any) => [u.id, u]))
+
+        return teachersData.map((t: any) => {
+            const user = userMap.get(t.user_id)
+            return {
+                id: t.id,
+                user_id: t.user_id,
+                employee_id_number: t.employee_id_number,
+                hire_date: t.hire_date,
+                department: t.department,
+                first_name: user?.first_name || 'Professor',
+                last_name: user?.last_name || '',
+                email: user?.email || ''
+            }
+        })
     } catch (error) {
         console.error('Network error fetching teachers:', error)
         return []
@@ -51,39 +58,34 @@ export async function getTeachers(): Promise<Teacher[]> {
 
 export async function getTeacherByUserId(userId: string): Promise<Teacher | null> {
     try {
-        const { data, error } = await (supabase as any)
+        const { data: teacherData, error: teacherError } = await (supabase as any)
             .from('teachers')
-            .select(`
-        id,
-        user_id,
-        employee_id_number,
-        hire_date,
-        department,
-        users:users (
-          first_name,
-          last_name,
-          email
-        )
-      `)
+            .select('id, user_id, employee_id_number, hire_date, department')
             .eq('user_id', userId)
             .single()
 
-        if (error) {
-            if (error.code !== 'PGRST116') {
-                console.error('Error fetching teacher by user ID:', error)
+        if (teacherError) {
+            if (teacherError.code !== 'PGRST116') {
+                console.error('Error fetching teacher by user ID:', teacherError)
             }
             return null
         }
 
+        const { data: userData, error: userError } = await (supabase as any)
+            .from('users')
+            .select('id, first_name, last_name, email')
+            .eq('id', userId)
+            .single()
+
         return {
-            id: data.id,
-            user_id: data.user_id,
-            employee_id_number: data.employee_id_number,
-            hire_date: data.hire_date,
-            department: data.department,
-            first_name: data.users?.first_name || '',
-            last_name: data.users?.last_name || '',
-            email: data.users?.email || ''
+            id: teacherData.id,
+            user_id: teacherData.user_id,
+            employee_id_number: teacherData.employee_id_number,
+            hire_date: teacherData.hire_date,
+            department: teacherData.department,
+            first_name: userData?.first_name || 'Professor',
+            last_name: userData?.last_name || '',
+            email: userData?.email || ''
         }
     } catch (error) {
         console.error('Network error fetching teacher by user ID:', error)

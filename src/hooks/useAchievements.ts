@@ -44,8 +44,6 @@ export function useAchievements() {
 
       // Se não tem, conceder
       if (!hasFirstLogin) {
-        console.log('🎉 Concedendo conquista de Primeiro Login para novo usuário')
-
         // Adicionar uma pontuação inicial para ativar a conquista
         await rankingService.addUserScore(user.id, 'login', 5, 'first-login')
 

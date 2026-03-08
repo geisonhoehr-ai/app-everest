@@ -110,14 +110,6 @@ export default function QuizPlayerPage() {
         ? Math.round((correctCount / totalQuestions) * 100)
         : 0
 
-      console.log('📊 Quiz Results:', {
-        quizId: quiz.id,
-        totalQuestions,
-        correctCount,
-        percentage,
-        durationSeconds
-      })
-
       // Salvar tentativa no banco de dados
       const attemptId = await quizService.saveQuizAttempt(
         user.id,
@@ -143,9 +135,6 @@ export default function QuizPlayerPage() {
         durationSeconds,
         quiz.id
       )
-
-      console.log('✅ Quiz attempt saved:', attemptId)
-      console.log('🏆 XP scored and ranking updated')
 
       // Navegar para página de resultados
       navigate(`/quiz/${quizId}/results`, {

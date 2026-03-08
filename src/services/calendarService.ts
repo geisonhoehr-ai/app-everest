@@ -13,8 +13,6 @@ export const getCalendarEvents = async (
   } = await supabase.auth.getUser()
   if (!user) return []
 
-  console.log('🔍 Fetching calendar events for user:', user.id)
-
   const year = getYear(date)
   const month = getMonth(date)
 
@@ -28,8 +26,6 @@ export const getCalendarEvents = async (
     .eq('id', user.id)
     .single()
 
-  console.log('👤 User profile:', { role: userProfile?.role })
-
   // Buscar turmas do aluno (se for aluno)
   let userClassIds: string[] = []
   if (userProfile?.role === 'student') {
@@ -39,7 +35,6 @@ export const getCalendarEvents = async (
       .eq('user_id', user.id)
 
     userClassIds = studentClasses?.map(sc => sc.class_id) || []
-    console.log('📚 Student classes:', userClassIds)
   }
 
   // Buscar eventos do mês
@@ -54,11 +49,9 @@ export const getCalendarEvents = async (
   // - OU eventos globais (class_id NULL)
   if (userProfile?.role === 'student') {
     if (userClassIds.length > 0) {
-      console.log('📚 Filtering events for student classes or global events')
       query = query.or(`class_id.in.(${userClassIds.join(',')}),class_id.is.null`)
     } else {
       // Se aluno não tem turma, ver apenas eventos globais
-      console.log('📚 Student has no class, showing only global events')
       query = query.is('class_id', null)
     }
   }
@@ -72,8 +65,6 @@ export const getCalendarEvents = async (
     console.error('❌ Error fetching calendar events:', error)
     throw new Error('Não foi possível carregar os eventos do calendário.')
   }
-
-  console.log('✅ Found calendar events:', data?.length || 0)
 
   return data || []
 }

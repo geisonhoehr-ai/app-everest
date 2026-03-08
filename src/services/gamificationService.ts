@@ -144,7 +144,7 @@ export async function getRanking(limit: number = 50): Promise<RankingEntry[]> {
 
     if (!error && data) return data
   } catch (e) {
-    console.log('View not available, using fallback query')
+    // View not available, using fallback query
   }
 
   // Fallback: Build ranking from user_progress directly

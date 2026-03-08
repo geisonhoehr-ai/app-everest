@@ -143,7 +143,6 @@ export async function testPandaConnection(): Promise<{
 }> {
   // Modo desenvolvimento - simular resposta se estiver em localhost
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('🔧 Modo desenvolvimento: Simulando conexão Panda Video')
     return {
       success: true,
       message: 'Conexão simulada (modo desenvolvimento)',

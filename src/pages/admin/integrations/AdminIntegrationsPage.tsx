@@ -64,7 +64,7 @@ export default function AdminIntegrationsPage() {
       description: 'Plataforma de streaming de vídeo para aulas e conteúdo educacional',
       icon: <Video className="h-6 w-6" />,
       enabled: true,
-      apiKey: 'panda-7815cbc9c501c0169d429ade132363867425dfb01a258da9a6a894ea8898908e',
+      apiKey: '',
       webhookUrl: '',
       status: 'disconnected',
       features: [

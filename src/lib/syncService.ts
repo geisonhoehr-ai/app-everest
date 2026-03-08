@@ -37,7 +37,6 @@ class SyncService {
    * Handler quando conexão é restaurada
    */
   private async handleOnline(): Promise<void> {
-    console.log('[SyncService] Conexão restaurada')
     this.isOnline = true
     this.notifyListeners()
 
@@ -49,7 +48,6 @@ class SyncService {
    * Handler quando conexão é perdida
    */
   private handleOffline(): void {
-    console.log('[SyncService] Conexão perdida - modo offline ativado')
     this.isOnline = false
     this.notifyListeners()
   }
@@ -70,17 +68,14 @@ class SyncService {
     failed: number
   }> {
     if (this.syncInProgress) {
-      console.log('[SyncService] Sincronização já em andamento')
       return { success: false, synced: 0, failed: 0 }
     }
 
     if (!this.isOnline) {
-      console.log('[SyncService] Offline - sincronização adiada')
       return { success: false, synced: 0, failed: 0 }
     }
 
     this.syncInProgress = true
-    console.log('[SyncService] Iniciando sincronização...')
 
     let synced = 0
     let failed = 0
@@ -88,14 +83,12 @@ class SyncService {
     try {
       // Sincronizar fila de sync
       const queue = await offlineStorage.getSyncQueue()
-      console.log(`[SyncService] ${queue.length} itens na fila`)
 
       for (const item of queue) {
         try {
           await this.syncQueueItem(item)
           await offlineStorage.removeFromSyncQueue(item.id)
           synced++
-          console.log(`[SyncService] Sincronizado: ${item.type}`)
         } catch (error) {
           console.error(`[SyncService] Erro ao sincronizar ${item.type}:`, error)
           await offlineStorage.incrementRetries(item.id)
@@ -147,9 +140,6 @@ class SyncService {
         }
       }
 
-      console.log(
-        `[SyncService] Sincronização completa: ${synced} sucesso, ${failed} falhas`,
-      )
       return { success: true, synced, failed }
     } catch (error) {
       console.error('[SyncService] Erro durante sincronização:', error)
@@ -275,7 +265,7 @@ class SyncService {
   private async syncQuizProgress(progress: any): Promise<void> {
     // Não precisamos sincronizar progresso de quiz em andamento
     // Ele será sincronizado quando o quiz for finalizado como quiz_attempt
-    console.log('[SyncService] Progresso de quiz será sincronizado ao finalizar')
+    // Progresso de quiz será sincronizado ao finalizar
   }
 
   /**
@@ -286,7 +276,6 @@ class SyncService {
     synced: number
     failed: number
   }> {
-    console.log('[SyncService] Sincronização manual solicitada')
     return await this.syncAll()
   }
 }

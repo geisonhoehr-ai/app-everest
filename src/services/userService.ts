@@ -22,8 +22,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
       return null
     }
 
-    console.log('🔍 Fetching user profile for:', userId)
-
     const { data, error } = await supabase
       .from('user_profiles')
       .select(`
@@ -54,7 +52,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
       return null
     }
 
-    console.log('✅ User profile fetched successfully:', data.email)
     return data
   } catch (error) {
     console.error('💥 Network error fetching user profile:', error)
@@ -67,8 +64,6 @@ export const updateUserProfile = async (
   updates: Partial<Omit<UserProfile, 'id' | 'created_at'>>
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log('💾 Updating user profile for:', userId)
-
     const { error } = await supabase
       .from('user_profiles')
       .update({
@@ -82,7 +77,6 @@ export const updateUserProfile = async (
       return { success: false, error: error.message }
     }
 
-    console.log('✅ User profile updated successfully')
     return { success: true }
   } catch (error) {
     console.error('💥 Network error updating user profile:', error)
@@ -92,8 +86,6 @@ export const updateUserProfile = async (
 
 export const getUsersByRole = async (role: UserProfile['role']): Promise<UserProfile[]> => {
   try {
-    console.log('👥 Fetching users by role:', role)
-
     const { data, error } = await supabase
       .from('user_profiles')
       .select(`
@@ -120,7 +112,6 @@ export const getUsersByRole = async (role: UserProfile['role']): Promise<UserPro
       return []
     }
 
-    console.log(`✅ Fetched ${data?.length || 0} users with role: ${role}`)
     return data || []
   } catch (error) {
     console.error('💥 Network error fetching users by role:', error)
@@ -130,8 +121,6 @@ export const getUsersByRole = async (role: UserProfile['role']): Promise<UserPro
 
 export const searchUsers = async (query: string): Promise<UserProfile[]> => {
   try {
-    console.log('🔍 Searching users with query:', query)
-
     const { data, error } = await supabase
       .from('user_profiles')
       .select(`
@@ -159,7 +148,6 @@ export const searchUsers = async (query: string): Promise<UserProfile[]> => {
       return []
     }
 
-    console.log(`✅ Found ${data?.length || 0} users matching: ${query}`)
     return data || []
   } catch (error) {
     console.error('💥 Network error searching users:', error)

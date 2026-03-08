@@ -18,7 +18,6 @@ export const getUserSettings = async (
       // Handle specific error codes
       if (error.code === 'PGRST116') {
         // No rows found - this is normal for new users
-        console.log('No user settings found for user:', userId)
         return null
       }
 

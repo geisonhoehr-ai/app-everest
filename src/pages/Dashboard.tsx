@@ -96,7 +96,6 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        console.log('🔄 Iniciando carga do dashboard...');
         const userId = user?.id;
         if (!userId) {
           console.warn('⚠️ Usuário não identificado no loadDashboard');
@@ -107,8 +106,6 @@ export default function DashboardPage() {
           getUserSettings(userId),
           courseService.getUserCoursesByTrail(userId)
         ]);
-
-        console.log('✅ Dados carregados:', { settings: !!settings, trailsCount: trailsData?.length });
 
         // Settings logic - Safe Fallback
         const userRole = profile?.role || 'student';

@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify'
 import { MagicCard } from '@/components/ui/magic-card'
 import { BookOpen, User, FileText } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -64,7 +65,7 @@ export function ReadingTextDisplay({ text, showStats = true }: ReadingTextDispla
         <div className="prose prose-sm dark:prose-invert max-w-none">
           {text.content_html ? (
             <div
-              dangerouslySetInnerHTML={{ __html: text.content_html }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text.content_html) }}
               className="text-foreground/90 leading-relaxed"
             />
           ) : (

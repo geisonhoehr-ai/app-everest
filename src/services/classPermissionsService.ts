@@ -38,8 +38,6 @@ export const getClassFeaturePermissions = async (
   classId: string
 ): Promise<ClassFeaturePermission[]> => {
   try {
-    console.log('🔍 Buscando permissões de recursos da turma:', classId)
-
     const { data, error } = await supabase
       .from('class_feature_permissions')
       .select('*')
@@ -50,7 +48,6 @@ export const getClassFeaturePermissions = async (
       return []
     }
 
-    console.log(`✅ Encontradas ${data?.length || 0} permissões de recursos`)
     return data || []
   } catch (error) {
     console.error('💥 Erro de rede ao buscar permissões de recursos:', error)
@@ -66,8 +63,6 @@ export const getUserAllowedFeatures = async (
   userId: string
 ): Promise<FeatureKey[]> => {
   try {
-    console.log('🔍 Buscando recursos permitidos para o usuário:', userId)
-
     // 1. Buscar turmas do aluno
     const { data: studentClasses, error: classError } = await supabase
       .from('student_classes')
@@ -80,12 +75,10 @@ export const getUserAllowedFeatures = async (
     }
 
     if (!studentClasses || studentClasses.length === 0) {
-      console.log('⚠️ Aluno não está matriculado em nenhuma turma')
       return []
     }
 
     const classIds = studentClasses.map(sc => sc.class_id)
-    console.log(`📚 Aluno matriculado em ${classIds.length} turma(s)`)
 
     // 2. Buscar permissões de todas as turmas do aluno
     const { data: permissions, error: permError } = await supabase
@@ -100,7 +93,6 @@ export const getUserAllowedFeatures = async (
 
     // 3. Remover duplicatas e retornar apenas as feature_keys
     const uniqueFeatures = [...new Set(permissions?.map(p => p.feature_key) || [])]
-    console.log(`✅ Usuário tem acesso a ${uniqueFeatures.length} recursos:`, uniqueFeatures)
 
     return uniqueFeatures as FeatureKey[]
   } catch (error) {
@@ -120,12 +112,6 @@ export const hasFeaturePermission = async (
     const allowedFeatures = await getUserAllowedFeatures(userId)
     const hasPermission = allowedFeatures.includes(featureKey)
 
-    console.log(
-      hasPermission
-        ? `✅ Usuário tem permissão para: ${featureKey}`
-        : `🚫 Usuário NÃO tem permissão para: ${featureKey}`
-    )
-
     return hasPermission
   } catch (error) {
     console.error('💥 Erro ao verificar permissão:', error)
@@ -142,8 +128,6 @@ export const addClassFeaturePermission = async (
   featureKey: FeatureKey
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log(`➕ Adicionando permissão ${featureKey} à turma ${classId}`)
-
     const { error } = await supabase
       .from('class_feature_permissions')
       .insert({
@@ -156,7 +140,6 @@ export const addClassFeaturePermission = async (
       return { success: false, error: error.message }
     }
 
-    console.log('✅ Permissão adicionada com sucesso')
     return { success: true }
   } catch (error) {
     console.error('💥 Erro de rede ao adicionar permissão:', error)
@@ -173,8 +156,6 @@ export const removeClassFeaturePermission = async (
   featureKey: FeatureKey
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log(`➖ Removendo permissão ${featureKey} da turma ${classId}`)
-
     const { error } = await supabase
       .from('class_feature_permissions')
       .delete()
@@ -186,10 +167,9 @@ export const removeClassFeaturePermission = async (
       return { success: false, error: error.message }
     }
 
-    console.log('✅ Permissão removida com sucesso')
     return { success: true }
   } catch (error) {
-    console.error('💥 Erro de rede ao remover permissão:', error)
+    console.error('Erro de rede ao remover permissão:', error)
     return { success: false, error: 'Erro de rede' }
   }
 }
@@ -203,8 +183,6 @@ export const updateClassFeaturePermissions = async (
   featureKeys: FeatureKey[]
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log(`🔄 Atualizando permissões da turma ${classId}`)
-
     // 1. Remover todas as permissões existentes
     const { error: deleteError } = await supabase
       .from('class_feature_permissions')
@@ -233,7 +211,6 @@ export const updateClassFeaturePermissions = async (
       }
     }
 
-    console.log('✅ Permissões atualizadas com sucesso')
     return { success: true }
   } catch (error) {
     console.error('💥 Erro de rede ao atualizar permissões:', error)

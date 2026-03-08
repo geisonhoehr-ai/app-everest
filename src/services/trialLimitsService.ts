@@ -38,8 +38,6 @@ export interface ContentAccessResult {
  */
 export const getUserTrialStatus = async (userId: string): Promise<TrialLimits> => {
   try {
-    console.log('🔍 Verificando status trial do usuário:', userId)
-
     // Buscar turma trial do usuário
     const { data: studentClass, error } = await supabase
       .from('student_classes')
@@ -59,7 +57,6 @@ export const getUserTrialStatus = async (userId: string): Promise<TrialLimits> =
       .single()
 
     if (error || !studentClass) {
-      console.log('✅ Usuário não está em turma trial')
       return {
         isTrialUser: false,
         className: null,
@@ -72,8 +69,6 @@ export const getUserTrialStatus = async (userId: string): Promise<TrialLimits> =
     }
 
     const classData = studentClass.classes as any
-
-    console.log('🎯 Usuário em turma trial:', classData.name)
 
     return {
       isTrialUser: true,
@@ -103,8 +98,6 @@ export const getUserTrialStatus = async (userId: string): Promise<TrialLimits> =
  */
 export const getTrialAllowedContent = async (userId: string): Promise<TrialAllowedContent> => {
   try {
-    console.log('🔍 Buscando conteúdo liberado para trial:', userId)
-
     // Buscar class_id do usuário
     const { data: studentClass } = await supabase
       .from('student_classes')
@@ -136,7 +129,6 @@ export const getTrialAllowedContent = async (userId: string): Promise<TrialAllow
       flashcardSets: allowedContent.filter(c => c.content_type === 'flashcard_set').map(c => c.content_id),
     }
 
-    console.log('✅ Conteúdo trial liberado:', result)
     return result
   } catch (error) {
     console.error('💥 Erro ao buscar conteúdo trial:', error)

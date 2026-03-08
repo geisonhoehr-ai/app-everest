@@ -4,12 +4,6 @@ import type { Database } from '@/lib/supabase/types'
 export type User = Database['public']['Tables']['users']['Row']
 
 export const getUsers = async (): Promise<User[]> => {
-  console.log('🔍 Fetching users from Supabase...')
-  
-  // Verificar se o usuário está autenticado
-  const { data: session } = await supabase.auth.getSession()
-  console.log('👤 Current session:', session?.session?.user?.email || 'Not authenticated')
-  
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -20,7 +14,6 @@ export const getUsers = async (): Promise<User[]> => {
     throw error
   }
   
-  console.log('✅ Users fetched successfully:', data?.length || 0, 'users')
   return data || []
 }
 
@@ -121,8 +114,6 @@ export interface UserWithClasses extends User {
 }
 
 export const getUsersWithClasses = async (): Promise<UserWithClasses[]> => {
-  console.log('🔍 Fetching users with classes from Supabase...')
-
   // Buscar todos os usuários
   const { data: users, error: usersError } = await supabase
     .from('users')
@@ -185,6 +176,5 @@ export const getUsersWithClasses = async (): Promise<UserWithClasses[]> => {
     }
   })
 
-  console.log('✅ Users with classes fetched successfully:', usersWithClasses.length)
   return usersWithClasses
 }

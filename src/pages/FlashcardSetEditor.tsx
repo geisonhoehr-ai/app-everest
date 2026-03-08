@@ -83,7 +83,6 @@ export default function FlashcardSetEditorPage() {
   })
 
   const onSubmit = (data: FormValues) => {
-    console.log(data)
     toast({
       title: `Conjunto ${isEditing ? 'atualizado' : 'criado'} com sucesso!`,
     })

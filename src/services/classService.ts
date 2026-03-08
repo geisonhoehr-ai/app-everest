@@ -26,7 +26,7 @@ export interface ClassStudent {
 }
 
 export async function getClasses(): Promise<Class[]> {
-  console.log('📚 Fetching classes...')
+
 
   try {
     // Try to use view first
@@ -36,16 +36,13 @@ export async function getClasses(): Promise<Class[]> {
       .order('created_at', { ascending: false })
 
     if (!error && data) {
-      console.log('✅ Classes loaded from view:', data.length)
       return data
     }
-    console.log('⚠️ View not available, error:', error)
   } catch (e) {
-    console.log('⚠️ View not available, using fallback query')
+    // View not available, using fallback query
   }
 
   // Fallback: Query classes and count students manually
-  console.log('📊 Loading classes from tables...')
   const { data: classesData, error: classesError } = await supabase
     .from('classes')
     .select('*')
@@ -56,8 +53,6 @@ export async function getClasses(): Promise<Class[]> {
     // Return empty array instead of throwing - don't crash the app
     return []
   }
-
-  console.log('✅ Classes loaded:', classesData?.length || 0)
 
   // Get student counts for each class (with error handling)
   try {

@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify'
 import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -46,7 +47,7 @@ export function QuestionRenderer({
           {question.question_html ? (
             <div
               className="prose prose-sm dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: question.question_html }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(question.question_html) }}
             />
           ) : (
             <p className="text-base leading-relaxed whitespace-pre-wrap">
@@ -219,7 +220,7 @@ export function QuestionRenderer({
                       {option.html ? (
                         <div
                           className="prose prose-sm dark:prose-invert max-w-none"
-                          dangerouslySetInnerHTML={{ __html: option.html }}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(option.html) }}
                         />
                       ) : (
                         <p>{option.text}</p>
