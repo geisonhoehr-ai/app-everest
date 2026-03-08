@@ -52,9 +52,9 @@ export const useAuth = () => {
       return '/admin'
     }
 
-    // Teachers go to admin area for content management
+    // Teachers go to courses page (admin index requires administrator role)
     if (role === 'teacher') {
-      return '/admin' // Or /dashboard if they have a student view too, but usually admin
+      return '/admin/courses'
     }
 
     // Default student path

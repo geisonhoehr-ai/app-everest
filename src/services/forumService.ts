@@ -22,7 +22,6 @@ export interface ForumTopic {
     author?: {
         first_name: string
         last_name: string
-        avatar_url: string | null
     }
     category?: ForumCategory
     replies_count?: number
@@ -38,7 +37,6 @@ export interface ForumPost {
     author?: {
         first_name: string
         last_name: string
-        avatar_url: string | null
     }
 }
 
@@ -58,7 +56,7 @@ export const getForumTopics = async (categoryId?: string) => {
         .select(`
       *,
       category:forum_categories(*),
-      users!forum_topics_user_id_fkey(first_name, last_name, avatar_url),
+      users!forum_topics_user_id_fkey(first_name, last_name),
       forum_posts(count)
     `)
         .order('created_at', { ascending: false })
@@ -101,7 +99,7 @@ export const getTopicDetails = async (topicId: string) => {
         .select(`
       *,
       category:forum_categories(*),
-      users!forum_topics_user_id_fkey(first_name, last_name, avatar_url)
+      users!forum_topics_user_id_fkey(first_name, last_name)
     `)
         .eq('id', topicId)
         .single()
@@ -119,7 +117,7 @@ export const getTopicPosts = async (topicId: string) => {
         .from('forum_posts')
         .select(`
       *,
-      users!forum_posts_user_id_fkey(first_name, last_name, avatar_url)
+      users!forum_posts_user_id_fkey(first_name, last_name)
     `)
         .eq('topic_id', topicId)
         .order('created_at', { ascending: true })

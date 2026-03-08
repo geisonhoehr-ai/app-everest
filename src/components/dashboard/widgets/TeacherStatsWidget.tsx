@@ -60,6 +60,25 @@ const TeacherStatsWidget = memo(() => {
 
   const delays = useStaggeredAnimation(stats.length, 100)
 
+  // All hooks must be called before any early return (React Rules of Hooks)
+  const countAnimation1 = useCountAnimation(stats[0]?.value ?? 0, 1000)
+  const countAnimation2 = useCountAnimation(stats[1]?.value ?? 0, 1000)
+  const countAnimation3 = useCountAnimation(stats[2]?.value ?? 0, 1000)
+  const floatProps = useFloat()
+
+  const countAnimations = [countAnimation1, countAnimation2, countAnimation3]
+
+  // Start animations when delays are ready and not loading
+  useEffect(() => {
+    if (loading) return
+    const timers = countAnimations.map((anim, index) => {
+      const delay = delays[index]?.delay ?? 0
+      return setTimeout(anim.startAnimation, delay + 300)
+    })
+    return () => timers.forEach(clearTimeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, delays.length])
+
   if (loading) {
     return (
       <div className="grid gap-4 md:grid-cols-3">
@@ -70,23 +89,10 @@ const TeacherStatsWidget = memo(() => {
     )
   }
 
-  // Criar hooks fixos para evitar problemas de ordem
-  const countAnimation1 = useCountAnimation(stats[0]?.value || 0, 1000)
-  const countAnimation2 = useCountAnimation(stats[1]?.value || 0, 1000)
-  const countAnimation3 = useCountAnimation(stats[2]?.value || 0, 1000)
-  const floatProps = useFloat()
-
-  const countAnimations = [countAnimation1, countAnimation2, countAnimation3]
-
   return (
     <div className="grid gap-4 md:grid-cols-3">
       {stats.map((stat, index) => {
-        const { count, startAnimation } = countAnimations[index]
-
-        useEffect(() => {
-          const timer = setTimeout(startAnimation, delays[index].delay + 300)
-          return () => clearTimeout(timer)
-        }, [index, startAnimation])
+        const { count } = countAnimations[index]
 
         return (
           <AnimatedCard
@@ -98,7 +104,7 @@ const TeacherStatsWidget = memo(() => {
               <AnimatedCardTitle className="text-sm font-medium">
                 {stat.title}
               </AnimatedCardTitle>
-              <stat.icon 
+              <stat.icon
                 className={cn(
                   "h-4 w-4 text-muted-foreground",
                   floatProps.className
