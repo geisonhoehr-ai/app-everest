@@ -110,7 +110,8 @@ export default function LessonPlayerPage() {
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
+  const [showModuleSelector, setShowModuleSelector] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [showResources, setShowResources] = useState(false)
 
@@ -187,11 +188,11 @@ export default function LessonPlayerPage() {
 
         setCourseData(course as CourseData)
 
-        // Exclusive accordion: only expand module containing current lesson
+        // Select the module containing current lesson
         const activeModuleId = (course.modules || []).find((m: ModuleData) =>
           m.lessons.some((l) => l.id === lessonId)
         )?.id
-        setExpandedModules(activeModuleId ? new Set([activeModuleId]) : new Set())
+        if (activeModuleId) setSelectedModuleId(activeModuleId)
 
         // find lesson
         let foundLesson: LessonData | null = null
@@ -346,15 +347,27 @@ export default function LessonPlayerPage() {
     }
   }, [user?.id, lessonId, lessonData, toast, nextLesson, courseId, navigate])
 
-  /* ---- toggle module (exclusive: only one open) ---- */
-  const toggleModule = (moduleId: string) => {
-    setExpandedModules((prev) => {
-      if (prev.has(moduleId)) {
-        return new Set()
-      }
-      return new Set([moduleId])
-    })
-  }
+  /* ---- sorted modules for selector ---- */
+  const sortedModules = useMemo(() => {
+    if (!courseData) return []
+    return [...courseData.modules].sort((a, b) => a.order_index - b.order_index)
+  }, [courseData])
+
+  /* ---- current module and its lessons ---- */
+  const currentModule = useMemo(
+    () => sortedModules.find((m) => m.id === selectedModuleId) || sortedModules[0] || null,
+    [sortedModules, selectedModuleId],
+  )
+
+  const currentModuleLessons = useMemo(() => {
+    if (!currentModule) return []
+    return [...currentModule.lessons].sort((a, b) => a.order_index - b.order_index)
+  }, [currentModule])
+
+  const currentModuleIndex = useMemo(
+    () => sortedModules.findIndex((m) => m.id === currentModule?.id),
+    [sortedModules, currentModule],
+  )
 
   /* ---- open PDF in split view ---- */
   const openPdfViewer = (url: string) => {
@@ -432,110 +445,130 @@ export default function LessonPlayerPage() {
   /*  Sidebar content (shared between desktop and mobile)              */
   /* ---------------------------------------------------------------- */
 
-  const renderModuleList = (isMobile = false) => (
-    <div className="flex-1 overflow-y-auto">
-      {courseData.modules
-        .sort((a, b) => a.order_index - b.order_index)
-        .map((mod) => {
-          const isExpanded = expandedModules.has(mod.id)
-          const modCompleted = mod.lessons.filter((l) => l.completed).length
-          const modTotal = mod.lessons.length
-          const modProgress = modTotal > 0 ? Math.round((modCompleted / modTotal) * 100) : 0
+  const renderLessonList = (isMobile = false) => {
+    if (!currentModule) return null
+    const modCompleted = currentModule.lessons.filter((l) => l.completed).length
+    const modTotal = currentModule.lessons.length
 
-          return (
-            <div key={mod.id} className="border-b border-border/30">
-              <button
-                onClick={() => toggleModule(mod.id)}
-                className="w-full p-3 px-4 flex items-center gap-3 hover:bg-muted/30 transition-colors"
-              >
-                <div className={cn(
-                  "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold transition-colors",
-                  modProgress === 100
-                    ? "bg-emerald-500/15 text-emerald-500"
-                    : modProgress > 0
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted text-muted-foreground"
-                )}>
-                  {modProgress === 100 ? (
-                    <CheckCircle className="h-3.5 w-3.5" />
-                  ) : (
-                    <span>{modCompleted}/{modTotal}</span>
-                  )}
-                </div>
-                <div className="flex-1 text-left min-w-0">
-                  <div className="text-xs font-semibold text-foreground/70 truncate">
-                    {mod.name}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">
-                    {modTotal} aulas
-                  </div>
-                </div>
-                <ChevronDown className={cn(
-                  "h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-transform duration-200",
-                  isExpanded ? "rotate-180" : ""
-                )} />
-              </button>
-
-              {/* Lessons - animated accordion */}
-              <div className={cn(
-                "overflow-hidden transition-all duration-300 ease-in-out",
-                isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
-              )}>
-                {[...mod.lessons]
-                  .sort((a, b) => a.order_index - b.order_index)
-                  .map((lesson) => {
-                    const isCurrent = lesson.id === lessonId
-                    return (
-                      <Link
-                        key={lesson.id}
-                        ref={isCurrent ? currentLessonRef : undefined}
-                        to={`/courses/${courseId}/lessons/${lesson.id}`}
-                        onClick={() => {
-                          if (isMobile) setIsSidebarOpen(false)
-                        }}
-                        className={cn(
-                          "flex items-center gap-3 py-2.5 px-4 pl-8 transition-all duration-150 border-l-2",
-                          isCurrent
-                            ? "bg-primary/10 border-l-primary"
-                            : "border-l-transparent hover:bg-muted/20"
-                        )}
-                      >
-                        <div className="shrink-0">
-                          {lesson.completed ? (
-                            <CheckCircle className="h-4 w-4 text-emerald-500" />
-                          ) : isCurrent ? (
-                            <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center">
-                              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            </div>
-                          ) : (
-                            <Circle className="h-4 w-4 text-muted-foreground/30" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className={cn(
-                            "text-xs font-medium truncate",
-                            isCurrent ? "text-primary" : lesson.completed ? "text-emerald-500/70" : "text-foreground/50"
-                          )}>
-                            {lesson.title}
-                          </div>
-                          {lesson.duration_seconds != null && lesson.duration_seconds > 0 && (
-                            <div className="text-[10px] text-muted-foreground/50 mt-0.5 tabular-nums">
-                              {formatDuration(lesson.duration_seconds)}
-                            </div>
-                          )}
-                        </div>
-                        {isCurrent && (
-                          <ChevronRight className="h-3 w-3 text-primary/50 shrink-0" />
-                        )}
-                      </Link>
-                    )
-                  })}
+    return (
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Module selector */}
+        <div className="shrink-0 relative">
+          <button
+            onClick={() => setShowModuleSelector((v) => !v)}
+            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/20 transition-colors border-b border-border/30"
+          >
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="text-xs font-bold text-primary">{currentModuleIndex + 1}</span>
+            </div>
+            <div className="flex-1 text-left min-w-0">
+              <div className="text-xs font-semibold text-foreground/80 truncate">
+                {currentModule.name}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {modCompleted}/{modTotal} aulas concluidas
               </div>
             </div>
-          )
-        })}
-    </div>
-  )
+            <ChevronDown className={cn(
+              "h-4 w-4 text-muted-foreground/50 shrink-0 transition-transform duration-200",
+              showModuleSelector ? "rotate-180" : ""
+            )} />
+          </button>
+
+          {/* Module dropdown */}
+          {showModuleSelector && (
+            <div className="absolute left-0 right-0 top-full z-20 bg-card border border-border/50 shadow-xl rounded-b-lg max-h-[300px] overflow-y-auto">
+              {sortedModules.map((mod, idx) => {
+                const mc = mod.lessons.filter((l) => l.completed).length
+                const mt = mod.lessons.length
+                const isSelected = mod.id === currentModule.id
+                return (
+                  <button
+                    key={mod.id}
+                    onClick={() => {
+                      setSelectedModuleId(mod.id)
+                      setShowModuleSelector(false)
+                    }}
+                    className={cn(
+                      "w-full px-4 py-2.5 flex items-center gap-3 transition-colors text-left border-b border-border/20 last:border-b-0",
+                      isSelected ? "bg-primary/10" : "hover:bg-muted/30"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold",
+                      isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    )}>
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={cn(
+                        "text-xs font-medium truncate",
+                        isSelected ? "text-primary" : "text-foreground/70"
+                      )}>
+                        {mod.name}
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{mc}/{mt}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Lessons list (only current module) */}
+        <div className="flex-1 overflow-y-auto">
+          {currentModuleLessons.map((lesson) => {
+            const isCurrent = lesson.id === lessonId
+            return (
+              <Link
+                key={lesson.id}
+                ref={isCurrent ? currentLessonRef : undefined}
+                to={`/courses/${courseId}/lessons/${lesson.id}`}
+                onClick={() => {
+                  if (isMobile) setIsSidebarOpen(false)
+                }}
+                className={cn(
+                  "flex items-center gap-3 py-2.5 px-4 transition-all duration-150 border-l-2",
+                  isCurrent
+                    ? "bg-primary/10 border-l-primary"
+                    : "border-l-transparent hover:bg-muted/20"
+                )}
+              >
+                <div className="shrink-0">
+                  {lesson.completed ? (
+                    <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  ) : isCurrent ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    </div>
+                  ) : (
+                    <Circle className="h-4 w-4 text-muted-foreground/30" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className={cn(
+                    "text-xs font-medium truncate",
+                    isCurrent ? "text-primary" : lesson.completed ? "text-emerald-500/70" : "text-foreground/50"
+                  )}>
+                    {lesson.title}
+                  </div>
+                  {lesson.duration_seconds != null && lesson.duration_seconds > 0 && (
+                    <div className="text-[10px] text-muted-foreground/50 mt-0.5 tabular-nums">
+                      {formatDuration(lesson.duration_seconds)}
+                    </div>
+                  )}
+                </div>
+                {isCurrent && (
+                  <ChevronRight className="h-3 w-3 text-primary/50 shrink-0" />
+                )}
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   /* ---------------------------------------------------------------- */
   /*  Render                                                           */
@@ -1114,33 +1147,7 @@ export default function LessonPlayerPage() {
             theaterMode ? "bg-black/50 border-white/[0.06]" : "bg-card/50 border-border/50",
             desktopSidebarVisible ? "w-[340px] min-w-[340px]" : "w-0 min-w-0 border-l-0"
           )}>
-            {desktopSidebarVisible && (
-              <>
-                {/* Header */}
-                <div className="p-4 shrink-0">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className={cn("font-bold text-sm", theaterMode ? "text-white/90" : "text-foreground/90")}>
-                        Conteudo do Curso
-                      </h3>
-                      <p className={cn("text-xs mt-0.5", theaterMode ? "text-white/30" : "text-muted-foreground")}>
-                        {completedCount} de {totalCount} aulas concluidas
-                      </p>
-                    </div>
-                    <span className="text-lg font-bold text-primary tabular-nums">{progressPercent}%</span>
-                  </div>
-                  <div className={cn("mt-3 h-1 rounded-full overflow-hidden", theaterMode ? "bg-white/[0.06]" : "bg-muted")}>
-                    <div
-                      className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all duration-700"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Modules */}
-                {renderModuleList(false)}
-              </>
-            )}
+            {desktopSidebarVisible && renderLessonList(false)}
           </aside>
 
           {/* ============================================================ */}
@@ -1156,9 +1163,9 @@ export default function LessonPlayerPage() {
                 {/* Mobile header */}
                 <div className="flex items-center justify-between p-4 border-b border-border/50 shrink-0">
                   <div>
-                    <h3 className="font-bold text-sm text-foreground/90">Conteudo do Curso</h3>
+                    <h3 className="font-bold text-sm text-foreground/90">Aulas</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {completedCount} de {totalCount} aulas
+                      {progressPercent}% concluido
                     </p>
                   </div>
                   <button
@@ -1169,22 +1176,8 @@ export default function LessonPlayerPage() {
                   </button>
                 </div>
 
-                {/* Mobile progress */}
-                <div className="px-4 py-3 border-b border-border/50 shrink-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-muted-foreground">Progresso</span>
-                    <span className="text-sm font-bold text-primary">{progressPercent}%</span>
-                  </div>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Mobile modules */}
-                {renderModuleList(true)}
+                {/* Mobile lesson list */}
+                {renderLessonList(true)}
               </aside>
             </>
           )}
