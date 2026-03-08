@@ -9,12 +9,15 @@ import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { rankingService } from '@/services/rankingService'
 import {
+  lessonInteractionService,
+  type LessonComment,
+  type LessonRatingStats,
+} from '@/services/lessonInteractionService'
+import {
   ArrowLeft,
   CheckCircle,
-  Circle,
   Play,
   ChevronDown,
-  ChevronRight,
   ChevronLeft,
   Download,
   FileText,
@@ -29,10 +32,14 @@ import {
   PanelRightOpen,
   PanelRightClose,
   Eye,
-  GripVertical,
   Maximize2,
   Minimize2,
   ListVideo,
+  MessageSquare,
+  Star,
+  Send,
+  Trash2,
+  Reply,
 } from 'lucide-react'
 
 /* ------------------------------------------------------------------ */
@@ -111,8 +118,6 @@ export default function LessonPlayerPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
   const [showModuleSelector, setShowModuleSelector] = useState(false)
-  const [showResources, setShowResources] = useState(false)
-
   // Theater mode
   const [theaterMode, setTheaterMode] = useState(false)
 
@@ -127,6 +132,16 @@ export default function LessonPlayerPage() {
 
   // XP animation
   const [showXpAnimation, setShowXpAnimation] = useState(false)
+
+  // Comments & Ratings
+  const [comments, setComments] = useState<LessonComment[]>([])
+  const [ratingStats, setRatingStats] = useState<LessonRatingStats>({ average: 0, total: 0, userRating: null })
+  const [commentText, setCommentText] = useState('')
+  const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState('')
+  const [submittingComment, setSubmittingComment] = useState(false)
+  const [hoverRating, setHoverRating] = useState(0)
+  const [activeTab, setActiveTab] = useState<'comments' | 'resources'>('comments')
 
   const currentLessonRef = useRef<HTMLAnchorElement>(null)
   const mainContentRef = useRef<HTMLDivElement>(null)
@@ -207,6 +222,14 @@ export default function LessonPlayerPage() {
 
         setAttachments((attData as Attachment[]) || [])
         setPdfViewerUrl(null)
+
+        // Fetch comments and ratings
+        const [commentsData, ratingsData] = await Promise.all([
+          lessonInteractionService.getComments(lessonId),
+          lessonInteractionService.getRatingStats(lessonId, user.id),
+        ])
+        setComments(commentsData)
+        setRatingStats(ratingsData)
       } catch (error) {
         console.error('Error fetching lesson data:', error)
         toast({ title: 'Erro ao carregar aula', variant: 'destructive' })
@@ -289,6 +312,59 @@ export default function LessonPlayerPage() {
       toast({ title: 'Erro', description: 'Nao foi possivel marcar a aula como concluida.', variant: 'destructive' })
     }
   }, [user?.id, lessonId, lessonData, toast, nextLesson, courseId, navigate])
+
+  /* ---- comment & rating handlers ---- */
+  const handleSubmitComment = useCallback(async (parentId?: string) => {
+    if (!user?.id || !lessonId) return
+    const text = parentId ? replyText : commentText
+    if (!text.trim()) return
+
+    setSubmittingComment(true)
+    try {
+      const newComment = await lessonInteractionService.addComment(lessonId, user.id, text.trim(), parentId)
+      if (newComment) {
+        // Award XP for commenting
+        await rankingService.addUserScore(user.id, 'lesson_comment', 5, lessonId)
+        // Refresh comments
+        const updated = await lessonInteractionService.getComments(lessonId)
+        setComments(updated)
+        setCommentText('')
+        setReplyText('')
+        setReplyingTo(null)
+        toast({ title: 'Comentario enviado! +5 XP' })
+      }
+    } catch {
+      toast({ title: 'Erro ao enviar comentario', variant: 'destructive' })
+    } finally {
+      setSubmittingComment(false)
+    }
+  }, [user?.id, lessonId, commentText, replyText, toast])
+
+  const handleDeleteComment = useCallback(async (commentId: string) => {
+    if (!user?.id || !lessonId) return
+    const ok = await lessonInteractionService.deleteComment(commentId, user.id)
+    if (ok) {
+      const updated = await lessonInteractionService.getComments(lessonId)
+      setComments(updated)
+      toast({ title: 'Comentario removido' })
+    }
+  }, [user?.id, lessonId, toast])
+
+  const handleRate = useCallback(async (rating: number) => {
+    if (!user?.id || !lessonId) return
+    const ok = await lessonInteractionService.rateLesson(lessonId, user.id, rating)
+    if (ok) {
+      // Award XP for first rating only
+      if (!ratingStats.userRating) {
+        await rankingService.addUserScore(user.id, 'lesson_rating', 3, lessonId)
+        toast({ title: `Avaliacao registrada! +3 XP` })
+      } else {
+        toast({ title: 'Avaliacao atualizada!' })
+      }
+      const updated = await lessonInteractionService.getRatingStats(lessonId, user.id)
+      setRatingStats(updated)
+    }
+  }, [user?.id, lessonId, ratingStats.userRating, toast])
 
   /* ---- module helpers ---- */
   const sortedModules = useMemo(() => {
@@ -759,55 +835,263 @@ export default function LessonPlayerPage() {
               </div>
 
               {/* ======================================================== */}
-              {/* Description + Resources                                    */}
+              {/* Description                                                 */}
               {/* ======================================================== */}
-              <div className={cn("px-4 sm:px-6 lg:px-8 pb-8 space-y-4", theaterMode ? "relative z-[65]" : "")}>
-                {sanitizedDescription && (
+              {sanitizedDescription && (
+                <div className={cn("px-4 sm:px-6 lg:px-8", theaterMode ? "relative z-[65]" : "")}>
                   <div className="rounded-lg bg-muted/30 border border-border p-5">
                     <div className="prose prose-sm dark:prose-invert max-w-none prose-p:text-muted-foreground prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground"
                       dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Resources */}
-                {attachments.length > 0 && (
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    <button onClick={() => setShowResources((v) => !v)}
-                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors min-h-[44px]">
-                      <div className="flex items-center gap-2">
-                        <Paperclip className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-sm font-medium text-foreground">Recursos</span>
-                        <span className="text-[10px] font-bold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">{attachments.length}</span>
-                      </div>
-                      <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", showResources ? "rotate-180" : "")} />
+              {/* ======================================================== */}
+              {/* Rating + Tabs (Comments / Resources)                       */}
+              {/* ======================================================== */}
+              <div className={cn("px-4 sm:px-6 lg:px-8 pb-8 space-y-4", theaterMode ? "relative z-[65]" : "")}>
+
+                {/* Star Rating */}
+                <div className="flex items-center gap-4 py-3 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Avalie esta aula:</span>
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => handleRate(star)}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className="p-0.5 transition-transform hover:scale-110 active:scale-95"
+                      >
+                        <Star className={cn(
+                          "h-5 w-5 transition-colors",
+                          (hoverRating || ratingStats.userRating || 0) >= star
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-muted-foreground/40"
+                        )} />
+                      </button>
+                    ))}
+                  </div>
+                  {ratingStats.total > 0 && (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {ratingStats.average.toFixed(1)} ({ratingStats.total} {ratingStats.total === 1 ? 'voto' : 'votos'})
+                    </span>
+                  )}
+                </div>
+
+                {/* Tab buttons */}
+                <div className="flex gap-1 border-b border-border">
+                  <button
+                    onClick={() => setActiveTab('comments')}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
+                      activeTab === 'comments'
+                        ? "border-primary text-primary"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Comentarios
+                    {comments.length > 0 && (
+                      <span className="text-[10px] font-bold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">
+                        {comments.reduce((sum, c) => sum + 1 + (c.replies?.length || 0), 0)}
+                      </span>
+                    )}
+                  </button>
+                  {attachments.length > 0 && (
+                    <button
+                      onClick={() => setActiveTab('resources')}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
+                        activeTab === 'resources'
+                          ? "border-primary text-primary"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      Recursos
+                      <span className="text-[10px] font-bold bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">{attachments.length}</span>
                     </button>
-                    {showResources && (
-                      <div className="px-4 pb-3 space-y-1.5 border-t border-border/50">
-                        {attachments.map((att) => {
-                          const isPdf = att.file_type?.includes('pdf') || att.file_name?.endsWith('.pdf')
-                          return (
-                            <div key={att.id} className="flex items-center justify-between p-2.5 rounded-md bg-muted/20 hover:bg-muted/40 transition-colors group mt-2">
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <FileText className={cn("h-4 w-4 shrink-0", isPdf ? "text-red-400" : "text-muted-foreground")} />
-                                <span className="text-xs text-muted-foreground truncate group-hover:text-foreground">{att.file_name}</span>
-                              </div>
-                              <div className="flex items-center gap-0.5 shrink-0">
-                                {isPdf && (
-                                  <button onClick={() => openPdfViewer(att.file_url)}
-                                    className="p-1.5 rounded text-muted-foreground hover:text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title="Abrir ao lado">
-                                    <Eye className="h-3.5 w-3.5" />
-                                  </button>
+                  )}
+                </div>
+
+                {/* Tab content: Comments */}
+                {activeTab === 'comments' && (
+                  <div className="space-y-4">
+                    {/* Comment input */}
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-primary">
+                          {user?.email?.[0]?.toUpperCase() || 'A'}
+                        </span>
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <textarea
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          placeholder="Deixe um comentario sobre esta aula..."
+                          rows={2}
+                          maxLength={2000}
+                          className="w-full px-3 py-2 text-sm bg-muted/30 border border-border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-foreground placeholder:text-muted-foreground/60"
+                        />
+                        {commentText.trim() && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground">{commentText.length}/2000</span>
+                            <Button
+                              size="sm"
+                              onClick={() => handleSubmitComment()}
+                              disabled={submittingComment || !commentText.trim()}
+                              className="h-8 px-3 text-xs gap-1.5"
+                            >
+                              <Send className="h-3 w-3" />
+                              Enviar (+5 XP)
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Comments list */}
+                    {comments.length === 0 ? (
+                      <div className="text-center py-8">
+                        <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Nenhum comentario ainda. Seja o primeiro!</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {comments.map((comment) => (
+                          <div key={comment.id} className="space-y-2">
+                            {/* Main comment */}
+                            <div className="flex gap-3 group">
+                              <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center shrink-0 mt-0.5">
+                                {comment.user_avatar ? (
+                                  <img src={comment.user_avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                ) : (
+                                  <span className="text-xs font-bold text-muted-foreground">
+                                    {(comment.user_name || 'A')[0].toUpperCase()}
+                                  </span>
                                 )}
-                                <a href={att.file_url} download target="_blank" rel="noopener noreferrer"
-                                  className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title="Baixar">
-                                  <Download className="h-3.5 w-3.5" />
-                                </a>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span className="text-xs font-medium text-foreground">{comment.user_name || 'Aluno'}</span>
+                                  <span className="text-[10px] text-muted-foreground/60">
+                                    {new Date(comment.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-foreground/80 whitespace-pre-wrap break-words">{comment.content}</p>
+                                <div className="flex items-center gap-3 mt-1">
+                                  <button
+                                    onClick={() => { setReplyingTo(replyingTo === comment.id ? null : comment.id); setReplyText('') }}
+                                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                                  >
+                                    <Reply className="h-3 w-3" />
+                                    Responder
+                                  </button>
+                                  {comment.user_id === user?.id && (
+                                    <button
+                                      onClick={() => handleDeleteComment(comment.id)}
+                                      className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                      Excluir
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Reply input */}
+                                {replyingTo === comment.id && (
+                                  <div className="flex gap-2 mt-2">
+                                    <input
+                                      value={replyText}
+                                      onChange={(e) => setReplyText(e.target.value)}
+                                      placeholder="Escreva uma resposta..."
+                                      maxLength={2000}
+                                      className="flex-1 px-3 py-1.5 text-xs bg-muted/30 border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground/60"
+                                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitComment(comment.id) } }}
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleSubmitComment(comment.id)}
+                                      disabled={submittingComment || !replyText.trim()}
+                                      className="h-7 px-2 text-[11px]"
+                                    >
+                                      <Send className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          )
-                        })}
+
+                            {/* Replies */}
+                            {comment.replies && comment.replies.length > 0 && (
+                              <div className="ml-11 space-y-2 border-l-2 border-border/50 pl-3">
+                                {comment.replies.map((reply) => (
+                                  <div key={reply.id} className="flex gap-2.5 group">
+                                    <div className="w-6 h-6 rounded-full bg-muted/50 flex items-center justify-center shrink-0 mt-0.5">
+                                      {reply.user_avatar ? (
+                                        <img src={reply.user_avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                                      ) : (
+                                        <span className="text-[10px] font-bold text-muted-foreground">
+                                          {(reply.user_name || 'A')[0].toUpperCase()}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-[11px] font-medium text-foreground">{reply.user_name || 'Aluno'}</span>
+                                        <span className="text-[10px] text-muted-foreground/60">
+                                          {new Date(reply.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-foreground/80 whitespace-pre-wrap break-words">{reply.content}</p>
+                                      {reply.user_id === user?.id && (
+                                        <button
+                                          onClick={() => handleDeleteComment(reply.id)}
+                                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 mt-0.5"
+                                        >
+                                          <Trash2 className="h-2.5 w-2.5" />
+                                          Excluir
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Tab content: Resources */}
+                {activeTab === 'resources' && attachments.length > 0 && (
+                  <div className="space-y-1.5">
+                    {attachments.map((att) => {
+                      const isPdf = att.file_type?.includes('pdf') || att.file_name?.endsWith('.pdf')
+                      return (
+                        <div key={att.id} className="flex items-center justify-between p-2.5 rounded-md bg-muted/20 hover:bg-muted/40 transition-colors group">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <FileText className={cn("h-4 w-4 shrink-0", isPdf ? "text-red-400" : "text-muted-foreground")} />
+                            <span className="text-xs text-muted-foreground truncate group-hover:text-foreground">{att.file_name}</span>
+                          </div>
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            {isPdf && (
+                              <button onClick={() => openPdfViewer(att.file_url)}
+                                className="p-1.5 rounded text-muted-foreground hover:text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title="Abrir ao lado">
+                                <Eye className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            <a href={att.file_url} download target="_blank" rel="noopener noreferrer"
+                              className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title="Baixar">
+                              <Download className="h-3.5 w-3.5" />
+                            </a>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
