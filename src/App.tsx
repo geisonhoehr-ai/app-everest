@@ -243,6 +243,16 @@ const App = () => (
                   <ProtectedRoute allowedRoles={['student', 'teacher']} />
                 }
               >
+                {/* Lesson player renders WITHOUT main sidebar for immersive experience */}
+                <Route
+                  path="/courses/:courseId/lessons/:lessonId"
+                  element={<LessonPlayerPage />}
+                />
+                <Route
+                  path="/meus-cursos/:courseId/lesson/:lessonId"
+                  element={<LessonPlayerPage />}
+                />
+
                 <Route element={<Layout />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/meus-cursos" element={<MyCoursesPage />} />
@@ -252,16 +262,8 @@ const App = () => (
                     element={<CourseDetailPage />}
                   />
                   <Route
-                    path="/courses/:courseId/lessons/:lessonId"
-                    element={<LessonPlayerPage />}
-                  />
-                  <Route
                     path="/meus-cursos/:courseId"
                     element={<CourseDetailPage />}
-                  />
-                  <Route
-                    path="/meus-cursos/:courseId/lesson/:lessonId"
-                    element={<LessonPlayerPage />}
                   />
                   <Route path="/calendario" element={<CalendarPage />} />
                   <Route path="/flashcards" element={<FlashcardsPage />} />
