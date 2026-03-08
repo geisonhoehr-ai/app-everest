@@ -203,6 +203,15 @@ const AdminIntegrationsPage = lazy(
 const AudioLessonPlayerPage = lazy(
   () => import('@/pages/AudioLessonPlayerPage'),
 )
+const MyCoursesPage = lazy(
+  () => import('@/pages/courses/MyCoursesPage'),
+)
+const CourseDetailPage = lazy(
+  () => import('@/pages/courses/CourseDetailPage'),
+)
+const LessonPlayerPage = lazy(
+  () => import('@/pages/courses/LessonPlayerPage'),
+)
 
 const App = () => (
   <ErrorBoundary>
@@ -237,6 +246,15 @@ const App = () => (
                 <Route element={<Layout />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/meus-cursos" element={<CoursesPage />} />
+                  <Route path="/courses" element={<MyCoursesPage />} />
+                  <Route
+                    path="/courses/:courseId"
+                    element={<CourseDetailPage />}
+                  />
+                  <Route
+                    path="/courses/:courseId/lessons/:lessonId"
+                    element={<LessonPlayerPage />}
+                  />
                   <Route
                     path="/meus-cursos/:courseId"
                     element={<CourseDetailsPage />}
