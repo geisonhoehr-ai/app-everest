@@ -89,6 +89,9 @@ const AdminUserFormPage = lazy(
 const AdminCoursesPage = lazy(
   () => import('@/pages/admin/courses/AdminCoursesPage'),
 )
+const AdminCourseEditorPage = lazy(
+  () => import('@/pages/admin/courses/AdminCourseEditorPage'),
+)
 const AdminCourseFormPage = lazy(
   () => import('@/pages/admin/courses/AdminCourseFormPage'),
 )
@@ -420,14 +423,14 @@ const App = () => (
               >
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route path="courses" element={<AdminCoursesPage />} />
-                  <Route path="courses/new" element={<AdminCourseFormPage />} />
+                  <Route path="courses/new" element={<AdminCourseEditorPage />} />
                   <Route
                     path="courses/:courseId/edit"
-                    element={<AdminCourseFormPage />}
+                    element={<AdminCourseEditorPage />}
                   />
                   <Route
                     path="courses/:courseId/content"
-                    element={<AdminCourseContentPage />}
+                    element={<AdminCourseEditorPage />}
                   />
                   <Route
                     path="courses/:courseId/classes"

@@ -249,21 +249,15 @@ export default function AdminCoursesPage() {
                               className="bg-card/95 backdrop-blur-sm border-border/50"
                             >
                               <DropdownMenuItem asChild>
-                                <Link to={`/admin/courses/${course.id}/content`} className="hover:bg-muted/50">
-                                  <ListVideo className="mr-2 h-4 w-4" />
-                                  Gerenciar Conteúdo
+                                <Link to={`/admin/courses/${course.id}/edit`} className="hover:bg-muted/50">
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Editar Curso
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
                                 <Link to={`/admin/courses/${course.id}/classes`} className="hover:bg-muted/50">
                                   <Users className="mr-2 h-4 w-4" />
                                   Gerenciar Turmas
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link to={`/admin/courses/${course.id}/edit`} className="hover:bg-muted/50">
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  Editar Detalhes
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuSeparator className="bg-border/50" />
