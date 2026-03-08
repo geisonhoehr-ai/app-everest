@@ -48,13 +48,18 @@ export interface PandaVideosResponse {
 async function pandaRequest(endpoint: string, options: RequestInit = {}) {
   const url = `${PANDA_API_URL}${endpoint}`
 
+  // On localhost, proxy injects the API key server-side, so skip Authorization header
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  }
+  if (!isLocalhost) {
+    headers['Authorization'] = PANDA_API_KEY
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Authorization': PANDA_API_KEY,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   })
 
   if (!response.ok) {
