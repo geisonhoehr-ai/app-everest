@@ -39,7 +39,7 @@ export const MyCoursesBauhaus = () => {
   }, [user?.id])
 
   const handleContinueCourse = (courseId: string) => {
-    navigate(`/cursos/${courseId}`)
+    navigate(`/courses/${courseId}`)
   }
 
   const handleBookmarkCourse = (courseId: string) => {
@@ -127,7 +127,7 @@ export const MyCoursesBauhaus = () => {
       </CardContent>
       <CardFooter>
         <Button asChild variant="ghost" className="w-full">
-          <Link to="/meus-cursos">Ver todos os cursos</Link>
+          <Link to="/courses">Ver todos os cursos</Link>
         </Button>
       </CardFooter>
     </Card>

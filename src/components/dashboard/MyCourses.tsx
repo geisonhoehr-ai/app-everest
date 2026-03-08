@@ -86,7 +86,7 @@ export const MyCourses = () => {
                   size="sm"
                   className="w-full mt-auto"
                 >
-                  <Link to={`/cursos/${course.id}`}>Continuar</Link>
+                  <Link to={`/courses/${course.id}`}>Continuar</Link>
                 </Button>
               </div>
             </Card>
@@ -99,7 +99,7 @@ export const MyCourses = () => {
       </CardContent>
       <CardFooter>
         <Button asChild variant="ghost" className="w-full">
-          <Link to="/meus-cursos">Ver todos os cursos</Link>
+          <Link to="/courses">Ver todos os cursos</Link>
         </Button>
       </CardFooter>
     </Card>

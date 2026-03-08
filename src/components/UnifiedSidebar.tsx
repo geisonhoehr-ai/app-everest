@@ -70,7 +70,7 @@ const studentMenuItems = [
   },
   {
     label: 'Meus Cursos',
-    href: '/meus-cursos',
+    href: '/courses',
     icon: BookOpen,
     featureKey: FEATURE_KEYS.VIDEO_LESSONS, // 🔒 Controlado por turma
   },
