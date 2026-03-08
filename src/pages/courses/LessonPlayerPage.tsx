@@ -90,6 +90,14 @@ interface Attachment {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
+/** Strip date/time stamps and "- Recording" suffix from lesson titles */
+function cleanTitle(title: string): string {
+  return title
+    .replace(/\s*-\s*\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}\s+GMT[^\s]*/, '')
+    .replace(/\s*-\s*Recording\s*$/i, '')
+    .trim()
+}
+
 function formatDuration(seconds?: number): string {
   if (!seconds) return '0:00'
   const hours = Math.floor(seconds / 3600)
@@ -536,7 +544,7 @@ export default function LessonPlayerPage() {
                 isMobile ? "text-xs" : "text-[13px]",
                 isCurrent ? "text-foreground font-medium" : lesson.completed ? "text-muted-foreground" : "text-foreground/80"
               )}>
-                {lesson.title}
+                {cleanTitle(lesson.title)}
               </div>
               {lesson.duration_seconds != null && lesson.duration_seconds > 0 && (
                 <div className="text-[11px] text-muted-foreground/70 mt-0.5 tabular-nums">
@@ -747,7 +755,7 @@ export default function LessonPlayerPage() {
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <h2 className="text-lg sm:text-xl font-semibold text-foreground leading-snug tracking-tight">
-                      {lessonData.title}
+                      {cleanTitle(lessonData.title)}
                     </h2>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                       {currentModule && (
@@ -819,14 +827,14 @@ export default function LessonPlayerPage() {
                     <Link to={`/courses/${courseId}/lessons/${prevLesson.id}`}
                       className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group min-h-[44px]">
                       <SkipBack className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
-                      <span className="hidden sm:inline max-w-[200px] truncate">{prevLesson.title}</span>
+                      <span className="hidden sm:inline max-w-[200px] truncate">{cleanTitle(prevLesson.title)}</span>
                       <span className="sm:hidden">Anterior</span>
                     </Link>
                   ) : <div />}
                   {nextLesson ? (
                     <Link to={`/courses/${courseId}/lessons/${nextLesson.id}`}
                       className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group min-h-[44px]">
-                      <span className="hidden sm:inline max-w-[200px] truncate">{nextLesson.title}</span>
+                      <span className="hidden sm:inline max-w-[200px] truncate">{cleanTitle(nextLesson.title)}</span>
                       <span className="sm:hidden">Proxima</span>
                       <SkipForward className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </Link>
