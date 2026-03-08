@@ -581,64 +581,78 @@ export default function LessonPlayerPage() {
         {/* ============================================================ */}
         <header className={cn(
           "sticky top-0 z-[70] h-12 flex items-center gap-2 px-3 border-b transition-colors duration-300",
-          theaterMode ? "bg-black/50 backdrop-blur-xl border-border/30" : "bg-card border-border"
+          theaterMode ? "bg-black/80 border-transparent backdrop-blur-sm" : "bg-card border-border"
         )}>
-          <button
-            onClick={() => navigate(`/courses/${courseId}`)}
-            className="p-1.5 -ml-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all group"
-          >
-            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-          </button>
+          {theaterMode ? (
+            /* Theater mode: only show "Acender Luz" button */
+            <>
+              <div className="flex-1" />
+              <button
+                onClick={() => setTheaterMode(false)}
+                className="p-1.5 rounded-md bg-primary/20 text-primary transition-all hover:bg-primary/30"
+                title="Acender Luz"
+              >
+                <Sun className="h-3.5 w-3.5" />
+              </button>
+            </>
+          ) : (
+            /* Normal mode: full header */
+            <>
+              <button
+                onClick={() => navigate(`/courses/${courseId}`)}
+                className="p-1.5 -ml-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all group"
+              >
+                <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+              </button>
 
-          <div className="h-4 w-px bg-border mx-0.5" />
+              <div className="h-4 w-px bg-border mx-0.5" />
 
-          <span className="text-[13px] text-muted-foreground truncate flex-1 font-medium">
-            {courseData.name}
-          </span>
-
-          {/* Progress ring */}
-          <div className="hidden sm:flex items-center gap-2">
-            <div className="relative w-7 h-7">
-              <svg className="w-7 h-7 -rotate-90" viewBox="0 0 28 28">
-                <circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted/50" />
-                <circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" strokeWidth="2"
-                  className="text-primary" strokeDasharray={`${2 * Math.PI * 11}`}
-                  strokeDashoffset={`${2 * Math.PI * 11 * (1 - progressPercent / 100)}`}
-                  strokeLinecap="round" />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-muted-foreground tabular-nums">
-                {progressPercent}
+              <span className="text-[13px] text-muted-foreground truncate flex-1 font-medium">
+                {courseData.name}
               </span>
-            </div>
-            <span className="text-[11px] text-muted-foreground tabular-nums">{completedCount}/{totalCount}</span>
-          </div>
 
-          {/* Apagar Luz */}
-          <button
-            onClick={() => setTheaterMode(!theaterMode)}
-            className={cn(
-              "p-1.5 rounded-md transition-all",
-              theaterMode ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            )}
-            title={theaterMode ? 'Acender Luz' : 'Apagar Luz'}
-          >
-            {theaterMode ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-          </button>
+              {/* Progress ring */}
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="relative w-7 h-7">
+                  <svg className="w-7 h-7 -rotate-90" viewBox="0 0 28 28">
+                    <circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted/50" />
+                    <circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" strokeWidth="2"
+                      className="text-primary" strokeDasharray={`${2 * Math.PI * 11}`}
+                      strokeDashoffset={`${2 * Math.PI * 11 * (1 - progressPercent / 100)}`}
+                      strokeLinecap="round" />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-muted-foreground tabular-nums">
+                    {progressPercent}
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground tabular-nums">{completedCount}/{totalCount}</span>
+              </div>
 
-          {/* Sidebar toggle */}
-          <button
-            onClick={() => setDesktopSidebarVisible(!desktopSidebarVisible)}
-            className="hidden lg:block p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-          >
-            {desktopSidebarVisible ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRightOpen className="h-3.5 w-3.5" />}
-          </button>
+              {/* Apagar Luz */}
+              <button
+                onClick={() => setTheaterMode(true)}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                title="Apagar Luz"
+              >
+                <Moon className="h-3.5 w-3.5" />
+              </button>
 
-          <button
-            className="lg:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu className="h-3.5 w-3.5" />
-          </button>
+              {/* Sidebar toggle */}
+              <button
+                onClick={() => setDesktopSidebarVisible(!desktopSidebarVisible)}
+                className="hidden lg:block p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+              >
+                {desktopSidebarVisible ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRightOpen className="h-3.5 w-3.5" />}
+              </button>
+
+              <button
+                className="lg:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                onClick={() => setIsSidebarOpen(true)}
+              >
+                <Menu className="h-3.5 w-3.5" />
+              </button>
+            </>
+          )}
         </header>
 
         {/* ============================================================ */}
@@ -730,7 +744,7 @@ export default function LessonPlayerPage() {
                   /* Normal video */
                   <div className="relative w-full bg-black">
                     {videoEmbedUrl ? (
-                      <div style={{ paddingBottom: theaterMode ? '48%' : '56.25%' }} className="relative">
+                      <div style={{ paddingBottom: theaterMode ? '52%' : '56.25%' }} className="relative">
                         <iframe src={videoEmbedUrl} title={lessonData.title}
                           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
                           allowFullScreen className="absolute inset-0 w-full h-full" />
@@ -749,7 +763,7 @@ export default function LessonPlayerPage() {
               {/* ======================================================== */}
               <div className={cn(
                 "px-4 sm:px-6 lg:px-8 py-5",
-                theaterMode ? "relative z-[65]" : ""
+                theaterMode ? "hidden" : ""
               )}>
                 {/* Title row */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3">
@@ -846,7 +860,7 @@ export default function LessonPlayerPage() {
               {/* Description                                                 */}
               {/* ======================================================== */}
               {sanitizedDescription && (
-                <div className={cn("px-4 sm:px-6 lg:px-8", theaterMode ? "relative z-[65]" : "")}>
+                <div className={cn("px-4 sm:px-6 lg:px-8", theaterMode ? "hidden" : "")}>
                   <div className="rounded-lg bg-muted/30 border border-border p-5">
                     <div className="prose prose-sm dark:prose-invert max-w-none prose-p:text-muted-foreground prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground"
                       dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />
@@ -857,7 +871,7 @@ export default function LessonPlayerPage() {
               {/* ======================================================== */}
               {/* Rating + Tabs (Comments / Resources)                       */}
               {/* ======================================================== */}
-              <div className={cn("px-4 sm:px-6 lg:px-8 pb-8 space-y-4", theaterMode ? "relative z-[65]" : "")}>
+              <div className={cn("px-4 sm:px-6 lg:px-8 pb-8 space-y-4", theaterMode ? "hidden" : "")}>
 
                 {/* Star Rating */}
                 <div className="flex items-center gap-4 py-3 border-b border-border">
@@ -1112,6 +1126,7 @@ export default function LessonPlayerPage() {
           <aside className={cn(
             "hidden lg:flex flex-col overflow-hidden transition-all duration-300 border-l",
             "bg-card border-border",
+            theaterMode ? "w-0 min-w-0 border-l-0" :
             desktopSidebarVisible ? "w-[320px] min-w-[320px]" : "w-0 min-w-0 border-l-0"
           )}>
             {desktopSidebarVisible && (
