@@ -15,7 +15,7 @@ const MagicLayout = React.forwardRef<HTMLDivElement, MagicLayoutProps>(
       <div
         ref={ref}
         className={cn(
-          'min-h-screen bg-gradient-to-br from-background via-background to-muted/20',
+          'min-h-screen bg-gradient-to-br from-muted/30 via-muted/20 to-background dark:from-background dark:via-background dark:to-muted/20',
           'relative overflow-hidden',
           className
         )}

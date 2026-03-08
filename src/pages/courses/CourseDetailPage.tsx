@@ -219,7 +219,7 @@ export default function CourseDetailPage() {
         </div>
 
         {/* ── Hero / Course Header ── */}
-        <section className="relative overflow-hidden rounded-2xl border border-border bg-card">
+        <section className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/[0.02] pointer-events-none" />
 
@@ -227,7 +227,7 @@ export default function CourseDetailPage() {
             {/* Top row: thumbnail + info */}
             <div className="flex flex-col md:flex-row gap-6">
               {course.thumbnail_url && (
-                <div className="flex-shrink-0 w-full md:w-72 h-44 rounded-xl overflow-hidden bg-muted">
+                <div className="flex-shrink-0 w-full md:w-80 rounded-xl overflow-hidden bg-muted self-stretch min-h-[180px]">
                   <img
                     src={course.thumbnail_url}
                     alt={course.name}
@@ -298,7 +298,7 @@ export default function CourseDetailPage() {
               </div>
               <Progress
                 value={stats.progressPercent}
-                className={cn('h-2.5 bg-muted', isCompleted ? '[&>div]:bg-green-500' : '')}
+                className="h-2.5 bg-muted [&>div]:bg-green-500"
               />
             </div>
           </div>
@@ -371,10 +371,10 @@ function StatBadge({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm',
+        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm cursor-default transition-all duration-200',
         highlight
-          ? 'border-green-500/30 bg-green-500/10 text-green-500'
-          : 'border-border bg-muted/50 text-muted-foreground'
+          ? 'border-green-500/30 bg-green-500/10 text-green-500 hover:bg-green-500/20 hover:border-green-500/50'
+          : 'border-primary/20 bg-primary/5 text-primary hover:bg-primary/15 hover:border-primary/40 hover:shadow-sm'
       )}
     >
       {icon}
@@ -410,8 +410,8 @@ function ModuleCardView({
           <div
             key={module.id}
             className={cn(
-              'group relative flex flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200',
-              'hover:border-primary/30 hover:shadow-md'
+              'group relative flex flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 shadow-sm',
+              'hover:border-primary/30 hover:shadow-lg'
             )}
           >
             {/* Module number badge */}
@@ -448,7 +448,7 @@ function ModuleCardView({
               </div>
               <Progress
                 value={moduleProgress}
-                className={cn('h-1.5 bg-muted', allCompleted ? '[&>div]:bg-green-500' : '')}
+                className="h-1.5 bg-muted [&>div]:bg-green-500"
               />
             </div>
 
@@ -469,7 +469,7 @@ function ModuleCardView({
                       className={cn(
                         'truncate text-xs',
                         lesson.completed
-                          ? 'text-muted-foreground'
+                          ? 'text-muted-foreground line-through decoration-muted-foreground/40'
                           : isHighlighted
                             ? 'text-foreground font-medium'
                             : 'text-foreground'
@@ -491,8 +491,8 @@ function ModuleCardView({
             <Link
               to={`/courses/${courseId}/lessons/${module.lessons[0]?.id ?? ''}`}
               className={cn(
-                'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium',
-                'text-foreground bg-muted/50 hover:bg-muted transition-colors duration-200'
+                'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
+                'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md active:scale-[0.97]'
               )}
             >
               Ver modulo
@@ -558,7 +558,7 @@ function ModuleListView({
                   <div className="hidden sm:flex items-center gap-2 w-24">
                     <Progress
                       value={moduleProgress}
-                      className={cn('h-1.5 bg-muted', allCompleted ? '[&>div]:bg-green-500' : '')}
+                      className="h-1.5 bg-muted [&>div]:bg-green-500"
                     />
                     <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">
                       {moduleProgress}%
