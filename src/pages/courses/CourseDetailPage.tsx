@@ -298,7 +298,7 @@ export default function CourseDetailPage() {
               </div>
               <Progress
                 value={stats.progressPercent}
-                className="h-2.5 bg-muted [&>div]:bg-primary"
+                className="h-2.5 bg-muted [&>div]:bg-blue-500"
               />
             </div>
           </div>
@@ -448,7 +448,7 @@ function ModuleCardView({
               </div>
               <Progress
                 value={moduleProgress}
-                className="h-1.5 bg-muted [&>div]:bg-primary"
+                className="h-1.5 bg-muted [&>div]:bg-blue-500"
               />
             </div>
 
@@ -558,7 +558,7 @@ function ModuleListView({
                   <div className="hidden sm:flex items-center gap-2 w-24">
                     <Progress
                       value={moduleProgress}
-                      className="h-1.5 bg-muted [&>div]:bg-primary"
+                      className="h-1.5 bg-muted [&>div]:bg-blue-500"
                     />
                     <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">
                       {moduleProgress}%
