@@ -836,31 +836,35 @@ export default function LessonPlayerPage() {
                 </div>
 
                 {/* Navigation */}
-                <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border">
+                <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-border">
                   {prevLesson ? (
                     <Link to={`/courses/${courseId}/lessons/${prevLesson.id}`}
-                      className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-muted/20 hover:bg-muted/50 hover:border-primary/30 transition-all duration-200 group min-h-[56px]">
-                      <div className="w-8 h-8 rounded-full bg-muted/60 group-hover:bg-primary/15 flex items-center justify-center shrink-0 transition-colors">
-                        <SkipBack className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:-translate-x-0.5 transition-all" />
+                      className="relative flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-border/60 bg-gradient-to-r from-muted/40 to-muted/20 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group overflow-hidden">
+                      {/* Decorative gradient blob */}
+                      <div className="absolute -left-4 -top-4 w-20 h-20 rounded-full bg-primary/5 group-hover:bg-primary/10 blur-2xl transition-colors duration-300" />
+                      <div className="relative w-11 h-11 rounded-xl bg-muted group-hover:bg-primary group-hover:shadow-md group-hover:shadow-primary/30 flex items-center justify-center shrink-0 transition-all duration-300">
+                        <ChevronLeft className="h-5 w-5 text-muted-foreground group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
                       </div>
-                      <div className="min-w-0">
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">Anterior</span>
-                        <p className="text-xs font-medium text-foreground truncate mt-0.5">{cleanTitle(prevLesson.title)}</p>
+                      <div className="relative min-w-0 flex-1">
+                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/50 font-semibold block">Aula anterior</span>
+                        <p className="text-sm font-semibold text-foreground truncate mt-1 group-hover:text-primary transition-colors duration-300">{cleanTitle(prevLesson.title)}</p>
                       </div>
                     </Link>
-                  ) : <div className="flex-1" />}
+                  ) : <div />}
                   {nextLesson ? (
                     <Link to={`/courses/${courseId}/lessons/${nextLesson.id}`}
-                      className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-muted/20 hover:bg-muted/50 hover:border-primary/30 transition-all duration-200 group min-h-[56px] justify-end text-right">
-                      <div className="min-w-0">
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">Proxima</span>
-                        <p className="text-xs font-medium text-foreground truncate mt-0.5">{cleanTitle(nextLesson.title)}</p>
+                      className="relative flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-border/60 bg-gradient-to-l from-muted/40 to-muted/20 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group overflow-hidden text-right justify-end">
+                      {/* Decorative gradient blob */}
+                      <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-primary/5 group-hover:bg-primary/10 blur-2xl transition-colors duration-300" />
+                      <div className="relative min-w-0 flex-1">
+                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/50 font-semibold block">Proxima aula</span>
+                        <p className="text-sm font-semibold text-foreground truncate mt-1 group-hover:text-primary transition-colors duration-300">{cleanTitle(nextLesson.title)}</p>
                       </div>
-                      <div className="w-8 h-8 rounded-full bg-muted/60 group-hover:bg-primary/15 flex items-center justify-center shrink-0 transition-colors">
-                        <SkipForward className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                      <div className="relative w-11 h-11 rounded-xl bg-muted group-hover:bg-primary group-hover:shadow-md group-hover:shadow-primary/30 flex items-center justify-center shrink-0 transition-all duration-300">
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
                       </div>
                     </Link>
-                  ) : <div className="flex-1" />}
+                  ) : <div />}
                 </div>
               </div>
 
