@@ -474,8 +474,8 @@ export const courseService = {
               return {
                 ...lesson,
                 progress: progress?.progress_percentage || 0,
-                completed: !!progress?.completed_at,
-                last_position: progress?.last_position_seconds || 0
+                completed: !!progress?.is_completed,
+                last_position: progress?.current_time_seconds || 0
               }
             })
           )

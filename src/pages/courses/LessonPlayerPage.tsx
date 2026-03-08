@@ -234,8 +234,8 @@ export default function LessonPlayerPage() {
         user_id: user.id,
         lesson_id: lessonId,
         progress_percentage: 100,
-        completed_at: new Date().toISOString(),
-        last_position_seconds: lessonData.duration_seconds || 0,
+        is_completed: true,
+        current_time_seconds: lessonData.duration_seconds || 0,
       })
       if (error) throw error
 
