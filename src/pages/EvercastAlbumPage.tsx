@@ -81,8 +81,8 @@ export default function EvercastAlbumPage() {
       className={cn("pb-32", currentTrack ? "mb-20" : "")}
     >
       {/* Album Header */}
-      <div className="flex flex-col md:flex-row gap-8 items-end p-8 bg-gradient-to-b from-emerald-900/30 via-cyan-900/10 to-background/0">
-        <div className="w-52 h-52 shadow-2xl rounded-md overflow-hidden shrink-0">
+      <div className="flex flex-col items-center md:flex-row md:items-end gap-6 md:gap-8 p-6 md:p-8 bg-gradient-to-b from-emerald-900/30 via-cyan-900/10 to-background/0">
+        <div className="w-44 h-44 md:w-52 md:h-52 shadow-2xl rounded-md overflow-hidden shrink-0">
           {course.thumbnail_url ? (
             <img src={course.thumbnail_url} alt={course.name} className="w-full h-full object-cover" />
           ) : (
@@ -91,7 +91,7 @@ export default function EvercastAlbumPage() {
             </div>
           )}
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 text-center md:text-left">
           <span className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Curso em Audio</span>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">{course.name}</h1>
           {course.description && (
