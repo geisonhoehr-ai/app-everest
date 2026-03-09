@@ -1,59 +1,109 @@
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Printer } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Printer, ArrowLeft, TrendingUp } from 'lucide-react'
 import { ProgressChart } from '@/components/essays/ProgressChart'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
-const mockProgressData = [
-  { date: 'Ago/25', grade: 880 },
-  { date: 'Set/25', grade: 900 },
-  { date: 'Out/25', grade: 920 },
-]
-
-const mockErrorTrends = [
-  { category: 'Concordância', count: 12 },
-  { category: 'Crase', count: 8 },
-  { category: 'Coesão', count: 5 },
-]
+import { useAuth } from '@/hooks/use-auth'
+import { getUserEssaysList, type EssayListItem } from '@/services/essayService'
+import { SectionLoader } from '@/components/SectionLoader'
+import { Link } from 'react-router-dom'
 
 export default function EssayEvolutionReportPage() {
+  const { user } = useAuth()
+  const [essays, setEssays] = useState<EssayListItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user?.id) return
+    getUserEssaysList(user.id)
+      .then(setEssays)
+      .finally(() => setLoading(false))
+  }, [user?.id])
+
+  if (loading) return <SectionLoader />
+
+  const corrected = essays
+    .filter((e) => e.status === 'Corrigida' && e.grade !== null)
+    .reverse()
+
+  const progressData = corrected.map((e) => ({
+    date: e.date,
+    grade: e.grade!,
+  }))
+
   return (
-    <div className="bg-background min-h-screen">
-      <div className="container py-8 mx-auto max-w-4xl">
-        <div className="flex justify-between items-center mb-8 print:hidden">
-          <h1 className="text-2xl font-bold">Relatório de Evolução</h1>
-          <Button onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimir / Salvar PDF
-          </Button>
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between print:hidden">
+        <div>
+          <Link
+            to="/redacoes"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Link>
+          <h1 className="text-2xl font-bold text-foreground">Evolução em Redações</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {user?.user_metadata?.first_name || 'Aluno'} · {corrected.length} redações corrigidas
+          </p>
         </div>
-        <div className="p-8 border rounded-lg space-y-8 bg-card">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold">Evolução em Redações</h2>
-            <p className="text-muted-foreground">Aluno: João Pedro</p>
-          </div>
-          <Separator />
-          <ProgressChart data={mockProgressData} />
-          <Separator />
-          <Card>
-            <CardHeader>
-              <CardTitle>Tendência de Erros</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {mockErrorTrends.map((trend) => (
-                  <li key={trend.category} className="flex justify-between">
-                    <span>{trend.category}</span>
-                    <span className="font-semibold">
-                      {trend.count} ocorrências
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+        <Button onClick={() => window.print()} variant="outline" className="gap-2">
+          <Printer className="h-4 w-4" />
+          Imprimir
+        </Button>
       </div>
+
+      {/* Progress Chart */}
+      {progressData.length > 0 ? (
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-primary" />
+              </div>
+              <h2 className="text-lg font-bold text-foreground">Evolução de Notas</h2>
+            </div>
+            <ProgressChart data={progressData} />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-border shadow-sm">
+          <CardContent className="text-center py-16">
+            <p className="text-muted-foreground">
+              Nenhuma redação corrigida ainda. Envie redações para acompanhar sua evolução.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Grades table */}
+      {corrected.length > 0 && (
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-6 space-y-3">
+            <h3 className="font-semibold text-foreground">Histórico de Notas</h3>
+            <div className="space-y-2">
+              {corrected.map((e, idx) => (
+                <div
+                  key={e.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30 transition-all duration-200 hover:shadow-md hover:border-primary/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-muted-foreground w-6">
+                      {idx + 1}.
+                    </span>
+                    <span className="text-sm font-medium text-foreground">{e.theme}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground">{e.date}</span>
+                    <span className="text-sm font-bold text-primary">{e.grade}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

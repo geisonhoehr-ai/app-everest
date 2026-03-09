@@ -128,7 +128,7 @@ export const getEssaySubmissions = async (promptId: string) => {
         email
       )
     `)
-    .eq('essay_prompt_id', promptId)
+    .eq('prompt_id', promptId)
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -146,7 +146,7 @@ export const getEssayPromptStats = async (promptId: string) => {
   const { data: essays, error } = await supabase
     .from('essays')
     .select('status, final_grade')
-    .eq('essay_prompt_id', promptId)
+    .eq('prompt_id', promptId)
 
   if (error) {
     console.error('Error fetching essay stats:', error)

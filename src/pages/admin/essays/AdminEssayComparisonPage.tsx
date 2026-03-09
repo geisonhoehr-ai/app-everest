@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
 import {
   getEssaysForComparison,
@@ -27,7 +28,6 @@ export default function AdminEssayComparisonPage() {
 
   const editor1Ref = useRef<HTMLDivElement>(null)
   const editor2Ref = useRef<HTMLDivElement>(null)
-
   const [isSyncEnabled, setIsSyncEnabled] = useState(true)
   const isSyncingScroll = useRef(false)
 
@@ -45,64 +45,70 @@ export default function AdminEssayComparisonPage() {
     }
   }, [searchParams, navigate])
 
-  const handleScroll = (scrollingEditor: 'editor1' | 'editor2') => {
+  const handleScroll = (source: 'editor1' | 'editor2') => {
     if (!isSyncEnabled || isSyncingScroll.current) return
-
     isSyncingScroll.current = true
-
-    const source =
-      scrollingEditor === 'editor1' ? editor1Ref.current : editor2Ref.current
-    const target =
-      scrollingEditor === 'editor1' ? editor2Ref.current : editor1Ref.current
-
-    if (source && target) {
-      target.scrollTop = source.scrollTop
-    }
-
-    setTimeout(() => {
-      isSyncingScroll.current = false
-    }, 100)
+    const src = source === 'editor1' ? editor1Ref.current : editor2Ref.current
+    const tgt = source === 'editor1' ? editor2Ref.current : editor1Ref.current
+    if (src && tgt) tgt.scrollTop = src.scrollTop
+    setTimeout(() => { isSyncingScroll.current = false }, 100)
   }
 
   if (isLoading) return <SectionLoader />
-  if (essays.length < 2)
-    return <div>Erro ao carregar redações para comparação.</div>
+
+  if (essays.length < 2) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">Erro ao carregar comparação</h1>
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar
+        </Button>
+      </div>
+    )
+  }
 
   const [essay1, essay2] = essays
 
   return (
-    <div className="flex flex-col gap-6 h-[calc(100vh-8rem)]">
+    <div className="flex flex-col gap-4 h-[calc(100vh-8rem)]">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+        <div>
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
+          >
             <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-xl font-semibold">Comparar Redações</h1>
-            <p className="text-sm text-muted-foreground">
-              {essay1.essay_prompts?.title}
-            </p>
-          </div>
+            Voltar
+          </button>
+          <h1 className="text-xl font-bold text-foreground">Comparar Redações</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {essay1.essay_prompts?.title}
+          </p>
         </div>
         <Button
           variant="outline"
           onClick={() => setIsSyncEnabled(!isSyncEnabled)}
+          className="gap-2 transition-all duration-200 hover:shadow-md hover:border-primary/30"
         >
-          <RefreshCw
-            className={cn('mr-2 h-4 w-4', isSyncEnabled && 'animate-spin')}
-          />
-          {isSyncEnabled
-            ? 'Desativar Rolagem Sincronizada'
-            : 'Ativar Rolagem Sincronizada'}
+          <RefreshCw className={cn('h-4 w-4', isSyncEnabled && 'animate-spin')} />
+          {isSyncEnabled ? 'Desativar Sync' : 'Ativar Sync'}
         </Button>
       </div>
+
+      {/* Side by side */}
       <ResizablePanelGroup direction="horizontal" className="flex-grow">
         <ResizablePanel>
-          <div className="grid grid-cols-2 h-full gap-2">
+          <div className="h-full flex flex-col gap-2">
+            <Badge variant="outline" className="w-fit">
+              {essay1.users?.first_name} {essay1.users?.last_name}
+              {essay1.final_grade != null && ` · ${essay1.final_grade}`}
+            </Badge>
             <div
               ref={editor1Ref}
               onScroll={() => handleScroll('editor1')}
-              className="overflow-y-auto h-full"
+              className="overflow-y-auto flex-1"
             >
               <InteractiveEssayEditor
                 text={essay1.submission_text}
@@ -111,41 +117,25 @@ export default function AdminEssayComparisonPage() {
                 onAnnotationClick={() => {}}
               />
             </div>
-            <div className="h-full">
-              <CorrectionPanel
-                essay={essay1}
-                errorCategories={errorCategories}
-                selectedAnnotation={null}
-                onAnnotationUpdate={() => {}}
-                onAnnotationDelete={() => {}}
-                onFinalizeCorrection={() => {}}
-              />
-            </div>
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel>
-          <div className="grid grid-cols-2 h-full gap-2">
+          <div className="h-full flex flex-col gap-2">
+            <Badge variant="outline" className="w-fit">
+              {essay2.users?.first_name} {essay2.users?.last_name}
+              {essay2.final_grade != null && ` · ${essay2.final_grade}`}
+            </Badge>
             <div
               ref={editor2Ref}
               onScroll={() => handleScroll('editor2')}
-              className="overflow-y-auto h-full"
+              className="overflow-y-auto flex-1"
             >
               <InteractiveEssayEditor
                 text={essay2.submission_text}
                 annotations={[]}
                 onTextSelect={() => {}}
                 onAnnotationClick={() => {}}
-              />
-            </div>
-            <div className="h-full">
-              <CorrectionPanel
-                essay={essay2}
-                errorCategories={errorCategories}
-                selectedAnnotation={null}
-                onAnnotationUpdate={() => {}}
-                onAnnotationDelete={() => {}}
-                onFinalizeCorrection={() => {}}
               />
             </div>
           </div>
