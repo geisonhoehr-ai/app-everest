@@ -80,8 +80,8 @@ export default function EvercastAlbumPage() {
       showHeader={false}
       className={cn("pb-32", currentTrack ? "mb-20" : "")}
     >
-      {/* Album Header */}
-      <div className="flex flex-col items-center md:flex-row md:items-end gap-6 md:gap-8 p-6 md:p-8 bg-gradient-to-b from-emerald-900/30 via-cyan-900/10 to-background/0">
+      {/* Album Header — full bleed over container padding */}
+      <div className="-mx-6 flex flex-col items-center md:flex-row md:items-end gap-6 md:gap-8 p-6 md:p-8 bg-gradient-to-b from-emerald-900/30 via-cyan-900/10 to-background/0">
         <div className="w-44 h-44 md:w-52 md:h-52 shadow-2xl rounded-md overflow-hidden shrink-0">
           {course.thumbnail_url ? (
             <img src={course.thumbnail_url} alt={course.name} className="w-full h-full object-cover" />
