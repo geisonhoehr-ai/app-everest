@@ -83,7 +83,7 @@ function RankingWidget({ className }: RankingWidgetProps) {
   const getRankIcon = (position: number) => {
     switch (position) {
       case 1: return <Crown className="h-4 w-4 text-yellow-500" />
-      case 2: return <Trophy className="h-4 w-4 text-gray-400" />
+      case 2: return <Trophy className="h-4 w-4 text-muted-foreground/70" />
       case 3: return <Award className="h-4 w-4 text-amber-600" />
       default: return <span className="text-sm font-bold text-muted-foreground">#{position}</span>
     }

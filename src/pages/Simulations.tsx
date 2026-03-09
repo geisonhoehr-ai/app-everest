@@ -257,7 +257,7 @@ export default function SimulationsPage() {
       case 'completed':
         return 'bg-blue-500/10 border-blue-500/20 text-blue-600'
       case 'expired':
-        return 'bg-gray-500/10 border-gray-500/20 text-gray-600'
+        return 'bg-muted/50 border-border text-muted-foreground'
       case 'scheduled':
         return 'bg-purple-500/10 border-purple-500/20 text-purple-600'
       default:
@@ -592,12 +592,12 @@ export default function SimulationsPage() {
                   </Button>
                 </div>
               ) : (
-                <div className="p-6 rounded-xl bg-gradient-to-r from-gray-500/10 to-gray-600/5 border border-gray-500/20">
+                <div className="p-6 rounded-xl bg-gradient-to-r from-gray-500/10 to-gray-600/5 border border-border">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 rounded-lg bg-gray-500/20">
-                      <Clock className="h-5 w-5 text-gray-600" />
+                    <div className="p-2 rounded-lg bg-muted">
+                      <Clock className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <h3 className="font-semibold text-gray-600">Próximo Simulado</h3>
+                    <h3 className="font-semibold text-muted-foreground">Próximo Simulado</h3>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
                     Nenhum simulado disponível no momento

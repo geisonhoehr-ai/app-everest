@@ -26,7 +26,6 @@ import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/components/ui/use-toast'
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { MagicLayout } from '@/components/ui/magic-layout'
 import { ChevronLeft } from 'lucide-react'
 
 const courseSchema = z.object({
@@ -167,10 +166,11 @@ export default function AdminCourseFormPage() {
   }
 
   return (
-    <MagicLayout
-      title={isEditing ? 'Editar Curso' : 'Novo Curso'}
-      description="Preencha os detalhes principais do curso"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">{isEditing ? 'Editar Curso' : 'Novo Curso'}</h1>
+        <p className="text-muted-foreground mt-1">Preencha os detalhes principais do curso</p>
+      </div>
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Button
@@ -268,6 +268,6 @@ export default function AdminCourseFormPage() {
           </form>
         </Form>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

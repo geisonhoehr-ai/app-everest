@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { MagicLayout } from '@/components/ui/magic-layout'
 import { SectionLoader } from '@/components/SectionLoader'
 import { PandaVideoPickerModal } from '@/components/admin/courses/PandaVideoPickerModal'
 import { type PandaVideo } from '@/services/pandaVideo'
@@ -215,13 +214,13 @@ function SortableModuleItem({
             {module.lessons.length} {module.lessons.length === 1 ? 'aula' : 'aulas'}
           </Badge>
           {module.is_active ? (
-            <Badge className="text-[10px] bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Ativo</Badge>
+            <Badge className="text-[10px] bg-emerald-500/100/15 text-emerald-600 border-emerald-500/30">Ativo</Badge>
           ) : (
             <Badge variant="outline" className="text-[10px] text-muted-foreground">Inativo</Badge>
           )}
           <button
             onClick={(e) => { e.stopPropagation(); onDelete() }}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/100/10 transition-colors"
             title="Excluir modulo"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -379,7 +378,7 @@ function SortableLessonItem({
           )}
           <button
             onClick={(e) => { e.stopPropagation(); onDelete() }}
-            className="p-1 rounded text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+            className="p-1 rounded text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/100/10 transition-colors"
           >
             <Trash2 className="h-3 w-3" />
           </button>
@@ -482,7 +481,7 @@ function SortableLessonItem({
                         )}
                         <button
                           onClick={() => onDeleteAttachment(att.id)}
-                          className="p-1 rounded hover:bg-red-500/10 hover:text-red-500 text-muted-foreground/40 transition-colors"
+                          className="p-1 rounded hover:bg-red-500/100/10 hover:text-red-500 text-muted-foreground/40 transition-colors"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -1111,7 +1110,7 @@ export default function AdminCourseEditorPage() {
         onVideoSelect={handleVideoSelect}
       />
 
-      <MagicLayout showHeader={false}>
+      <div className="space-y-6">
         <div className="max-w-5xl mx-auto py-6 space-y-6">
           {/* Top bar */}
           <div className="flex items-center justify-between gap-4">
@@ -1124,7 +1123,7 @@ export default function AdminCourseEditorPage() {
                 {isNewCourse ? 'Novo Curso' : 'Editar Curso'}
               </h1>
               {hasChanges && (
-                <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-500 bg-amber-500/10">
+                <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-500 bg-amber-500/100/10">
                   <AlertTriangle className="h-2.5 w-2.5 mr-1" />
                   Alteracoes nao salvas
                 </Badge>
@@ -1310,7 +1309,7 @@ export default function AdminCourseEditorPage() {
             </div>
           )}
         </div>
-      </MagicLayout>
+      </div>
     </>
   )
 }

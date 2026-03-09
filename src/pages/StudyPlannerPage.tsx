@@ -1018,7 +1018,7 @@ function CategoryCard({
       'amber': "bg-amber-100 dark:bg-amber-950/30 text-amber-600",
       'teal': "bg-teal-100 dark:bg-teal-950/30 text-teal-600",
       'lime': "bg-lime-100 dark:bg-lime-950/30 text-lime-600",
-      'gray': "bg-gray-100 dark:bg-gray-950/30 text-gray-600"
+      'gray': "bg-muted dark:bg-gray-950/30 text-muted-foreground"
     },
     hover: {
       'blue': "hover:bg-blue-50 dark:hover:bg-blue-950/20",
@@ -1036,7 +1036,7 @@ function CategoryCard({
       'amber': "hover:bg-amber-50 dark:hover:bg-amber-950/20",
       'teal': "hover:bg-teal-50 dark:hover:bg-teal-950/20",
       'lime': "hover:bg-lime-50 dark:hover:bg-lime-950/20",
-      'gray': "hover:bg-gray-50 dark:hover:bg-gray-950/20"
+      'gray': "hover:bg-muted/50 dark:hover:bg-gray-950/20"
     }
   }
 
@@ -1105,7 +1105,7 @@ function TopicCard({
         "p-4 rounded-lg border-2 transition-colors duration-300",
         topic.status === 'completed' && "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800",
         topic.status === 'in-progress' && "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800",
-        topic.status === 'pending' && "bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800"
+        topic.status === 'pending' && "bg-muted/50 dark:bg-gray-950/20 border-border dark:border-gray-800"
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1486,7 +1486,7 @@ function StudyHistory({
                         "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
                         session.completed
                           ? "bg-green-100 dark:bg-green-950/30 text-green-600"
-                          : "bg-gray-100 dark:bg-gray-950/30 text-gray-600"
+                          : "bg-muted dark:bg-gray-950/30 text-muted-foreground"
                       )}>
                         {session.completed ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
                       </div>

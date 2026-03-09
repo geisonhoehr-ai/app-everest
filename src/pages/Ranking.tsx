@@ -120,7 +120,7 @@ export default function RankingPage() {
   const getRankIcon = (position: number) => {
     switch (position) {
       case 1: return <Crown className="h-6 w-6 text-yellow-500" />
-      case 2: return <Medal className="h-6 w-6 text-gray-400" />
+      case 2: return <Medal className="h-6 w-6 text-muted-foreground/70" />
       case 3: return <Award className="h-6 w-6 text-amber-600" />
       default: return <span className="text-lg font-bold text-muted-foreground">#{position}</span>
     }

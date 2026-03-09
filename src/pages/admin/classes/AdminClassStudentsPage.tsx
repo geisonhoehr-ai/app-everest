@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { logger } from '@/lib/logger'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -229,54 +228,59 @@ export default function AdminClassStudentsPage() {
   }
 
   return (
-    <MagicLayout
-      title={`Alunos - ${className}`}
-      description="Gerencie os alunos matriculados nesta turma"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{`Alunos - ${className}`}</h1>
+        <p className="text-sm text-muted-foreground">Gerencie os alunos matriculados nesta turma</p>
+      </div>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <MagicCard variant="glass" size="lg">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/admin/classes')}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <h2 className="text-xl font-bold">{className}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {students.length} aluno(s) matriculado(s)
-                </p>
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate('/admin/classes')}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">{className}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {students.length} aluno(s) matriculado(s)
+                  </p>
+                </div>
               </div>
+              <Button
+                onClick={() => setIsAddDialogOpen(true)}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Adicionar Aluno
+              </Button>
             </div>
-            <Button
-              onClick={() => setIsAddDialogOpen(true)}
-              className="bg-gradient-to-r from-primary to-primary/80"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Adicionar Aluno
-            </Button>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Search */}
-        <MagicCard variant="glass">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar alunos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </MagicCard>
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar alunos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Table */}
-        <MagicCard variant="glass" size="lg">
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -340,7 +344,8 @@ export default function AdminClassStudentsPage() {
               </TableBody>
             </Table>
           </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Add Student Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -381,6 +386,6 @@ export default function AdminClassStudentsPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

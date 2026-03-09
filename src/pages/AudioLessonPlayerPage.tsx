@@ -327,7 +327,7 @@ export default function AudioLessonPlayerPage() {
                 max={duration || 0}
                 value={currentTime}
                 onChange={handleSeek}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer slider"
               />
             </div>
 
@@ -387,7 +387,7 @@ export default function AudioLessonPlayerPage() {
                   step="0.1"
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                  className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer slider"
                 />
               </div>
             </div>

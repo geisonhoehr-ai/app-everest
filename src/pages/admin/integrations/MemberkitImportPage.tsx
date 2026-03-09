@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -279,380 +278,389 @@ export default function MemberkitImportPage() {
   const isImporting = importingCourse || importingUsers || connecting
 
   return (
-    <MagicLayout
-      title="Importacao MemberKit"
-      description="Importe cursos e alunos da plataforma MemberKit"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Importacao MemberKit</h1>
+        <p className="text-muted-foreground mt-1">Importe cursos e alunos da plataforma MemberKit</p>
+      </div>
+
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Configuration Card */}
-        <MagicCard variant="glass" size="lg">
-          <div className="space-y-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                <Link2 className="h-5 w-5 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold">Configuracao</h2>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="mk-key">MemberKit API Key</Label>
-                <Input
-                  id="mk-key"
-                  type="password"
-                  placeholder="Sua chave da MemberKit"
-                  value={memberkitApiKey}
-                  onChange={(e) => setMemberkitApiKey(e.target.value)}
-                  disabled={connected || isImporting}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="panda-key">Panda Video API Key</Label>
-                <Input
-                  id="panda-key"
-                  type="password"
-                  placeholder="Sua chave do Panda Video (opcional)"
-                  value={pandaApiKey}
-                  onChange={(e) => setPandaApiKey(e.target.value)}
-                  disabled={connected || isImporting}
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="service-key">
-                  Supabase Service Role Key{' '}
-                  <span className="text-xs text-muted-foreground">
-                    (necessaria para criar usuarios)
-                  </span>
-                </Label>
-                <Input
-                  id="service-key"
-                  type="password"
-                  placeholder="Chave service_role do Supabase"
-                  value={serviceRoleKey}
-                  onChange={(e) => setServiceRoleKey(e.target.value)}
-                  disabled={connected || isImporting}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {!connected ? (
-                <Button
-                  onClick={handleConnect}
-                  disabled={connecting || !memberkitApiKey.trim()}
-                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                >
-                  {connecting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Conectando...
-                    </>
-                  ) : (
-                    <>
-                      <Link2 className="mr-2 h-4 w-4" />
-                      Conectar
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <div className="flex items-center gap-2 text-green-500">
-                  <CheckCircle className="h-5 w-5" />
-                  <span className="font-medium">Conectado</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setConnected(false)
-                      setCourses([])
-                      setClassrooms([])
-                      setPandaVideoMap(null)
-                      setCourseResult(null)
-                      setUsersResult(null)
-                    }}
-                    disabled={isImporting}
-                  >
-                    Desconectar
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </MagicCard>
-
-        {/* Import Course Card */}
-        {connected && (
-          <MagicCard variant="glass" size="lg">
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
             <div className="space-y-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/10">
-                  <BookOpen className="h-5 w-5 text-blue-500" />
+                <div className="p-2 rounded-lg bg-muted/50">
+                  <Link2 className="h-5 w-5 text-primary" />
                 </div>
-                <h2 className="text-xl font-semibold">Importar Curso</h2>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Curso MemberKit</Label>
-                  <Select
-                    value={selectedCourseId}
-                    onValueChange={setSelectedCourseId}
-                    disabled={importingCourse}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um curso..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  onClick={handleImportCourse}
-                  disabled={!selectedCourseId || importingCourse || !pandaVideoMap}
-                  className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
-                >
-                  {importingCourse ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Importando Curso...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Importar Curso
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {/* Course Result */}
-              {courseResult && (
-                <div className="rounded-xl border border-border/50 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-green-500 font-medium">
-                    <CheckCircle className="h-5 w-5" />
-                    Curso &quot;{courseResult.courseName}&quot; importado
-                  </div>
-                  <div className="grid grid-cols-3 gap-3 text-sm">
-                    <div className="text-center p-3 rounded-lg bg-blue-500/10">
-                      <div className="text-lg font-bold text-blue-500">
-                        {courseResult.modulesCreated}
-                      </div>
-                      <div className="text-muted-foreground">Modulos</div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-green-500/10">
-                      <div className="text-lg font-bold text-green-500">
-                        {courseResult.lessonsCreated}
-                      </div>
-                      <div className="text-muted-foreground">Aulas</div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-purple-500/10">
-                      <div className="text-lg font-bold text-purple-500">
-                        {courseResult.attachmentsCreated}
-                      </div>
-                      <div className="text-muted-foreground">Anexos</div>
-                    </div>
-                  </div>
-                  {courseResult.errors.length > 0 && (
-                    <div className="text-sm text-yellow-500">
-                      <AlertCircle className="h-4 w-4 inline mr-1" />
-                      {courseResult.errors.length} avisos durante a importacao
-                    </div>
-                  )}
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/admin/courses">
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Ver Cursos
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </div>
-          </MagicCard>
-        )}
-
-        {/* Import Users Card */}
-        {connected && (
-          <MagicCard variant="glass" size="lg">
-            <div className="space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-green-500/10">
-                  <Users className="h-5 w-5 text-green-500" />
-                </div>
-                <h2 className="text-xl font-semibold">Importar Alunos</h2>
+                <h2 className="text-xl font-semibold text-foreground">Configuracao</h2>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Turma MemberKit</Label>
-                  <Select
-                    value={selectedClassroomId}
-                    onValueChange={setSelectedClassroomId}
-                    disabled={importingUsers}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma turma MK..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classrooms.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>
-                          {c.name} ({c.users_count} membros)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Turma Everest</Label>
-                  <Select
-                    value={selectedEverestClassId}
-                    onValueChange={setSelectedEverestClassId}
-                    disabled={importingUsers}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma turma Everest..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {everestClasses.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="default-password">Senha padrao para novos alunos</Label>
+                  <Label htmlFor="mk-key">MemberKit API Key</Label>
                   <Input
-                    id="default-password"
-                    type="text"
-                    value={defaultPassword}
-                    onChange={(e) => setDefaultPassword(e.target.value)}
-                    disabled={importingUsers}
+                    id="mk-key"
+                    type="password"
+                    placeholder="Sua chave da MemberKit"
+                    value={memberkitApiKey}
+                    onChange={(e) => setMemberkitApiKey(e.target.value)}
+                    disabled={connected || isImporting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="panda-key">Panda Video API Key</Label>
+                  <Input
+                    id="panda-key"
+                    type="password"
+                    placeholder="Sua chave do Panda Video (opcional)"
+                    value={pandaApiKey}
+                    onChange={(e) => setPandaApiKey(e.target.value)}
+                    disabled={connected || isImporting}
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="service-key">
+                    Supabase Service Role Key{' '}
+                    <span className="text-xs text-muted-foreground">
+                      (necessaria para criar usuarios)
+                    </span>
+                  </Label>
+                  <Input
+                    id="service-key"
+                    type="password"
+                    placeholder="Chave service_role do Supabase"
+                    value={serviceRoleKey}
+                    onChange={(e) => setServiceRoleKey(e.target.value)}
+                    disabled={connected || isImporting}
                   />
                 </div>
               </div>
 
-              <Button
-                onClick={handleImportUsers}
-                disabled={
-                  !selectedClassroomId ||
-                  !selectedEverestClassId ||
-                  importingUsers
-                }
-                className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white"
-              >
-                {importingUsers ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Importando Alunos...
-                  </>
+              <div className="flex items-center gap-3">
+                {!connected ? (
+                  <Button
+                    onClick={handleConnect}
+                    disabled={connecting || !memberkitApiKey.trim()}
+                  >
+                    {connecting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Conectando...
+                      </>
+                    ) : (
+                      <>
+                        <Link2 className="mr-2 h-4 w-4" />
+                        Conectar
+                      </>
+                    )}
+                  </Button>
                 ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" />
-                    Importar Alunos
-                  </>
-                )}
-              </Button>
-
-              {/* Users Result */}
-              {usersResult && (
-                <div className="rounded-xl border border-border/50 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-green-500 font-medium">
+                  <div className="flex items-center gap-2 text-green-500">
                     <CheckCircle className="h-5 w-5" />
-                    Importacao de alunos concluida
+                    <span className="font-medium">Conectado</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setConnected(false)
+                        setCourses([])
+                        setClassrooms([])
+                        setPandaVideoMap(null)
+                        setCourseResult(null)
+                        setUsersResult(null)
+                      }}
+                      disabled={isImporting}
+                    >
+                      Desconectar
+                    </Button>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-sm">
-                    <div className="text-center p-3 rounded-lg bg-green-500/10">
-                      <div className="text-lg font-bold text-green-500">
-                        {usersResult.usersCreated}
-                      </div>
-                      <div className="text-muted-foreground">Criados</div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-yellow-500/10">
-                      <div className="text-lg font-bold text-yellow-500">
-                        {usersResult.usersAlreadyExisted}
-                      </div>
-                      <div className="text-muted-foreground">Ja existiam</div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-blue-500/10">
-                      <div className="text-lg font-bold text-blue-500">
-                        {usersResult.enrollmentsCreated}
-                      </div>
-                      <div className="text-muted-foreground">Matriculados</div>
-                    </div>
-                  </div>
-                  {usersResult.errors.length > 0 && (
-                    <div className="text-sm text-yellow-500">
-                      <AlertCircle className="h-4 w-4 inline mr-1" />
-                      {usersResult.errors.length} erros durante a importacao
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </MagicCard>
+          </CardContent>
+        </Card>
+
+        {/* Import Course Card */}
+        {connected && (
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <BookOpen className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-foreground">Importar Curso</h2>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Curso MemberKit</Label>
+                    <Select
+                      value={selectedCourseId}
+                      onValueChange={setSelectedCourseId}
+                      disabled={importingCourse}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um curso..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((c) => (
+                          <SelectItem key={c.id} value={String(c.id)}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button
+                    onClick={handleImportCourse}
+                    disabled={!selectedCourseId || importingCourse || !pandaVideoMap}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {importingCourse ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Importando Curso...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Importar Curso
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Course Result */}
+                {courseResult && (
+                  <div className="rounded-xl border border-border p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-green-500 font-medium">
+                      <CheckCircle className="h-5 w-5" />
+                      Curso &quot;{courseResult.courseName}&quot; importado
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div className="text-center p-3 rounded-lg bg-blue-500/10">
+                        <div className="text-lg font-bold text-blue-500">
+                          {courseResult.modulesCreated}
+                        </div>
+                        <div className="text-muted-foreground">Modulos</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-green-500/10">
+                        <div className="text-lg font-bold text-green-500">
+                          {courseResult.lessonsCreated}
+                        </div>
+                        <div className="text-muted-foreground">Aulas</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-purple-500/10">
+                        <div className="text-lg font-bold text-purple-500">
+                          {courseResult.attachmentsCreated}
+                        </div>
+                        <div className="text-muted-foreground">Anexos</div>
+                      </div>
+                    </div>
+                    {courseResult.errors.length > 0 && (
+                      <div className="text-sm text-yellow-500">
+                        <AlertCircle className="h-4 w-4 inline mr-1" />
+                        {courseResult.errors.length} avisos durante a importacao
+                      </div>
+                    )}
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to="/admin/courses">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Ver Cursos
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Import Users Card */}
+        {connected && (
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-500/10">
+                    <Users className="h-5 w-5 text-green-500" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-foreground">Importar Alunos</h2>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Turma MemberKit</Label>
+                    <Select
+                      value={selectedClassroomId}
+                      onValueChange={setSelectedClassroomId}
+                      disabled={importingUsers}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma turma MK..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {classrooms.map((c) => (
+                          <SelectItem key={c.id} value={String(c.id)}>
+                            {c.name} ({c.users_count} membros)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Turma Everest</Label>
+                    <Select
+                      value={selectedEverestClassId}
+                      onValueChange={setSelectedEverestClassId}
+                      disabled={importingUsers}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma turma Everest..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {everestClasses.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="default-password">Senha padrao para novos alunos</Label>
+                    <Input
+                      id="default-password"
+                      type="text"
+                      value={defaultPassword}
+                      onChange={(e) => setDefaultPassword(e.target.value)}
+                      disabled={importingUsers}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleImportUsers}
+                  disabled={
+                    !selectedClassroomId ||
+                    !selectedEverestClassId ||
+                    importingUsers
+                  }
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {importingUsers ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Importando Alunos...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Importar Alunos
+                    </>
+                  )}
+                </Button>
+
+                {/* Users Result */}
+                {usersResult && (
+                  <div className="rounded-xl border border-border p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-green-500 font-medium">
+                      <CheckCircle className="h-5 w-5" />
+                      Importacao de alunos concluida
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div className="text-center p-3 rounded-lg bg-green-500/10">
+                        <div className="text-lg font-bold text-green-500">
+                          {usersResult.usersCreated}
+                        </div>
+                        <div className="text-muted-foreground">Criados</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-yellow-500/10">
+                        <div className="text-lg font-bold text-yellow-500">
+                          {usersResult.usersAlreadyExisted}
+                        </div>
+                        <div className="text-muted-foreground">Ja existiam</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-blue-500/10">
+                        <div className="text-lg font-bold text-blue-500">
+                          {usersResult.enrollmentsCreated}
+                        </div>
+                        <div className="text-muted-foreground">Matriculados</div>
+                      </div>
+                    </div>
+                    {usersResult.errors.length > 0 && (
+                      <div className="text-sm text-yellow-500">
+                        <AlertCircle className="h-4 w-4 inline mr-1" />
+                        {usersResult.errors.length} erros durante a importacao
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Progress Log Card */}
         {logs.length > 0 && (
-          <MagicCard variant="glass" size="lg">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500/20 to-orange-500/10">
-                  <ScrollText className="h-5 w-5 text-orange-500" />
-                </div>
-                <h2 className="text-xl font-semibold">Log de Progresso</h2>
-                <span className="text-xs text-muted-foreground ml-auto">
-                  {logs.length} entradas
-                </span>
-              </div>
-
-              <div
-                ref={logContainerRef}
-                className="max-h-80 overflow-y-auto rounded-xl border border-border/50 bg-background/50 p-3 space-y-1 font-mono text-xs"
-              >
-                {logs.map((log) => (
-                  <div key={log.id} className="flex items-start gap-2">
-                    <span className="text-muted-foreground shrink-0">
-                      {log.timestamp.toLocaleTimeString('pt-BR')}
-                    </span>
-                    {log.type === 'success' && (
-                      <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5" />
-                    )}
-                    {log.type === 'error' && (
-                      <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0 mt-0.5" />
-                    )}
-                    {log.type === 'info' && (
-                      <AlertCircle className="h-3.5 w-3.5 text-blue-500 shrink-0 mt-0.5" />
-                    )}
-                    {log.type === 'progress' && (
-                      <Loader2 className="h-3.5 w-3.5 text-yellow-500 shrink-0 mt-0.5 animate-spin" />
-                    )}
-                    <span
-                      className={
-                        log.type === 'error'
-                          ? 'text-red-400'
-                          : log.type === 'success'
-                            ? 'text-green-400'
-                            : 'text-foreground/80'
-                      }
-                    >
-                      {log.message}
-                    </span>
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-orange-500/10">
+                    <ScrollText className="h-5 w-5 text-orange-500" />
                   </div>
-                ))}
+                  <h2 className="text-xl font-semibold text-foreground">Log de Progresso</h2>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {logs.length} entradas
+                  </span>
+                </div>
+
+                <div
+                  ref={logContainerRef}
+                  className="max-h-80 overflow-y-auto rounded-xl border border-border bg-muted/50 p-3 space-y-1 font-mono text-xs"
+                >
+                  {logs.map((log) => (
+                    <div key={log.id} className="flex items-start gap-2">
+                      <span className="text-muted-foreground shrink-0">
+                        {log.timestamp.toLocaleTimeString('pt-BR')}
+                      </span>
+                      {log.type === 'success' && (
+                        <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5" />
+                      )}
+                      {log.type === 'error' && (
+                        <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0 mt-0.5" />
+                      )}
+                      {log.type === 'info' && (
+                        <AlertCircle className="h-3.5 w-3.5 text-blue-500 shrink-0 mt-0.5" />
+                      )}
+                      {log.type === 'progress' && (
+                        <Loader2 className="h-3.5 w-3.5 text-yellow-500 shrink-0 mt-0.5 animate-spin" />
+                      )}
+                      <span
+                        className={
+                          log.type === 'error'
+                            ? 'text-red-400'
+                            : log.type === 'success'
+                              ? 'text-green-400'
+                              : 'text-foreground/80'
+                        }
+                      >
+                        {log.message}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </MagicCard>
+            </CardContent>
+          </Card>
         )}
       </div>
-    </MagicLayout>
+    </div>
   )
 }

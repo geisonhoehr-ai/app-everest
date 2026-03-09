@@ -288,6 +288,7 @@ export const audioLessonService = {
               .select('id, title, description, duration_seconds, module_id, order_index, video_source_id, video_source_type')
               .in('module_id', moduleIds)
               .eq('is_active', true)
+              .not('video_source_id', 'is', null)
               .order('order_index')
 
             lessons = lessonData || []

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { logger } from '@/lib/logger'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -74,19 +73,19 @@ export default function AdminClassesPage() {
     switch (status) {
       case 'active':
         return (
-          <Badge className="bg-green-500/10 border-green-500/20 text-green-600">
+          <Badge className="bg-green-500/100/10 border-green-500/20 text-green-600">
             Ativa
           </Badge>
         )
       case 'inactive':
         return (
-          <Badge className="bg-orange-500/10 border-orange-500/20 text-orange-600">
+          <Badge className="bg-orange-500/100/10 border-orange-500/20 text-orange-600">
             Inativa
           </Badge>
         )
       case 'archived':
         return (
-          <Badge className="bg-gray-500/10 border-gray-500/20 text-gray-600">
+          <Badge className="bg-muted/50 border-border text-muted-foreground">
             Arquivada
           </Badge>
         )
@@ -103,85 +102,97 @@ export default function AdminClassesPage() {
   const activeClasses = classes.filter(c => c.status === 'active').length
 
   return (
-    <MagicLayout
-      title="Gestão de Turmas"
-      description="Gerencie turmas, matricule alunos e configure permissões de acesso"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Gestão de Turmas</h1>
+        <p className="text-sm text-muted-foreground">Gerencie turmas, matricule alunos e configure permissões de acesso</p>
+      </div>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <MagicCard variant="glass" className="p-3 md:p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
-              <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
-                <GraduationCap className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+                <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                  <GraduationCap className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                </div>
+                <div>
+                  <div className="text-xl md:text-2xl font-bold text-foreground">{classes.length}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Total de Turmas</div>
+                </div>
               </div>
-              <div>
-                <div className="text-xl md:text-2xl font-bold">{classes.length}</div>
-                <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Total de Turmas</div>
-              </div>
-            </div>
-          </MagicCard>
+            </CardContent>
+          </Card>
 
-          <MagicCard variant="glass" className="p-3 md:p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
-              <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/10">
-                <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+                <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                  <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+                </div>
+                <div>
+                  <div className="text-xl md:text-2xl font-bold text-foreground">{activeClasses}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Turmas Ativas</div>
+                </div>
               </div>
-              <div>
-                <div className="text-xl md:text-2xl font-bold">{activeClasses}</div>
-                <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Turmas Ativas</div>
-              </div>
-            </div>
-          </MagicCard>
+            </CardContent>
+          </Card>
 
-          <MagicCard variant="glass" className="p-3 md:p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
-              <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10">
-                <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+                <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                  <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+                </div>
+                <div>
+                  <div className="text-xl md:text-2xl font-bold text-foreground">{totalStudents}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Alunos Matriculados</div>
+                </div>
               </div>
-              <div>
-                <div className="text-xl md:text-2xl font-bold">{totalStudents}</div>
-                <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Alunos Matriculados</div>
-              </div>
-            </div>
-          </MagicCard>
+            </CardContent>
+          </Card>
 
-          <MagicCard variant="glass" className="p-3 md:p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
-              <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10">
-                <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-3 md:p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+                <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                  <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+                </div>
+                <div>
+                  <div className="text-xl md:text-2xl font-bold text-foreground">{Math.round(totalStudents / (classes.length || 1))}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Média por Turma</div>
+                </div>
               </div>
-              <div>
-                <div className="text-xl md:text-2xl font-bold">{Math.round(totalStudents / (classes.length || 1))}</div>
-                <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Média por Turma</div>
-              </div>
-            </div>
-          </MagicCard>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Actions */}
-        <MagicCard variant="glass" size="lg">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="relative flex-1 w-full md:max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar turmas..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="relative flex-1 w-full md:max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar turmas..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button className="w-full md:w-auto" asChild>
+                <Link to="/admin/classes/new">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Nova Turma
+                </Link>
+              </Button>
             </div>
-            <Button className="bg-gradient-to-r from-primary to-primary/80 w-full md:w-auto" asChild>
-              <Link to="/admin/classes/new">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Nova Turma
-              </Link>
-            </Button>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Table */}
-        <MagicCard variant="glass" size="lg">
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -278,60 +289,67 @@ export default function AdminClassesPage() {
               </TableBody>
             </Table>
           </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <MagicCard variant="glass" className="p-6 hover:scale-105 transition-transform cursor-pointer">
-            <Link to="/admin/management" className="block">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10">
-                  <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+          <Card className="border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-6">
+              <Link to="/admin/management" className="block">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                    <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm md:text-base font-semibold mb-1 text-foreground">Gerenciar Alunos</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      Adicionar e remover alunos das turmas
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm md:text-base font-semibold mb-1">Gerenciar Alunos</h3>
-                  <p className="text-xs md:text-sm text-muted-foreground">
-                    Adicionar e remover alunos das turmas
-                  </p>
-                </div>
-              </div>
-            </Link>
-          </MagicCard>
+              </Link>
+            </CardContent>
+          </Card>
 
-          <MagicCard variant="glass" className="p-6 hover:scale-105 transition-transform cursor-pointer">
-            <Link to="/admin/permissions" className="block">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10">
-                  <Lock className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+          <Card className="border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-6">
+              <Link to="/admin/permissions" className="block">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                    <Lock className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm md:text-base font-semibold mb-1 text-foreground">Permissões</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      Configurar acesso aos recursos
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm md:text-base font-semibold mb-1">Permissões</h3>
-                  <p className="text-xs md:text-sm text-muted-foreground">
-                    Configurar acesso aos recursos
-                  </p>
-                </div>
-              </div>
-            </Link>
-          </MagicCard>
+              </Link>
+            </CardContent>
+          </Card>
 
-          <MagicCard variant="glass" className="p-6 hover:scale-105 transition-transform cursor-pointer">
-            <Link to="/admin/reports" className="block">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/10">
-                  <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+          <Card className="border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-6">
+              <Link to="/admin/reports" className="block">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                    <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm md:text-base font-semibold mb-1 text-foreground">Relatórios</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      Ver desempenho das turmas
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm md:text-base font-semibold mb-1">Relatórios</h3>
-                  <p className="text-xs md:text-sm text-muted-foreground">
-                    Ver desempenho das turmas
-                  </p>
-                </div>
-              </div>
-            </Link>
-          </MagicCard>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </MagicLayout>
+    </div>
   )
 }
 

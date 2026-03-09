@@ -62,7 +62,7 @@ export const MyCourses = () => {
           courses.map((course) => (
             <Card
               key={course.id}
-              className="rounded-2xl border transition-all duration-200 hover:shadow-xl hover:-translate-y-2 hover:scale-102 cursor-pointer overflow-hidden flex flex-col"
+              className="rounded-2xl border transition-shadow duration-200 hover:shadow-md cursor-pointer overflow-hidden flex flex-col"
             >
               <img
                 src={course.image}
@@ -73,7 +73,7 @@ export const MyCourses = () => {
                 <h3 className="font-semibold text-md flex-grow">
                   {course.title}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                   {course.description}
                 </p>
                 <div className="flex items-center gap-3 mb-4">

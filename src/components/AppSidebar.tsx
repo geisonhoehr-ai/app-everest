@@ -197,18 +197,18 @@ export function AppSidebar() {
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-black"
+      className="border-r border-border dark:border-gray-800 bg-white dark:bg-black"
     >
-      <SidebarHeader className="border-b border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-black">
+      <SidebarHeader className="border-b border-border dark:border-gray-800 p-6 bg-white dark:bg-black">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-2xl bg-gray-900 dark:bg-white">
-            <Mountain className="h-6 w-6 text-white dark:text-gray-900" />
+            <Mountain className="h-6 w-6 text-white dark:text-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h1 className="text-xl font-semibold text-foreground dark:text-white">
               Everest
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-light">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground/70 font-light">
               Education Platform
             </p>
           </div>
@@ -239,13 +239,13 @@ export function AppSidebar() {
                 isActive={isActive(item.href)}
                 className={cn(
                   "group relative transition-all duration-300 ease-out",
-                  "hover:bg-gray-50 dark:hover:bg-gray-900",
+                  "hover:bg-muted/50 dark:hover:bg-gray-900",
                   "rounded-2xl p-4 h-auto border border-transparent",
-                  "hover:border-gray-200 dark:hover:border-gray-800",
+                  "hover:border-border dark:hover:border-gray-800",
                   isActive(item.href) && [
-                    "bg-gray-50 dark:bg-gray-900",
-                    "text-gray-900 dark:text-white",
-                    "border-gray-200 dark:border-gray-800",
+                    "bg-muted/50 dark:bg-gray-900",
+                    "text-foreground dark:text-white",
+                    "border-border dark:border-gray-800",
                     "shadow-sm"
                   ]
                 )}
@@ -254,37 +254,37 @@ export function AppSidebar() {
                   <a href={item.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 w-full">
                     <div className={cn(
                       "p-2 rounded-xl transition-all duration-300 ease-out",
-                      "group-hover:bg-gray-100 dark:group-hover:bg-gray-800",
-                      isActive(item.href) && "bg-gray-100 dark:bg-gray-800"
+                      "group-hover:bg-muted dark:group-hover:bg-gray-800",
+                      isActive(item.href) && "bg-muted dark:bg-gray-800"
                     )}>
                       <item.icon className={cn(
                         "h-5 w-5 transition-colors duration-300 ease-out",
-                        isActive(item.href) && "text-gray-900 dark:text-white"
+                        isActive(item.href) && "text-foreground dark:text-white"
                       )} />
                     </div>
                     <span className={cn(
                       "transition-colors duration-300 ease-out font-medium text-sm flex-1",
-                      isActive(item.href) && "text-gray-900 dark:text-white"
+                      isActive(item.href) && "text-foreground dark:text-white"
                     )}>
                       {item.label}
                     </span>
-                    <ExternalLink className="h-4 w-4 text-gray-400" />
+                    <ExternalLink className="h-4 w-4 text-muted-foreground/70" />
                   </a>
                 ) : (
                   <Link to={item.href} className="flex items-center gap-4 w-full">
                     <div className={cn(
                       "p-2 rounded-xl transition-all duration-300 ease-out",
-                      "group-hover:bg-gray-100 dark:group-hover:bg-gray-800",
-                      isActive(item.href) && "bg-gray-100 dark:bg-gray-800"
+                      "group-hover:bg-muted dark:group-hover:bg-gray-800",
+                      isActive(item.href) && "bg-muted dark:bg-gray-800"
                     )}>
                       <item.icon className={cn(
                         "h-5 w-5 transition-colors duration-300 ease-out",
-                        isActive(item.href) && "text-gray-900 dark:text-white"
+                        isActive(item.href) && "text-foreground dark:text-white"
                       )} />
                     </div>
                     <span className={cn(
                       "transition-colors duration-300 ease-out font-medium text-sm flex-1",
-                      isActive(item.href) && "text-gray-900 dark:text-white"
+                      isActive(item.href) && "text-foreground dark:text-white"
                     )}>
                       {item.label}
                     </span>
@@ -307,7 +307,7 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-gray-200 dark:border-gray-800 p-4 space-y-4 bg-white dark:bg-black">
+      <SidebarFooter className="border-t border-border dark:border-gray-800 p-4 space-y-4 bg-white dark:bg-black">
         <SidebarMenu className="space-y-2">
           {bottomMenuItems.map((item) => (
             <SidebarMenuItem key={item.label}>
@@ -316,12 +316,12 @@ export function AppSidebar() {
                 isActive={isActive(item.href)}
                 className={cn(
                   "group relative transition-all duration-300 ease-out",
-                  "hover:bg-gray-50 dark:hover:bg-gray-900",
+                  "hover:bg-muted/50 dark:hover:bg-gray-900",
                   "rounded-2xl p-4 h-auto border border-transparent",
-                  "hover:border-gray-200 dark:hover:border-gray-800",
+                  "hover:border-border dark:hover:border-gray-800",
                   isActive(item.href) && [
-                    "bg-gray-50 dark:bg-gray-900",
-                    "text-gray-900 dark:text-white",
+                    "bg-muted/50 dark:bg-gray-900",
+                    "text-foreground dark:text-white",
                     "shadow-sm"
                   ]
                 )}
@@ -329,17 +329,17 @@ export function AppSidebar() {
                 <Link to={item.href} className="flex items-center gap-4 w-full">
                   <div className={cn(
                     "p-2 rounded-xl transition-all duration-300 ease-out",
-                    "group-hover:bg-gray-100 dark:group-hover:bg-gray-800",
-                    isActive(item.href) && "bg-gray-100 dark:bg-gray-800"
+                    "group-hover:bg-muted dark:group-hover:bg-gray-800",
+                    isActive(item.href) && "bg-muted dark:bg-gray-800"
                   )}>
                     <item.icon className={cn(
                       "h-5 w-5 transition-colors duration-300 ease-out",
-                      isActive(item.href) && "text-gray-900 dark:text-white"
+                      isActive(item.href) && "text-foreground dark:text-white"
                     )} />
                   </div>
                   <span className={cn(
                     "transition-colors duration-300 ease-out font-medium text-sm",
-                    isActive(item.href) && "text-gray-900 dark:text-white"
+                    isActive(item.href) && "text-foreground dark:text-white"
                   )}>
                     {item.label}
                   </span>
@@ -371,15 +371,15 @@ export function AppSidebar() {
         </SidebarMenu>
 
         {/* User Profile - Apple Style */}
-        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/50 dark:bg-gray-900 border border-border dark:border-gray-800">
           <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-2xl border-2 border-primary/20">
             {getUserRankIcon()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+            <p className="text-sm font-medium text-foreground dark:text-white truncate">
               {profile?.first_name} {profile?.last_name}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/70 truncate">
               {rankingService.calculateLevelInfo(userXP).title} • {userXP} XP
             </p>
           </div>

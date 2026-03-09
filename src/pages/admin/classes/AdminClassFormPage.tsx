@@ -7,8 +7,7 @@ import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -191,12 +190,14 @@ export default function AdminClassFormPage() {
   }
 
   return (
-    <MagicLayout
-      title={isEditing ? 'Editar Turma' : 'Nova Turma'}
-      description={isEditing ? 'Edite as informações da turma' : 'Crie uma nova turma no sistema'}
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{isEditing ? 'Editar Turma' : 'Nova Turma'}</h1>
+        <p className="text-sm text-muted-foreground">{isEditing ? 'Edite as informações da turma' : 'Crie uma nova turma no sistema'}</p>
+      </div>
       <div className="max-w-4xl mx-auto space-y-6">
-        <MagicCard variant="glass" size="lg">
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
           <div className="flex items-center gap-3 mb-6">
             <Button
               variant="ghost"
@@ -206,7 +207,7 @@ export default function AdminClassFormPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
+              <div className="p-3 rounded-xl bg-muted/50">
                 <GraduationCap className="h-6 w-6 text-primary" />
               </div>
               <div>
@@ -383,7 +384,7 @@ export default function AdminClassFormPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-primary to-primary/80"
+                  className="flex-1"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isEditing ? 'Salvar Alterações' : 'Criar Turma'}
@@ -391,8 +392,9 @@ export default function AdminClassFormPage() {
               </div>
             </form>
           </Form>
-        </MagicCard>
+        </CardContent>
+        </Card>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

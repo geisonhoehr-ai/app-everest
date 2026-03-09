@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { logger } from '@/lib/logger'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -232,136 +231,143 @@ export default function AdminStudentClassesPage() {
   }
 
   return (
-    <MagicLayout
-      title={`Turmas - ${user?.first_name} ${user?.last_name}`}
-      description="Gerencie as turmas do aluno"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Turmas - {user?.first_name} {user?.last_name}</h1>
+        <p className="text-muted-foreground">Gerencie as turmas do aluno</p>
+      </div>
+
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <MagicCard variant="glass" size="lg">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/admin/management')}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5 text-primary" />
-                  <h2 className="text-xl font-bold">
-                    {user?.first_name} {user?.last_name}
-                  </h2>
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate('/admin/management')}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="h-5 w-5 text-primary" />
+                    <h2 className="text-xl font-bold text-foreground">
+                      {user?.first_name} {user?.last_name}
+                    </h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {user?.email}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {studentClasses.length} turma(s) matriculada(s)
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {user?.email}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {studentClasses.length} turma(s) matriculada(s)
-                </p>
               </div>
+              <Button
+                onClick={() => setIsAddDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Turma
+              </Button>
             </div>
-            <Button
-              onClick={() => setIsAddDialogOpen(true)}
-              className="bg-gradient-to-r from-primary to-primary/80"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Turma
-            </Button>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Search */}
-        <MagicCard variant="glass">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar turmas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </MagicCard>
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar turmas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Table */}
-        <MagicCard variant="glass" size="lg">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Turma</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="hidden md:table-cell">Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Matrícula</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClasses.length === 0 ? (
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12">
-                      <div className="flex flex-col items-center gap-3">
-                        <BookOpen className="h-12 w-12 text-muted-foreground/50" />
-                        <div>
-                          <p className="font-medium text-muted-foreground">Nenhuma turma encontrada</p>
-                          <p className="text-sm text-muted-foreground/60">
-                            {searchTerm ? 'Tente outra busca' : 'Adicione o aluno a uma turma'}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
+                    <TableHead>Turma</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead className="hidden md:table-cell">Status</TableHead>
+                    <TableHead className="hidden md:table-cell">Matrícula</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                ) : (
-                  filteredClasses.map((studentClass) => (
-                    <TableRow key={studentClass.id}>
-                      <TableCell>
-                        <div className="font-medium">
-                          {studentClass.class?.name}
+                </TableHeader>
+                <TableBody>
+                  {filteredClasses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-12">
+                        <div className="flex flex-col items-center gap-3">
+                          <BookOpen className="h-12 w-12 text-muted-foreground/50" />
+                          <div>
+                            <p className="font-medium text-muted-foreground">Nenhuma turma encontrada</p>
+                            <p className="text-sm text-muted-foreground/70">
+                              {searchTerm ? 'Tente outra busca' : 'Adicione o aluno a uma turma'}
+                            </p>
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-muted-foreground max-w-md truncate">
-                          {studentClass.class?.description}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Badge
-                          variant={
-                            studentClass.class?.status === 'active'
-                              ? 'default'
-                              : 'secondary'
-                          }
-                        >
-                          {studentClass.class?.status === 'active' ? 'Ativa' : 'Inativa'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(studentClass.enrolled_at).toLocaleDateString('pt-BR')}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveClass(studentClass.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Remover
-                        </Button>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </MagicCard>
+                  ) : (
+                    filteredClasses.map((studentClass) => (
+                      <TableRow key={studentClass.id}>
+                        <TableCell>
+                          <div className="font-medium text-foreground">
+                            {studentClass.class?.name}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-muted-foreground max-w-md truncate">
+                            {studentClass.class?.description}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Badge
+                            variant={
+                              studentClass.class?.status === 'active'
+                                ? 'default'
+                                : 'secondary'
+                            }
+                          >
+                            {studentClass.class?.status === 'active' ? 'Ativa' : 'Inativa'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            {new Date(studentClass.enrolled_at).toLocaleDateString('pt-BR')}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveClass(studentClass.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Remover
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Add Class Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -402,6 +408,6 @@ export default function AdminStudentClassesPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

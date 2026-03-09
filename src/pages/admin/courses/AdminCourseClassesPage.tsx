@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -241,10 +240,11 @@ export default function AdminCourseClassesPage() {
   }
 
   return (
-    <MagicLayout
-      title={`Turmas do Curso: ${courseName}`}
-      description="Gerencie quais turmas têm acesso a este curso"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{`Turmas do Curso: ${courseName}`}</h1>
+        <p className="text-sm text-muted-foreground">Gerencie quais turmas têm acesso a este curso</p>
+      </div>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -333,53 +333,60 @@ export default function AdminCourseClassesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <MagicCard variant="premium" size="sm">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10">
-                <Users className="h-6 w-6 text-blue-500" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{assignedClasses.length}</div>
-                <div className="text-sm text-muted-foreground">Turmas com Acesso</div>
-              </div>
-            </div>
-          </MagicCard>
-
-          <MagicCard variant="premium" size="sm">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/10">
-                <BookOpen className="h-6 w-6 text-green-500" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">
-                  {assignedClasses.reduce((sum, c) => sum + c.student_count, 0)}
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-muted/50">
+                  <Users className="h-6 w-6 text-blue-500" />
                 </div>
-                <div className="text-sm text-muted-foreground">Alunos com Acesso</div>
-              </div>
-            </div>
-          </MagicCard>
-
-          <MagicCard variant="premium" size="sm">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10">
-                <CheckCircle className="h-6 w-6 text-purple-500" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">
-                  {availableClasses.length - assignedClasses.length}
+                <div>
+                  <div className="text-2xl font-bold text-foreground">{assignedClasses.length}</div>
+                  <div className="text-sm text-muted-foreground">Turmas com Acesso</div>
                 </div>
-                <div className="text-sm text-muted-foreground">Turmas Disponíveis</div>
               </div>
-            </div>
-          </MagicCard>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-muted/50">
+                  <BookOpen className="h-6 w-6 text-green-500" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {assignedClasses.reduce((sum, c) => sum + c.student_count, 0)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Alunos com Acesso</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-muted/50">
+                  <CheckCircle className="h-6 w-6 text-purple-500" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {availableClasses.length - assignedClasses.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Turmas Disponíveis</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Assigned Classes Table */}
-        <MagicCard variant="glass" size="lg">
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Turmas com Acesso</h2>
+            <h2 className="text-xl font-semibold text-foreground">Turmas com Acesso</h2>
 
-            <div className="rounded-xl border border-border/50 overflow-hidden">
+            <div className="rounded-xl border border-border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
@@ -433,8 +440,9 @@ export default function AdminCourseClassesPage() {
               </Table>
             </div>
           </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

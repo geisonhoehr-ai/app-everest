@@ -166,7 +166,7 @@ export default function AnswerSheetsListPage() {
       case 'submitted':
         return 'bg-blue-500/10 border-blue-500/20 text-blue-600'
       case 'expired':
-        return 'bg-gray-500/10 border-gray-500/20 text-gray-600'
+        return 'bg-muted/50 border-border text-muted-foreground'
       case 'scheduled':
         return 'bg-purple-500/10 border-purple-500/20 text-purple-600'
       default:

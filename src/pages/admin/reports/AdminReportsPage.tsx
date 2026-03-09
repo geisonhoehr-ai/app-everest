@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SectionLoader } from '@/components/SectionLoader'
 import {
@@ -24,12 +23,6 @@ import {
   Clock,
   TrendingDown
 } from 'lucide-react'
-import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   BarChart,
@@ -77,28 +70,32 @@ export default function AdminReportsPage() {
       title: 'Total de Usuarios',
       value: stats ? stats.totalUsers.toLocaleString('pt-BR') : '0',
       icon: Users,
-      color: 'from-blue-500/20 to-blue-600/10',
+      bgColor: 'bg-blue-500/10',
+      borderColor: 'border-blue-500/20',
       iconColor: 'text-blue-500'
     },
     {
       title: 'Cursos',
       value: stats ? stats.totalCourses.toLocaleString('pt-BR') : '0',
       icon: BookOpen,
-      color: 'from-green-500/20 to-green-600/10',
+      bgColor: 'bg-green-500/10',
+      borderColor: 'border-green-500/20',
       iconColor: 'text-green-500'
     },
     {
       title: 'Redacoes',
       value: stats ? stats.totalEssays.toLocaleString('pt-BR') : '0',
       icon: FileText,
-      color: 'from-purple-500/20 to-purple-600/10',
+      bgColor: 'bg-purple-500/10',
+      borderColor: 'border-purple-500/20',
       iconColor: 'text-purple-500'
     },
     {
       title: 'Taxa de Conclusao',
       value: stats ? `${stats.completionRate}%` : '0%',
       icon: Target,
-      color: 'from-orange-500/20 to-orange-600/10',
+      bgColor: 'bg-orange-500/10',
+      borderColor: 'border-orange-500/20',
       iconColor: 'text-orange-500'
     }
   ]
@@ -108,10 +105,12 @@ export default function AdminReportsPage() {
   }
 
   return (
-    <MagicLayout
-      title="Relatorios e Analises"
-      description="Visualize metricas e estatisticas detalhadas da plataforma"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Relatorios e Analises</h1>
+        <p className="text-muted-foreground">Visualize metricas e estatisticas detalhadas da plataforma</p>
+      </div>
+
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         {/* Header Actions */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -129,7 +128,7 @@ export default function AdminReportsPage() {
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Personalizar</span>
             </Button>
-            <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 flex-1 md:flex-none">
+            <Button className="gap-2 flex-1 md:flex-none">
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Exportar</span>
             </Button>
@@ -139,19 +138,21 @@ export default function AdminReportsPage() {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {statsCards.map((stat, index) => (
-            <MagicCard key={index} variant="glass" glow>
-              <div className="space-y-3 md:space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className={`p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br ${stat.color}`}>
-                    <stat.icon className={`h-4 w-4 md:h-6 md:w-6 ${stat.iconColor}`} />
+            <Card key={index} className="border-border shadow-sm">
+              <CardContent className="p-5">
+                <div className="space-y-3 md:space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className={`p-2 md:p-3 rounded-xl md:rounded-2xl ${stat.bgColor} border ${stat.borderColor}`}>
+                      <stat.icon className={`h-4 w-4 md:h-6 md:w-6 ${stat.iconColor}`} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs md:text-sm text-muted-foreground">{stat.title}</p>
+                    <h3 className="text-xl md:text-3xl font-bold text-foreground mt-1">{stat.value}</h3>
                   </div>
                 </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">{stat.title}</p>
-                  <h3 className="text-xl md:text-3xl font-bold mt-1">{stat.value}</h3>
-                </div>
-              </div>
-            </MagicCard>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
@@ -165,9 +166,9 @@ export default function AdminReportsPage() {
 
           {/* Visao Geral */}
           <TabsContent value="overview" className="space-y-6">
-            <MagicCard variant="premium" size="lg">
+            <Card className="border-border shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                <CardTitle className="flex items-center gap-2 text-lg md:text-xl text-foreground">
                   <BarChart3 className="h-5 w-5" />
                   Resumo
                 </CardTitle>
@@ -182,7 +183,7 @@ export default function AdminReportsPage() {
                       <Users className="h-4 w-4" />
                       Alunos
                     </div>
-                    <p className="text-xl md:text-2xl font-bold">
+                    <p className="text-xl md:text-2xl font-bold text-foreground">
                       {stats ? stats.totalStudents.toLocaleString('pt-BR') : '0'}
                     </p>
                   </div>
@@ -191,7 +192,7 @@ export default function AdminReportsPage() {
                       <Award className="h-4 w-4" />
                       Quizzes
                     </div>
-                    <p className="text-xl md:text-2xl font-bold">
+                    <p className="text-xl md:text-2xl font-bold text-foreground">
                       {stats ? stats.totalQuizzes.toLocaleString('pt-BR') : '0'}
                     </p>
                   </div>
@@ -200,7 +201,7 @@ export default function AdminReportsPage() {
                       <TrendingUp className="h-4 w-4" />
                       Flashcards
                     </div>
-                    <p className="text-xl md:text-2xl font-bold">
+                    <p className="text-xl md:text-2xl font-bold text-foreground">
                       {stats ? stats.totalFlashcards.toLocaleString('pt-BR') : '0'}
                     </p>
                   </div>
@@ -246,13 +247,13 @@ export default function AdminReportsPage() {
                   </div>
                 )}
               </CardContent>
-            </MagicCard>
+            </Card>
 
             {/* Atividade Semanal */}
             {weeklyActivityData.length > 0 && (
-              <MagicCard variant="glass" size="lg">
+              <Card className="border-border shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-base md:text-lg">Atividade Semanal</CardTitle>
+                  <CardTitle className="text-base md:text-lg text-foreground">Atividade Semanal</CardTitle>
                   <CardDescription className="text-xs md:text-sm">Atividades por dia da semana</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -268,15 +269,15 @@ export default function AdminReportsPage() {
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
-              </MagicCard>
+              </Card>
             )}
           </TabsContent>
 
           {/* Usuarios */}
           <TabsContent value="users" className="space-y-6">
-            <MagicCard variant="premium" size="lg">
+            <Card className="border-border shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg text-foreground">
                   <Users className="h-5 w-5" />
                   Crescimento de Usuarios
                 </CardTitle>
@@ -311,29 +312,29 @@ export default function AdminReportsPage() {
                   </div>
                 )}
               </CardContent>
-            </MagicCard>
+            </Card>
 
             {/* Distribuicao por Papel */}
-            <MagicCard variant="glass" size="lg">
+            <Card className="border-border shadow-sm">
               <CardHeader>
-                <CardTitle className="text-base md:text-lg">Distribuicao de Usuarios</CardTitle>
+                <CardTitle className="text-base md:text-lg text-foreground">Distribuicao de Usuarios</CardTitle>
                 <CardDescription className="text-xs md:text-sm">Por papel na plataforma</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                  <div className="text-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
                     <div className="text-2xl font-bold text-blue-600">
                       {stats ? stats.totalStudents : 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Alunos</div>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                  <div className="text-center p-4 rounded-xl bg-green-500/10 border border-green-500/20">
                     <div className="text-2xl font-bold text-green-600">
                       {stats ? stats.totalTeachers : 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Professores</div>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                  <div className="text-center p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
                     <div className="text-2xl font-bold text-purple-600">
                       {stats ? stats.totalAdministrators : 0}
                     </div>
@@ -341,14 +342,14 @@ export default function AdminReportsPage() {
                   </div>
                 </div>
               </CardContent>
-            </MagicCard>
+            </Card>
           </TabsContent>
 
           {/* Conteudo */}
           <TabsContent value="content" className="space-y-6">
-            <MagicCard variant="premium" size="lg">
+            <Card className="border-border shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg text-foreground">
                   <BookOpen className="h-5 w-5" />
                   Conteudo da Plataforma
                 </CardTitle>
@@ -358,37 +359,37 @@ export default function AdminReportsPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                  <div className="text-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
                     <div className="text-2xl font-bold text-blue-600">
                       {stats ? stats.totalCourses : 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Cursos</div>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                  <div className="text-center p-4 rounded-xl bg-green-500/10 border border-green-500/20">
                     <div className="text-2xl font-bold text-green-600">
                       {stats ? stats.totalFlashcards : 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Flashcards</div>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                  <div className="text-center p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
                     <div className="text-2xl font-bold text-purple-600">
                       {stats ? stats.totalQuizzes : 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Quizzes</div>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+                  <div className="text-center p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
                     <div className="text-2xl font-bold text-orange-600">
                       {stats ? stats.totalEssays : 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Redacoes</div>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-pink-500/10 to-pink-600/5 border border-pink-500/20">
+                  <div className="text-center p-4 rounded-xl bg-pink-500/10 border border-pink-200">
                     <div className="text-2xl font-bold text-pink-600">
                       {stats ? stats.totalAudioCourses : 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Audio Cursos</div>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20">
+                  <div className="text-center p-4 rounded-xl bg-cyan-500/10 border border-cyan-200">
                     <div className="text-2xl font-bold text-cyan-600">
                       {stats ? stats.totalClasses : 0}
                     </div>
@@ -396,10 +397,10 @@ export default function AdminReportsPage() {
                   </div>
                 </div>
               </CardContent>
-            </MagicCard>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

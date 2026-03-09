@@ -24,7 +24,6 @@ import { FormControl, FormField, FormItem } from '@/components/ui/form'
 import { useToast } from '@/components/ui/use-toast'
 import { ArrowLeft, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { LessonForm } from '@/components/admin/courses/LessonForm'
-import { MagicLayout } from '@/components/ui/magic-layout'
 import { SectionLoader } from '@/components/SectionLoader'
 
 const lessonSchema = z.object({
@@ -371,22 +370,26 @@ export default function AdminCourseContentPage() {
 
   if (!course) {
     return (
-      <MagicLayout title="Curso não encontrado">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Curso não encontrado</h1>
+        </div>
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold mb-4">Curso não encontrado</h2>
           <Button onClick={() => navigate('/admin/courses')}>
             Voltar para Cursos
           </Button>
         </div>
-      </MagicLayout>
+      </div>
     )
   }
 
   return (
-    <MagicLayout
-      title={`Gerenciar Conteúdo: ${course.name}`}
-      description="Organize módulos e aulas do seu curso"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">{`Gerenciar Conteúdo: ${course.name}`}</h1>
+        <p className="text-muted-foreground mt-1">Organize módulos e aulas do seu curso</p>
+      </div>
       <div className="max-w-6xl mx-auto">
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -432,6 +435,6 @@ export default function AdminCourseContentPage() {
           </form>
         </FormProvider>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

@@ -6,8 +6,7 @@ import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -148,117 +147,125 @@ export default function AdminTopicFormPage() {
   }
 
   return (
-    <MagicLayout
-      title={isEditing ? 'Editar Tópico' : 'Novo Tópico'}
-      description={`${subjectName} - ${isEditing ? 'Edite o tópico' : 'Crie um novo tópico'}`}
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">
+          {isEditing ? 'Editar Tópico' : 'Novo Tópico'}
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          {`${subjectName} - ${isEditing ? 'Edite o tópico' : 'Crie um novo tópico'}`}
+        </p>
+      </div>
+
       <div className="max-w-4xl mx-auto space-y-6">
-        <MagicCard variant="glass" size="lg">
-          <div className="flex items-center gap-3 mb-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(`/admin/flashcards/${subjectId}`)}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
-                <Layers className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">
-                  {isEditing ? 'Editar Tópico' : 'Novo Tópico'}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {subjectName}
-                </p>
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3 mb-6">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(`/admin/flashcards/${subjectId}`)}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-muted/50">
+                  <Layers className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">
+                    {isEditing ? 'Editar Tópico' : 'Novo Tópico'}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {subjectName}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid gap-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Tópico *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Funções Quadráticas" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid gap-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Tópico *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Funções Quadráticas" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Descrição do tópico (opcional)"
-                          rows={3}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Breve descrição sobre o conteúdo do tópico
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Descrição do tópico (opcional)"
+                            rows={3}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Breve descrição sobre o conteúdo do tópico
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="order_index"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ordem de Exibição</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Define a ordem em que o tópico aparece na lista (0 = primeiro)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  <FormField
+                    control={form.control}
+                    name="order_index"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ordem de Exibição</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Define a ordem em que o tópico aparece na lista (0 = primeiro)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-              <div className="flex items-center gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(`/admin/flashcards/${subjectId}`)}
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-primary to-primary/80"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {isEditing ? 'Salvar Alterações' : 'Criar Tópico'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </MagicCard>
+                <div className="flex items-center gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate(`/admin/flashcards/${subjectId}`)}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {isEditing ? 'Salvar Alterações' : 'Criar Tópico'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

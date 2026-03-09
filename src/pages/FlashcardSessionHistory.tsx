@@ -44,7 +44,7 @@ const getModeDetails = (mode: string) => {
     case 'free':
       return { name: 'Estudo Livre', icon: Star, color: 'bg-green-500/10 text-green-600 border-green-500/20' }
     default:
-      return { name: mode, icon: BookOpen, color: 'bg-gray-500/10 text-gray-600 border-gray-500/20' }
+      return { name: mode, icon: BookOpen, color: 'bg-muted/50 text-muted-foreground border-border' }
   }
 }
 

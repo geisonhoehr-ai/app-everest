@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
@@ -157,7 +157,7 @@ const studentMenuItems = [
 // Menu items for teachers and administrators
 const adminMenuItems = [
   {
-    group: 'Principal',
+    group: '',
     items: [
       {
         href: '/admin',
@@ -165,22 +165,26 @@ const adminMenuItems = [
         icon: LayoutDashboard,
         badge: null
       },
-      {
-        href: '/admin/system-control',
-        label: 'Controle Total',
-        icon: Shield,
-        badge: null,
-        adminOnly: true
-      },
+    ]
+  },
+  {
+    group: 'Pessoas',
+    items: [
       {
         href: '/admin/management',
-        label: 'Usuários',
-        icon: UserCog,
+        label: 'Usuarios',
+        icon: Users,
+        badge: null
+      },
+      {
+        href: '/admin/classes',
+        label: 'Turmas',
+        icon: GraduationCap,
         badge: null
       },
       {
         href: '/admin/permissions',
-        label: 'Permissões',
+        label: 'Permissoes',
         icon: Lock,
         badge: null,
         adminOnly: true
@@ -188,7 +192,7 @@ const adminMenuItems = [
     ]
   },
   {
-    group: 'Conteúdo',
+    group: 'Conteudo',
     items: [
       {
         href: '/admin/courses',
@@ -210,7 +214,7 @@ const adminMenuItems = [
       },
       {
         href: '/admin/essays',
-        label: 'Redações',
+        label: 'Redacoes',
         icon: FileText,
         badge: null
       },
@@ -229,13 +233,31 @@ const adminMenuItems = [
     ]
   },
   {
-    group: 'Relatórios',
+    group: 'Agenda',
+    items: [
+      {
+        href: '/admin/calendar',
+        label: 'Calendario',
+        icon: Calendar,
+        badge: null
+      },
+    ]
+  },
+  {
+    group: 'Analise',
     items: [
       {
         href: '/admin/reports',
-        label: 'Relatórios',
+        label: 'Relatorios',
         icon: BarChart3,
         badge: null
+      },
+      {
+        href: '/admin/gamification',
+        label: 'Gamificacao',
+        icon: Trophy,
+        badge: null,
+        adminOnly: true
       },
     ]
   },
@@ -243,15 +265,22 @@ const adminMenuItems = [
     group: 'Sistema',
     items: [
       {
+        href: '/admin/system-control',
+        label: 'Controle Total',
+        icon: Shield,
+        badge: null,
+        adminOnly: true
+      },
+      {
         href: '/admin/integrations',
-        label: 'Integrações',
+        label: 'Integracoes',
         icon: Plug,
         badge: null,
         adminOnly: true
       },
       {
         href: '/admin/settings',
-        label: 'Configurações',
+        label: 'Configuracoes',
         icon: Settings,
         badge: null
       },
@@ -263,6 +292,7 @@ export function UnifiedSidebar() {
   const { profile, signOut } = useAuth()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const location = useLocation()
+  const navigate = useNavigate()
 
   if (!profile) return null
 
@@ -271,8 +301,9 @@ export function UnifiedSidebar() {
   const isAdmin = isAdministrator || isTeacher
   const isStudent = profile.role === 'student'
 
-  const handleLogout = () => {
-    signOut()
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/login')
   }
 
   // Filtra os itens do menu de alunos baseado nas permissões
@@ -297,53 +328,70 @@ export function UnifiedSidebar() {
     })
   })).filter(group => group.items.length > 0) // Remove grupos vazios
 
+  // Admin uses dark sidebar on light background
+  const adminSidebarClasses = isAdmin
+    ? "border-r-0 bg-[#1a1a2e] text-white [&_*]:!border-white/10"
+    : "border-r border-border/50 bg-card/50 backdrop-blur-sm"
+
   return (
-    <Sidebar className="border-r border-border/50 bg-card/50 backdrop-blur-sm">
-      <SidebarHeader className="p-6">
+    <Sidebar className={adminSidebarClasses}>
+      <SidebarHeader className="p-5 pb-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80">
-            <Mountain className="h-6 w-6 text-white" />
+          <div className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-lg",
+            isAdmin ? "bg-primary" : "bg-gradient-to-br from-primary to-primary/80"
+          )}>
+            <Mountain className="h-5 w-5 text-white" />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+            <h1 className={cn(
+              "text-base font-bold",
+              isAdmin ? "text-white" : "text-foreground"
+            )}>
               Everest
             </h1>
-            <p className="text-xs text-muted-foreground">
-              {isAdmin ? 'Painel Administrativo' : 'Plataforma de Estudos'}
+            <p className={cn(
+              "text-[11px]",
+              isAdmin ? "text-white/50" : "text-muted-foreground"
+            )}>
+              {isAdmin ? 'Admin' : 'Plataforma de Estudos'}
             </p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-4">
+      <SidebarContent className="px-3">
         {isAdmin ? (
-          // Admin/Teacher Menu Structure
+          // Admin/Teacher Menu - Professional dark sidebar
           <>
             {visibleAdminMenuItems.map((group, groupIndex) => (
-              <SidebarGroup key={groupIndex}>
-                <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {group.group}
-                </SidebarGroupLabel>
+              <SidebarGroup key={groupIndex} className="py-1">
+                {group.group && (
+                  <SidebarGroupLabel className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.1em] px-3 mb-1">
+                    {group.group}
+                  </SidebarGroupLabel>
+                )}
                 <SidebarMenu>
                   {group.items.map((item) => {
-                    const isActive = location.pathname === item.href
+                    const isActive = location.pathname === item.href ||
+                      (item.href !== '/admin' && location.pathname.startsWith(item.href))
                     return (
                       <SidebarMenuItem key={item.href}>
                         <SidebarMenuButton
                           asChild
                           isActive={isActive}
                           className={cn(
-                            "w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                            "w-full justify-start gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150",
                             isActive
-                              ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25"
-                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                              ? "bg-white/10 text-white"
+                              : "text-white/60 hover:bg-white/5 hover:text-white/90"
                           )}
                         >
                           <Link to={item.href}>
-                            <item.icon className="h-4 w-4" />
+                            <item.icon className="h-4 w-4 shrink-0" />
                             <span>{item.label}</span>
                             {item.badge && (
-                              <Badge variant="secondary" className="ml-auto">
+                              <Badge variant="secondary" className="ml-auto text-[10px] bg-white/10 text-white/70 border-0">
                                 {item.badge}
                               </Badge>
                             )}
@@ -385,41 +433,47 @@ export function UnifiedSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <div className="space-y-4">
-          {/* User Profile Section */}
-          <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 p-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={profile.avatar_url} alt={profile.first_name} />
-              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
-                {profile.first_name?.[0]}{profile.last_name?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">
-                {profile.first_name} {profile.last_name}
-              </p>
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    "text-xs font-medium",
-                    profile.role === 'administrator'
-                      ? "bg-gradient-to-r from-red-500/10 to-red-600/5 border-red-500/20 text-red-600"
-                      : profile.role === 'teacher'
-                        ? "bg-gradient-to-r from-blue-500/10 to-blue-600/5 border-blue-500/20 text-blue-600"
-                        : "bg-gradient-to-r from-green-500/10 to-green-600/5 border-green-500/20 text-green-600"
-                  )}
-                >
-                  {profile.role === 'administrator' && <Shield className="h-3 w-3 mr-1" />}
-                  {profile.role === 'teacher' && <GraduationCap className="h-3 w-3 mr-1" />}
-                  {profile.role === 'student' && <UserCheck className="h-3 w-3 mr-1" />}
-                  {profile.role === 'administrator' ? 'Admin' :
-                    profile.role === 'teacher' ? 'Professor' : 'Estudante'}
-                </Badge>
-              </div>
-            </div>
+      <SidebarFooter className="p-3 space-y-2">
+        <div className={cn(
+          "flex items-center gap-3 rounded-lg p-3",
+          isAdmin ? "bg-white/5" : "bg-muted/50"
+        )}>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={profile.avatar_url} alt={profile.first_name} />
+            <AvatarFallback className={cn(
+              "text-xs font-semibold",
+              isAdmin ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
+            )}>
+              {profile.first_name?.[0]}{profile.last_name?.[0]}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className={cn(
+              "text-xs font-medium truncate",
+              isAdmin ? "text-white/90" : "text-foreground"
+            )}>
+              {profile.first_name} {profile.last_name}
+            </p>
+            <p className={cn(
+              "text-[10px]",
+              isAdmin ? "text-white/40" : "text-muted-foreground"
+            )}>
+              {profile.role === 'administrator' ? 'Administrador' :
+                profile.role === 'teacher' ? 'Professor' : 'Estudante'}
+            </p>
           </div>
+          <button
+            onClick={handleLogout}
+            className={cn(
+              "p-1.5 rounded-md transition-colors shrink-0",
+              isAdmin
+                ? "text-white/40 hover:text-white hover:bg-white/10"
+                : "text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
+            )}
+            title="Sair da conta"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </SidebarFooter>
     </Sidebar>

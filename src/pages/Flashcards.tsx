@@ -274,7 +274,7 @@ export default function FlashcardsPage() {
                           {/* Progress Badge - Mais discreto */}
                           <div className="absolute top-3 right-3">
                             <div className="px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-sm shadow-lg">
-                              <span className="text-xs font-bold text-gray-900">{Math.round(progress)}%</span>
+                              <span className="text-xs font-bold text-foreground">{Math.round(progress)}%</span>
                             </div>
                           </div>
 

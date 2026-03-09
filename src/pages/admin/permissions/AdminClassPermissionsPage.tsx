@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { logger } from '@/lib/logger'
 import { useToast } from '@/hooks/use-toast'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -45,7 +44,7 @@ import {
 import { supabase } from '@/lib/supabase/client'
 
 /**
- * Página de Gerenciamento de Permissões por Turma
+ * Pagina de Gerenciamento de Permissoes por Turma
  *
  * Permite que administradores configurem quais recursos
  * cada turma pode acessar na plataforma.
@@ -69,14 +68,14 @@ interface FeatureOption {
   category: 'core' | 'content' | 'gamification'
 }
 
-// Recursos CONTROLÁVEIS por turma
-// NOTA: Os recursos abaixo são NÃO marcados são SEMPRE VISÍVEIS para todos os alunos:
-// ✅ Dashboard, Calendário, Ranking, Fórum, Conquistas, Progresso, Notificações, Configurações
+// Recursos CONTROLAVEIS por turma
+// NOTA: Os recursos abaixo sao NAO marcados sao SEMPRE VISIVEIS para todos os alunos:
+// Dashboard, Calendario, Ranking, Forum, Conquistas, Progresso, Notificacoes, Configuracoes
 const FEATURE_OPTIONS: FeatureOption[] = [
   {
     key: FEATURE_KEYS.FLASHCARDS,
     label: 'Flashcards',
-    description: 'Sistema de revisão espaçada com flashcards',
+    description: 'Sistema de revisao espacada com flashcards',
     icon: Brain,
     category: 'content'
   },
@@ -90,28 +89,28 @@ const FEATURE_OPTIONS: FeatureOption[] = [
   {
     key: FEATURE_KEYS.EVERCAST,
     label: 'Evercast',
-    description: 'Aulas em áudio (podcast)',
+    description: 'Aulas em audio (podcast)',
     icon: Mic,
     category: 'content'
   },
   {
     key: FEATURE_KEYS.ESSAYS,
-    label: 'Redações',
-    description: 'Sistema de redações e correções',
+    label: 'Redacoes',
+    description: 'Sistema de redacoes e correcoes',
     icon: FileText,
     category: 'content'
   },
   {
     key: FEATURE_KEYS.VIDEO_LESSONS,
     label: 'Videoaulas',
-    description: 'Cursos em vídeo',
+    description: 'Cursos em video',
     icon: BookOpen,
     category: 'content'
   },
   {
     key: FEATURE_KEYS.AUDIO_LESSONS,
-    label: 'Aulas em Áudio',
-    description: 'Módulos de áudio e podcasts educativos',
+    label: 'Aulas em Audio',
+    description: 'Modulos de audio e podcasts educativos',
     icon: Headphones,
     category: 'content'
   },
@@ -130,7 +129,7 @@ export default function AdminClassPermissionsPage() {
     loadClasses()
   }, [])
 
-  // Buscar permissões quando seleciona uma turma
+  // Buscar permissoes quando seleciona uma turma
   useEffect(() => {
     if (selectedClassId) {
       loadPermissions(selectedClassId)
@@ -152,7 +151,7 @@ export default function AdminClassPermissionsPage() {
       logger.error('Erro ao carregar turmas:', error)
       toast({
         title: 'Erro',
-        description: 'Não foi possível carregar as turmas.',
+        description: 'Nao foi possivel carregar as turmas.',
         variant: 'destructive',
       })
     } finally {
@@ -167,10 +166,10 @@ export default function AdminClassPermissionsPage() {
       const featureKeys = permissions.map(p => p.feature_key as FeatureKey)
       setSelectedPermissions(featureKeys)
     } catch (error) {
-      logger.error('Erro ao carregar permissões:', error)
+      logger.error('Erro ao carregar permissoes:', error)
       toast({
         title: 'Erro',
-        description: 'Não foi possível carregar as permissões.',
+        description: 'Nao foi possivel carregar as permissoes.',
         variant: 'destructive',
       })
     } finally {
@@ -200,7 +199,7 @@ export default function AdminClassPermissionsPage() {
   const handleSave = async () => {
     if (!selectedClassId) {
       toast({
-        title: 'Atenção',
+        title: 'Atencao',
         description: 'Selecione uma turma primeiro.',
         variant: 'destructive',
       })
@@ -217,16 +216,16 @@ export default function AdminClassPermissionsPage() {
       if (result.success) {
         toast({
           title: 'Sucesso!',
-          description: 'Permissões atualizadas com sucesso.',
+          description: 'Permissoes atualizadas com sucesso.',
         })
       } else {
         throw new Error(result.error)
       }
     } catch (error) {
-      logger.error('Erro ao salvar permissões:', error)
+      logger.error('Erro ao salvar permissoes:', error)
       toast({
         title: 'Erro',
-        description: 'Não foi possível salvar as permissões.',
+        description: 'Nao foi possivel salvar as permissoes.',
         variant: 'destructive',
       })
     } finally {
@@ -241,9 +240,9 @@ export default function AdminClassPermissionsPage() {
       case 'core':
         return 'Essenciais'
       case 'content':
-        return 'Conteúdo'
+        return 'Conteudo'
       case 'gamification':
-        return 'Gamificação'
+        return 'Gamificacao'
       default:
         return 'Outros'
     }
@@ -258,249 +257,258 @@ export default function AdminClassPermissionsPage() {
   }, {} as Record<string, FeatureOption[]>)
 
   return (
-    <MagicLayout
-      title="Permissões por Turma"
-      description="Configure quais recursos cada turma pode acessar na plataforma"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Permissoes por Turma</h1>
+        <p className="text-muted-foreground">Configure quais recursos cada turma pode acessar na plataforma</p>
+      </div>
+
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <MagicCard variant="premium" size="lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/20">
-                <Lock className="h-8 w-8 text-blue-600" />
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                  <Lock className="h-8 w-8 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Gerenciamento de Permissoes</h1>
+                  <p className="text-muted-foreground">
+                    Controle granular de acesso por turma
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold">Gerenciamento de Permissões</h1>
-                <p className="text-muted-foreground">
-                  Controle granular de acesso por turma
-                </p>
+              <Badge variant="outline" className="bg-blue-500/10 border-blue-500/20 text-blue-600">
+                <Users className="h-3 w-3 mr-1" />
+                {classes.length} Turmas
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Selecao de Turma */}
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <GraduationCap className="h-5 w-5 text-primary" />
+                <Label className="text-lg font-semibold text-foreground">Selecione uma Turma</Label>
               </div>
-            </div>
-            <Badge variant="outline" className="bg-blue-500/10 border-blue-500/20 text-blue-600">
-              <Users className="h-3 w-3 mr-1" />
-              {classes.length} Turmas
-            </Badge>
-          </div>
-        </MagicCard>
 
-        {/* Seleção de Turma */}
-        <MagicCard variant="glass" size="lg">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <GraduationCap className="h-5 w-5 text-primary" />
-              <Label className="text-lg font-semibold">Selecione uma Turma</Label>
-            </div>
+              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Escolha uma turma..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map(cls => (
+                    <SelectItem key={cls.id} value={cls.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{cls.name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {cls.class_type === 'trial' ? 'Trial' : 'Padrao'}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Escolha uma turma..." />
-              </SelectTrigger>
-              <SelectContent>
-                {classes.map(cls => (
-                  <SelectItem key={cls.id} value={cls.id}>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{cls.name}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {cls.class_type === 'trial' ? 'Trial' : 'Padrão'}
-                      </Badge>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {selectedClass && (
-              <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
-                <div className="flex items-start gap-3">
-                  <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div className="flex-1">
-                    <h4 className="font-semibold mb-1">{selectedClass.name}</h4>
-                    {selectedClass.description && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {selectedClass.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>Início: {new Date(selectedClass.start_date).toLocaleDateString('pt-BR')}</span>
-                      {selectedClass.end_date && (
-                        <span>Fim: {new Date(selectedClass.end_date).toLocaleDateString('pt-BR')}</span>
+              {selectedClass && (
+                <div className="p-4 rounded-xl bg-muted/50 border border-border">
+                  <div className="flex items-start gap-3">
+                    <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-foreground mb-1">{selectedClass.name}</h4>
+                      {selectedClass.description && (
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {selectedClass.description}
+                        </p>
                       )}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Inicio: {new Date(selectedClass.start_date).toLocaleDateString('pt-BR')}</span>
+                        {selectedClass.end_date && (
+                          <span>Fim: {new Date(selectedClass.end_date).toLocaleDateString('pt-BR')}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </MagicCard>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Recursos Disponíveis */}
+        {/* Recursos Disponiveis */}
         {selectedClassId && (
-          <MagicCard variant="glass" size="lg">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Lock className="h-5 w-5 text-primary" />
-                  <div>
-                    <Label className="text-lg font-semibold">Recursos Controláveis</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Configure quais recursos adicionais esta turma pode acessar
-                    </p>
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Lock className="h-5 w-5 text-primary" />
+                    <div>
+                      <Label className="text-lg font-semibold text-foreground">Recursos Controlaveis</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Configure quais recursos adicionais esta turma pode acessar
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleSelectAll}>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Todos
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleDeselectAll}>
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Nenhum
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleSelectAll}>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Todos
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleDeselectAll}>
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Nenhum
-                  </Button>
-                </div>
-              </div>
 
-              {/* Info Box - Recursos Padrão */}
-              <div className="p-4 rounded-xl bg-green-500/5 border border-green-500/20">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-green-600 mb-2">Recursos Padrão (Sempre Visíveis)</h4>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Todos os alunos têm acesso automático aos seguintes recursos, independente da turma:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
-                        Dashboard
-                      </Badge>
-                      <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
-                        Calendário
-                      </Badge>
-                      <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
-                        Ranking
-                      </Badge>
-                      <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
-                        Fórum
-                      </Badge>
-                      <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
-                        Conquistas
-                      </Badge>
-                      <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
-                        Progresso
-                      </Badge>
-                      <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
-                        Notificações
-                      </Badge>
-                      <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
-                        Configurações
-                      </Badge>
+                {/* Info Box - Recursos Padrao */}
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-green-600 mb-2">Recursos Padrao (Sempre Visiveis)</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Todos os alunos tem acesso automatico aos seguintes recursos, independente da turma:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
+                          Dashboard
+                        </Badge>
+                        <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
+                          Calendario
+                        </Badge>
+                        <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
+                          Ranking
+                        </Badge>
+                        <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
+                          Forum
+                        </Badge>
+                        <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
+                          Conquistas
+                        </Badge>
+                        <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
+                          Progresso
+                        </Badge>
+                        <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
+                          Notificacoes
+                        </Badge>
+                        <Badge variant="outline" className="bg-green-500/10 border-green-500/20 text-green-700">
+                          Configuracoes
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {Object.entries(groupedFeatures).map(([category, features]) => (
-                <div key={category} className="space-y-3">
-                  <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                      {getCategoryLabel(category)}
-                    </h3>
-                    <Badge variant="outline" className="text-xs">
-                      {features.filter(f => selectedPermissions.includes(f.key)).length}/{features.length}
-                    </Badge>
-                  </div>
+                {Object.entries(groupedFeatures).map(([category, features]) => (
+                  <div key={category} className="space-y-3">
+                    <div className="flex items-center gap-2 pb-2 border-b border-border">
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                        {getCategoryLabel(category)}
+                      </h3>
+                      <Badge variant="outline" className="text-xs">
+                        {features.filter(f => selectedPermissions.includes(f.key)).length}/{features.length}
+                      </Badge>
+                    </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {features.map(feature => {
-                      const isSelected = selectedPermissions.includes(feature.key)
-                      return (
-                        <div
-                          key={feature.key}
-                          className={cn(
-                            'p-4 rounded-xl border transition-all cursor-pointer',
-                            isSelected
-                              ? 'bg-primary/5 border-primary/50'
-                              : 'bg-card/50 border-border/50 hover:border-primary/30'
-                          )}
-                          onClick={() => handleTogglePermission(feature.key)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => handleTogglePermission(feature.key)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <feature.icon className="h-4 w-4 text-primary" />
-                                <span className="font-semibold">{feature.label}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {features.map(feature => {
+                        const isSelected = selectedPermissions.includes(feature.key)
+                        return (
+                          <div
+                            key={feature.key}
+                            className={cn(
+                              'p-4 rounded-xl border transition-all cursor-pointer',
+                              isSelected
+                                ? 'bg-primary/5 border-primary/50'
+                                : 'bg-muted/50 border-border hover:border-primary/30'
+                            )}
+                            onClick={() => handleTogglePermission(feature.key)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => handleTogglePermission(feature.key)}
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <feature.icon className="h-4 w-4 text-primary" />
+                                  <span className="font-semibold text-foreground">{feature.label}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {feature.description}
+                                </p>
                               </div>
-                              <p className="text-xs text-muted-foreground">
-                                {feature.description}
-                              </p>
                             </div>
                           </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Info Box */}
+                <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div className="flex-1 text-sm">
+                      <h4 className="font-semibold text-blue-600 mb-1">Importante</h4>
+                      <ul className="text-muted-foreground space-y-1 list-disc list-inside">
+                        <li>Alunos so verao os recursos marcados acima no menu e dashboard</li>
+                        <li>Professores e Administradores sempre tem acesso total</li>
+                        <li>As alteracoes sao aplicadas imediatamente apos salvar</li>
+                        <li>Alunos precisam fazer logout/login para ver as mudancas</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              ))}
 
-              {/* Info Box */}
-              <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div className="flex-1 text-sm">
-                    <h4 className="font-semibold text-blue-600 mb-1">Importante</h4>
-                    <ul className="text-muted-foreground space-y-1 list-disc list-inside">
-                      <li>Alunos só verão os recursos marcados acima no menu e dashboard</li>
-                      <li>Professores e Administradores sempre têm acesso total</li>
-                      <li>As alterações são aplicadas imediatamente após salvar</li>
-                      <li>Alunos precisam fazer logout/login para ver as mudanças</li>
-                    </ul>
-                  </div>
+                {/* Acoes */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                  <Button
+                    variant="outline"
+                    onClick={() => loadPermissions(selectedClassId)}
+                    disabled={loading || saving}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Resetar
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={loading || saving}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {saving ? 'Salvando...' : 'Salvar Permissoes'}
+                  </Button>
                 </div>
               </div>
-
-              {/* Ações */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-border/50">
-                <Button
-                  variant="outline"
-                  onClick={() => loadPermissions(selectedClassId)}
-                  disabled={loading || saving}
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Resetar
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={loading || saving}
-                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {saving ? 'Salvando...' : 'Salvar Permissões'}
-                </Button>
-              </div>
-            </div>
-          </MagicCard>
+            </CardContent>
+          </Card>
         )}
 
         {/* Empty State */}
         {!selectedClassId && !loading && (
-          <MagicCard variant="glass" size="lg" className="text-center py-12">
-            <div className="max-w-md mx-auto">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center">
-                <GraduationCap className="w-8 h-8 text-blue-600" />
+          <Card className="border-border shadow-sm text-center py-12">
+            <CardContent className="p-5">
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+                  <GraduationCap className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-2">Selecione uma Turma</h3>
+                <p className="text-muted-foreground">
+                  Escolha uma turma acima para configurar as permissoes de acesso aos recursos da plataforma.
+                </p>
               </div>
-              <h3 className="text-xl font-bold mb-2">Selecione uma Turma</h3>
-              <p className="text-muted-foreground">
-                Escolha uma turma acima para configurar as permissões de acesso aos recursos da plataforma.
-              </p>
-            </div>
-          </MagicCard>
+            </CardContent>
+          </Card>
         )}
       </div>
-    </MagicLayout>
+    </div>
   )
 }

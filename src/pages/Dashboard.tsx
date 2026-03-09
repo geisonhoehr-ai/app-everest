@@ -1,451 +1,456 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import {
   getUserSettings,
   saveDashboardLayout,
 } from '@/services/userSettingsService'
 import { courseService } from '@/services/courseService'
-import { DEFAULT_LAYOUTS, AVAILABLE_WIDGETS, WIDGETS } from '@/lib/dashboard-config'
-import { WidgetRenderer } from '@/components/dashboard/WidgetRenderer'
-import { CustomizationPanel } from '@/components/dashboard/CustomizationPanel'
-import { DashboardTutorial } from '@/components/dashboard/DashboardTutorial'
+import { DEFAULT_LAYOUTS } from '@/lib/dashboard-config'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Settings, Layout, GripVertical, Star, BookOpen, Brain, Clock, TrendingUp, CheckCircle, Award, Users, Zap, HelpCircle } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import {
+  BookOpen,
+  Clock,
+  TrendingUp,
+  CheckCircle,
+  Zap,
+  Calendar,
+  ArrowRight,
+  Trophy,
+  ChevronRight,
+} from 'lucide-react'
 import { SectionLoader } from '@/components/SectionLoader'
-import { useToast } from '@/components/ui/use-toast'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { useStaggeredAnimation } from '@/hooks/useAnimations'
+import { dashboardService, type Course, type Event } from '@/services/dashboardService'
+import {
+  rankingService,
+  type UserPosition,
+  type UserRanking,
+} from '@/services/rankingService'
+import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart'
+
+const chartData = [
+  { day: 'Seg', hours: 2.5 },
+  { day: 'Ter', hours: 3 },
+  { day: 'Qua', hours: 4 },
+  { day: 'Qui', hours: 2 },
+  { day: 'Sex', hours: 5 },
+  { day: 'Sáb', hours: 6 },
+  { day: 'Dom', hours: 1.5 },
+]
+
+const chartConfig = {
+  hours: {
+    label: 'Horas de Estudo',
+    color: 'hsl(var(--primary))',
+  },
+}
+
+const eventIcons = {
+  exam: <BookOpen className="h-4 w-4" />,
+  deadline: <Calendar className="h-4 w-4" />,
+  live: <Calendar className="h-4 w-4" />,
+}
+
+const eventColors = {
+  exam: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  deadline: 'bg-red-500/10 text-red-600 dark:text-red-400',
+  live: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+}
 
 export default function DashboardPage() {
   const { user, profile } = useAuth()
-  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)
-  const [isCustomizing, setIsCustomizing] = useState(false)
-  const [widgets, setWidgets] = useState<string[]>([])
-  const [isDragging, setIsDragging] = useState(false)
-  const [draggedWidget, setDraggedWidget] = useState<string | null>(null)
-  const [dragOverWidget, setDragOverWidget] = useState<string | null>(null)
-  const [showTutorial, setShowTutorial] = useState(false)
-  const dragRef = useRef<HTMLDivElement>(null)
-
-  // Check if tutorial should be shown on first visit
-  useEffect(() => {
-    const hasSeenTutorial = localStorage.getItem('dashboard_tutorial_seen')
-    if (!hasSeenTutorial) {
-      setShowTutorial(true)
-    }
-  }, [])
-
-  const handleCloseTutorial = () => {
-    setShowTutorial(false)
-    localStorage.setItem('dashboard_tutorial_seen', 'true')
-  }
-
   const [stats, setStats] = useState({
     activeCourses: 0,
     averageProgress: 0,
     completedLessons: 0,
-    studyTime: 0
+    studyTime: 0,
   })
-
   const [streak, setStreak] = useState(0)
+  const [courses, setCourses] = useState<Course[]>([])
+  const [events, setEvents] = useState<Event[]>([])
+  const [userPosition, setUserPosition] = useState<UserPosition | null>(null)
+  const [topRanking, setTopRanking] = useState<UserRanking[]>([])
 
+  // Streak
   useEffect(() => {
-    const updateStreak = () => {
-      const stored = localStorage.getItem('everest_streak')
-      const today = new Date()
-      const todayStr = today.toDateString()
+    const stored = localStorage.getItem('everest_streak')
+    const today = new Date()
+    const todayStr = today.toDateString()
+    let currentStreak = 1
+    let lastDateStr = ''
 
-      let currentStreak = 1
-      let lastDateStr = ''
+    if (stored) {
+      try {
+        const data = JSON.parse(stored)
+        currentStreak = data.count || 0
+        lastDateStr = data.lastDate || ''
+      } catch { /* ignore */ }
+    }
 
-      if (stored) {
-        try {
-          const data = JSON.parse(stored)
-          currentStreak = data.count || 0
-          lastDateStr = data.lastDate || ''
-        } catch (e) {
-          console.error('Error parsing streak', e)
-        }
-      }
+    if (lastDateStr === todayStr) {
+      setStreak(currentStreak)
+      return
+    }
 
-      if (lastDateStr === todayStr) {
-        setStreak(currentStreak)
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    if (lastDateStr === yesterday.toDateString()) {
+      currentStreak += 1
+    } else {
+      currentStreak = 1
+    }
+
+    setStreak(currentStreak)
+    localStorage.setItem('everest_streak', JSON.stringify({ count: currentStreak, lastDate: todayStr }))
+  }, [])
+
+  // Load all data
+  useEffect(() => {
+    const loadDashboard = async () => {
+      const userId = user?.id
+      if (!userId) {
+        setIsLoading(false)
         return
       }
 
-      const yesterday = new Date(today)
-      yesterday.setDate(yesterday.getDate() - 1)
-      const yesterdayStr = yesterday.toDateString()
-
-      if (lastDateStr === yesterdayStr) {
-        currentStreak += 1
-      } else {
-        currentStreak = 1
-      }
-
-      setStreak(currentStreak)
-      localStorage.setItem('everest_streak', JSON.stringify({ count: currentStreak, lastDate: todayStr }))
-    }
-
-    updateStreak()
-  }, [])
-
-  useEffect(() => {
-    const loadDashboard = async () => {
       try {
-        const userId = user?.id;
-        if (!userId) {
-          console.warn('⚠️ Usuário não identificado no loadDashboard');
-          return;
-        }
+        const [trailsData, userCourses, upcomingEvents, positionData, rankingData] = await Promise.all([
+          courseService.getUserCoursesByTrail(userId),
+          dashboardService.getUserCourses(userId),
+          dashboardService.getUpcomingEvents(userId),
+          rankingService.getUserPosition(userId).catch(() => null),
+          rankingService.getUserRanking(5).catch(() => []),
+        ])
 
-        const [settings, trailsData] = await Promise.all([
-          getUserSettings(userId),
-          courseService.getUserCoursesByTrail(userId)
-        ]);
-
-        // Settings logic - Safe Fallback
-        const userRole = profile?.role || 'student';
-        if (settings?.dashboard_layout) {
-          setWidgets(settings.dashboard_layout as string[]);
-        } else {
-          const defaultLayout = DEFAULT_LAYOUTS[userRole] || DEFAULT_LAYOUTS.student;
-          setWidgets(defaultLayout.order || []);
-        }
-
-        // Safe array check
-        const trails = Array.isArray(trailsData) ? trailsData : [];
-        const allCourses = trails.flatMap(t => Array.isArray(t.courses) ? t.courses : []);
-        const activeCoursesCount = allCourses.length;
-
-        let totalProgressSum = 0;
-        let totalLessonsCompleted = 0;
-        let totalStudyHours = 0;
+        // Stats from trails
+        const trails = Array.isArray(trailsData) ? trailsData : []
+        const allCourses = trails.flatMap(t => Array.isArray(t.courses) ? t.courses : [])
+        const activeCoursesCount = allCourses.length
+        let totalProgressSum = 0
+        let totalLessonsCompleted = 0
+        let totalStudyHours = 0
 
         allCourses.forEach(course => {
           if (course) {
-            totalProgressSum += (course.progress || 0);
-            totalLessonsCompleted += Math.round(((course.lessons_count || 0) * (course.progress || 0)) / 100);
-            totalStudyHours += ((course.total_hours || 0) * ((course.progress || 0) / 100));
+            totalProgressSum += (course.progress || 0)
+            totalLessonsCompleted += Math.round(((course.lessons_count || 0) * (course.progress || 0)) / 100)
+            totalStudyHours += ((course.total_hours || 0) * ((course.progress || 0) / 100))
           }
-        });
+        })
 
-        const averageProgress = activeCoursesCount > 0 ? Math.round(totalProgressSum / activeCoursesCount) : 0;
+        const averageProgress = activeCoursesCount > 0 ? Math.round(totalProgressSum / activeCoursesCount) : 0
 
         setStats({
           activeCourses: activeCoursesCount,
           averageProgress: isNaN(averageProgress) ? 0 : averageProgress,
           completedLessons: isNaN(totalLessonsCompleted) ? 0 : totalLessonsCompleted,
-          studyTime: isNaN(totalStudyHours) ? 0 : Math.round(totalStudyHours)
-        });
+          studyTime: isNaN(totalStudyHours) ? 0 : Math.round(totalStudyHours),
+        })
 
+        setCourses(userCourses)
+        setEvents(upcomingEvents)
+        setUserPosition(positionData)
+        setTopRanking(rankingData)
       } catch (error) {
-        console.error('❌ Erro crítico ao carregar dashboard:', error);
-        const userRole = profile?.role || 'student';
-        const defaultLayout = DEFAULT_LAYOUTS[userRole] || DEFAULT_LAYOUTS.student;
-        setWidgets(defaultLayout.order || []);
-
-        toast({
-          title: "Erro ao carregar dados",
-          description: "Ocorreu um problema ao carregar seu progresso. Usando layout padrão.",
-          variant: "destructive"
-        });
+        console.error('Erro ao carregar dashboard:', error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
-
-    if (user) {
-      loadDashboard();
-    } else {
-      // Se não tem user, libera o loading com layout padrão
-      console.warn('⚠️ Dashboard carregado sem usuário autenticado');
-      const userRole = profile?.role || 'student';
-      const defaultLayout = DEFAULT_LAYOUTS[userRole] || DEFAULT_LAYOUTS.student;
-      setWidgets(defaultLayout.order || []);
-      setIsLoading(false);
-    }
-  }, [user?.id, profile?.role])
-
-
-  const handleDragStart = (e: React.DragEvent, widgetId: string) => {
-    setIsDragging(true)
-    setDraggedWidget(widgetId)
-    e.dataTransfer.effectAllowed = 'move'
-  }
-
-  const handleDragOver = (e: React.DragEvent, widgetId: string) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    setDragOverWidget(widgetId)
-  }
-
-  const handleDragLeave = () => {
-    setDragOverWidget(null)
-  }
-
-  const handleDrop = (e: React.DragEvent, targetWidgetId: string) => {
-    e.preventDefault()
-
-    if (!draggedWidget || draggedWidget === targetWidgetId) {
-      setIsDragging(false)
-      setDraggedWidget(null)
-      setDragOverWidget(null)
-      return
     }
 
-    const draggedIndex = widgets.indexOf(draggedWidget)
-    const targetIndex = widgets.indexOf(targetWidgetId)
-
-    if (draggedIndex === -1 || targetIndex === -1) return
-
-    const newWidgets = [...widgets]
-    newWidgets.splice(draggedIndex, 1)
-    newWidgets.splice(targetIndex, 0, draggedWidget)
-
-    setWidgets(newWidgets)
-    setIsDragging(false)
-    setDraggedWidget(null)
-    setDragOverWidget(null)
-  }
-
-  const handleDragEnd = () => {
-    setIsDragging(false)
-    setDraggedWidget(null)
-    setDragOverWidget(null)
-  }
-
-  const handleSaveLayout = async () => {
-    try {
-      await saveDashboardLayout(user?.id || '', widgets)
-      toast({
-        title: "Layout salvo",
-        description: "Suas preferências de dashboard foram salvas com sucesso.",
-      })
-    } catch (error) {
-      console.error('Error saving layout:', error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar o layout. Tente novamente.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleRemoveWidget = (widgetId: string) => {
-    setWidgets(widgets.filter(id => id !== widgetId))
-  }
-
-  const handleResetLayout = () => {
-    const defaultLayout = DEFAULT_LAYOUTS[profile?.role || 'student'] || DEFAULT_LAYOUTS.student
-    setWidgets(defaultLayout.order)
-  }
-
-  const handleVisibilityChange = (widgetId: string, isVisible: boolean) => {
-    if (isVisible) {
-      if (!widgets.includes(widgetId)) {
-        setWidgets([...widgets, widgetId])
-      }
-    } else {
-      setWidgets(widgets.filter(id => id !== widgetId))
-    }
-  }
-
-  const delays = useStaggeredAnimation(widgets.length, 100)
+    loadDashboard()
+  }, [user?.id])
 
   if (isLoading) {
     return <SectionLoader />
   }
 
+  const kpis = [
+    {
+      label: 'Cursos Ativos',
+      value: stats.activeCourses,
+      icon: BookOpen,
+      color: 'text-blue-600 dark:text-blue-400',
+      bg: 'bg-blue-500/10',
+    },
+    {
+      label: 'Progresso Médio',
+      value: `${stats.averageProgress}%`,
+      icon: TrendingUp,
+      color: 'text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-emerald-500/10',
+    },
+    {
+      label: 'Aulas Concluídas',
+      value: stats.completedLessons,
+      icon: CheckCircle,
+      color: 'text-violet-600 dark:text-violet-400',
+      bg: 'bg-violet-500/10',
+    },
+    {
+      label: 'Horas de Estudo',
+      value: `${stats.studyTime}h`,
+      icon: Clock,
+      color: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-500/10',
+    },
+    {
+      label: 'Dias em Sequência',
+      value: streak,
+      icon: Zap,
+      color: 'text-orange-600 dark:text-orange-400',
+      bg: 'bg-orange-500/10',
+    },
+  ]
+
   return (
-    <MagicLayout
-      title={`Olá, ${profile?.first_name || 'Usuário'}!`}
-      description="Bem-vindo ao seu dashboard personalizado. Acompanhe seu progresso e continue aprendendo."
-    >
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header Stats */}
-        <MagicCard variant="premium" size="lg">
-          <div className="space-y-4 md:space-y-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <Star className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                    Dashboard Inteligente
-                  </h1>
-                  <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
-                    Acompanhe seu progresso e continue aprendendo
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto mt-4 md:mt-0">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowTutorial(true)}
-                  className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 text-xs md:text-sm"
-                  title="Ver tutorial"
-                >
-                  <HelpCircle className="w-3 h-3 md:w-4 md:h-4" />
-                  <span className="hidden md:inline ml-2">Ajuda</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsCustomizing(!isCustomizing)}
-                  className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 text-xs md:text-sm"
-                >
-                  <Layout className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                  <span className="hidden sm:inline">Personalizar</span>
-                  <span className="sm:hidden">Config</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={handleSaveLayout}
-                  className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 text-xs md:text-sm"
-                >
-                  <Settings className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                  Salvar
-                </Button>
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.activeCourses}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Cursos Ativos</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-green-600">{stats.averageProgress}%</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Progresso Médio</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                <CheckCircle className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-purple-600">{stats.completedLessons}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Aulas Concluídas</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
-                <Clock className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-orange-600">{stats.studyTime}h</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Tempo de Estudo</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/20">
-                <Zap className="h-5 w-5 md:h-6 md:w-6 text-yellow-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-yellow-600">{streak}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Dias em Sequência</div>
-              </div>
-            </div>
-          </div>
-        </MagicCard>
-
-        {/* Customization Panel (Sheet) */}
-        <CustomizationPanel
-          isOpen={isCustomizing}
-          onOpenChange={setIsCustomizing}
-          visibleWidgets={widgets}
-          onVisibilityChange={handleVisibilityChange}
-          onSave={() => {
-            handleSaveLayout()
-            setIsCustomizing(false)
-          }}
-          onReset={handleResetLayout}
-          userRole={profile?.role || 'student'}
-        />
-
-        {/* Widgets Grid */}
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-          {widgets.map((widgetId, index) => {
-            const widget = WIDGETS[widgetId]
-            if (!widget) return null
-
-            return (
-              <MagicCard
-                key={widgetId}
-                variant="glass"
-                size="lg"
-                className={cn(
-                  "transition-all duration-300",
-                  isDragging && draggedWidget === widgetId && "opacity-50 scale-95",
-                  isDragging && dragOverWidget === widgetId && "ring-2 ring-primary/50",
-                  "hover:scale-105"
-                )}
-                style={{ animationDelay: `${delays[index]}ms` }}
-                draggable={isCustomizing}
-                onDragStart={(e) => handleDragStart(e, widgetId)}
-                onDragOver={(e) => handleDragOver(e, widgetId)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, widgetId)}
-                onDragEnd={handleDragEnd}
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                        {widget.icon && <widget.icon className="h-6 w-6 text-primary" />}
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold">{widget.name}</h3>
-                        <p className="text-sm text-muted-foreground">{widget.description}</p>
-                      </div>
-                    </div>
-                    {isCustomizing && (
-                      <div className="flex items-center gap-2">
-                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveWidget(widgetId)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="min-h-[200px]">
-                    <WidgetRenderer widgetId={widgetId} />
-                  </div>
-                </div>
-              </MagicCard>
-            )
-          })}
-        </div>
-
-        {/* Empty State */}
-        {widgets.length === 0 && (
-          <MagicCard variant="glass" size="lg" className="text-center py-24">
-            <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                <Layout className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Dashboard vazio
-              </h3>
-              <p className="text-muted-foreground mb-8">
-                Personalize seu dashboard adicionando widgets úteis para acompanhar seu progresso.
-              </p>
-              <Button
-                onClick={() => setIsCustomizing(true)}
-                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-8 py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg"
-              >
-                <Layout className="mr-2 h-4 w-4" />
-                Personalizar Dashboard
-              </Button>
-            </div>
-          </MagicCard>
-        )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">
+          Olá, {profile?.first_name || 'Aluno'}!
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Acompanhe seu progresso e continue aprendendo.
+        </p>
       </div>
 
-      {/* Tutorial */}
-      {showTutorial && <DashboardTutorial onClose={handleCloseTutorial} />}
-    </MagicLayout>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {kpis.map((kpi) => (
+          <Card key={kpi.label} className="border-border shadow-sm">
+            <CardContent className="p-4">
+              <div className={cn('p-2 rounded-lg w-fit mb-3', kpi.bg)}>
+                <kpi.icon className={cn('h-4 w-4', kpi.color)} />
+              </div>
+              <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
+              <div className="text-xs text-muted-foreground mt-1">{kpi.label}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Meus Cursos - spans 2 cols */}
+        <div className="lg:col-span-2">
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-semibold">Meus Cursos</CardTitle>
+                  <CardDescription>Continue de onde parou</CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/courses">
+                    Ver todos
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {courses.length > 0 ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {courses.slice(0, 4).map((course) => (
+                    <Link
+                      key={course.id}
+                      to={`/courses/${course.id}`}
+                      className="group flex gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                    >
+                      <img
+                        src={course.image}
+                        alt={course.title}
+                        className="w-16 h-16 rounded-lg object-cover shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                          {course.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                          {course.description}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Progress value={course.progress} className="h-1.5 flex-1" />
+                          <span className="text-xs font-medium text-muted-foreground">{course.progress}%</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <BookOpen className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Nenhum curso encontrado.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Ranking */}
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold">Ranking</CardTitle>
+                <CardDescription>Sua posição atual</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/ranking">
+                  Ver todos
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* User Position */}
+            {userPosition && (
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                        {userPosition.first_name[0]}{userPosition.last_name[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="text-sm font-medium text-foreground">Você</div>
+                      <div className="text-xs text-muted-foreground">{userPosition.total_xp} XP</div>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-xs">
+                    #{userPosition.rank_position}
+                  </Badge>
+                </div>
+                {(() => {
+                  const progressInfo = rankingService.calculateProgressToNext(userPosition.total_xp)
+                  const levelInfo = rankingService.calculateLevelInfo(userPosition.total_xp)
+                  return (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Nível {levelInfo.level} - {levelInfo.title}</span>
+                        <span>{progressInfo.xpToNext} XP p/ próximo</span>
+                      </div>
+                      <Progress value={progressInfo.progress} className="h-1.5" />
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
+            {/* Top 5 */}
+            <div className="space-y-1">
+              {topRanking.slice(0, 5).map((rankedUser, index) => (
+                <div key={rankedUser.user_id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <span className={cn(
+                    "w-6 text-center text-xs font-bold",
+                    index === 0 && "text-yellow-500",
+                    index === 1 && "text-gray-400",
+                    index === 2 && "text-amber-600",
+                    index > 2 && "text-muted-foreground"
+                  )}>
+                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                  </span>
+                  <Avatar className="h-7 w-7">
+                    <AvatarFallback className="text-[10px]">
+                      {rankedUser.first_name[0]}{rankedUser.last_name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-foreground truncate">
+                      {rankedUser.first_name} {rankedUser.last_name}
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{rankedUser.total_xp} XP</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Second Row */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Progresso Semanal */}
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Progresso Semanal</CardTitle>
+            <CardDescription>Horas de estudo nos últimos 7 dias</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
+              <BarChart accessibilityLayer data={chartData}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="day"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  fontSize={12}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="dot" />}
+                />
+                <Bar dataKey="hours" fill="var(--color-hours)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Próximos Eventos */}
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold">Próximos Eventos</CardTitle>
+                <CardDescription>Seus compromissos futuros</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/calendario">
+                  Ver todos
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {events.length > 0 ? (
+              <div className="space-y-3">
+                {events.map((event, index) => (
+                  <div key={`${event.title}-${index}`} className="flex items-center gap-3">
+                    <div className={cn('rounded-lg p-2', eventColors[event.type])}>
+                      {eventIcons[event.type]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">{event.date}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Calendar className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Nenhum evento próximo.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
 }
