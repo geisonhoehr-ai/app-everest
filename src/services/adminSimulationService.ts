@@ -259,3 +259,116 @@ export const unpublishSimulation = async (
     throw error
   }
 }
+
+// ─── Question Types ─────────────────────────────────────────────────────
+
+export type QuizQuestion = Database['public']['Tables']['quiz_questions']['Row']
+export type QuizQuestionInsert = Database['public']['Tables']['quiz_questions']['Insert']
+export type QuizQuestionUpdate = Database['public']['Tables']['quiz_questions']['Update']
+
+export type ReadingText = Database['public']['Tables']['quiz_reading_texts']['Row']
+export type ReadingTextInsert = Database['public']['Tables']['quiz_reading_texts']['Insert']
+export type ReadingTextUpdate = Database['public']['Tables']['quiz_reading_texts']['Update']
+
+// ─── Reading Texts CRUD ─────────────────────────────────────────────────
+
+export const getReadingTexts = async (quizId: string): Promise<ReadingText[]> => {
+  const { data, error } = await supabase
+    .from('quiz_reading_texts')
+    .select('*')
+    .eq('quiz_id', quizId)
+    .order('display_order', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
+export const createReadingText = async (text: ReadingTextInsert): Promise<ReadingText> => {
+  const { data, error } = await supabase
+    .from('quiz_reading_texts')
+    .insert(text)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const updateReadingText = async (id: string, text: ReadingTextUpdate): Promise<ReadingText> => {
+  const { data, error } = await supabase
+    .from('quiz_reading_texts')
+    .update(text)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const deleteReadingText = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('quiz_reading_texts')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+// ─── Questions CRUD ─────────────────────────────────────────────────────
+
+export const getQuestions = async (quizId: string): Promise<QuizQuestion[]> => {
+  const { data, error } = await supabase
+    .from('quiz_questions')
+    .select('*')
+    .eq('quiz_id', quizId)
+    .order('display_order', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
+export const createQuestion = async (question: QuizQuestionInsert): Promise<QuizQuestion> => {
+  const { data, error } = await supabase
+    .from('quiz_questions')
+    .insert(question)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const updateQuestion = async (id: string, question: QuizQuestionUpdate): Promise<QuizQuestion> => {
+  const { data, error } = await supabase
+    .from('quiz_questions')
+    .update(question)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const deleteQuestion = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('quiz_questions')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+/**
+ * Buscar simulado completo com questões e textos
+ */
+export const getSimulationFull = async (simulationId: string) => {
+  const [simulation, questions, readingTexts] = await Promise.all([
+    getSimulationById(simulationId),
+    getQuestions(simulationId),
+    getReadingTexts(simulationId),
+  ])
+
+  return { simulation, questions, readingTexts }
+}
