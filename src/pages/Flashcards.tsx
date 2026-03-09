@@ -123,21 +123,21 @@ export default function FlashcardsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card className="border-border shadow-sm">
+        <Card className="border-border shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-500/30">
           <CardContent className="p-4 text-center">
             <BookOpen className="h-5 w-5 text-blue-500 mx-auto mb-1.5" />
             <div className="text-xl font-bold text-foreground">{subjectList.length}</div>
             <div className="text-xs text-muted-foreground">Matérias</div>
           </CardContent>
         </Card>
-        <Card className="border-border shadow-sm">
+        <Card className="border-border shadow-sm transition-all duration-200 hover:shadow-md hover:border-purple-500/30">
           <CardContent className="p-4 text-center">
             <Target className="h-5 w-5 text-purple-500 mx-auto mb-1.5" />
             <div className="text-xl font-bold text-foreground">{totalTopics}</div>
             <div className="text-xs text-muted-foreground">Tópicos</div>
           </CardContent>
         </Card>
-        <Card className="border-border shadow-sm">
+        <Card className="border-border shadow-sm transition-all duration-200 hover:shadow-md hover:border-green-500/30">
           <CardContent className="p-4 text-center">
             <Brain className="h-5 w-5 text-green-500 mx-auto mb-1.5" />
             <div className="text-xl font-bold text-foreground">{totalCards}</div>
