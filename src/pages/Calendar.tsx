@@ -2,8 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Calendar } from '@/components/ui/calendar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { format, isSameDay, isAfter, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
@@ -17,10 +16,6 @@ import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import {
   Calendar as CalendarIcon,
   Clock,
-  BookOpen,
-  FileText,
-  Play,
-  Users,
   Lock,
   ChevronRight,
   Filter,
@@ -124,82 +119,82 @@ export default function CalendarPage() {
 
   if (isStudent && !hasFeature(FEATURE_KEYS.CALENDAR)) {
     return (
-      <MagicLayout title="Calendário" description="Recurso bloqueado">
-        <MagicCard variant="glass" size="lg" className="text-center py-24">
-          <div className="max-w-md mx-auto">
-            <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-              <Lock className="w-10 h-10 text-primary" />
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Calendário</h1>
+          <p className="text-sm text-muted-foreground mt-1">Recurso bloqueado</p>
+        </div>
+        <Card className="border-border shadow-sm">
+          <CardContent className="text-center py-16">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Lock className="w-8 h-8 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold text-foreground mb-4">Recurso Bloqueado</h3>
-            <p className="text-muted-foreground mb-8">
+            <h3 className="text-xl font-bold text-foreground mb-2">Recurso Bloqueado</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
               Este recurso não está disponível para sua turma. Entre em contato com seu professor ou administrador.
             </p>
-          </div>
-        </MagicCard>
-      </MagicLayout>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
   const getEventConfig = (type: string) => eventConfig[type as EventType] || eventConfig.GENERAL
 
   return (
-    <MagicLayout
-      title="Calendário"
-      description="Acompanhe seus eventos, prazos e atividades"
-      showHeader={false}
-    >
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Calendário</h1>
-            <p className="text-muted-foreground mt-1">Seus eventos, mentorias e simulados</p>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CalendarIcon className="h-4 w-4" />
-            <span>{format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}</span>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Calendário</h1>
+          <p className="text-sm text-muted-foreground mt-1">Seus eventos, mentorias e simulados</p>
         </div>
-
-        {/* Type Filter Pills */}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={activeFilter === 'ALL' ? 'default' : 'outline'}
-            size="sm"
-            className="rounded-full h-8 text-xs"
-            onClick={() => setActiveFilter('ALL')}
-          >
-            <Filter className="h-3 w-3 mr-1" />
-            Todos ({events.length})
-          </Button>
-          {(Object.keys(eventConfig) as EventType[]).map(type => {
-            const config = eventConfig[type]
-            const count = eventCountByType[type] || 0
-            if (count === 0) return null
-            const Icon = config.icon
-            return (
-              <Button
-                key={type}
-                variant={activeFilter === type ? 'default' : 'outline'}
-                size="sm"
-                className={cn(
-                  "rounded-full h-8 text-xs",
-                  activeFilter !== type && config.color
-                )}
-                onClick={() => setActiveFilter(type)}
-              >
-                <Icon className="h-3 w-3 mr-1" />
-                {config.label} ({count})
-              </Button>
-            )
-          })}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CalendarIcon className="h-4 w-4" />
+          <span>{format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}</span>
         </div>
+      </div>
 
-        {/* Main Grid */}
-        <div className="grid gap-6 lg:grid-cols-5">
-          {/* Calendar */}
-          <div className="lg:col-span-3">
-            <MagicCard variant="glass" size="lg">
+      {/* Type Filter Pills */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={activeFilter === 'ALL' ? 'default' : 'outline'}
+          size="sm"
+          className="rounded-full h-8 text-xs"
+          onClick={() => setActiveFilter('ALL')}
+        >
+          <Filter className="h-3 w-3 mr-1" />
+          Todos ({events.length})
+        </Button>
+        {(Object.keys(eventConfig) as EventType[]).map(type => {
+          const config = eventConfig[type]
+          const count = eventCountByType[type] || 0
+          if (count === 0) return null
+          const Icon = config.icon
+          return (
+            <Button
+              key={type}
+              variant={activeFilter === type ? 'default' : 'outline'}
+              size="sm"
+              className={cn(
+                "rounded-full h-8 text-xs",
+                activeFilter !== type && config.color
+              )}
+              onClick={() => setActiveFilter(type)}
+            >
+              <Icon className="h-3 w-3 mr-1" />
+              {config.label} ({count})
+            </Button>
+          )
+        })}
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid gap-6 lg:grid-cols-5">
+        {/* Calendar */}
+        <div className="lg:col-span-3">
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-4">
               <Calendar
                 mode="single"
                 selected={date}
@@ -220,132 +215,126 @@ export default function CalendarPage() {
                   },
                 }}
               />
-            </MagicCard>
-          </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Selected Day Events */}
-          <div className="lg:col-span-2 space-y-6">
-            <MagicCard variant="glass" size="lg">
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold">
-                    {date ? format(date, "dd 'de' MMMM", { locale: ptBR }) : 'Selecione um dia'}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedDayEvents.length > 0
-                      ? `${selectedDayEvents.length} evento${selectedDayEvents.length > 1 ? 's' : ''}`
-                      : 'Nenhum evento'}
-                  </p>
-                </div>
-
-                <div className="space-y-2 max-h-[350px] overflow-y-auto">
-                  {selectedDayEvents.length > 0 ? (
-                    selectedDayEvents.map((event) => {
-                      const config = getEventConfig(event.event_type)
-                      const Icon = config.icon
-                      return (
-                        <div
-                          key={event.id}
-                          className={cn(
-                            "p-3 rounded-lg border transition-colors",
-                            config.bg
-                          )}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={cn("mt-0.5", config.color)}>
-                              <Icon className="h-4 w-4" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm leading-tight">{event.title}</p>
-                              {event.description && (
-                                <p className="text-xs text-muted-foreground mt-1">{event.description}</p>
-                              )}
-                              <div className="flex items-center gap-3 mt-2">
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {format(new Date(event.start_time), 'HH:mm')}
-                                  {event.end_time && ` - ${format(new Date(event.end_time), 'HH:mm')}`}
-                                </span>
-                                <Badge variant="outline" className={cn("text-[10px] h-5", config.badge)}>
-                                  {config.label}
-                                </Badge>
-                              </div>
+        {/* Selected Day Events */}
+        <div className="lg:col-span-2">
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold">
+                {date ? format(date, "dd 'de' MMMM", { locale: ptBR }) : 'Selecione um dia'}
+              </CardTitle>
+              <CardDescription>
+                {selectedDayEvents.length > 0
+                  ? `${selectedDayEvents.length} evento${selectedDayEvents.length > 1 ? 's' : ''}`
+                  : 'Nenhum evento'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-[350px] overflow-y-auto">
+                {selectedDayEvents.length > 0 ? (
+                  selectedDayEvents.map((event) => {
+                    const config = getEventConfig(event.event_type)
+                    const Icon = config.icon
+                    return (
+                      <div
+                        key={event.id}
+                        className={cn(
+                          "p-3 rounded-lg border transition-colors",
+                          config.bg
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={cn("mt-0.5", config.color)}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm leading-tight">{event.title}</p>
+                            {event.description && (
+                              <p className="text-xs text-muted-foreground mt-1">{event.description}</p>
+                            )}
+                            <div className="flex items-center gap-3 mt-2">
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {format(new Date(event.start_time), 'HH:mm')}
+                                {event.end_time && ` - ${format(new Date(event.end_time), 'HH:mm')}`}
+                              </span>
+                              <Badge variant="outline" className={cn("text-[10px] h-5", config.badge)}>
+                                {config.label}
+                              </Badge>
                             </div>
                           </div>
                         </div>
-                      )
-                    })
-                  ) : (
-                    <div className="text-center py-8">
-                      <CalendarIcon className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">Nenhum evento neste dia</p>
-                    </div>
-                  )}
-                </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <CalendarIcon className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Nenhum evento neste dia</p>
+                  </div>
+                )}
               </div>
-            </MagicCard>
-          </div>
+            </CardContent>
+          </Card>
         </div>
-
-        {/* Upcoming Events */}
-        {upcomingEvents.length > 0 && (
-          <MagicCard variant="glass" size="lg">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Próximos Eventos</h2>
-                <span className="text-xs text-muted-foreground">Próximos 5 eventos</span>
-              </div>
-              <div className="space-y-2">
-                {upcomingEvents.map((event) => {
-                  const config = getEventConfig(event.event_type)
-                  const Icon = config.icon
-                  const eventDate = new Date(event.start_time)
-                  return (
-                    <div
-                      key={event.id}
-                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => {
-                        setDate(eventDate)
-                        setCurrentMonth(eventDate)
-                      }}
-                    >
-                      {/* Date block */}
-                      <div className="text-center w-12 shrink-0">
-                        <div className="text-2xl font-bold leading-none">
-                          {format(eventDate, 'dd')}
-                        </div>
-                        <div className="text-[10px] uppercase text-muted-foreground font-medium">
-                          {format(eventDate, 'MMM', { locale: ptBR })}
-                        </div>
-                      </div>
-
-                      {/* Colored bar */}
-                      <div className={cn("w-1 h-10 rounded-full shrink-0", config.dot)} />
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{event.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-muted-foreground">
-                            {format(eventDate, "EEEE", { locale: ptBR })} · {format(eventDate, 'HH:mm')}
-                            {event.end_time && ` - ${format(new Date(event.end_time), 'HH:mm')}`}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Badge */}
-                      <Badge variant="outline" className={cn("text-[10px] h-5 shrink-0", config.badge)}>
-                        {config.label}
-                      </Badge>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </MagicCard>
-        )}
       </div>
-    </MagicLayout>
+
+      {/* Upcoming Events */}
+      {upcomingEvents.length > 0 && (
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold">Próximos Eventos</CardTitle>
+              <span className="text-xs text-muted-foreground">Próximos 5 eventos</span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              {upcomingEvents.map((event) => {
+                const config = getEventConfig(event.event_type)
+                const eventDate = new Date(event.start_time)
+                return (
+                  <div
+                    key={event.id}
+                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setDate(eventDate)
+                      setCurrentMonth(eventDate)
+                    }}
+                  >
+                    <div className="text-center w-12 shrink-0">
+                      <div className="text-2xl font-bold leading-none">
+                        {format(eventDate, 'dd')}
+                      </div>
+                      <div className="text-[10px] uppercase text-muted-foreground font-medium">
+                        {format(eventDate, 'MMM', { locale: ptBR })}
+                      </div>
+                    </div>
+
+                    <div className={cn("w-1 h-10 rounded-full shrink-0", config.dot)} />
+
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{event.title}</p>
+                      <span className="text-xs text-muted-foreground">
+                        {format(eventDate, "EEEE", { locale: ptBR })} · {format(eventDate, 'HH:mm')}
+                        {event.end_time && ` - ${format(new Date(event.end_time), 'HH:mm')}`}
+                      </span>
+                    </div>
+
+                    <Badge variant="outline" className={cn("text-[10px] h-5 shrink-0", config.badge)}>
+                      {config.label}
+                    </Badge>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   )
 }
