@@ -81,12 +81,12 @@ export default function EvercastAlbumPage() {
       className={cn("pb-32", currentTrack ? "mb-20" : "")}
     >
       {/* Album Header */}
-      <div className="flex flex-col md:flex-row gap-8 items-end p-8 bg-gradient-to-b from-primary/20 to-background/0">
+      <div className="flex flex-col md:flex-row gap-8 items-end p-8 bg-gradient-to-b from-emerald-900/30 via-cyan-900/10 to-background/0">
         <div className="w-52 h-52 shadow-2xl rounded-md overflow-hidden shrink-0">
           {course.thumbnail_url ? (
             <img src={course.thumbnail_url} alt={course.name} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary to-purple-700 flex items-center justify-center">
+            <div className="w-full h-full bg-gradient-to-br from-emerald-600 to-cyan-700 flex items-center justify-center">
               <Disc3 className="w-24 h-24 text-white" />
             </div>
           )}
@@ -146,19 +146,19 @@ export default function EvercastAlbumPage() {
                       key={lesson.id}
                       className={cn(
                         "flex items-center gap-4 p-3 rounded-md cursor-pointer hover:bg-white/5 transition-colors group",
-                        currentTrack?.id === lesson.id ? "bg-white/5" : ""
+                        currentTrack?.id === lesson.id ? "bg-emerald-500/10 border border-emerald-500/20" : ""
                       )}
                       onClick={() => handlePlay(lesson)}
                     >
                       <span className={cn(
                         "w-6 text-center text-sm",
-                        currentTrack?.id === lesson.id ? "text-green-500" : "text-muted-foreground"
+                        currentTrack?.id === lesson.id ? "text-emerald-400" : "text-muted-foreground"
                       )}>
                         {currentTrack?.id === lesson.id ? (
                           <div className="w-4 h-4 mx-auto flex items-end justify-between gap-[2px]">
-                            <div className="w-1 bg-green-500 animate-[music-bar_0.6s_ease-in-out_infinite] h-full" />
-                            <div className="w-1 bg-green-500 animate-[music-bar_0.8s_ease-in-out_infinite_0.1s] h-2/3" />
-                            <div className="w-1 bg-green-500 animate-[music-bar_1.0s_ease-in-out_infinite_0.2s] h-1/2" />
+                            <div className="w-1 bg-emerald-400 animate-[music-bar_0.6s_ease-in-out_infinite] h-full" />
+                            <div className="w-1 bg-emerald-400 animate-[music-bar_0.8s_ease-in-out_infinite_0.1s] h-2/3" />
+                            <div className="w-1 bg-emerald-400 animate-[music-bar_1.0s_ease-in-out_infinite_0.2s] h-1/2" />
                           </div>
                         ) : (
                           <>
@@ -170,7 +170,7 @@ export default function EvercastAlbumPage() {
                       <div className="flex-1 min-w-0">
                         <p className={cn(
                           "font-medium truncate",
-                          currentTrack?.id === lesson.id ? "text-green-500" : ""
+                          currentTrack?.id === lesson.id ? "text-emerald-400" : ""
                         )}>
                           {lesson.title}
                         </p>
