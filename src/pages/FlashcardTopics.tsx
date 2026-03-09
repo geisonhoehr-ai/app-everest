@@ -3,7 +3,8 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Layers, Play } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { ArrowLeft, Brain, ChevronRight, Play } from 'lucide-react'
 import { StudyModeDialog } from '@/components/flashcards/StudyModeDialog'
 import {
   getSubjectById,
@@ -96,33 +97,51 @@ export default function FlashcardTopicsPage() {
       </div>
 
       {/* Topics Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {topics.map((topic) => {
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {topics.map((topic, idx) => {
           const cardCount = topic.flashcards?.[0]?.count || topic.flashcardCount || 0
 
           return (
-            <Card key={topic.id} className="border-border shadow-sm flex flex-col h-full transition-shadow duration-200 hover:shadow-md">
-              <CardContent className="flex flex-col h-full p-5">
-                <div className="flex-1 space-y-3">
-                  <h3 className="text-base font-semibold text-foreground line-clamp-2 leading-tight">
-                    {topic.name}
-                  </h3>
-                  <Badge variant="outline" className="w-fit text-xs">
-                    {cardCount} cards
-                  </Badge>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {topic.description || `Estude ${topic.name} com flashcards interativos`}
-                  </p>
-                </div>
+            <div
+              key={topic.id}
+              className={cn(
+                'group relative flex flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 shadow-sm',
+                'hover:border-primary/30 hover:shadow-lg'
+              )}
+            >
+              {/* Badge flutuante */}
+              <div className="absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold bg-primary text-primary-foreground">
+                Tópico {idx + 1}
+              </div>
 
-                <div className="pt-4 mt-auto">
-                  <Button onClick={() => handleStudyClick(topic.id)} className="w-full" size="sm">
-                    <Play className="h-4 w-4 mr-2" />
-                    Estudar Agora
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Título */}
+              <h3 className="mt-2 font-semibold text-foreground leading-snug line-clamp-2">
+                {topic.name}
+              </h3>
+
+              {/* Info */}
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <Brain className="h-3.5 w-3.5 text-muted-foreground/60" />
+                <span>{cardCount} cards disponíveis</span>
+              </div>
+
+              {/* Descrição */}
+              <p className="mt-2 flex-1 text-sm text-muted-foreground line-clamp-2">
+                {topic.description || `Estude ${topic.name} com flashcards interativos`}
+              </p>
+
+              {/* Botão */}
+              <button
+                onClick={() => handleStudyClick(topic.id)}
+                className={cn(
+                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
+                  'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'
+                )}
+              >
+                Estudar Agora
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           )
         })}
       </div>

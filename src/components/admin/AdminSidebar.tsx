@@ -16,6 +16,7 @@ import {
   LogOut,
   BarChart3,
   Plug,
+  Library,
 } from 'lucide-react'
 
 import {
@@ -56,9 +57,15 @@ const menuItems = [
     icon: Layers,
     badge: 'Novo'
   },
-  { 
-    href: '/admin/quizzes', 
-    label: 'Quizzes', 
+  {
+    href: '/admin/acervo',
+    label: 'Acervo Digital',
+    icon: Library,
+    badge: null
+  },
+  {
+    href: '/admin/quizzes',
+    label: 'Quizzes',
     icon: ListChecks,
     badge: null
   },
@@ -149,7 +156,7 @@ export const AdminSidebar = () => {
             Conteúdo
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
-            {menuItems.slice(4, 8).map((item) => (
+            {menuItems.slice(4, 9).map((item) => (
               <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton 
                   asChild 
@@ -176,7 +183,7 @@ export const AdminSidebar = () => {
             Ferramentas
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
-            {menuItems.slice(8).map((item) => (
+            {menuItems.slice(9).map((item) => (
               <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton 
                   asChild 

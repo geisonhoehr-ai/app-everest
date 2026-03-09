@@ -102,6 +102,9 @@ const AdminCourseContentPage = lazy(
 const AdminCourseClassesPage = lazy(
   () => import('@/pages/admin/courses/AdminCourseClassesPage'),
 )
+const AdminAcervoPage = lazy(
+  () => import('@/pages/admin/acervo/AdminAcervoPage'),
+)
 const AdminFlashcardsPage = lazy(
   () => import('@/pages/admin/flashcards/AdminFlashcardsPage'),
 )
@@ -415,6 +418,7 @@ const App = () => (
                     path="users/:userId/classes"
                     element={<AdminStudentClassesPage />}
                   />
+                  <Route path="acervo" element={<AdminAcervoPage />} />
                   <Route path="reports" element={<AdminReportsPage />} />
                   <Route path="settings" element={<AdminSettingsPage />} />
                 </Route>

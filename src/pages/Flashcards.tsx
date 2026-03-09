@@ -8,13 +8,14 @@ import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import {
   Play,
-  ArrowRight,
+  ChevronRight,
   BookOpen,
   Brain,
   Lock,
   HelpCircle,
   PlusCircle,
   Target,
+  Layers,
 } from 'lucide-react'
 import { getSubjectsWithProgress } from '@/services/subjectService'
 import { SectionLoader } from '@/components/SectionLoader'
@@ -164,83 +165,83 @@ export default function FlashcardsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {subjectList
             .filter((s) => (s.topics?.reduce((sum, t) => sum + (t.flashcard_count || 0), 0) || 0) > 0)
-            .map((subject) => {
-            const subjectTopics = subject.topics?.length || 0
-            const subjectCards = subject.topics?.reduce((sum, topic) => sum + (topic.flashcard_count || 0), 0) || 0
+            .map((subject, idx) => {
+            const subjectTopics = subject.topics || []
+            const subjectCards = subjectTopics.reduce((sum, topic) => sum + (topic.flashcard_count || 0), 0)
             const progress = subject.progress || 0
+            const allDone = progress === 100
+            const previewTopics = subjectTopics.slice(0, 4)
 
             return (
-              <Link to={`/flashcards/${subject.id}`} key={subject.id} className="group block">
-                <Card className="border-border shadow-sm overflow-hidden flex flex-col h-full transition-shadow duration-200 hover:shadow-md">
-                  {/* Image */}
-                  <div className="relative h-36 overflow-hidden bg-muted">
-                    <img
-                      src={
-                        subject.name.toLowerCase().includes('português') ||
-                        subject.name.toLowerCase().includes('portugues')
-                          ? '/flashcard-cover.png'
-                          : subject.image_url ||
-                            `https://img.usecurling.com/p/600/300?q=${encodeURIComponent(subject.name)}`
-                      }
-                      alt={subject.name}
-                      className="w-full h-full object-cover object-top"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <h3 className="text-white text-lg font-bold line-clamp-1 drop-shadow">
-                        {subject.name}
-                      </h3>
-                      <p className="text-white/80 text-xs line-clamp-1">
-                        {subject.description || `Flashcards sobre ${subject.name}`}
-                      </p>
-                    </div>
+              <Link
+                to={`/flashcards/${subject.id}`}
+                key={subject.id}
+                className={cn(
+                  'group relative flex flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 shadow-sm',
+                  'hover:border-primary/30 hover:shadow-lg'
+                )}
+              >
+                {/* Badge flutuante */}
+                <div
+                  className={cn(
+                    'absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold',
+                    allDone
+                      ? 'bg-green-500 text-white'
+                      : 'bg-primary text-primary-foreground'
+                  )}
+                >
+                  Matéria {idx + 1}
+                </div>
+
+                {/* Título */}
+                <h3 className="mt-2 font-semibold text-foreground leading-snug line-clamp-2">
+                  {subject.name}
+                </h3>
+
+                {/* Progress */}
+                <div className="mt-3 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{subjectTopics.length} tópicos · {subjectCards} cards</span>
+                    <span className={cn('font-semibold', allDone ? 'text-green-500' : 'text-foreground')}>
+                      {Math.round(progress)}%
+                    </span>
                   </div>
+                  <Progress value={progress} className="h-1.5 bg-muted [&>div]:bg-blue-500" />
+                </div>
 
-                  {/* Content */}
-                  <CardContent className="flex-1 flex flex-col p-4">
-                    <div className="flex items-center justify-around gap-2 mb-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                          <Target className="w-3.5 h-3.5 text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold">{subjectTopics}</div>
-                          <div className="text-xs text-muted-foreground">Tópicos</div>
-                        </div>
-                      </div>
-                      <div className="w-px h-8 bg-border" />
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-green-500/10 flex items-center justify-center">
-                          <Brain className="w-3.5 h-3.5 text-green-600" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold">{subjectCards}</div>
-                          <div className="text-xs text-muted-foreground">Cards</div>
-                        </div>
-                      </div>
-                    </div>
+                {/* Preview de tópicos */}
+                <ul className="mt-4 flex-1 space-y-1.5">
+                  {previewTopics.map((topic) => (
+                    <li key={topic.id} className="flex items-center gap-2 min-w-0">
+                      <Layers className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/40" />
+                      <span className="truncate text-xs text-foreground">
+                        {topic.name}
+                      </span>
+                      <span className="ml-auto text-xs text-muted-foreground shrink-0">
+                        {topic.flashcard_count || 0}
+                      </span>
+                    </li>
+                  ))}
+                  {subjectTopics.length > 4 && (
+                    <li className="text-xs text-muted-foreground pl-5.5">
+                      +{subjectTopics.length - 4} tópico{subjectTopics.length - 4 !== 1 ? 's' : ''}
+                    </li>
+                  )}
+                </ul>
 
-                    {/* Progress */}
-                    <div className="space-y-1.5 mb-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">Progresso</span>
-                        <span className={cn('text-xs font-semibold', progress === 100 ? 'text-green-600' : 'text-primary')}>
-                          {Math.round(progress)}%
-                        </span>
-                      </div>
-                      <Progress value={progress} className="h-1.5" />
-                    </div>
-
-                    <Button className="w-full mt-auto" size="sm">
-                      <Play className="w-4 h-4 mr-2 fill-current" />
-                      Estudar Cards
-                      <ArrowRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </CardContent>
-                </Card>
+                {/* Botão */}
+                <div
+                  className={cn(
+                    'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
+                    'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'
+                  )}
+                >
+                  Estudar Cards
+                  <ChevronRight className="h-4 w-4" />
+                </div>
               </Link>
             )
           })}

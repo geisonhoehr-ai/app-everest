@@ -1,156 +1,636 @@
-import { MagicCard } from '@/components/ui/magic-card'
-import { MagicLayout } from '@/components/ui/magic-layout'
+import { useEffect, useState, useMemo } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Folder, FileText, Video, ExternalLink, Library, Archive, BookOpen, Star } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import {
+  FileText,
+  Archive,
+  BookOpen,
+  Search,
+  Download,
+  Eye,
+  ChevronRight,
+  X,
+  ClipboardList,
+  Calendar,
+  FolderOpen,
+  ArrowLeft,
+  LayoutGrid,
+  List,
+} from 'lucide-react'
+import { SectionLoader } from '@/components/SectionLoader'
+import { cn } from '@/lib/utils'
+import { acervoService, type AcervoItem, type ProvaGroup } from '@/services/acervoService'
 
-// Mock Data - In a real app, this could come from DB or be editable by Admin
-const acervoItems = [
-    {
-        title: 'Português - Material Completo',
-        description: 'PDFs de gramática, interpretação de texto e redação.',
-        type: 'folder',
-        link: 'https://drive.google.com/drive/u/0/my-drive', // Placeholder
-        color: 'blue'
-    },
-    {
-        title: 'Legislação e Regulamentos',
-        description: 'Coletânea de leis, estatutos e regulamentos atualizados.',
-        type: 'folder',
-        link: '#',
-        color: 'green'
-    },
-    {
-        title: 'Provas Anteriores (2020-2024)',
-        description: 'Arquivo com todas as provas aplicadas nos últimos anos.',
-        type: 'folder',
-        link: '#',
-        color: 'orange'
-    },
-    {
-        title: 'Livro: Gramática do Cegalla',
-        description: 'Versão digitalizada para consulta rápida.',
-        type: 'pdf',
-        link: '#',
-        color: 'red'
-    },
-    {
-        title: 'Manual de Redação Oficial',
-        description: 'Guia prático para redação de documentos oficiais.',
-        type: 'pdf',
-        link: '#',
-        color: 'purple'
-    }
-]
+const CONCURSO_COLORS: Record<string, { bg: string; text: string; badge: string; border: string }> = {
+  livros: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20' },
+  EAOF: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', badge: 'bg-blue-500', border: 'border-blue-500/20' },
+  EAOP: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20' },
+  CAMAR: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', badge: 'bg-purple-500', border: 'border-purple-500/20' },
+  CADAR: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', badge: 'bg-orange-500', border: 'border-orange-500/20' },
+  CAFAR: { bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', badge: 'bg-rose-500', border: 'border-rose-500/20' },
+  CFOE: { bg: 'bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400', badge: 'bg-cyan-500', border: 'border-cyan-500/20' },
+}
 
-const totalFolders = acervoItems.filter(i => i.type === 'folder').length
-const totalPdfs = acervoItems.filter(i => i.type === 'pdf').length
-const totalVideos = acervoItems.filter(i => i.type === 'video').length
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '—'
+  const mb = bytes / (1024 * 1024)
+  return mb >= 1 ? `${mb.toFixed(1)} MB` : `${(bytes / 1024).toFixed(0)} KB`
+}
+
+// Category that was selected to browse files
+interface SelectedCategory {
+  type: 'livros' | 'provas'
+  label: string
+  concurso?: string
+  items: AcervoItem[]
+  group?: ProvaGroup
+}
 
 export default function AcervoDigitalPage() {
+  const [livros, setLivros] = useState<AcervoItem[]>([])
+  const [provas, setProvas] = useState<AcervoItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [viewingFile, setViewingFile] = useState<AcervoItem | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<SelectedCategory | null>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setIsLoading(true)
+        const [l, p] = await Promise.all([
+          acervoService.getLivros(),
+          acervoService.getProvas(),
+        ])
+        setLivros(l)
+        setProvas(p)
+      } catch (err) {
+        console.error('Error loading acervo:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const provaGroups = useMemo(() => acervoService.groupProvasByConcurso(provas), [provas])
+
+  const filteredLivros = useMemo(() => {
+    if (!search) return livros
+    const q = search.toLowerCase()
+    return livros.filter(l => l.title.toLowerCase().includes(q))
+  }, [livros, search])
+
+  const filteredProvaGroups = useMemo((): ProvaGroup[] => {
+    if (!search) return provaGroups
+    const q = search.toLowerCase()
+    return provaGroups
+      .map(group => ({
+        ...group,
+        subcategories: group.subcategories
+          .map(sub => ({
+            ...sub,
+            years: sub.years
+              .map(y => ({
+                ...y,
+                items: y.items.filter(i =>
+                  i.title.toLowerCase().includes(q) ||
+                  group.concurso.toLowerCase().includes(q)
+                )
+              }))
+              .filter(y => y.items.length > 0)
+          }))
+          .filter(s => s.years.length > 0)
+      }))
+      .filter(g => g.subcategories.length > 0)
+  }, [provaGroups, search])
+
+  const totalItems = livros.length + provas.length
+
+  function getFileUrl(item: AcervoItem): string {
+    return acervoService.getPublicUrl(item.file_path)
+  }
+
+  function getAllItemsFromGroup(group: ProvaGroup): AcervoItem[] {
+    return group.subcategories.flatMap(sub => sub.years.flatMap(y => y.items))
+  }
+
+  if (isLoading) {
+    return <SectionLoader />
+  }
+
+  // If a category is selected, show the file browser view
+  if (selectedCategory) {
+    const colors = CONCURSO_COLORS[selectedCategory.concurso || 'livros'] || CONCURSO_COLORS.livros
+    const group = selectedCategory.group
+
     return (
-        <MagicLayout
-            title="Acervo Digital"
-            description="Sua biblioteca virtual com materiais de estudo, livros e arquivos externos"
-        >
-            <div className="max-w-7xl mx-auto space-y-8">
-                {/* Header Stats */}
-                <MagicCard variant="premium" size="lg">
-                    <div className="space-y-4 md:space-y-6">
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-3 md:gap-4">
-                                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                                    <Library className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-                                </div>
-                                <div>
-                                    <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                                        Acervo Digital
-                                    </h1>
-                                    <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
-                                        Acesse materiais de estudo, livros em PDF e bancos de arquivos
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                                <Star className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-                                <span className="text-xs md:text-sm font-medium">Biblioteca Virtual</span>
-                            </div>
-                        </div>
-
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                            <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                                <Archive className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
-                                <div className="text-xl md:text-2xl font-bold text-blue-600">{acervoItems.length}</div>
-                                <div className="text-xs md:text-sm text-muted-foreground">Total Materiais</div>
-                            </div>
-                            <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                                <Folder className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
-                                <div className="text-xl md:text-2xl font-bold text-green-600">{totalFolders}</div>
-                                <div className="text-xs md:text-sm text-muted-foreground">Pastas</div>
-                            </div>
-                            <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                                <FileText className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
-                                <div className="text-xl md:text-2xl font-bold text-purple-600">{totalPdfs}</div>
-                                <div className="text-xs md:text-sm text-muted-foreground">PDFs</div>
-                            </div>
-                            <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
-                                <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                                <div className="text-xl md:text-2xl font-bold text-orange-600">{totalVideos}</div>
-                                <div className="text-xs md:text-sm text-muted-foreground">Vídeos</div>
-                            </div>
-                        </div>
-                    </div>
-                </MagicCard>
-
-                {/* Grid de Conteúdo */}
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {acervoItems.map((item, index) => (
-                        <MagicCard
-                            key={index}
-                            className="group flex flex-col justify-between overflow-hidden"
-                            led={true}
-                            ledColor={item.color === 'blue' ? 'blue' : item.color === 'red' ? 'pink' : item.color === 'green' ? 'green' : item.color === 'orange' ? 'orange' : 'purple'}
-                        >
-                            <div className="p-6 space-y-4">
-                                <div className={`
-                    w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110
-                    ${item.color === 'blue' ? 'bg-blue-500/10 text-blue-500' :
-                                        item.color === 'green' ? 'bg-green-500/10 text-green-500' :
-                                            item.color === 'red' ? 'bg-red-500/10 text-red-500' :
-                                                item.color === 'orange' ? 'bg-orange-500/10 text-orange-500' :
-                                                    'bg-purple-500/10 text-purple-500'}
-                  `}>
-                                    {item.type === 'folder' ? <Folder className="h-6 w-6" /> :
-                                        item.type === 'video' ? <Video className="h-6 w-6" /> :
-                                            <FileText className="h-6 w-6" />}
-                                </div>
-
-                                <div>
-                                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
-                                        {item.title}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                                        {item.description}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="p-6 pt-0">
-                                <Button
-                                    className="w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-all"
-                                    variant="outline"
-                                    asChild
-                                >
-                                    <a href={item.link} target="_blank" rel="noopener noreferrer">
-                                        <span>Acessar Material</span>
-                                        <ExternalLink className="h-4 w-4" />
-                                    </a>
-                                </Button>
-                            </div>
-                        </MagicCard>
-                    ))}
-                </div>
+      <div className="space-y-6">
+        {/* Back + Header */}
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-muted-foreground hover:text-foreground mb-3 -ml-2"
+            onClick={() => setSelectedCategory(null)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar ao Acervo
+          </Button>
+          <div className="flex items-center gap-3">
+            <div className={cn('p-2.5 rounded-lg', colors.bg)}>
+              {selectedCategory.type === 'livros' ? (
+                <BookOpen className={cn('h-5 w-5', colors.text)} />
+              ) : (
+                <ClipboardList className={cn('h-5 w-5', colors.text)} />
+              )}
             </div>
-        </MagicLayout>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{selectedCategory.label}</h1>
+              <p className="text-sm text-muted-foreground">
+                {selectedCategory.items.length} {selectedCategory.items.length === 1 ? 'arquivo' : 'arquivos'}
+                {group && ` · ${group.yearRange}`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Search + View Toggle */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar nesta categoria..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex items-center rounded-lg border border-border bg-card p-0.5">
+            <Button
+              size="sm"
+              variant="ghost"
+              className={cn('h-8 px-2.5', viewMode === 'grid' && 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground')}
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className={cn('h-8 px-2.5', viewMode === 'list' && 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground')}
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Files content */}
+        {(() => {
+          // Get filtered items for flat views
+          const flatItems = selectedCategory.type === 'livros'
+            ? (search ? selectedCategory.items.filter(i => i.title.toLowerCase().includes(search.toLowerCase())) : selectedCategory.items)
+            : (search ? selectedCategory.items.filter(i => i.title.toLowerCase().includes(search.toLowerCase())) : selectedCategory.items)
+
+          // GRID VIEW
+          if (viewMode === 'grid') {
+            return (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {flatItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-all duration-200 shadow-sm hover:border-primary/30 hover:shadow-lg"
+                  >
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className={cn('p-2 rounded-lg shrink-0', colors.bg)}>
+                        <FileText className={cn('h-4 w-4', colors.text)} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-medium text-sm text-foreground leading-tight line-clamp-2">
+                          {item.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatFileSize(item.file_size)} &middot; {item.file_type.toUpperCase()}
+                          {item.year && ` · ${item.year}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        size="sm"
+                        className="flex-1 h-8 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md"
+                        onClick={() => setViewingFile(item)}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        Ler
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-8 hover:bg-green-600 hover:text-white hover:border-green-600" asChild>
+                        <a href={getFileUrl(item)} download target="_blank" rel="noopener noreferrer">
+                          <Download className="h-3.5 w-3.5" />
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          }
+
+          // LIST VIEW
+          if (selectedCategory.type === 'provas' && group) {
+            // Provas: grouped by subcategory/year
+            return (
+              <div className="space-y-6">
+                {group.subcategories.map((sub, subIdx) => {
+                  const filteredYears = search
+                    ? sub.years.map(y => ({
+                        ...y,
+                        items: y.items.filter(i => i.title.toLowerCase().includes(search.toLowerCase()))
+                      })).filter(y => y.items.length > 0)
+                    : sub.years
+
+                  if (filteredYears.length === 0) return null
+
+                  return (
+                    <div key={subIdx}>
+                      {sub.name && (
+                        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-border/60">
+                          <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-semibold text-muted-foreground">{sub.name}</span>
+                        </div>
+                      )}
+                      <div className="space-y-4">
+                        {filteredYears.map(yearGroup => (
+                          <div key={yearGroup.year}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold', colors.bg, colors.text)}>
+                                <Calendar className="h-3 w-3" />
+                                {yearGroup.year}
+                              </span>
+                              <div className="flex-1 h-px bg-border/40" />
+                              <span className="text-xs text-muted-foreground">{yearGroup.items.length} {yearGroup.items.length === 1 ? 'arquivo' : 'arquivos'}</span>
+                            </div>
+                            <div className="rounded-lg border border-border overflow-hidden bg-card">
+                              {yearGroup.items.map((item, itemIdx) => (
+                                <div
+                                  key={item.id}
+                                  className={cn(
+                                    'flex items-center justify-between gap-3 p-2.5 border-l-2 border-l-transparent hover:border-l-primary hover:bg-muted/40 dark:hover:bg-white/[0.06] transition-all duration-200 group/item',
+                                    itemIdx % 2 === 0 ? 'bg-card' : 'bg-muted/80 dark:bg-white/[0.04]'
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className={cn('p-1.5 rounded-md shrink-0', colors.bg)}>
+                                      <FileText className={cn('h-3.5 w-3.5', colors.text)} />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <span className="text-sm font-medium text-foreground truncate block">{item.title}</span>
+                                      <span className="text-[11px] text-muted-foreground">
+                                        {formatFileSize(item.file_size)} &middot; {item.file_type.toUpperCase()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-1.5 shrink-0">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-8 px-3 text-xs gap-1.5 opacity-70 group-hover/item:opacity-100 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
+                                      onClick={() => setViewingFile(item)}
+                                    >
+                                      <Eye className="h-3.5 w-3.5" />
+                                      Ler
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-8 px-2 opacity-70 group-hover/item:opacity-100 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
+                                      asChild
+                                    >
+                                      <a href={getFileUrl(item)} download target="_blank" rel="noopener noreferrer">
+                                        <Download className="h-3.5 w-3.5" />
+                                      </a>
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          }
+
+          // Livros list view (flat)
+          return (
+            <div className="rounded-lg border border-border overflow-hidden bg-card">
+              {flatItems.map((item, itemIdx) => (
+                <div
+                  key={item.id}
+                  className={cn(
+                    'flex items-center justify-between gap-3 p-2.5 border-l-2 border-l-transparent hover:border-l-primary hover:bg-muted/40 dark:hover:bg-white/[0.06] transition-all duration-200 group/item',
+                    itemIdx % 2 === 0 ? 'bg-card' : 'bg-muted/80 dark:bg-white/[0.04]'
+                  )}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={cn('p-1.5 rounded-md shrink-0', colors.bg)}>
+                      <FileText className={cn('h-3.5 w-3.5', colors.text)} />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium text-foreground truncate block">{item.title}</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {formatFileSize(item.file_size)} &middot; {item.file_type.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-3 text-xs gap-1.5 opacity-70 group-hover/item:opacity-100 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
+                      onClick={() => setViewingFile(item)}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Ler
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-2 opacity-70 group-hover/item:opacity-100 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
+                      asChild
+                    >
+                      <a href={getFileUrl(item)} download target="_blank" rel="noopener noreferrer">
+                        <Download className="h-3.5 w-3.5" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
+
+        {/* PDF Viewer Dialog */}
+        <Dialog open={!!viewingFile} onOpenChange={open => !open && setViewingFile(null)}>
+          <DialogContent className="max-w-[95vw] w-[95vw] h-[92vh] max-h-[92vh] p-0 gap-0 overflow-hidden">
+            {viewingFile && (
+              <>
+                <div className="flex items-center justify-between px-4 py-3 border-b bg-background">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <FileText className="h-4 w-4 text-primary shrink-0" />
+                    <span className="font-medium text-sm truncate">{viewingFile.title}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" asChild>
+                      <a href={getFileUrl(viewingFile)} download target="_blank" rel="noopener noreferrer">
+                        <Download className="h-3.5 w-3.5" />
+                        Baixar
+                      </a>
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-8" onClick={() => setViewingFile(null)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <iframe
+                  src={getFileUrl(viewingFile)}
+                  className="w-full flex-1"
+                  style={{ height: 'calc(92vh - 52px)' }}
+                  title={viewingFile.title}
+                />
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     )
+  }
+
+  // Main view: category cards grid
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Acervo Digital</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Livros, apostilas e provas anteriores para seu estudo
+        </p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-4">
+            <div className="p-2 rounded-lg w-fit mb-3 bg-blue-500/10">
+              <Archive className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="text-2xl font-bold text-foreground">{totalItems}</div>
+            <div className="text-xs text-muted-foreground mt-1">Total de Materiais</div>
+          </CardContent>
+        </Card>
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-4">
+            <div className="p-2 rounded-lg w-fit mb-3 bg-emerald-500/10">
+              <BookOpen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="text-2xl font-bold text-foreground">{livros.length}</div>
+            <div className="text-xs text-muted-foreground mt-1">Livros</div>
+          </CardContent>
+        </Card>
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-4">
+            <div className="p-2 rounded-lg w-fit mb-3 bg-purple-500/10">
+              <ClipboardList className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="text-2xl font-bold text-foreground">{provas.length}</div>
+            <div className="text-xs text-muted-foreground mt-1">Provas</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar material por nome..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Category Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Livros Card */}
+        {filteredLivros.length > 0 && (() => {
+          const colors = CONCURSO_COLORS.livros
+          const previewItems = filteredLivros.slice(0, 4)
+          return (
+            <div
+              className={cn(
+                'group relative flex flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 shadow-sm',
+                'hover:border-primary/30 hover:shadow-lg'
+              )}
+            >
+              {/* Category badge */}
+              <div className={cn('absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold text-white', colors.badge)}>
+                Livros
+              </div>
+
+              {/* Title */}
+              <div className="flex items-center gap-2.5 mt-1">
+                <div className={cn('p-2 rounded-lg', colors.bg)}>
+                  <BookOpen className={cn('h-5 w-5', colors.text)} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground leading-snug">Livros para Consulta</h3>
+                  <p className="text-xs text-muted-foreground">{filteredLivros.length} arquivos</p>
+                </div>
+              </div>
+
+              {/* Preview list */}
+              <ul className="mt-4 flex-1 space-y-1.5">
+                {previewItems.map((item) => (
+                  <li key={item.id} className="flex items-center gap-2 min-w-0">
+                    <FileText className={cn('h-3.5 w-3.5 flex-shrink-0', colors.text)} />
+                    <span className="truncate text-xs text-foreground">{item.title}</span>
+                  </li>
+                ))}
+                {filteredLivros.length > 4 && (
+                  <li className="text-xs text-muted-foreground pl-5.5">
+                    +{filteredLivros.length - 4} {filteredLivros.length - 4 === 1 ? 'livro' : 'livros'}
+                  </li>
+                )}
+              </ul>
+
+              {/* Action button */}
+              <button
+                onClick={() => {
+                  setSearch('')
+                  setSelectedCategory({
+                    type: 'livros',
+                    label: 'Livros para Consulta',
+                    items: livros,
+                  })
+                }}
+                className={cn(
+                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
+                  'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'
+                )}
+              >
+                Ver arquivos
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )
+        })()}
+
+        {/* Prova Group Cards */}
+        {filteredProvaGroups.map((group) => {
+          const colors = CONCURSO_COLORS[group.concurso] || CONCURSO_COLORS.livros
+          const allItems = getAllItemsFromGroup(group)
+          const previewItems = allItems.slice(0, 4)
+          const years = [...new Set(allItems.map(i => i.year))].sort((a, b) => (b || 0) - (a || 0))
+
+          return (
+            <div
+              key={group.concurso}
+              className={cn(
+                'group relative flex flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 shadow-sm',
+                'hover:border-primary/30 hover:shadow-lg'
+              )}
+            >
+              {/* Category badge */}
+              <div className={cn('absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold text-white', colors.badge)}>
+                {group.concurso}
+              </div>
+
+              {/* Title */}
+              <div className="flex items-center gap-2.5 mt-1">
+                <div className={cn('p-2 rounded-lg', colors.bg)}>
+                  <ClipboardList className={cn('h-5 w-5', colors.text)} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground leading-snug">Provas {group.concurso}</h3>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground">{group.totalFiles} arquivos</span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-xs text-muted-foreground">{group.yearRange}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview list */}
+              <ul className="mt-4 flex-1 space-y-1.5">
+                {previewItems.map((item) => (
+                  <li key={item.id} className="flex items-center gap-2 min-w-0">
+                    <FileText className={cn('h-3.5 w-3.5 flex-shrink-0', colors.text)} />
+                    <span className="truncate text-xs text-foreground">{item.title}</span>
+                  </li>
+                ))}
+                {allItems.length > 4 && (
+                  <li className="text-xs text-muted-foreground pl-5.5">
+                    +{allItems.length - 4} {allItems.length - 4 === 1 ? 'arquivo' : 'arquivos'}
+                  </li>
+                )}
+              </ul>
+
+              {/* Year pills */}
+              <div className="mt-3 flex flex-wrap gap-1">
+                {years.slice(0, 6).map(year => (
+                  <span key={year} className={cn('px-1.5 py-0.5 rounded text-[10px] font-medium', colors.bg, colors.text)}>
+                    {year}
+                  </span>
+                ))}
+                {years.length > 6 && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium text-muted-foreground">
+                    +{years.length - 6}
+                  </span>
+                )}
+              </div>
+
+              {/* Action button */}
+              <button
+                onClick={() => {
+                  setSearch('')
+                  setSelectedCategory({
+                    type: 'provas',
+                    label: `Provas ${group.concurso}`,
+                    concurso: group.concurso,
+                    items: allItems,
+                    group,
+                  })
+                }}
+                className={cn(
+                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
+                  'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'
+                )}
+              >
+                Ver arquivos
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Empty state when search filters everything */}
+      {filteredLivros.length === 0 && filteredProvaGroups.length === 0 && (
+        <Card className="border-border shadow-sm">
+          <CardContent className="text-center py-12">
+            <p className="text-muted-foreground">
+              {search ? 'Nenhum material encontrado para essa busca.' : 'Nenhum material disponível.'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
 }
