@@ -29,7 +29,7 @@
   --accent-foreground: 222.2 84% 4.9%;
   
   /* Enhanced Background Colors */
-  --background: 0 0% 100%;
+  --background: 220 20% 97%;
   --foreground: 222.2 84% 4.9%;
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
@@ -334,7 +334,7 @@ h1, h2, h3, h4, h5, h6 {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 220 20% 97%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;

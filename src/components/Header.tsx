@@ -16,7 +16,7 @@ export const Header = () => {
   const isAdmin = profile?.role === 'administrator' || profile?.role === 'teacher'
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/40 bg-background/60 backdrop-blur-md px-4 md:px-6 supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/40 bg-card px-4 md:px-6">
       {profile && (
         <>
           <div className="hidden md:flex items-center">

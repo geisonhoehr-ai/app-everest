@@ -151,7 +151,7 @@ export default function EvercastPage() {
         ) : (
           <div className="text-center py-16">
             <Music className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground">Nenhum curso disponivel no Evercast ainda.</p>
+            <p className="text-muted-foreground">Nenhum curso disponível no Evercast ainda.</p>
           </div>
         )}
       </div>

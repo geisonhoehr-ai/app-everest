@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { MagicLayout } from '@/components/ui/magic-layout'
+import { Card, CardContent } from '@/components/ui/card'
 import { SectionLoader } from '@/components/SectionLoader'
 import {
   Accordion,
@@ -182,20 +182,26 @@ export default function CourseDetailPage() {
   // ---- Course not found ----
   if (!course) {
     return (
-      <MagicLayout
-        title="Curso nao encontrado"
-        description="O curso solicitado nao foi encontrado"
-      >
-        <div className="text-center py-24">
-          <h2 className="text-2xl font-bold mb-4 text-foreground">Curso nao encontrado</h2>
-          <p className="text-muted-foreground mb-8">
-            O curso que voce esta procurando nao existe ou nao esta disponivel.
-          </p>
-          <Link to="/courses">
-            <Button>Voltar aos Cursos</Button>
-          </Link>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Curso não encontrado</h1>
+          <p className="text-sm text-muted-foreground mt-1">O curso solicitado não foi encontrado</p>
         </div>
-      </MagicLayout>
+        <Card className="border-border shadow-sm">
+          <CardContent className="text-center py-16">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <BookOpen className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Curso não encontrado</h3>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              O curso que você está procurando não existe ou não está disponível.
+            </p>
+            <Link to="/courses">
+              <Button>Voltar aos Cursos</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
@@ -205,10 +211,9 @@ export default function CourseDetailPage() {
   // RENDER
   // ====================================================================
   return (
-    <MagicLayout showHeader={false}>
-      <div className="max-w-6xl mx-auto space-y-8 pb-12">
+    <div className="space-y-6">
         {/* ── Back button ── */}
-        <div className="pt-6">
+        <div>
           <Link
             to="/courses"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -219,11 +224,8 @@ export default function CourseDetailPage() {
         </div>
 
         {/* ── Hero / Course Header ── */}
-        <section className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/[0.02] pointer-events-none" />
-
-          <div className="relative p-6 md:p-8 space-y-6">
+        <section className="rounded-2xl border border-border bg-card shadow-sm">
+          <div className="p-6 md:p-8 space-y-6">
             {/* Top row: thumbnail + info */}
             <div className="flex flex-col md:flex-row gap-6">
               {course.thumbnail_url && (
@@ -251,13 +253,13 @@ export default function CourseDetailPage() {
                 {/* Stats row */}
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   <StatBadge icon={<BookOpen className="h-4 w-4" />} label={`${stats.totalLessons} aulas`} />
-                  <StatBadge icon={<Layers className="h-4 w-4" />} label={`${course.modules.length} modulos`} />
+                  <StatBadge icon={<Layers className="h-4 w-4" />} label={`${course.modules.length} módulos`} />
                   {stats.totalDuration > 0 && (
                     <StatBadge icon={<Clock className="h-4 w-4" />} label={formatTotalDuration(stats.totalDuration)} />
                   )}
                   <StatBadge
                     icon={isCompleted ? <Trophy className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                    label={`${stats.progressPercent}% concluido`}
+                    label={`${stats.progressPercent}% concluído`}
                     highlight={isCompleted}
                   />
                 </div>
@@ -277,7 +279,7 @@ export default function CourseDetailPage() {
                 ) : isCompleted ? (
                   <div className="inline-flex items-center gap-2 text-sm font-medium text-green-500">
                     <Trophy className="h-5 w-5" />
-                    Curso concluido!
+                    Curso concluído!
                   </div>
                 ) : null}
               </div>
@@ -306,14 +308,14 @@ export default function CourseDetailPage() {
 
         {/* ── View Toggle + Section Title ── */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Modulos do curso</h2>
+          <h2 className="text-lg font-semibold text-foreground">Módulos do curso</h2>
           <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/50 p-1">
             <button
               onClick={() => setViewMode('card')}
               className={cn(
                 'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200',
                 viewMode === 'card'
-                  ? 'bg-background text-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -325,7 +327,7 @@ export default function CourseDetailPage() {
               className={cn(
                 'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200',
                 viewMode === 'list'
-                  ? 'bg-background text-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -350,8 +352,7 @@ export default function CourseDetailPage() {
             defaultOpenModule={defaultOpenModule}
           />
         )}
-      </div>
-    </MagicLayout>
+    </div>
   )
 }
 
@@ -423,7 +424,7 @@ function ModuleCardView({
                   : 'bg-primary text-primary-foreground'
               )}
             >
-              Modulo {idx + 1}
+              Módulo {idx + 1}
             </div>
 
             {/* Module name */}
@@ -492,10 +493,10 @@ function ModuleCardView({
               to={`/courses/${courseId}/lessons/${module.lessons[0]?.id ?? ''}`}
               className={cn(
                 'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
-                'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md active:scale-[0.97]'
+                'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'
               )}
             >
-              Ver modulo
+              Ver módulo
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>

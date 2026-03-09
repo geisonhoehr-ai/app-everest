@@ -70,7 +70,7 @@ export default function AdminSettingsPage() {
             className="gap-2"
           >
             <Save className="h-4 w-4" />
-            {loading ? 'Salvando...' : 'Salvar Alteracoes'}
+            {loading ? 'Salvando...' : 'Salvar Alterações'}
           </Button>
         </div>
 

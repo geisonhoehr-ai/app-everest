@@ -172,7 +172,7 @@ const adminMenuItems = [
     items: [
       {
         href: '/admin/management',
-        label: 'Usuarios',
+        label: 'Usuários',
         icon: Users,
         badge: null
       },
@@ -184,7 +184,7 @@ const adminMenuItems = [
       },
       {
         href: '/admin/permissions',
-        label: 'Permissoes',
+        label: 'Permissões',
         icon: Lock,
         badge: null,
         adminOnly: true
@@ -192,7 +192,7 @@ const adminMenuItems = [
     ]
   },
   {
-    group: 'Conteudo',
+    group: 'Conteúdo',
     items: [
       {
         href: '/admin/courses',
@@ -214,7 +214,7 @@ const adminMenuItems = [
       },
       {
         href: '/admin/essays',
-        label: 'Redacoes',
+        label: 'Redações',
         icon: FileText,
         badge: null
       },
@@ -237,24 +237,24 @@ const adminMenuItems = [
     items: [
       {
         href: '/admin/calendar',
-        label: 'Calendario',
+        label: 'Calendário',
         icon: Calendar,
         badge: null
       },
     ]
   },
   {
-    group: 'Analise',
+    group: 'Análise',
     items: [
       {
         href: '/admin/reports',
-        label: 'Relatorios',
+        label: 'Relatórios',
         icon: BarChart3,
         badge: null
       },
       {
         href: '/admin/gamification',
-        label: 'Gamificacao',
+        label: 'Gamificação',
         icon: Trophy,
         badge: null,
         adminOnly: true
@@ -273,14 +273,14 @@ const adminMenuItems = [
       },
       {
         href: '/admin/integrations',
-        label: 'Integracoes',
+        label: 'Integrações',
         icon: Plug,
         badge: null,
         adminOnly: true
       },
       {
         href: '/admin/settings',
-        label: 'Configuracoes',
+        label: 'Configurações',
         icon: Settings,
         badge: null
       },

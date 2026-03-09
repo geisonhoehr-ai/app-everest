@@ -61,9 +61,9 @@ export default function EvercastAlbumPage() {
 
   if (!course) {
     return (
-      <MagicLayout title="Curso nao encontrado" description="">
+      <MagicLayout title="Curso não encontrado" description="">
         <div className="text-center py-24">
-          <p className="text-muted-foreground mb-4">Este curso nao esta disponivel no Evercast.</p>
+          <p className="text-muted-foreground mb-4">Este curso não está disponível no Evercast.</p>
           <Button variant="outline" onClick={() => navigate('/evercast')}>
             <ChevronLeft className="h-4 w-4 mr-2" />
             Voltar ao Evercast

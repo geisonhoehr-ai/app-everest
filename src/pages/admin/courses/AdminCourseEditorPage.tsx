@@ -204,7 +204,7 @@ function SortableModuleItem({
             value={module.name}
             onChange={(e) => onUpdate('name', e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            placeholder="Nome do modulo..."
+            placeholder="Nome do módulo..."
             className="w-full bg-transparent text-sm font-semibold text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
           />
         </div>
@@ -221,7 +221,7 @@ function SortableModuleItem({
           <button
             onClick={(e) => { e.stopPropagation(); onDelete() }}
             className="p-1.5 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/100/10 transition-colors"
-            title="Excluir modulo"
+            title="Excluir módulo"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -239,7 +239,7 @@ function SortableModuleItem({
                 checked={module.is_active}
                 onCheckedChange={(v) => onUpdate('is_active', v)}
               />
-              Modulo ativo
+              Módulo ativo
             </label>
           </div>
 
@@ -265,7 +265,7 @@ function SortableModuleItem({
           {module.lessons.length === 0 && (
             <div className="text-center py-6 border-2 border-dashed border-border/50 rounded-xl">
               <Video className="h-6 w-6 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground">Nenhuma aula neste modulo</p>
+              <p className="text-xs text-muted-foreground">Nenhuma aula neste módulo</p>
             </div>
           )}
 
@@ -355,7 +355,7 @@ function SortableLessonItem({
 
         <div className="flex-1 min-w-0">
           <span className="text-xs font-medium text-foreground truncate block">
-            {lesson.title || 'Aula sem titulo'}
+            {lesson.title || 'Aula sem título'}
           </span>
         </div>
 
@@ -692,7 +692,7 @@ export default function AdminCourseEditorPage() {
 
   const deleteModule = useCallback((moduleIndex: number) => {
     const mod = modules[moduleIndex]
-    if (!mod.isNew && !confirm(`Excluir modulo "${mod.name || 'sem nome'}" e todas as suas aulas?`)) return
+    if (!mod.isNew && !confirm(`Excluir módulo "${mod.name || 'sem nome'}" e todas as suas aulas?`)) return
 
     if (!mod.isNew) {
       setDeletedModuleIds(prev => [...prev, mod.id])
@@ -754,7 +754,7 @@ export default function AdminCourseEditorPage() {
   const deleteLesson = useCallback((moduleIndex: number, lessonIndex: number) => {
     const lesson = modules[moduleIndex]?.lessons[lessonIndex]
     if (!lesson) return
-    if (!lesson.isNew && !confirm(`Excluir aula "${lesson.title || 'sem titulo'}"?`)) return
+    if (!lesson.isNew && !confirm(`Excluir aula "${lesson.title || 'sem título'}"?`)) return
 
     if (!lesson.isNew) {
       setDeletedLessonIds(prev => [...prev, lesson.id])
@@ -894,12 +894,12 @@ export default function AdminCourseEditorPage() {
     }
     for (const mod of modules) {
       if (!mod.name.trim()) {
-        toast({ title: 'Todos os modulos precisam ter nome', variant: 'destructive' })
+        toast({ title: 'Todos os módulos precisam ter nome', variant: 'destructive' })
         return
       }
       for (const lesson of mod.lessons) {
         if (!lesson.title.trim()) {
-          toast({ title: `Todas as aulas precisam ter titulo (modulo "${mod.name}")`, variant: 'destructive' })
+          toast({ title: `Todas as aulas precisam ter título (módulo "${mod.name}")`, variant: 'destructive' })
           return
         }
       }
@@ -1125,7 +1125,7 @@ export default function AdminCourseEditorPage() {
               {hasChanges && (
                 <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-500 bg-amber-500/100/10">
                   <AlertTriangle className="h-2.5 w-2.5 mr-1" />
-                  Alteracoes nao salvas
+                  Alterações não salvas
                 </Badge>
               )}
             </div>
@@ -1226,7 +1226,7 @@ export default function AdminCourseEditorPage() {
 
           {/* Stats bar */}
           <div className="flex items-center gap-4 px-4 py-2.5 bg-muted/20 rounded-xl text-xs text-muted-foreground">
-            <span>{modules.length} {modules.length === 1 ? 'modulo' : 'modulos'}</span>
+            <span>{modules.length} {modules.length === 1 ? 'módulo' : 'módulos'}</span>
             <span className="text-border">|</span>
             <span>{totalLessons} {totalLessons === 1 ? 'aula' : 'aulas'}</span>
             <span className="text-border">|</span>
@@ -1280,8 +1280,8 @@ export default function AdminCourseEditorPage() {
             {modules.length === 0 && (
               <div className="text-center py-12 border-2 border-dashed border-border/50 rounded-xl">
                 <Video className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground mb-1">Nenhum modulo ainda</p>
-                <p className="text-xs text-muted-foreground/60">Comece adicionando o primeiro modulo do curso</p>
+                <p className="text-sm text-muted-foreground mb-1">Nenhum módulo ainda</p>
+                <p className="text-xs text-muted-foreground/60">Comece adicionando o primeiro módulo do curso</p>
               </div>
             )}
 
@@ -1291,7 +1291,7 @@ export default function AdminCourseEditorPage() {
               className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-border/50 rounded-xl text-sm text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all font-medium"
             >
               <Plus className="h-4 w-4" />
-              Adicionar modulo
+              Adicionar módulo
             </button>
           </div>
 
@@ -1300,7 +1300,7 @@ export default function AdminCourseEditorPage() {
             <div className="sticky bottom-4 flex items-center justify-between px-5 py-3 bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg">
               <div className="flex items-center gap-2 text-sm">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                <span className="text-muted-foreground">Voce tem alteracoes nao salvas</span>
+                <span className="text-muted-foreground">Você tem alterações não salvas</span>
               </div>
               <Button onClick={handleSave} disabled={saving} className="gap-2">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

@@ -217,7 +217,7 @@ export default function LessonPlayerPage() {
 
         const course = await courseService.getCourseWithModulesAndProgress(courseId, user.id)
         if (!course) {
-          toast({ title: 'Curso nao encontrado', variant: 'destructive' })
+          toast({ title: 'Curso não encontrado', variant: 'destructive' })
           navigate('/courses')
           return
         }
@@ -236,7 +236,7 @@ export default function LessonPlayerPage() {
         }
 
         if (!foundLesson) {
-          toast({ title: 'Aula nao encontrada', variant: 'destructive' })
+          toast({ title: 'Aula não encontrada', variant: 'destructive' })
           navigate(`/courses/${courseId}`)
           return
         }
@@ -504,7 +504,7 @@ export default function LessonPlayerPage() {
   if (!lessonData || !courseData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 bg-background">
-        <h2 className="text-xl font-semibold text-foreground">Aula nao encontrada</h2>
+        <h2 className="text-xl font-semibold text-foreground">Aula não encontrada</h2>
         <Button variant="outline" onClick={() => navigate(`/courses/${courseId}`)}>
           <ChevronLeft className="mr-2 h-4 w-4" /> Voltar ao Curso
         </Button>
@@ -1252,7 +1252,7 @@ export default function LessonPlayerPage() {
                 {activeTab === 'notes' && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground">Suas anotacoes pessoais sobre esta aula. Apenas voce pode ve-las.</p>
+                      <p className="text-xs text-muted-foreground">Suas anotações pessoais sobre esta aula. Apenas você pode vê-las.</p>
                       {noteLastSaved && (
                         <span className={cn(
                           "flex items-center gap-1 text-[11px] transition-colors",
@@ -1268,7 +1268,7 @@ export default function LessonPlayerPage() {
                     <RichTextEditor
                       content={noteContent}
                       onChange={handleNoteChange}
-                      placeholder="Escreva suas anotacoes aqui... (salva automaticamente)"
+                      placeholder="Escreva suas anotações aqui... (salva automaticamente)"
                       minHeight="180px"
                     />
                   </div>
@@ -1294,7 +1294,7 @@ export default function LessonPlayerPage() {
                 {/* Module progress bar at bottom */}
                 <div className="shrink-0 px-4 py-3 border-t border-border">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] text-muted-foreground">Progresso do modulo</span>
+                    <span className="text-[11px] text-muted-foreground">Progresso do módulo</span>
                     <span className="text-[11px] font-medium text-primary tabular-nums">
                       {modTotal > 0 ? Math.round((modCompleted / modTotal) * 100) : 0}%
                     </span>
@@ -1353,7 +1353,7 @@ function VideoPlaceholder() {
       <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-3">
         <Play className="h-6 w-6 text-muted-foreground ml-0.5" />
       </div>
-      <p className="text-xs text-muted-foreground">Video nao disponivel</p>
+      <p className="text-xs text-muted-foreground">Vídeo não disponível</p>
     </div>
   )
 }

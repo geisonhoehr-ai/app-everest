@@ -335,7 +335,7 @@ export default function AdminQuestionFormPage() {
                             <Textarea {...field} rows={5} />
                           </FormControl>
                           <FormDescription>
-                            Sera usado como fallback se nao houver versao formatada
+                            Será usado como fallback se não houver versão formatada
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

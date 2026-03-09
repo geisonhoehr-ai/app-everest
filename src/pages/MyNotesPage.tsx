@@ -143,7 +143,7 @@ export default function MyNotesPage() {
   }
 
   return (
-    <MagicLayout title="Minhas Anotacoes" description="Todas as suas anotacoes de aulas em um so lugar" showHeader>
+    <MagicLayout title="Minhas Anotações" description="Todas as suas anotações de aulas em um só lugar" showHeader>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Search bar */}
         <div className="relative">
@@ -152,7 +152,7 @@ export default function MyNotesPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar nas anotacoes..."
+            placeholder="Buscar nas anotações..."
             className="w-full pl-10 pr-4 py-2.5 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-foreground placeholder:text-muted-foreground/50"
           />
         </div>
@@ -163,9 +163,9 @@ export default function MyNotesPage() {
             <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
               <StickyNote className="h-7 w-7 text-muted-foreground/40" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">Nenhuma anotacao ainda</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-1">Nenhuma anotação ainda</h3>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Comece a fazer anotacoes durante suas aulas. Elas aparecerao aqui organizadas por curso.
+              Comece a fazer anotações durante suas aulas. Elas aparecerão aqui organizadas por curso.
             </p>
             <Link
               to="/meus-cursos"
@@ -241,7 +241,7 @@ export default function MyNotesPage() {
         {notes.length > 0 && (
           <div className="text-center pt-4 pb-2">
             <p className="text-xs text-muted-foreground/50">
-              {notes.length} {notes.length === 1 ? 'anotacao' : 'anotacoes'} no total
+              {notes.length} {notes.length === 1 ? 'anotação' : 'anotações'} no total
             </p>
           </div>
         )}
