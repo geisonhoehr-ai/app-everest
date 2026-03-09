@@ -255,7 +255,7 @@ export const notificationService = new NotificationService()
 export const createNotification = async (notification: NotificationInsert) => {
   const { error } = await supabase.from('notifications').insert(notification)
   if (error) {
-    console.error('Error creating notification:', error)
+    logger.error('Error creating notification:', error)
     throw error
   }
 }

@@ -10,6 +10,7 @@ import {
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { logger } from '@/lib/logger'
 
 // Simplified UserProfile interface
 export interface UserProfile {
@@ -90,7 +91,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
       const { data: { user }, error: userError } = await supabase.auth.getUser()
 
       if (userError || !user) {
-        console.error('Could not get user data for profile creation:', userError)
+        logger.error('Could not get user data for profile creation:', userError)
         return null
       }
 
@@ -114,7 +115,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
         .single()
 
       if (createError) {
-        console.error('Failed to create profile:', createError)
+        logger.error('Failed to create profile:', createError)
         return null
       }
 
@@ -131,7 +132,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
           .insert(studentData)
 
         if (studentError) {
-          console.error('Failed to create student record:', studentError)
+          logger.error('Failed to create student record:', studentError)
         }
       }
 
@@ -148,7 +149,7 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
           .insert(teacherData)
 
         if (teacherError) {
-          console.error('Failed to create teacher record:', teacherError)
+          logger.error('Failed to create teacher record:', teacherError)
         }
       }
 
@@ -156,11 +157,11 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
     }
 
     // For other errors, log and return null
-    console.error('Profile fetch error:', fetchError)
+    logger.error('Profile fetch error:', fetchError)
     return null
 
   } catch (error) {
-    console.error('Network error fetching profile:', error)
+    logger.error('Network error fetching profile:', error)
     return null
   }
 }
@@ -262,7 +263,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         if (!mounted) return
 
-        console.error('Auth initialization failed:', error)
+        logger.error('Auth initialization failed:', error)
 
         const isTimeout = error instanceof Error && error.message.includes('timeout')
 
@@ -358,7 +359,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     })
 
     if (error) {
-      console.error('Sign in error:', error)
+      logger.error('Sign in error:', error)
     }
 
     return { error }
@@ -371,7 +372,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     })
 
     if (error) {
-      console.error('Sign up error:', error)
+      logger.error('Sign up error:', error)
     }
 
     return { error }
@@ -389,7 +390,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         if (error.status !== 403) {
-          console.error('Sign out error:', error)
+          logger.error('Sign out error:', error)
         }
       }
 

@@ -10,13 +10,8 @@ import {
   CornerUpRight,
   MessageSquare,
   Clock,
-  Heart,
-  Share2,
-  Flag,
   Reply,
-  ThumbsUp,
   Loader2,
-  Award,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -158,8 +153,7 @@ export default function ForumTopicPage() {
         {/* Topic Header */}
         <MagicCard variant="glass" size="lg">
           <div className="space-y-6">
-            <div className="flex items-start justify-between">
-              <div className="space-y-4">
+            <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
                     <MessageSquare className="h-6 w-6 text-primary" />
@@ -174,30 +168,6 @@ export default function ForumTopicPage() {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                   {topic.title}
                 </h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="opacity-70 hover:opacity-100"
-                >
-                  <Heart className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="opacity-70 hover:opacity-100"
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="opacity-70 hover:opacity-100"
-                >
-                  <Flag className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
 
             <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50">
@@ -287,16 +257,7 @@ export default function ForumTopicPage() {
                           variant="ghost"
                           size="sm"
                           className="text-muted-foreground hover:text-foreground"
-                        >
-                          <ThumbsUp className="h-4 w-4 mr-1" />
-                          Curtir
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-foreground"
                           onClick={() => {
-                            // Focus textarea or scroll to reply form
                             document.querySelector('textarea')?.focus()
                           }}
                         >

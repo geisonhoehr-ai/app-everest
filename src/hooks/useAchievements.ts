@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/auth-provider'
 import { rankingService, type UserAchievement } from '@/services/rankingService'
 import { useAchievementNotifications } from '@/components/achievements/AchievementNotification'
+import { logger } from '@/lib/logger'
 
 export function useAchievements() {
   const { user } = useAuth()
@@ -18,7 +19,7 @@ export function useAchievements() {
       const achievements = await rankingService.getUserAchievements(user.id)
       setUserAchievements(achievements)
     } catch (error) {
-      console.error('Erro ao carregar conquistas:', error)
+      logger.error('Erro ao carregar conquistas:', error)
     } finally {
       setIsLoading(false)
     }
@@ -54,7 +55,7 @@ export function useAchievements() {
       // Marcar como verificado
       localStorage.setItem(`first_login_checked_${user.id}`, 'true')
     } catch (error) {
-      console.error('Erro ao conceder conquista de primeiro login:', error)
+      logger.error('Erro ao conceder conquista de primeiro login:', error)
     }
   }, [user?.id])
 
@@ -75,7 +76,7 @@ export function useAchievements() {
         })
       }
     } catch (error) {
-      console.error('Erro ao verificar conquistas:', error)
+      logger.error('Erro ao verificar conquistas:', error)
     }
   }, [user?.id, addNotification])
 
@@ -101,7 +102,7 @@ export function useAchievements() {
         await checkAndGrantAchievements()
       }
     } catch (error) {
-      console.error('Erro ao adicionar pontuação:', error)
+      logger.error('Erro ao adicionar pontuação:', error)
     }
   }, [user?.id, checkAndGrantAchievements])
 

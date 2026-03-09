@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { SectionLoader } from '@/components/SectionLoader'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 import {
   StickyNote,
   Search,
@@ -87,7 +88,7 @@ export default function MyNotesPage() {
 
         setNotes(enriched)
       } catch (err) {
-        console.error('Error fetching notes:', err)
+        logger.error('Error fetching notes:', err)
       } finally {
         setLoading(false)
       }

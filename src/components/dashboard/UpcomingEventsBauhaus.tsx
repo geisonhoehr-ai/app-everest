@@ -12,6 +12,7 @@ import { dashboardService, Event } from '@/services/dashboardService'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
+import { logger } from '@/lib/logger'
 
 const eventIcons = {
   exam: <Book className="h-5 w-5" />,
@@ -52,7 +53,7 @@ export const UpcomingEventsBauhaus = () => {
         const upcomingEvents = await dashboardService.getUpcomingEvents(user.id)
         setEvents(upcomingEvents)
       } catch (error) {
-        console.error('Erro ao carregar eventos:', error)
+        logger.error('Erro ao carregar eventos:', error)
       } finally {
         setLoading(false)
       }

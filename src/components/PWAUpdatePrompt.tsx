@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { RefreshCw, Wifi, WifiOff } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { logger } from '@/lib/logger'
 
 export function PWAUpdatePrompt() {
   const [showUpdateDialog, setShowUpdateDialog] = useState(false)
@@ -28,7 +29,7 @@ export function PWAUpdatePrompt() {
       // Service Worker registrado
     },
     onRegisterError(error) {
-      console.error('Erro ao registrar SW:', error)
+      logger.error('Erro ao registrar SW:', error)
     },
   })
 

@@ -3,19 +3,17 @@ import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { courseService, type CourseWithProgress } from '@/services/courseService'
 import { getUserProgress, getUserAchievements, type UserProgress, type UserAchievement } from '@/services/gamificationService'
 import { SectionLoader } from '@/components/SectionLoader'
+import { logger } from '@/lib/logger'
 import {
   TrendingUp,
   BookOpen,
-  Target,
   Clock,
   Award,
-  Calendar,
   CheckCircle,
   AlertCircle,
   Star
@@ -34,11 +32,6 @@ interface ProgressData {
     completed: boolean
     date: string
   }[]
-  weeklyGoal: {
-    hours: number
-    completed: number
-    daysLeft: number
-  }
   userAchievements: {
     title: string
     description: string
@@ -54,11 +47,6 @@ const emptyData: ProgressData = {
   streak: 0,
   achievements: 0,
   recentActivity: [],
-  weeklyGoal: {
-    hours: 0,
-    completed: 0,
-    daysLeft: 0
-  },
   userAchievements: []
 }
 
@@ -110,10 +98,6 @@ export default function ProgressPage() {
           earned: true
         }))
 
-        // Calculate days left in the week
-        const today = new Date().getDay()
-        const daysLeft = 7 - today
-
         setData({
           overallProgress,
           coursesCompleted,
@@ -122,17 +106,12 @@ export default function ProgressPage() {
           streak: userProgress?.current_streak_days || 0,
           achievements: achievements.length,
           recentActivity,
-          weeklyGoal: {
-            hours: 0,
-            completed: 0,
-            daysLeft
-          },
           userAchievements: userAchievementsList.length > 0
             ? userAchievementsList.slice(0, 6)
             : []
         })
       } catch (error) {
-        console.error('Erro ao carregar progresso:', error)
+        logger.error('Erro ao carregar progresso:', error)
       } finally {
         setLoading(false)
       }

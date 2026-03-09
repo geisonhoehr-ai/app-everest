@@ -18,6 +18,7 @@ import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { audioLessonService, type AudioLesson, type EvercastCourse } from '@/services/audioLessonService'
 import { AudioPlayer } from '@/components/AudioPlayer'
+import { logger } from '@/lib/logger'
 
 export default function EvercastPage() {
   const { isStudent, user } = useAuth()
@@ -40,7 +41,7 @@ export default function EvercastPage() {
       setEvercastCourses(courses)
       setAllLessons(courses.flatMap(c => c.modules.flatMap(m => m.lessons)))
     } catch (error) {
-      console.error('Error loading evercast courses:', error)
+      logger.error('Error loading evercast courses:', error)
     } finally {
       setIsLoading(false)
     }

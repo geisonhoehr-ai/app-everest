@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/types'
+import { logger } from '@/lib/logger'
 
 export type EssayPrompt = Database['public']['Tables']['essay_prompts']['Row']
 export type EssayPromptInsert = Database['public']['Tables']['essay_prompts']['Insert']
@@ -22,7 +23,7 @@ export const getAllEssayPrompts = async (): Promise<AdminEssayPrompt[]> => {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching essay prompts:', error)
+    logger.error('Error fetching essay prompts:', error)
     throw error
   }
 
@@ -45,7 +46,7 @@ export const getEssayPromptById = async (
     .single()
 
   if (error) {
-    console.error('Error fetching essay prompt:', error)
+    logger.error('Error fetching essay prompt:', error)
     throw error
   }
 
@@ -65,7 +66,7 @@ export const createEssayPrompt = async (
     .single()
 
   if (error) {
-    console.error('Error creating essay prompt:', error)
+    logger.error('Error creating essay prompt:', error)
     throw error
   }
 
@@ -87,7 +88,7 @@ export const updateEssayPrompt = async (
     .single()
 
   if (error) {
-    console.error('Error updating essay prompt:', error)
+    logger.error('Error updating essay prompt:', error)
     throw error
   }
 
@@ -104,7 +105,7 @@ export const deleteEssayPrompt = async (promptId: string): Promise<void> => {
     .eq('id', promptId)
 
   if (error) {
-    console.error('Error deleting essay prompt:', error)
+    logger.error('Error deleting essay prompt:', error)
     throw error
   }
 }
@@ -132,7 +133,7 @@ export const getEssaySubmissions = async (promptId: string) => {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching essay submissions:', error)
+    logger.error('Error fetching essay submissions:', error)
     throw error
   }
 
@@ -149,7 +150,7 @@ export const getEssayPromptStats = async (promptId: string) => {
     .eq('prompt_id', promptId)
 
   if (error) {
-    console.error('Error fetching essay stats:', error)
+    logger.error('Error fetching essay stats:', error)
     throw error
   }
 

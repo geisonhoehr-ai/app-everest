@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { dashboardService, Event } from '@/services/dashboardService'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
+import { logger } from '@/lib/logger'
 
 const eventIcons = {
   exam: <Book className="h-5 w-5" />,
@@ -39,7 +40,7 @@ export const UpcomingEvents = () => {
         const upcomingEvents = await dashboardService.getUpcomingEvents(user.id)
         setEvents(upcomingEvents)
       } catch (error) {
-        console.error('Erro ao carregar eventos:', error)
+        logger.error('Erro ao carregar eventos:', error)
         // Em caso de erro, mostrar lista vazia
         setEvents([])
       } finally {

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 export interface SystemStats {
   totalUsers: number
@@ -69,65 +70,11 @@ export async function getSystemStats(): Promise<SystemStats> {
       completionRate
     }
   } catch (error) {
-    console.error('Error fetching system stats:', error)
+    logger.error('Error fetching system stats:', error)
     throw error
   }
 }
 
-export interface UserActivity {
-  date: string
-  user_count: number
-  activity_count: number
-}
-
-export async function getRecentActivity(days: number = 7): Promise<UserActivity[]> {
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() - days)
-
-  const { data, error } = await supabase
-    .from('user_sessions')
-    .select('login_at, user_id')
-    .gte('login_at', startDate.toISOString())
-    .order('login_at', { ascending: false })
-
-  if (error) throw error
-
-  // Group by date
-  const activityMap = new Map<string, Set<string>>()
-  
-  ;(data || []).forEach(session => {
-    const date = new Date(session.login_at).toISOString().split('T')[0]
-    if (!activityMap.has(date)) {
-      activityMap.set(date, new Set())
-    }
-    activityMap.get(date)?.add(session.user_id)
-  })
-
-  return Array.from(activityMap.entries())
-    .map(([date, userIds]) => ({
-      date,
-      user_count: userIds.size,
-      activity_count: userIds.size
-    }))
-    .sort((a, b) => a.date.localeCompare(b.date))
-}
-
-export interface ResourceUsage {
-  database_size: string
-  storage_used: string
-  api_calls_today: number
-  active_connections: number
-}
-
-export async function getResourceUsage(): Promise<ResourceUsage> {
-  // Placeholder - these would require additional monitoring setup
-  return {
-    database_size: '2.4 GB',
-    storage_used: '1.2 GB',
-    api_calls_today: 12543,
-    active_connections: 24
-  }
-}
 
 export interface UserGrowthData {
   month: string
@@ -135,14 +82,14 @@ export interface UserGrowthData {
   ativos: number
 }
 
-export async function getUserGrowthData(): Promise<UserGrowthData[]> {
+export async function getUserGrowthData(days: number = 180): Promise<UserGrowthData[]> {
   try {
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun']
+    const monthCount = Math.max(1, Math.ceil(days / 30))
     const result: UserGrowthData[] = []
 
     const now = new Date()
 
-    for (let i = 5; i >= 0; i--) {
+    for (let i = monthCount - 1; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
 
@@ -160,7 +107,7 @@ export async function getUserGrowthData(): Promise<UserGrowthData[]> {
         .lt('login_at', nextDate.toISOString())
 
       result.push({
-        month: months[5 - i] || date.toLocaleDateString('pt-BR', { month: 'short' }),
+        month: date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
         usuarios: totalUsers || 0,
         ativos: activeUsers || 0
       })
@@ -168,7 +115,7 @@ export async function getUserGrowthData(): Promise<UserGrowthData[]> {
 
     return result
   } catch (error) {
-    console.error('Error fetching user growth data:', error)
+    logger.error('Error fetching user growth data:', error)
     // Return fallback data
     return [
       { month: 'Jan', usuarios: 0, ativos: 0 },
@@ -186,19 +133,25 @@ export interface ActivityDataPoint {
   atividades: number
 }
 
-export async function getWeeklyActivityData(): Promise<ActivityDataPoint[]> {
+export async function getWeeklyActivityData(rangeDays: number = 7): Promise<ActivityDataPoint[]> {
   try {
-    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab']
+    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab']
     const result: ActivityDataPoint[] = []
 
+    // For ranges > 7 days, we aggregate by day-of-week over the full range
     const now = new Date()
-    const startOfWeek = new Date(now)
-    startOfWeek.setDate(now.getDate() - now.getDay()) // Start from Sunday
-    startOfWeek.setHours(0, 0, 0, 0)
+    const rangeStart = new Date(now)
+    rangeStart.setDate(now.getDate() - rangeDays)
+    rangeStart.setHours(0, 0, 0, 0)
 
-    for (let i = 0; i < 7; i++) {
-      const dayStart = new Date(startOfWeek)
-      dayStart.setDate(startOfWeek.getDate() + i)
+    // Initialize accumulators for each day of week
+    const dayTotals = [0, 0, 0, 0, 0, 0, 0]
+
+    // We still query day-by-day but aggregate into weekday buckets
+    const actualDays = Math.min(rangeDays, 365)
+    for (let i = 0; i < actualDays; i++) {
+      const dayStart = new Date(rangeStart)
+      dayStart.setDate(rangeStart.getDate() + i)
 
       const dayEnd = new Date(dayStart)
       dayEnd.setDate(dayStart.getDate() + 1)
@@ -223,16 +176,16 @@ export async function getWeeklyActivityData(): Promise<ActivityDataPoint[]> {
       ])
 
       const totalActivities = (sessions.count || 0) + (quizHistory.count || 0) + (flashcardSessions.count || 0)
+      dayTotals[dayStart.getDay()] += totalActivities
+    }
 
-      result.push({
-        day: days[i],
-        atividades: totalActivities
-      })
+    for (let d = 0; d < 7; d++) {
+      result.push({ day: dayNames[d], atividades: dayTotals[d] })
     }
 
     return result
   } catch (error) {
-    console.error('Error fetching weekly activity data:', error)
+    logger.error('Error fetching weekly activity data:', error)
     return [
       { day: 'Dom', atividades: 0 },
       { day: 'Seg', atividades: 0 },
@@ -347,7 +300,7 @@ export async function getRecentActivities(limit: number = 5): Promise<RecentActi
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
       .slice(0, limit)
   } catch (error) {
-    console.error('Error fetching recent activities:', error)
+    logger.error('Error fetching recent activities:', error)
     return []
   }
 }
@@ -411,7 +364,7 @@ export async function getSystemAlerts(): Promise<Alert[]> {
 
     return alerts
   } catch (error) {
-    console.error('Error fetching system alerts:', error)
+    logger.error('Error fetching system alerts:', error)
     return [{
       type: 'info',
       message: 'Sistema funcionando normalmente',
@@ -492,7 +445,7 @@ export async function getKPIChanges(): Promise<{
       completionRate: completionChange
     }
   } catch (error) {
-    console.error('Error calculating KPI changes:', error)
+    logger.error('Error calculating KPI changes:', error)
     return {
       users: { current: 0, previous: 0, change: '+0%', trend: 'stable' },
       activeUsers: { current: 0, previous: 0, change: '+0%', trend: 'stable' },

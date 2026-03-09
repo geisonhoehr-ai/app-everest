@@ -32,6 +32,7 @@ import {
   type UserRanking,
 } from '@/services/rankingService'
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
+import { logger } from '@/lib/logger'
 import {
   ChartContainer,
   ChartTooltip,
@@ -163,7 +164,7 @@ export default function DashboardPage() {
         setUserPosition(positionData)
         setTopRanking(rankingData)
       } catch (error) {
-        console.error('Erro ao carregar dashboard:', error)
+        logger.error('Erro ao carregar dashboard:', error)
       } finally {
         setIsLoading(false)
       }

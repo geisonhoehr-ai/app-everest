@@ -21,19 +21,14 @@ import {
   LayoutDashboard,
   BookOpen,
   Calendar,
-  Layers,
   Users,
-  ListChecks,
   Radio,
   FileText,
   ClipboardCheck,
   Settings,
-  HelpCircle,
   LogOut,
   Mountain,
-  UserCog,
   Archive,
-  ArrowLeft,
   Brain,
   Target,
   Mic,
@@ -41,117 +36,80 @@ import {
   BarChart3,
   Shield,
   GraduationCap,
-  UserCheck,
-  PlayCircle,
   Award,
   TrendingUp,
-  Zap,
   Trophy,
   Lock,
   Plug,
-  Search
+  Search,
+  Bell,
 } from 'lucide-react'
 
-// Menu items for students (com feature_key para controle de permissões)
-// null = 🟢 PADRÃO - SEMPRE VISÍVEL para todos os alunos
-// feature_key = 🔒 CONTROLADO POR TURMA (via class_feature_permissions)
-const studentMenuItems = [
+// Student menu: grouped structure
+// featureKey null = always visible, otherwise controlled by class permissions
+type StudentMenuItem = {
+  label: string
+  href: string
+  icon: any
+  featureKey: string | null
+}
+
+type StudentMenuGroup = {
+  group: string
+  items: StudentMenuItem[]
+}
+
+const studentMenuGroups: StudentMenuGroup[] = [
   {
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
+    group: '',
+    items: [
+      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, featureKey: null },
+    ],
   },
   {
-    label: 'Calendário',
-    href: '/calendario',
-    icon: Calendar,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
+    group: 'Estudos',
+    items: [
+      { label: 'Meus Cursos', href: '/courses', icon: BookOpen, featureKey: FEATURE_KEYS.VIDEO_LESSONS },
+      { label: 'Flashcards', href: '/flashcards', icon: Brain, featureKey: FEATURE_KEYS.FLASHCARDS },
+      { label: 'Banco de Questões', href: '/banco-de-questoes', icon: Search, featureKey: FEATURE_KEYS.QUIZ },
+    ],
   },
   {
-    label: 'Meus Cursos',
-    href: '/courses',
-    icon: BookOpen,
-    featureKey: FEATURE_KEYS.VIDEO_LESSONS, // 🔒 Controlado por turma
+    group: 'Avaliações',
+    items: [
+      { label: 'Simulados', href: '/simulados', icon: ClipboardCheck, featureKey: FEATURE_KEYS.QUIZ },
+      { label: 'Redações', href: '/redacoes', icon: FileText, featureKey: FEATURE_KEYS.ESSAYS },
+    ],
   },
   {
-    label: 'Flashcards',
-    href: '/flashcards',
-    icon: Brain,
-    featureKey: FEATURE_KEYS.FLASHCARDS, // 🔒 Controlado por turma
+    group: 'Conteúdo',
+    items: [
+      { label: 'Acervo Digital', href: '/acervo', icon: Archive, featureKey: null },
+      { label: 'Evercast', href: '/evercast', icon: Mic, featureKey: FEATURE_KEYS.EVERCAST },
+    ],
   },
   {
-    label: 'Banco de Questões',
-    href: '/banco-de-questoes',
-    icon: Search,
-    featureKey: FEATURE_KEYS.QUIZ, // 🔒 Controlado por turma (usando mesma key de quiz por enquanto)
+    group: 'Agenda',
+    items: [
+      { label: 'Calendário', href: '/calendario', icon: Calendar, featureKey: null },
+      { label: 'Plano de Estudos', href: '/study-planner', icon: Target, featureKey: null },
+    ],
   },
   {
-    label: 'Simulados',
-    href: '/simulados',
-    icon: ClipboardCheck,
-    featureKey: FEATURE_KEYS.QUIZ, // 🔒 Controlado por turma
+    group: 'Desempenho',
+    items: [
+      { label: 'Progresso', href: '/progresso', icon: TrendingUp, featureKey: null },
+      { label: 'Ranking', href: '/ranking', icon: Trophy, featureKey: null },
+      { label: 'Conquistas', href: '/achievements', icon: Award, featureKey: null },
+    ],
   },
-  {
-    label: 'Redações',
-    href: '/redacoes',
-    icon: FileText,
-    featureKey: FEATURE_KEYS.ESSAYS, // 🔒 Controlado por turma
-  },
-  {
-    label: 'Acervo Digital',
-    href: '/acervo',
-    icon: Archive,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
-  },
-  {
-    label: 'Evercast',
-    href: '/evercast',
-    icon: Mic,
-    featureKey: FEATURE_KEYS.EVERCAST, // 🔒 Controlado por turma
-  },
-  {
-    label: 'Comunidade',
-    href: '/forum',
-    icon: MessageSquare,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
-  },
-  {
-    label: 'Conquistas',
-    href: '/achievements',
-    icon: Award,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
-  },
-  {
-    label: 'Ranking',
-    href: '/ranking',
-    icon: Trophy,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
-  },
-  {
-    label: 'Plano de Estudos',
-    href: '/study-planner',
-    icon: Calendar,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
-  },
-  {
-    label: 'Progresso',
-    href: '/progresso',
-    icon: TrendingUp,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
-  },
-  {
-    label: 'Notificações',
-    href: '/notificacoes',
-    icon: Radio,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
-  },
-  {
-    label: 'Configurações',
-    href: '/configuracoes',
-    icon: Settings,
-    featureKey: null, // 🟢 PADRÃO - Sempre visível
-  },
+]
+
+// Footer items shown below the main menu
+const studentFooterItems: StudentMenuItem[] = [
+  { label: 'Comunidade', href: '/forum', icon: MessageSquare, featureKey: null },
+  { label: 'Notificações', href: '/notificacoes', icon: Bell, featureKey: null },
+  { label: 'Configurações', href: '/configuracoes', icon: Settings, featureKey: null },
 ]
 
 // Menu items for teachers and administrators
@@ -306,17 +264,20 @@ export function UnifiedSidebar() {
     navigate('/login')
   }
 
-  // Filtra os itens do menu de alunos baseado nas permissões
-  const visibleStudentMenuItems = isStudent
-    ? studentMenuItems.filter(item => {
-      // Se não tem featureKey, sempre mostra
+  // Filter student menu groups based on permissions
+  const filterStudentItems = (items: StudentMenuItem[]) =>
+    items.filter(item => {
       if (!item.featureKey) return true
-      // Se ainda está carregando permissões, não mostra itens com permissão
-      if (permissionsLoading) return false
-      // Verifica se tem permissão
-      return hasFeature(item.featureKey)
+      if (isStudent && permissionsLoading) return false
+      if (isStudent) return hasFeature(item.featureKey)
+      return true
     })
-    : studentMenuItems
+
+  const visibleStudentGroups = studentMenuGroups
+    .map(group => ({ ...group, items: filterStudentItems(group.items) }))
+    .filter(group => group.items.length > 0)
+
+  const visibleStudentFooter = filterStudentItems(studentFooterItems)
 
   // Filtra itens admin-only do menu (professores não veem)
   const visibleAdminMenuItems = adminMenuItems.map(group => ({
@@ -405,9 +366,50 @@ export function UnifiedSidebar() {
             ))}
           </>
         ) : (
-          // Student Menu Structure (com filtro de permissões)
+          // Student Menu - Grouped structure
+          <>
+            {visibleStudentGroups.map((group, groupIndex) => (
+              <SidebarGroup key={groupIndex} className="py-1">
+                {group.group && (
+                  <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-[0.1em] px-3 mb-1">
+                    {group.group}
+                  </SidebarGroupLabel>
+                )}
+                <SidebarMenu>
+                  {group.items.map((item) => {
+                    const isActive = location.pathname === item.href
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          className={cn(
+                            "w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                            isActive
+                              ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25"
+                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          )}
+                        >
+                          <Link to={item.href}>
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              </SidebarGroup>
+            ))}
+          </>
+        )}
+      </SidebarContent>
+
+      <SidebarFooter className="p-3 space-y-2">
+        {/* Student footer nav items */}
+        {!isAdmin && visibleStudentFooter.length > 0 && (
           <SidebarMenu>
-            {visibleStudentMenuItems.map((item) => {
+            {visibleStudentFooter.map((item) => {
               const isActive = location.pathname === item.href
               return (
                 <SidebarMenuItem key={item.href}>
@@ -415,7 +417,7 @@ export function UnifiedSidebar() {
                     asChild
                     isActive={isActive}
                     className={cn(
-                      "w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      "w-full justify-start gap-3 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-200",
                       isActive
                         ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25"
                         : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -431,9 +433,6 @@ export function UnifiedSidebar() {
             })}
           </SidebarMenu>
         )}
-      </SidebarContent>
-
-      <SidebarFooter className="p-3 space-y-2">
         <div className={cn(
           "flex items-center gap-3 rounded-lg p-3",
           isAdmin ? "bg-white/5" : "bg-muted/50"

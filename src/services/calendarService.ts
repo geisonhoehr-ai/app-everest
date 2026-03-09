@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/types'
 import { getMonth, getYear } from 'date-fns'
+import { logger } from '@/lib/logger'
 
 export type CalendarEvent =
   Database['public']['Tables']['calendar_events']['Row']
@@ -62,7 +63,7 @@ export const getCalendarEvents = async (
   const { data, error } = await query
 
   if (error) {
-    console.error('❌ Error fetching calendar events:', error)
+    logger.error('❌ Error fetching calendar events:', error)
     throw new Error('Não foi possível carregar os eventos do calendário.')
   }
 
@@ -84,7 +85,29 @@ export const createEvent = async (event: {
     .single()
 
   if (error) {
-    console.error('Error creating calendar event:', error)
+    logger.error('Error creating calendar event:', error)
+    throw error
+  }
+  return data
+}
+
+export const updateEvent = async (eventId: string, event: {
+  title: string
+  description?: string
+  start_time: string
+  end_time?: string
+  event_type: 'LIVE_CLASS' | 'ESSAY_DEADLINE' | 'SIMULATION' | 'GENERAL'
+  class_id?: string | null
+}): Promise<CalendarEvent> => {
+  const { data, error } = await supabase
+    .from('calendar_events')
+    .update(event)
+    .eq('id', eventId)
+    .select()
+    .single()
+
+  if (error) {
+    logger.error('Error updating calendar event:', error)
     throw error
   }
   return data
@@ -97,7 +120,7 @@ export const deleteEvent = async (eventId: string): Promise<void> => {
     .eq('id', eventId)
 
   if (error) {
-    console.error('Error deleting calendar event:', error)
+    logger.error('Error deleting calendar event:', error)
     throw error
   }
 }

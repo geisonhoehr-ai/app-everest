@@ -31,6 +31,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
+import { logger } from '@/lib/logger'
 
 export default function EssaysPage() {
   const { user, isStudent } = useAuth()
@@ -55,7 +56,7 @@ export default function EssaysPage() {
         setEssays(essaysData)
         setStats(statsData)
       } catch (error) {
-        console.error('Error fetching essays:', error)
+        logger.error('Error fetching essays:', error)
       } finally {
         setIsLoading(false)
       }

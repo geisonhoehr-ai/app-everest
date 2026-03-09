@@ -9,6 +9,7 @@ import { useCountAnimation, useStaggeredAnimation, useFloat } from '@/hooks/useA
 import { memo, useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { BookOpen, Layers, ListChecks, ClipboardCheck, Archive, Calendar, Radio, Users, LucideIcon } from 'lucide-react'
+import { logger } from '@/lib/logger'
 
 interface StatItemProps {
   title: string
@@ -67,7 +68,7 @@ const AdminStatsWidget = memo(() => {
         const dashboardStats = await dashboardService.getDashboardStats()
         setStats(dashboardStats)
       } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error)
+        logger.error('Erro ao carregar estatísticas:', error)
       } finally {
         setLoading(false)
       }

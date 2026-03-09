@@ -18,6 +18,7 @@ import { Video, Upload, Trash2, Star, ListChecks, X } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { QuizPickerModal } from './QuizPickerModal'
 import { type Quiz } from '@/services/quizService'
+import { logger } from '@/lib/logger'
 
 interface Attachment {
   id: string
@@ -127,7 +128,7 @@ export const LessonForm = ({ moduleIndex, lessonIndex }: LessonFormProps) => {
         description: 'Arquivo enviado com sucesso.',
       })
     } catch (error) {
-      console.error('Error uploading file:', error)
+      logger.error('Error uploading file:', error)
       toast({
         title: 'Erro no upload',
         description: 'Não foi possível enviar o arquivo.',

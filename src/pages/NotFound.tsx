@@ -3,11 +3,12 @@ import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
-import { 
-  Home, 
-  ArrowLeft, 
-  Search, 
-  AlertTriangle, 
+import { logger } from '@/lib/logger'
+import {
+  Home,
+  ArrowLeft,
+  Search,
+  AlertTriangle,
   Compass,
   Sparkles,
   Zap
@@ -17,7 +18,7 @@ const NotFound = () => {
   const location = useLocation()
 
   useEffect(() => {
-    console.error(
+    logger.error(
       '404 Error: User attempted to access non-existent route:',
       location.pathname,
     )

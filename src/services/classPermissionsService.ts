@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 /**
  * Service para gerenciar permissões de recursos por turma (class_feature_permissions)
@@ -44,13 +45,13 @@ export const getClassFeaturePermissions = async (
       .eq('class_id', classId)
 
     if (error) {
-      console.error('❌ Erro ao buscar permissões de recursos:', error)
+      logger.error('❌ Erro ao buscar permissões de recursos:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('💥 Erro de rede ao buscar permissões de recursos:', error)
+    logger.error('💥 Erro de rede ao buscar permissões de recursos:', error)
     return []
   }
 }
@@ -70,7 +71,7 @@ export const getUserAllowedFeatures = async (
       .eq('user_id', userId)
 
     if (classError) {
-      console.error('❌ Erro ao buscar turmas do aluno:', classError)
+      logger.error('❌ Erro ao buscar turmas do aluno:', classError)
       return []
     }
 
@@ -87,7 +88,7 @@ export const getUserAllowedFeatures = async (
       .in('class_id', classIds)
 
     if (permError) {
-      console.error('❌ Erro ao buscar permissões de recursos:', permError)
+      logger.error('❌ Erro ao buscar permissões de recursos:', permError)
       return []
     }
 
@@ -96,7 +97,7 @@ export const getUserAllowedFeatures = async (
 
     return uniqueFeatures as FeatureKey[]
   } catch (error) {
-    console.error('💥 Erro de rede ao buscar recursos permitidos:', error)
+    logger.error('💥 Erro de rede ao buscar recursos permitidos:', error)
     return []
   }
 }
@@ -114,7 +115,7 @@ export const hasFeaturePermission = async (
 
     return hasPermission
   } catch (error) {
-    console.error('💥 Erro ao verificar permissão:', error)
+    logger.error('💥 Erro ao verificar permissão:', error)
     return false
   }
 }
@@ -136,13 +137,13 @@ export const addClassFeaturePermission = async (
       })
 
     if (error) {
-      console.error('❌ Erro ao adicionar permissão:', error)
+      logger.error('❌ Erro ao adicionar permissão:', error)
       return { success: false, error: error.message }
     }
 
     return { success: true }
   } catch (error) {
-    console.error('💥 Erro de rede ao adicionar permissão:', error)
+    logger.error('💥 Erro de rede ao adicionar permissão:', error)
     return { success: false, error: 'Erro de rede' }
   }
 }
@@ -163,13 +164,13 @@ export const removeClassFeaturePermission = async (
       .eq('feature_key', featureKey)
 
     if (error) {
-      console.error('❌ Erro ao remover permissão:', error)
+      logger.error('❌ Erro ao remover permissão:', error)
       return { success: false, error: error.message }
     }
 
     return { success: true }
   } catch (error) {
-    console.error('Erro de rede ao remover permissão:', error)
+    logger.error('Erro de rede ao remover permissão:', error)
     return { success: false, error: 'Erro de rede' }
   }
 }
@@ -190,7 +191,7 @@ export const updateClassFeaturePermissions = async (
       .eq('class_id', classId)
 
     if (deleteError) {
-      console.error('❌ Erro ao remover permissões antigas:', deleteError)
+      logger.error('❌ Erro ao remover permissões antigas:', deleteError)
       return { success: false, error: deleteError.message }
     }
 
@@ -206,14 +207,14 @@ export const updateClassFeaturePermissions = async (
         .insert(permissions)
 
       if (insertError) {
-        console.error('❌ Erro ao inserir novas permissões:', insertError)
+        logger.error('❌ Erro ao inserir novas permissões:', insertError)
         return { success: false, error: insertError.message }
       }
     }
 
     return { success: true }
   } catch (error) {
-    console.error('💥 Erro de rede ao atualizar permissões:', error)
+    logger.error('💥 Erro de rede ao atualizar permissões:', error)
     return { success: false, error: 'Erro de rede' }
   }
 }

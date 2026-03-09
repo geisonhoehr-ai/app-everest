@@ -1,10 +1,8 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS, type FeatureKey } from '@/services/classPermissionsService'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
 import { SheetClose } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import {
@@ -25,96 +23,78 @@ import {
   TrendingUp,
   Trophy,
   Award,
-  CalendarDays,
   MessageSquare,
+  Brain,
+  Archive,
+  Mic,
+  Search,
+  Target,
+  Bell,
 } from 'lucide-react'
 
 type MenuItem = {
   label: string
   href: string
   icon: any
-  featureKey?: FeatureKey
+  featureKey?: FeatureKey | null
 }
 
-const menuItems: MenuItem[] = [
+type MenuGroup = {
+  group: string
+  items: MenuItem[]
+}
+
+// Student menu groups - mirrors UnifiedSidebar structure
+const studentMenuGroups: MenuGroup[] = [
   {
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    // Dashboard sempre visível
-  },
-  // {
-  //   label: 'Meus Cursos',
-  //   href: '/meus-cursos',
-  //   icon: BookOpen,
-  //   featureKey: FEATURE_KEYS.VIDEO_LESSONS,
-  // },
-  {
-    label: 'Calendário',
-    href: '/calendario',
-    icon: Calendar,
-    featureKey: FEATURE_KEYS.CALENDAR,
+    group: '',
+    items: [
+      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    ],
   },
   {
-    label: 'Flashcards',
-    href: '/flashcards',
-    icon: Layers,
-    featureKey: FEATURE_KEYS.FLASHCARDS,
+    group: 'Estudos',
+    items: [
+      { label: 'Meus Cursos', href: '/courses', icon: BookOpen, featureKey: FEATURE_KEYS.VIDEO_LESSONS },
+      { label: 'Flashcards', href: '/flashcards', icon: Brain, featureKey: FEATURE_KEYS.FLASHCARDS },
+      { label: 'Banco de Questões', href: '/banco-de-questoes', icon: Search, featureKey: FEATURE_KEYS.QUIZ },
+    ],
   },
   {
-    label: 'Quizzes',
-    href: '/quizzes',
-    icon: ListChecks,
-    featureKey: FEATURE_KEYS.QUIZ,
+    group: 'Avaliações',
+    items: [
+      { label: 'Simulados', href: '/simulados', icon: ClipboardCheck, featureKey: FEATURE_KEYS.QUIZ },
+      { label: 'Redações', href: '/redacoes', icon: FileText, featureKey: FEATURE_KEYS.ESSAYS },
+    ],
   },
   {
-    label: 'Evercast',
-    href: '/evercast',
-    icon: Radio,
-    featureKey: FEATURE_KEYS.EVERCAST,
+    group: 'Conteúdo',
+    items: [
+      { label: 'Acervo Digital', href: '/acervo', icon: Archive },
+      { label: 'Evercast', href: '/evercast', icon: Mic, featureKey: FEATURE_KEYS.EVERCAST },
+    ],
   },
   {
-    label: 'Redações',
-    href: '/redacoes',
-    icon: FileText,
-    featureKey: FEATURE_KEYS.ESSAYS,
+    group: 'Agenda',
+    items: [
+      { label: 'Calendário', href: '/calendario', icon: Calendar },
+      { label: 'Plano de Estudos', href: '/study-planner', icon: Target },
+    ],
   },
   {
-    label: 'Simulados',
-    href: '/simulados',
-    icon: ClipboardCheck,
-    featureKey: FEATURE_KEYS.QUIZ,
+    group: 'Desempenho',
+    items: [
+      { label: 'Progresso', href: '/progresso', icon: TrendingUp },
+      { label: 'Ranking', href: '/ranking', icon: Trophy },
+      { label: 'Conquistas', href: '/achievements', icon: Award },
+    ],
   },
-  {
-    label: 'Meu Progresso',
-    href: '/progresso',
-    icon: TrendingUp,
-    // Progresso sempre visível
-  },
-  {
-    label: 'Ranking',
-    href: '/ranking',
-    icon: Trophy,
-    featureKey: FEATURE_KEYS.RANKING,
-  },
-  {
-    label: 'Conquistas',
-    href: '/conquistas',
-    icon: Award,
-    // Conquistas sempre visível
-  },
-  {
-    label: 'Planejamento',
-    href: '/planejamento',
-    icon: CalendarDays,
-    featureKey: FEATURE_KEYS.CALENDAR,
-  },
-  // {
-  //   label: 'Fórum',
-  //   href: '/forum',
-  //   icon: MessageSquare,
-  //   // Fórum sempre visível
-  // },
+]
+
+const studentFooterItems: MenuItem[] = [
+  { label: 'Comunidade', href: '/forum', icon: MessageSquare },
+  { label: 'Notificações', href: '/notificacoes', icon: Bell },
+  { label: 'Configurações', href: '/configuracoes', icon: Settings },
 ]
 
 const adminMenuItems = [
@@ -232,44 +212,50 @@ export const MobileSidebar = () => {
 
       {/* Menu Items */}
       <nav className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-1">
-          {menuItems
-            .filter((item) => {
-              // Se não tem featureKey, sempre mostra (páginas públicas)
-              if (!item.featureKey) return true
-
-              // Se for admin ou teacher, mostra tudo
-              if (isAdmin || isTeacher) return true
-
-              // Se for aluno, verifica permissão
-              if (isStudent) {
-                return hasFeature(item.featureKey)
-              }
-
-              // Default: mostra
-              return true
-            })
-            .map((item) => {
-              const Icon = item.icon
-              const isActive = location.pathname === item.href
-
-              return (
-                <SheetClose asChild key={item.href}>
-                  <button
-                    onClick={() => handleNavigate(item.href)}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-                      isActive
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    )}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                </SheetClose>
-              )
-            })}
+        <div className="space-y-3">
+          {/* Student grouped menu */}
+          {studentMenuGroups
+            .map(group => ({
+              ...group,
+              items: group.items.filter(item => {
+                if (!item.featureKey) return true
+                if (isAdmin || isTeacher) return true
+                if (isStudent) return hasFeature(item.featureKey)
+                return true
+              }),
+            }))
+            .filter(group => group.items.length > 0)
+            .map((group, groupIndex) => (
+              <div key={groupIndex}>
+                {group.group && (
+                  <p className="px-3 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-[0.1em] mb-1">
+                    {group.group}
+                  </p>
+                )}
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const Icon = item.icon
+                    const isActive = location.pathname === item.href
+                    return (
+                      <SheetClose asChild key={item.href}>
+                        <button
+                          onClick={() => handleNavigate(item.href)}
+                          className={cn(
+                            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                            isActive
+                              ? 'bg-primary text-primary-foreground shadow-md'
+                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          )}
+                        >
+                          <Icon className="h-5 w-5 shrink-0" />
+                          <span className="font-medium">{item.label}</span>
+                        </button>
+                      </SheetClose>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
 
           {(isAdmin || isTeacher) && (
             <>
@@ -338,24 +324,26 @@ export const MobileSidebar = () => {
 
       {/* Footer */}
       <div className="p-4 border-t space-y-1">
-        <SheetClose asChild>
-          <button
-            onClick={() => handleNavigate('/configuracoes')}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
-          >
-            <Settings className="h-5 w-5 shrink-0" />
-            <span className="font-medium">Configurações</span>
-          </button>
-        </SheetClose>
-        <SheetClose asChild>
-          <button
-            onClick={() => handleNavigate('/faq')}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
-          >
-            <HelpCircle className="h-5 w-5 shrink-0" />
-            <span className="font-medium">Ajuda</span>
-          </button>
-        </SheetClose>
+        {studentFooterItems.map((item) => {
+          const Icon = item.icon
+          const isActive = location.pathname === item.href
+          return (
+            <SheetClose asChild key={item.href}>
+              <button
+                onClick={() => handleNavigate(item.href)}
+                className={cn(
+                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                <span className="font-medium">{item.label}</span>
+              </button>
+            </SheetClose>
+          )
+        })}
         <SheetClose asChild>
           <button
             onClick={handleSignOut}

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/types'
+import { logger } from '@/lib/logger'
 
 export type User = Database['public']['Tables']['users']['Row']
 
@@ -10,7 +11,7 @@ export const getUsers = async (): Promise<User[]> => {
     .order('created_at', { ascending: false })
   
   if (error) {
-    console.error('❌ Error fetching users:', error)
+    logger.error('❌ Error fetching users:', error)
     throw error
   }
   
@@ -24,7 +25,7 @@ export const getUserById = async (id: string): Promise<User | null> => {
     .eq('id', id)
     .single()
   if (error) {
-    console.error(error)
+    logger.error(error)
     return null
   }
   return data
@@ -41,7 +42,7 @@ export const updateUser = async (
     .select()
     .single()
   if (error) {
-    console.error(error)
+    logger.error(error)
     return null
   }
   return data
@@ -67,7 +68,7 @@ export const getUserClasses = async (userId: string) => {
     .eq('user_id', userId)
 
   if (error) {
-    console.error('Error fetching user classes:', error)
+    logger.error('Error fetching user classes:', error)
     throw error
   }
 
@@ -83,7 +84,7 @@ export const addUserToClass = async (userId: string, classId: string) => {
     })
 
   if (error) {
-    console.error('Error adding user to class:', error)
+    logger.error('Error adding user to class:', error)
     throw error
   }
 }
@@ -95,7 +96,7 @@ export const removeUserFromClass = async (studentClassId: string) => {
     .eq('id', studentClassId)
 
   if (error) {
-    console.error('Error removing user from class:', error)
+    logger.error('Error removing user from class:', error)
     throw error
   }
 }
@@ -121,7 +122,7 @@ export const getUsersWithClasses = async (): Promise<UserWithClasses[]> => {
     .order('created_at', { ascending: false })
 
   if (usersError) {
-    console.error('❌ Error fetching users:', usersError)
+    logger.error('❌ Error fetching users:', usersError)
     throw usersError
   }
 
@@ -142,7 +143,7 @@ export const getUsersWithClasses = async (): Promise<UserWithClasses[]> => {
     `)
 
   if (classesError) {
-    console.error('❌ Error fetching student classes:', classesError)
+    logger.error('❌ Error fetching student classes:', classesError)
     // Continuar mesmo com erro, retornando usuários sem informação de turmas
   }
 

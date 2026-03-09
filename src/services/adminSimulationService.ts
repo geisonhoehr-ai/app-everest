@@ -1,5 +1,10 @@
 import { supabase } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/types'
+import { logger } from '@/lib/logger'
+import {
+  getQuestions as _getQuestions,
+  getReadingTexts as _getReadingTexts,
+} from './adminQuizService'
 
 export type Simulation = Database['public']['Tables']['quizzes']['Row']
 export type SimulationInsert = Database['public']['Tables']['quizzes']['Insert']
@@ -32,7 +37,7 @@ export const getAllSimulations = async (): Promise<AdminSimulation[]> => {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching simulations:', error)
+    logger.error('Error fetching simulations:', error)
     throw error
   }
 
@@ -59,7 +64,7 @@ export const getSimulationById = async (
     .single()
 
   if (error) {
-    console.error('Error fetching simulation:', error)
+    logger.error('Error fetching simulation:', error)
     throw error
   }
 
@@ -84,7 +89,7 @@ export const createSimulation = async (
     .single()
 
   if (error) {
-    console.error('Error creating simulation:', error)
+    logger.error('Error creating simulation:', error)
     throw error
   }
 
@@ -107,7 +112,7 @@ export const updateSimulation = async (
     .single()
 
   if (error) {
-    console.error('Error updating simulation:', error)
+    logger.error('Error updating simulation:', error)
     throw error
   }
 
@@ -125,7 +130,7 @@ export const deleteSimulation = async (simulationId: string): Promise<void> => {
     .eq('type', 'simulation')
 
   if (error) {
-    console.error('Error deleting simulation:', error)
+    logger.error('Error deleting simulation:', error)
     throw error
   }
 }
@@ -150,7 +155,7 @@ export const assignClassesToSimulation = async (
     const { error } = await supabase.from('quiz_classes').insert(rows)
 
     if (error) {
-      console.error('Error assigning classes to simulation:', error)
+      logger.error('Error assigning classes to simulation:', error)
       throw error
     }
   }
@@ -173,7 +178,7 @@ export const getSimulationClasses = async (simulationId: string) => {
     .eq('quiz_id', simulationId)
 
   if (error) {
-    console.error('Error fetching simulation classes:', error)
+    logger.error('Error fetching simulation classes:', error)
     throw error
   }
 
@@ -198,7 +203,7 @@ export const getSimulationStats = async (simulationId: string) => {
     .eq('status', 'submitted')
 
   if (error) {
-    console.error('Error fetching simulation stats:', error)
+    logger.error('Error fetching simulation stats:', error)
     throw error
   }
 
@@ -237,7 +242,7 @@ export const publishSimulation = async (
     .eq('type', 'simulation')
 
   if (error) {
-    console.error('Error publishing simulation:', error)
+    logger.error('Error publishing simulation:', error)
     throw error
   }
 }
@@ -255,110 +260,31 @@ export const unpublishSimulation = async (
     .eq('type', 'simulation')
 
   if (error) {
-    console.error('Error unpublishing simulation:', error)
+    logger.error('Error unpublishing simulation:', error)
     throw error
   }
 }
 
-// ─── Question Types ─────────────────────────────────────────────────────
+// ─── Re-export shared Question/ReadingText types and CRUD from adminQuizService ──
+export type {
+  QuizQuestion,
+  QuizQuestionInsert,
+  QuizQuestionUpdate,
+  ReadingText,
+  ReadingTextInsert,
+  ReadingTextUpdate,
+} from './adminQuizService'
 
-export type QuizQuestion = Database['public']['Tables']['quiz_questions']['Row']
-export type QuizQuestionInsert = Database['public']['Tables']['quiz_questions']['Insert']
-export type QuizQuestionUpdate = Database['public']['Tables']['quiz_questions']['Update']
-
-export type ReadingText = Database['public']['Tables']['quiz_reading_texts']['Row']
-export type ReadingTextInsert = Database['public']['Tables']['quiz_reading_texts']['Insert']
-export type ReadingTextUpdate = Database['public']['Tables']['quiz_reading_texts']['Update']
-
-// ─── Reading Texts CRUD ─────────────────────────────────────────────────
-
-export const getReadingTexts = async (quizId: string): Promise<ReadingText[]> => {
-  const { data, error } = await supabase
-    .from('quiz_reading_texts')
-    .select('*')
-    .eq('quiz_id', quizId)
-    .order('display_order', { ascending: true })
-
-  if (error) throw error
-  return data || []
-}
-
-export const createReadingText = async (text: ReadingTextInsert): Promise<ReadingText> => {
-  const { data, error } = await supabase
-    .from('quiz_reading_texts')
-    .insert(text)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
-
-export const updateReadingText = async (id: string, text: ReadingTextUpdate): Promise<ReadingText> => {
-  const { data, error } = await supabase
-    .from('quiz_reading_texts')
-    .update(text)
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
-
-export const deleteReadingText = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('quiz_reading_texts')
-    .delete()
-    .eq('id', id)
-
-  if (error) throw error
-}
-
-// ─── Questions CRUD ─────────────────────────────────────────────────────
-
-export const getQuestions = async (quizId: string): Promise<QuizQuestion[]> => {
-  const { data, error } = await supabase
-    .from('quiz_questions')
-    .select('*')
-    .eq('quiz_id', quizId)
-    .order('display_order', { ascending: true })
-
-  if (error) throw error
-  return data || []
-}
-
-export const createQuestion = async (question: QuizQuestionInsert): Promise<QuizQuestion> => {
-  const { data, error } = await supabase
-    .from('quiz_questions')
-    .insert(question)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
-
-export const updateQuestion = async (id: string, question: QuizQuestionUpdate): Promise<QuizQuestion> => {
-  const { data, error } = await supabase
-    .from('quiz_questions')
-    .update(question)
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
-
-export const deleteQuestion = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('quiz_questions')
-    .delete()
-    .eq('id', id)
-
-  if (error) throw error
-}
+export {
+  getReadingTexts,
+  createReadingText,
+  updateReadingText,
+  deleteReadingText,
+  getQuestions,
+  createQuestion,
+  updateQuestion,
+  deleteQuestion,
+} from './adminQuizService'
 
 /**
  * Buscar simulado completo com questões e textos
@@ -366,8 +292,8 @@ export const deleteQuestion = async (id: string): Promise<void> => {
 export const getSimulationFull = async (simulationId: string) => {
   const [simulation, questions, readingTexts] = await Promise.all([
     getSimulationById(simulationId),
-    getQuestions(simulationId),
-    getReadingTexts(simulationId),
+    _getQuestions(simulationId),
+    _getReadingTexts(simulationId),
   ])
 
   return { simulation, questions, readingTexts }

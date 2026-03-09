@@ -58,6 +58,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import * as studyPlannerService from '@/services/studyPlannerService'
+import { PomodoroWidget } from '@/components/study-planner/PomodoroWidget'
 
 type StudyTopic = {
   id: string
@@ -1327,6 +1328,17 @@ function PomodoroTimer({
           >
             {notificationsEnabled ? <Bell className="h-5 w-5 text-green-600" /> : <BellOff className="h-5 w-5" />}
           </Button>
+
+          <PomodoroWidget
+            timerActive={timerActive}
+            timerMode={timerMode}
+            timeLeft={timeLeft}
+            currentTopic={currentTopic}
+            completedPomodoros={completedPomodoros}
+            onToggleTimer={onToggleTimer}
+            onResetTimer={onResetTimer}
+            formatTime={formatTime}
+          />
         </div>
       </div>
     </MagicCard>

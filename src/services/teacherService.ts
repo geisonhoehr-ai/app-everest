@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 export interface Teacher {
     id: string
@@ -19,7 +20,7 @@ export async function getTeachers(): Promise<Teacher[]> {
             .select('id, user_id, employee_id_number, hire_date, department')
 
         if (teachersError) {
-            console.error('Error fetching teachers:', teachersError)
+            logger.error('Error fetching teachers:', teachersError)
             return []
         }
 
@@ -32,7 +33,7 @@ export async function getTeachers(): Promise<Teacher[]> {
             .in('id', userIds)
 
         if (usersError) {
-            console.error('Error fetching users for teachers:', usersError)
+            logger.error('Error fetching users for teachers:', usersError)
         }
 
         const userMap = new Map((usersData || []).map((u: any) => [u.id, u]))
@@ -51,7 +52,7 @@ export async function getTeachers(): Promise<Teacher[]> {
             }
         })
     } catch (error) {
-        console.error('Network error fetching teachers:', error)
+        logger.error('Network error fetching teachers:', error)
         return []
     }
 }
@@ -66,7 +67,7 @@ export async function getTeacherByUserId(userId: string): Promise<Teacher | null
 
         if (teacherError) {
             if (teacherError.code !== 'PGRST116') {
-                console.error('Error fetching teacher by user ID:', teacherError)
+                logger.error('Error fetching teacher by user ID:', teacherError)
             }
             return null
         }
@@ -88,7 +89,7 @@ export async function getTeacherByUserId(userId: string): Promise<Teacher | null
             email: userData?.email || ''
         }
     } catch (error) {
-        console.error('Network error fetching teacher by user ID:', error)
+        logger.error('Network error fetching teacher by user ID:', error)
         return null
     }
 }

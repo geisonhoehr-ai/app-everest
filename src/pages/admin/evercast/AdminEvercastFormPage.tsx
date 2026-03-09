@@ -80,7 +80,7 @@ export default function AdminEvercastFormPage() {
           }
         }
       } catch (error) {
-        console.error(error)
+        logger.error(error)
         toast({ title: 'Erro ao carregar dados', variant: 'destructive' })
       } finally {
         setInitialLoading(false)

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { rankingService } from '@/services/rankingService'
 import { useState, useEffect } from 'react'
 import { Crown, Star, Trophy, Award, Target, Zap } from 'lucide-react'
+import { logger } from '@/lib/logger'
 
 interface LevelBadgeProps {
   variant?: 'compact' | 'detailed' | 'avatar'
@@ -29,7 +30,7 @@ export function LevelBadge({
         const position = await rankingService.getUserPosition(user.id)
         setUserPosition(position)
       } catch (error) {
-        console.error('Erro ao carregar posição do usuário:', error)
+        logger.error('Erro ao carregar posição do usuário:', error)
       } finally {
         setIsLoading(false)
       }
@@ -175,7 +176,7 @@ export function QuickRanking({ className }: { className?: string }) {
         const position = await rankingService.getUserPosition(user.id)
         setUserPosition(position)
       } catch (error) {
-        console.error('Erro ao carregar posição do usuário:', error)
+        logger.error('Erro ao carregar posição do usuário:', error)
       } finally {
         setIsLoading(false)
       }

@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { getSimulationResult, getLastAttempt } from '@/services/simulationService'
 import { SectionLoader } from '@/components/SectionLoader'
+import { logger } from '@/lib/logger'
 
 export default function SimulationResultsPage() {
   const { simulationId } = useParams()
@@ -78,7 +79,7 @@ export default function SimulationResultsPage() {
         setPerformanceByArea(chartData)
       }
     } catch (error) {
-      console.error('Error loading results:', error)
+      logger.error('Error loading results:', error)
     } finally {
       setLoading(false)
     }

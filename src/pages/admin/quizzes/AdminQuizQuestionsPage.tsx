@@ -146,7 +146,7 @@ export default function AdminQuizQuestionsPage() {
       setIsTextDialogOpen(false)
       loadData() // Reload everything to refresh list
     } catch (error) {
-      console.error(error)
+      logger.error(error)
       toast({ title: "Erro ao salvar texto", variant: "destructive" })
     } finally {
       setIsLoading(false)

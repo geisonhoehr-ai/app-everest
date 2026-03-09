@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 export interface Class {
   id: string
@@ -49,7 +50,7 @@ export async function getClasses(): Promise<Class[]> {
     .order('created_at', { ascending: false })
 
   if (classesError) {
-    console.error('❌ Error loading classes:', classesError)
+    logger.error('❌ Error loading classes:', classesError)
     // Return empty array instead of throwing - don't crash the app
     return []
   }
@@ -68,7 +69,7 @@ export async function getClasses(): Promise<Class[]> {
             .eq('class_id', classItem.id)
           studentCount = count || 0
         } catch (e) {
-          console.warn('⚠️ Could not fetch student count for class:', classItem.id)
+          logger.warn('⚠️ Could not fetch student count for class:', classItem.id)
         }
 
         try {
@@ -78,7 +79,7 @@ export async function getClasses(): Promise<Class[]> {
             .eq('class_id', classItem.id)
           permissionsCount = count || 0
         } catch (e) {
-          console.warn('⚠️ Could not fetch permissions count for class:', classItem.id)
+          logger.warn('⚠️ Could not fetch permissions count for class:', classItem.id)
         }
 
         return {
@@ -92,7 +93,7 @@ export async function getClasses(): Promise<Class[]> {
 
     return classesWithCounts
   } catch (e) {
-    console.error('❌ Error enriching class data:', e)
+    logger.error('❌ Error enriching class data:', e)
     // Return basic class data without counts
     return classesData || []
   }

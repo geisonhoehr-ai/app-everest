@@ -25,6 +25,7 @@ import { MoreHorizontal, PlusCircle, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { audioLessonService, AudioLesson } from '@/services/audioLessonService'
 import { useToast } from '@/components/ui/use-toast'
+import { logger } from '@/lib/logger'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,7 +49,7 @@ export default function AdminEvercastPage() {
       const data = await audioLessonService.getAudioLessons()
       setLessons(data)
     } catch (error) {
-      console.error(error)
+      logger.error(error)
       toast({ title: 'Erro ao carregar áudio-aulas', variant: 'destructive' })
     } finally {
       setIsLoading(false)

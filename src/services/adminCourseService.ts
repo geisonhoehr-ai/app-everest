@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/types'
+import { logger } from '@/lib/logger'
 
 export type VideoCourse = Database['public']['Tables']['video_courses']['Row']
 export type VideoCourseInsert =
@@ -38,7 +39,7 @@ export const getAllCourses = async (): Promise<AdminCourse[]> => {
     .order('name')
 
   if (error) {
-    console.error('Error fetching courses:', error)
+    logger.error('Error fetching courses:', error)
     throw error
   }
 
@@ -92,7 +93,7 @@ export const getCourseById = async (
     .single()
 
   if (error) {
-    console.error('Error fetching course:', error)
+    logger.error('Error fetching course:', error)
     throw error
   }
 
@@ -112,7 +113,7 @@ export const createCourse = async (
     .single()
 
   if (error) {
-    console.error('Error creating course:', error)
+    logger.error('Error creating course:', error)
     throw error
   }
 
@@ -134,7 +135,7 @@ export const updateCourse = async (
     .single()
 
   if (error) {
-    console.error('Error updating course:', error)
+    logger.error('Error updating course:', error)
     throw error
   }
 
@@ -151,7 +152,7 @@ export const deleteCourse = async (courseId: string): Promise<void> => {
     .eq('id', courseId)
 
   if (error) {
-    console.error('Error deleting course:', error)
+    logger.error('Error deleting course:', error)
     throw error
   }
 }
@@ -174,7 +175,7 @@ export const getCourseModules = async (courseId: string) => {
     .order('order_index')
 
   if (error) {
-    console.error('Error fetching modules:', error)
+    logger.error('Error fetching modules:', error)
     throw error
   }
 
@@ -194,7 +195,7 @@ export const createModule = async (
     .single()
 
   if (error) {
-    console.error('Error creating module:', error)
+    logger.error('Error creating module:', error)
     throw error
   }
 
@@ -216,7 +217,7 @@ export const updateModule = async (
     .single()
 
   if (error) {
-    console.error('Error updating module:', error)
+    logger.error('Error updating module:', error)
     throw error
   }
 
@@ -233,7 +234,7 @@ export const deleteModule = async (moduleId: string): Promise<void> => {
     .eq('id', moduleId)
 
   if (error) {
-    console.error('Error deleting module:', error)
+    logger.error('Error deleting module:', error)
     throw error
   }
 }
@@ -253,7 +254,7 @@ export const getModuleLessons = async (moduleId: string) => {
     .order('order_index')
 
   if (error) {
-    console.error('Error fetching lessons:', error)
+    logger.error('Error fetching lessons:', error)
     throw error
   }
 
@@ -273,7 +274,7 @@ export const createLesson = async (
     .single()
 
   if (error) {
-    console.error('Error creating lesson:', error)
+    logger.error('Error creating lesson:', error)
     throw error
   }
 
@@ -295,7 +296,7 @@ export const updateLesson = async (
     .single()
 
   if (error) {
-    console.error('Error updating lesson:', error)
+    logger.error('Error updating lesson:', error)
     throw error
   }
 
@@ -312,7 +313,7 @@ export const deleteLesson = async (lessonId: string): Promise<void> => {
     .eq('id', lessonId)
 
   if (error) {
-    console.error('Error deleting lesson:', error)
+    logger.error('Error deleting lesson:', error)
     throw error
   }
 }
@@ -334,7 +335,7 @@ export const getCourseWithContent = async (courseId: string) => {
     .single()
 
   if (error) {
-    console.error('Error fetching course with content:', error)
+    logger.error('Error fetching course with content:', error)
     throw error
   }
 

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
+import { logger } from '@/lib/logger'
 
 // Get environment variables with fallbacks
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ||
@@ -55,7 +56,7 @@ try {
     },
   )
 } catch (error) {
-  console.error('Failed to create Supabase client:', error)
+  logger.error('Failed to create Supabase client:', error)
   // Create a mock client that doesn't break the app
   supabase = {
     auth: {

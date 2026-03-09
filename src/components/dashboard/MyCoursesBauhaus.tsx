@@ -13,6 +13,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
+import { logger } from '@/lib/logger'
 
 export const MyCoursesBauhaus = () => {
   const { user } = useAuth()
@@ -29,7 +30,7 @@ export const MyCoursesBauhaus = () => {
         const userCourses = await dashboardService.getUserCourses(user.id)
         setCourses(userCourses)
       } catch (error) {
-        console.error('Erro ao carregar cursos:', error)
+        logger.error('Erro ao carregar cursos:', error)
       } finally {
         setLoading(false)
       }

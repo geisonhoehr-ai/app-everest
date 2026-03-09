@@ -25,6 +25,7 @@ import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
 import { SectionLoader } from '@/components/SectionLoader'
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 interface LessonData {
   id: string
@@ -134,7 +135,7 @@ export default function CourseLessonPage() {
           setAttachments(attachmentsData)
         }
       } catch (error) {
-        console.error('Error fetching lesson data:', error)
+        logger.error('Error fetching lesson data:', error)
         toast({
           title: 'Erro ao carregar aula',
           description: 'Ocorreu um erro ao carregar os dados da aula.',
@@ -171,7 +172,7 @@ export default function CourseLessonPage() {
         description: 'Parabéns! Continue seu progresso.',
       })
     } catch (error) {
-      console.error('Error marking lesson as complete:', error)
+      logger.error('Error marking lesson as complete:', error)
       toast({
         title: 'Erro',
         description: 'Não foi possível marcar a aula como concluída.',

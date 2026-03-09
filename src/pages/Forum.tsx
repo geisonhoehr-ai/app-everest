@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -21,22 +21,17 @@ import {
   Filter,
   ArrowRight,
   MessageCircle,
-  Heart,
-  Share2,
-  Lock,
   Loader2
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { SectionLoader } from '@/components/SectionLoader'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from '@/components/ui/responsive-dialog'
 import {
   Form,
   FormControl,
@@ -78,9 +73,12 @@ export default function ForumPage() {
   const [categories, setCategories] = useState<ForumCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
   const { toast } = useToast()
   const { user } = useAuth()
-  const navigate = useNavigate()
+  const filteredTopics = searchTerm.trim()
+    ? topics.filter((t) => t.title.toLowerCase().includes(searchTerm.trim().toLowerCase()))
+    : topics
 
   const form = useForm<TopicFormValues>({
     resolver: zodResolver(topicSchema),
@@ -220,6 +218,8 @@ export default function ForumPage() {
               <Input
                 placeholder="Buscar no fórum..."
                 className="pl-10 bg-card/50 backdrop-blur-sm border-border/50"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="flex gap-2 w-full md:w-auto">
@@ -231,23 +231,24 @@ export default function ForumPage() {
                 Filtrar
               </Button>
 
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="flex-1 md:flex-none bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold transition-transform duration-300 hover:scale-105 hover:shadow-lg inline-flex items-center justify-center">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    <span className="hidden sm:inline">Novo Tópico</span>
-                    <span className="sm:hidden">Novo</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>Criar Novo Tópico</DialogTitle>
-                    <DialogDescription>
+              <Button
+                onClick={() => setIsDialogOpen(true)}
+                className="flex-1 md:flex-none bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold transition-transform duration-300 hover:scale-105 hover:shadow-lg inline-flex items-center justify-center"
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Novo Tópico</span>
+                <span className="sm:hidden">Novo</span>
+              </Button>
+              <ResponsiveDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <ResponsiveDialogContent className="sm:max-w-[600px]">
+                  <ResponsiveDialogHeader>
+                    <ResponsiveDialogTitle>Criar Novo Tópico</ResponsiveDialogTitle>
+                    <ResponsiveDialogDescription>
                       Compartilhe suas dúvidas ou conhecimentos com a comunidade.
-                    </DialogDescription>
-                  </DialogHeader>
+                    </ResponsiveDialogDescription>
+                  </ResponsiveDialogHeader>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 md:px-0">
                       <FormField
                         control={form.control}
                         name="title"
@@ -305,7 +306,7 @@ export default function ForumPage() {
                         )}
                       />
 
-                      <DialogFooter>
+                      <ResponsiveDialogFooter>
                         <Button
                           type="button"
                           variant="outline"
@@ -319,11 +320,11 @@ export default function ForumPage() {
                           )}
                           Publicar Tópico
                         </Button>
-                      </DialogFooter>
+                      </ResponsiveDialogFooter>
                     </form>
                   </Form>
-                </DialogContent>
-              </Dialog>
+                </ResponsiveDialogContent>
+              </ResponsiveDialog>
             </div>
           </div>
         </MagicCard>
@@ -338,7 +339,7 @@ export default function ForumPage() {
               <h2 className="text-2xl font-bold">Tópicos Recentes</h2>
             </div>
 
-            {topics.length === 0 ? (
+            {filteredTopics.length === 0 ? (
               <div className="text-center py-24">
                 <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                   <MessageSquare className="w-10 h-10 text-primary" />
@@ -347,19 +348,30 @@ export default function ForumPage() {
                   Nenhum tópico encontrado
                 </h3>
                 <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                  Seja o primeiro a criar um tópico e iniciar uma discussão!
+                  {searchTerm.trim()
+                    ? 'Nenhum tópico corresponde à sua busca. Tente outros termos.'
+                    : 'Seja o primeiro a criar um tópico e iniciar uma discussão!'}
                 </p>
-                <Button
-                  onClick={() => setIsDialogOpen(true)}
-                  className="bg-gradient-to-r from-primary to-primary/80"
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Criar Primeiro Tópico
-                </Button>
+                {searchTerm.trim() ? (
+                  <Button
+                    onClick={() => setSearchTerm('')}
+                    variant="outline"
+                  >
+                    Limpar Busca
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => setIsDialogOpen(true)}
+                    className="bg-gradient-to-r from-primary to-primary/80"
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Criar Primeiro Tópico
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
-                {topics.map((topic) => (
+                {filteredTopics.map((topic) => (
                   <div
                     key={topic.id}
                     className="group p-6 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50 hover:border-primary/30 transition-colors duration-300 hover:scale-[1.02] hover:shadow-lg"
@@ -408,28 +420,6 @@ export default function ForumPage() {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                }}
-                              >
-                                <Heart className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                }}
-                              >
-                                <Share2 className="h-4 w-4" />
-                              </Button>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -451,7 +441,7 @@ export default function ForumPage() {
               <h2 className="text-2xl font-bold">Ações Rápidas</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div
                 className="p-6 rounded-xl bg-gradient-to-r from-blue-500/10 to-blue-600/5 border border-blue-500/20 hover:border-blue-500/30 transition-transform duration-300 hover:scale-105 inline-flex items-center justify-center cursor-pointer"
                 onClick={() => setIsDialogOpen(true)}
@@ -472,28 +462,6 @@ export default function ForumPage() {
                   >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Novo Tópico
-                  </Button>
-                </div>
-              </div>
-
-              <div className="p-6 rounded-xl bg-gradient-to-r from-green-500/10 to-green-600/5 border border-green-500/20 hover:border-green-500/30 transition-transform duration-300 hover:scale-105 inline-flex items-center justify-center">
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 rounded-lg bg-green-500/20">
-                      <TrendingUp className="h-5 w-5 text-green-600" />
-                    </div>
-                    <h3 className="font-semibold text-green-600">Tópicos Populares</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4 text-center">
-                    Veja os tópicos mais comentados e relevantes
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 w-full"
-                  >
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    Ver Populares
                   </Button>
                 </div>
               </div>

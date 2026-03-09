@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import type { UserProfile } from '@/contexts/auth-provider'
+import { logger } from '@/lib/logger'
 
 /**
  * Simplified User Service
@@ -18,7 +19,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   try {
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     if (!currentUser || currentUser.id !== userId) {
-      console.warn(`Unauthorized profile access attempt for userId: ${userId}`)
+      logger.warn(`Unauthorized profile access attempt for userId: ${userId}`)
       return null
     }
 
@@ -43,18 +44,18 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
       .single()
 
     if (error) {
-      console.error('❌ Error fetching user profile:', error)
+      logger.error('❌ Error fetching user profile:', error)
       return null
     }
 
     if (!data) {
-      console.warn('⚠️ User profile not found for:', userId)
+      logger.warn('⚠️ User profile not found for:', userId)
       return null
     }
 
     return data
   } catch (error) {
-    console.error('💥 Network error fetching user profile:', error)
+    logger.error('💥 Network error fetching user profile:', error)
     return null
   }
 }
@@ -73,13 +74,13 @@ export const updateUserProfile = async (
       .eq('id', userId)
 
     if (error) {
-      console.error('❌ Error updating user profile:', error)
+      logger.error('❌ Error updating user profile:', error)
       return { success: false, error: error.message }
     }
 
     return { success: true }
   } catch (error) {
-    console.error('💥 Network error updating user profile:', error)
+    logger.error('💥 Network error updating user profile:', error)
     return { success: false, error: 'Network error' }
   }
 }
@@ -108,13 +109,13 @@ export const getUsersByRole = async (role: UserProfile['role']): Promise<UserPro
       .order('first_name')
 
     if (error) {
-      console.error('❌ Error fetching users by role:', error)
+      logger.error('❌ Error fetching users by role:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('💥 Network error fetching users by role:', error)
+    logger.error('💥 Network error fetching users by role:', error)
     return []
   }
 }
@@ -144,13 +145,13 @@ export const searchUsers = async (query: string): Promise<UserProfile[]> => {
       .limit(50)
 
     if (error) {
-      console.error('❌ Error searching users:', error)
+      logger.error('❌ Error searching users:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('💥 Network error searching users:', error)
+    logger.error('💥 Network error searching users:', error)
     return []
   }
 }

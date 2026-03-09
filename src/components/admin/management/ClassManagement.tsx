@@ -28,6 +28,7 @@ import { MoreHorizontal, PlusCircle, Search, RefreshCw } from 'lucide-react'
 import { getClasses, type Class } from '@/services/classService'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
+import { logger } from '@/lib/logger'
 
 export const ClassManagement = () => {
   const [classes, setClasses] = useState<Class[]>([])
@@ -51,7 +52,7 @@ export const ClassManagement = () => {
       setClasses(data)
       setFilteredClasses(data)
     } catch (error) {
-      console.error('Erro ao carregar turmas:', error)
+      logger.error('Erro ao carregar turmas:', error)
       toast({
         title: 'Erro',
         description: 'Não foi possível carregar as turmas.',

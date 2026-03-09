@@ -15,7 +15,6 @@ import {
   ResponsiveDialogTitle,
   ResponsiveDialogDescription,
 } from '@/components/ui/responsive-dialog'
-import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { logger } from '@/lib/logger'
@@ -51,6 +50,39 @@ export default function SettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const defaultNotifications = {
+    email: true,
+    push: true,
+    achievements: true,
+    courses: true,
+    reminders: false,
+    social: true
+  }
+
+  const defaultPrivacy = {
+    profileVisibility: 'public',
+    showProgress: true,
+    showAchievements: true,
+    allowMessages: true
+  }
+
+  const defaultAppearance = {
+    theme: 'system',
+    language: 'pt-BR',
+    fontSize: 'medium',
+    animations: true
+  }
+
+  function loadStoredPrefs<T>(key: string, defaults: T): T {
+    try {
+      const stored = localStorage.getItem(key)
+      if (stored) return { ...defaults, ...JSON.parse(stored) }
+    } catch {
+      // Ignore invalid JSON
+    }
+    return defaults
+  }
+
   const [settings, setSettings] = useState({
     profile: {
       firstName: profile?.first_name || '',
@@ -59,26 +91,9 @@ export default function SettingsPage() {
       bio: profile?.bio || '',
       avatar: profile?.avatar_url || `https://img.usecurling.com/ppl/medium?seed=${profile?.id || 'default'}`
     },
-    notifications: {
-      email: true,
-      push: true,
-      achievements: true,
-      courses: true,
-      reminders: false,
-      social: true
-    },
-    privacy: {
-      profileVisibility: 'public',
-      showProgress: true,
-      showAchievements: true,
-      allowMessages: true
-    },
-    appearance: {
-      theme: 'system',
-      language: 'pt-BR',
-      fontSize: 'medium',
-      animations: true
-    }
+    notifications: loadStoredPrefs('everest_notification_prefs', defaultNotifications),
+    privacy: loadStoredPrefs('everest_privacy_prefs', defaultPrivacy),
+    appearance: loadStoredPrefs('everest_appearance_prefs', defaultAppearance)
   })
 
   // Atualizar settings quando o profile carregar
@@ -97,6 +112,61 @@ export default function SettingsPage() {
       }))
     }
   }, [profile])
+
+  // Persist preferences to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('everest_notification_prefs', JSON.stringify(settings.notifications))
+  }, [settings.notifications])
+
+  useEffect(() => {
+    localStorage.setItem('everest_privacy_prefs', JSON.stringify(settings.privacy))
+  }, [settings.privacy])
+
+  useEffect(() => {
+    localStorage.setItem('everest_appearance_prefs', JSON.stringify(settings.appearance))
+  }, [settings.appearance])
+
+  const handleExportData = () => {
+    if (!profile) return
+
+    const exportData = {
+      profile: {
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        email: profile.email,
+        bio: profile.bio,
+        role: profile.role,
+        avatar_url: profile.avatar_url,
+        created_at: profile.created_at,
+      },
+      exported_at: new Date().toISOString(),
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `everest-dados-${profile.first_name || 'usuario'}-${new Date().toISOString().slice(0, 10)}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+
+    toast({
+      title: 'Dados exportados',
+      description: 'O arquivo JSON foi baixado com seus dados de perfil.',
+    })
+  }
+
+  const handleDeleteAccount = () => {
+    const confirmed = window.confirm(
+      'Tem certeza que deseja solicitar a exclusão da sua conta? Esta ação não pode ser desfeita.'
+    )
+    if (confirmed) {
+      toast({
+        title: 'Exclusão de conta',
+        description: 'Entre em contato com o suporte para deletar sua conta.',
+      })
+    }
+  }
 
   const handleSave = async () => {
     if (!profile?.id) {
@@ -741,16 +811,12 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-4">
-            <Button variant="outline" className="w-full justify-start">
+            <Button variant="outline" className="w-full justify-start" onClick={handleExportData}>
               <Download className="mr-2 h-4 w-4" />
               Exportar meus dados
             </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <Upload className="mr-2 h-4 w-4" />
-              Importar dados
-            </Button>
             <Separator />
-            <Button variant="destructive" className="w-full justify-start">
+            <Button variant="destructive" className="w-full justify-start" onClick={handleDeleteAccount}>
               <Trash2 className="mr-2 h-4 w-4" />
               Excluir conta
             </Button>

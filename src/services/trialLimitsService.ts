@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 /**
  * Service para gerenciar limites e conteúdo trial (degustação)
@@ -80,7 +81,7 @@ export const getUserTrialStatus = async (userId: string): Promise<TrialLimits> =
       enrollmentDate: studentClass.enrollment_date,
     }
   } catch (error) {
-    console.error('💥 Erro ao verificar status trial:', error)
+    logger.error('💥 Erro ao verificar status trial:', error)
     return {
       isTrialUser: false,
       className: null,
@@ -117,7 +118,7 @@ export const getTrialAllowedContent = async (userId: string): Promise<TrialAllow
       .eq('class_id', studentClass.class_id)
 
     if (error || !allowedContent) {
-      console.error('❌ Erro ao buscar conteúdo liberado:', error)
+      logger.error('❌ Erro ao buscar conteúdo liberado:', error)
       return { subjects: [], topics: [], quizzes: [], flashcardSets: [] }
     }
 
@@ -131,7 +132,7 @@ export const getTrialAllowedContent = async (userId: string): Promise<TrialAllow
 
     return result
   } catch (error) {
-    console.error('💥 Erro ao buscar conteúdo trial:', error)
+    logger.error('💥 Erro ao buscar conteúdo trial:', error)
     return { subjects: [], topics: [], quizzes: [], flashcardSets: [] }
   }
 }
@@ -188,7 +189,7 @@ export const checkContentAccess = async (
       upgradeMessage: `Este ${contentName} está disponível apenas para assinantes. Faça upgrade para acessar todo o conteúdo!`
     }
   } catch (error) {
-    console.error('💥 Erro ao verificar acesso ao conteúdo:', error)
+    logger.error('💥 Erro ao verificar acesso ao conteúdo:', error)
     return { hasAccess: false, reason: 'trial_locked' }
   }
 }
@@ -219,7 +220,7 @@ export const checkQuizDailyLimit = async (userId: string): Promise<ContentAccess
       .gte('attempt_date', today.toISOString())
 
     if (error) {
-      console.error('❌ Erro ao verificar limite de quizzes:', error)
+      logger.error('❌ Erro ao verificar limite de quizzes:', error)
       return { hasAccess: false, reason: 'trial_locked' }
     }
 
@@ -235,7 +236,7 @@ export const checkQuizDailyLimit = async (userId: string): Promise<ContentAccess
 
     return { hasAccess: true, reason: 'allowed' }
   } catch (error) {
-    console.error('💥 Erro ao verificar limite de quizzes:', error)
+    logger.error('💥 Erro ao verificar limite de quizzes:', error)
     return { hasAccess: false, reason: 'trial_locked' }
   }
 }
@@ -266,7 +267,7 @@ export const checkFlashcardDailyLimit = async (userId: string): Promise<ContentA
       .gte('last_reviewed_at', today.toISOString())
 
     if (error) {
-      console.error('❌ Erro ao verificar limite de flashcards:', error)
+      logger.error('❌ Erro ao verificar limite de flashcards:', error)
       return { hasAccess: false, reason: 'trial_locked' }
     }
 
@@ -282,7 +283,7 @@ export const checkFlashcardDailyLimit = async (userId: string): Promise<ContentA
 
     return { hasAccess: true, reason: 'allowed' }
   } catch (error) {
-    console.error('💥 Erro ao verificar limite de flashcards:', error)
+    logger.error('💥 Erro ao verificar limite de flashcards:', error)
     return { hasAccess: false, reason: 'trial_locked' }
   }
 }

@@ -17,13 +17,13 @@ import {
   FileText,
   TrendingUp,
   Download,
-  Calendar,
   Target,
   Award,
   Clock,
   TrendingDown
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { logger } from '@/lib/logger'
 import {
   BarChart,
   Bar,
@@ -44,26 +44,74 @@ export default function AdminReportsPage() {
   const [userGrowthData, setUserGrowthData] = useState<UserGrowthData[]>([])
   const [weeklyActivityData, setWeeklyActivityData] = useState<ActivityDataPoint[]>([])
 
+  const rangeDays = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : dateRange === '90d' ? 90 : 365
+
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true)
         const [statsData, growthData, activityData] = await Promise.all([
           getSystemStats().catch(() => null),
-          getUserGrowthData().catch(() => []),
-          getWeeklyActivityData().catch(() => [])
+          getUserGrowthData(rangeDays).catch(() => []),
+          getWeeklyActivityData(rangeDays).catch(() => [])
         ])
         setStats(statsData)
         setUserGrowthData(growthData)
         setWeeklyActivityData(activityData)
       } catch (error) {
-        console.error('Erro ao carregar dados dos relatorios:', error)
+        logger.error('Erro ao carregar dados dos relatorios:', error)
       } finally {
         setLoading(false)
       }
     }
     loadData()
-  }, [])
+  }, [rangeDays])
+
+  const handleExport = () => {
+    const rows: string[][] = []
+
+    // Stats summary
+    if (stats) {
+      rows.push(['Métrica', 'Valor'])
+      rows.push(['Total de Usuários', String(stats.totalUsers)])
+      rows.push(['Alunos', String(stats.totalStudents)])
+      rows.push(['Professores', String(stats.totalTeachers)])
+      rows.push(['Administradores', String(stats.totalAdministrators)])
+      rows.push(['Cursos', String(stats.totalCourses)])
+      rows.push(['Flashcards', String(stats.totalFlashcards)])
+      rows.push(['Quizzes', String(stats.totalQuizzes)])
+      rows.push(['Redações', String(stats.totalEssays)])
+      rows.push(['Turmas', String(stats.totalClasses)])
+      rows.push(['Taxa de Conclusão', `${stats.completionRate}%`])
+      rows.push([])
+    }
+
+    // User growth
+    if (userGrowthData.length > 0) {
+      rows.push(['Mês', 'Total Usuários', 'Ativos'])
+      for (const d of userGrowthData) {
+        rows.push([d.month, String(d.usuarios), String(d.ativos)])
+      }
+      rows.push([])
+    }
+
+    // Weekly activity
+    if (weeklyActivityData.length > 0) {
+      rows.push(['Dia', 'Atividades'])
+      for (const d of weeklyActivityData) {
+        rows.push([d.day, String(d.atividades)])
+      }
+    }
+
+    const csv = rows.map(r => r.join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `relatorio-everest-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   const statsCards = [
     {
@@ -123,16 +171,10 @@ export default function AdminReportsPage() {
             </TabsList>
           </Tabs>
 
-          <div className="flex gap-3 w-full md:w-auto">
-            <Button variant="outline" className="gap-2 flex-1 md:flex-none">
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Personalizar</span>
-            </Button>
-            <Button className="gap-2 flex-1 md:flex-none">
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Exportar</span>
-            </Button>
-          </div>
+          <Button onClick={handleExport} className="gap-2">
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Exportar CSV</span>
+          </Button>
         </div>
 
         {/* Stats Cards */}

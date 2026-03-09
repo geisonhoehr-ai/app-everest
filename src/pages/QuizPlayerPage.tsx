@@ -24,6 +24,7 @@ import { useAuth } from '@/contexts/auth-provider'
 import { useToast } from '@/hooks/use-toast'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useActivityScoring } from '@/hooks/useAchievements'
+import { logger } from '@/lib/logger'
 
 export default function QuizPlayerPage() {
   const { quizId } = useParams<{ quizId: string }>()
@@ -69,7 +70,7 @@ export default function QuizPlayerPage() {
 
         setQuiz(quizData)
       } catch (error) {
-        console.error('Erro ao carregar quiz:', error)
+        logger.error('Erro ao carregar quiz:', error)
         toast({
           title: 'Erro ao carregar quiz',
           description: 'Não foi possível carregar o quiz.',
@@ -149,7 +150,7 @@ export default function QuizPlayerPage() {
         },
       })
     } catch (error) {
-      console.error('Erro ao finalizar quiz:', error)
+      logger.error('Erro ao finalizar quiz:', error)
       toast({
         title: 'Erro ao finalizar quiz',
         description: 'Ocorreu um erro ao salvar seus resultados.',

@@ -29,6 +29,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { logger } from '@/lib/logger'
 import {
   ArrowLeft,
   Save,
@@ -629,7 +630,7 @@ export default function AdminCourseEditorPage() {
 
         setModules(modulesWithLessons)
       } catch (err) {
-        console.error('Error loading course:', err)
+        logger.error('Error loading course:', err)
         toast({ title: 'Erro ao carregar curso', variant: 'destructive' })
       } finally {
         setLoading(false)
@@ -663,7 +664,7 @@ export default function AdminCourseEditorPage() {
       updateCourseField('thumbnail_url', publicUrl)
       toast({ title: 'Capa enviada!' })
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast({ title: 'Erro ao enviar imagem', variant: 'destructive' })
     } finally {
       setUploadingThumbnail(false)
@@ -815,7 +816,7 @@ export default function AdminCourseEditorPage() {
       markChanged()
       toast({ title: 'Arquivo enviado!' })
     } catch (err) {
-      console.error(err)
+      logger.error(err)
       toast({ title: 'Erro no upload', variant: 'destructive' })
     }
   }, [toast, markChanged])
@@ -1087,7 +1088,7 @@ export default function AdminCourseEditorPage() {
         navigate(`/admin/courses/${savedCourseId}/edit`, { replace: true })
       }
     } catch (err) {
-      console.error('Error saving course:', err)
+      logger.error('Error saving course:', err)
       toast({ title: 'Erro ao salvar', description: 'Tente novamente.', variant: 'destructive' })
     } finally {
       setSaving(false)

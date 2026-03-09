@@ -25,6 +25,7 @@ import {
   Award
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 
 interface CourseModule {
   id: string
@@ -99,7 +100,7 @@ export default function CourseDetailsPage() {
 
         setCourse(transformedCourse)
       } catch (error) {
-        console.error('Error fetching course details:', error)
+        logger.error('Error fetching course details:', error)
       } finally {
         setIsLoading(false)
       }

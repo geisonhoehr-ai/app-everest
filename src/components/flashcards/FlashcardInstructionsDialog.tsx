@@ -1,10 +1,10 @@
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogDescription,
+} from '@/components/ui/responsive-dialog'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, XCircle, Clock, Info, Brain, Calendar, TrendingUp } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -20,23 +20,23 @@ export const FlashcardInstructionsDialog = ({
   onClose,
 }: FlashcardInstructionsDialogProps) => {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader className="space-y-3 pb-4">
+    <ResponsiveDialog open={isOpen} onOpenChange={onClose}>
+      <ResponsiveDialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <ResponsiveDialogHeader className="space-y-3 pb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
               <Brain className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <DialogTitle className="text-2xl font-bold">
+              <ResponsiveDialogTitle className="text-2xl font-bold">
                 Como Funciona o Sistema de Flashcards
-              </DialogTitle>
-              <DialogDescription className="text-base">
+              </ResponsiveDialogTitle>
+              <ResponsiveDialogDescription className="text-base">
                 Aprenda a usar a auto-avaliação para maximizar seu aprendizado
-              </DialogDescription>
+              </ResponsiveDialogDescription>
             </div>
           </div>
-        </DialogHeader>
+        </ResponsiveDialogHeader>
 
         <div className="space-y-6">
           {/* Como funciona */}
@@ -186,7 +186,7 @@ export const FlashcardInstructionsDialog = ({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   )
 }

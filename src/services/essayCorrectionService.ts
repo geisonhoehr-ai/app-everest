@@ -5,6 +5,7 @@
 
 import { difyService } from './difyService'
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 interface EssayCorrectionRequest {
   essayId: string
@@ -96,7 +97,7 @@ class EssayCorrectionService {
         aiConfidence: this.calculateConfidence(aiResult)
       }
     } catch (error) {
-      console.error('Erro na correção por IA:', error)
+      logger.error('Erro na correção por IA:', error)
       throw new Error('Falha na correção automática')
     }
   }
@@ -139,7 +140,7 @@ class EssayCorrectionService {
         correctedAt: new Date()
       }
     } catch (error) {
-      console.error('Erro na correção manual:', error)
+      logger.error('Erro na correção manual:', error)
       throw new Error('Falha na correção manual')
     }
   }
@@ -187,7 +188,7 @@ class EssayCorrectionService {
 
       return finalResult
     } catch (error) {
-      console.error('Erro na correção híbrida:', error)
+      logger.error('Erro na correção híbrida:', error)
       throw new Error('Falha na correção híbrida')
     }
   }
@@ -224,7 +225,7 @@ class EssayCorrectionService {
         aiConfidence: data.ai_confidence
       }
     } catch (error) {
-      console.error('Erro ao obter correção:', error)
+      logger.error('Erro ao obter correção:', error)
       throw new Error('Falha ao obter correção')
     }
   }
@@ -255,7 +256,7 @@ class EssayCorrectionService {
         aiConfidence: item.ai_confidence
       }))
     } catch (error) {
-      console.error('Erro ao listar correções:', error)
+      logger.error('Erro ao listar correções:', error)
       throw new Error('Falha ao listar correções')
     }
   }
@@ -311,7 +312,7 @@ class EssayCorrectionService {
 
       return stats
     } catch (error) {
-      console.error('Erro ao obter estatísticas:', error)
+      logger.error('Erro ao obter estatísticas:', error)
       throw new Error('Falha ao obter estatísticas')
     }
   }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
 import { Button } from '@/components/ui/button'
@@ -38,6 +39,7 @@ import { FEATURE_KEYS } from '@/services/classPermissionsService'
 
 export default function RankingPage() {
   const { user, isStudent } = useAuth()
+  const navigate = useNavigate()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [activeTab, setActiveTab] = useState('global')
   const [isLoading, setIsLoading] = useState(true)
@@ -459,7 +461,11 @@ export default function RankingPage() {
 
               {userAchievements.length > 6 && (
                 <div className="text-center">
-                  <Button variant="outline" className="rounded-xl">
+                  <Button
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => navigate('/achievements')}
+                  >
                     Ver Todas as Conquistas
                   </Button>
                 </div>

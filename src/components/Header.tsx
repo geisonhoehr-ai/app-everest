@@ -2,15 +2,16 @@ import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { Bell, Menu, Search, Mountain } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { MobileSidebar } from './MobileSidebar'
 import { ThemeToggle } from './ThemeToggle'
+import { CommandPalette } from './CommandPalette'
 import { useAuth } from '@/hooks/use-auth'
+import { useNotifications } from '@/hooks/useNotifications'
 import { SidebarTrigger } from './ui/sidebar'
 
 export const Header = () => {
-  const unreadNotifications = 0
+  const { unreadCount } = useNotifications()
   const { profile } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const isAdmin = profile?.role === 'administrator' || profile?.role === 'teacher'
@@ -49,17 +50,19 @@ export const Header = () => {
 
       <div className="flex flex-1 items-center gap-4 md:gap-8">
         {profile ? (
-          <div className="relative flex-1 max-w-md hidden md:flex items-center">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-            <Input
-              type="search"
-              placeholder="O que você quer aprender hoje?"
-              className="w-full bg-muted/40 pl-9 border-transparent focus:border-primary/20 focus:bg-background transition-all rounded-xl h-9 shadow-none hover:bg-muted/60"
-            />
-            <div className="absolute right-2 px-1.5 py-0.5 rounded border bg-background text-[10px] font-medium text-muted-foreground opacity-50">
-              ⌘K
-            </div>
-          </div>
+          <>
+            <button
+              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+              className="relative flex-1 max-w-md hidden md:flex items-center cursor-pointer bg-muted/40 hover:bg-muted/60 rounded-xl h-9 px-3 transition-all border border-transparent hover:border-border/30"
+            >
+              <Search className="h-4 w-4 text-muted-foreground/50 shrink-0 mr-2" />
+              <span className="text-sm text-muted-foreground/50">Buscar...</span>
+              <kbd className="ml-auto text-[10px] text-muted-foreground/50 border rounded px-1.5 py-0.5 bg-background/50">
+                Ctrl K
+              </kbd>
+            </button>
+            <CommandPalette />
+          </>
         ) : (
           <Link
             to="/"
@@ -85,7 +88,7 @@ export const Header = () => {
             >
               <NavLink to="/notificacoes">
                 <Bell className="h-4 w-4" />
-                {unreadNotifications > 0 && (
+                {unreadCount > 0 && (
                   <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
                 )}
                 <span className="sr-only">Notificações</span>

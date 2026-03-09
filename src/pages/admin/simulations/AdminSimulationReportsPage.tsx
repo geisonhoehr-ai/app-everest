@@ -81,6 +81,15 @@ interface TopStudent {
   medal?: string
 }
 
+interface AttemptRow {
+  id: string
+  name: string
+  score: number
+  duration: number
+  date: string
+  completed: boolean
+}
+
 export default function AdminSimulationReportsPage() {
   const { simulationId } = useParams<{ simulationId: string }>()
   const navigate = useNavigate()
@@ -92,6 +101,7 @@ export default function AdminSimulationReportsPage() {
   const [attemptsByDay, setAttemptsByDay] = useState<AttemptsByDay[]>([])
   const [timeDistribution, setTimeDistribution] = useState<TimeDistribution[]>([])
   const [topStudents, setTopStudents] = useState<TopStudent[]>([])
+  const [allAttempts, setAllAttempts] = useState<AttemptRow[]>([])
 
   useEffect(() => {
     loadSimulationReports()
@@ -209,6 +219,18 @@ export default function AdminSimulationReportsPage() {
         }))
 
       setTopStudents(top)
+
+      // All attempts for the Tentativas tab
+      setAllAttempts(
+        (attempts || []).map((a, idx) => ({
+          id: a.id,
+          name: a.users?.full_name || `Aluno ${idx + 1}`,
+          score: Math.round(a.score || 0),
+          duration: a.duration_minutes || 0,
+          date: new Date(a.created_at).toLocaleString('pt-BR'),
+          completed: !!a.completed_at,
+        }))
+      )
 
       // Tentativas por dia (últimos 7 dias)
       const dayGroups: Record<string, number> = {}
@@ -458,6 +480,13 @@ export default function AdminSimulationReportsPage() {
                     <h3 className="text-base md:text-lg font-semibold text-foreground mb-1">Desempenho por Questão</h3>
                     <p className="text-xs md:text-sm text-muted-foreground">Acertos vs Erros</p>
                   </div>
+                  {questionPerformance.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Target className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                      <p>Dados por questão não disponíveis para este simulado.</p>
+                      <p className="text-xs mt-1">O rastreamento por questão requer respostas individuais registradas.</p>
+                    </div>
+                  ) : (
                   <div className="h-[350px] md:h-[450px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={questionPerformance}>
@@ -471,10 +500,12 @@ export default function AdminSimulationReportsPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
+            {questionPerformance.length > 0 && (
             <div className="grid gap-4">
               {questionPerformance.map((q, idx) => {
                 const total = q.corretas + q.incorretas
@@ -524,6 +555,7 @@ export default function AdminSimulationReportsPage() {
                 )
               })}
             </div>
+            )}
           </TabsContent>
 
           {/* Alunos */}
@@ -596,38 +628,45 @@ export default function AdminSimulationReportsPage() {
                   </div>
 
                   <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {Array.from({ length: 20 }).map((_, idx) => (
-                      <div
-                        key={idx}
-                        className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 p-3 md:p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                      >
-                        <div className="flex items-center gap-3 flex-1">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-sm md:text-base text-foreground">Aluno {idx + 1}</p>
-                            <p className="text-xs md:text-sm text-muted-foreground">
-                              {Math.floor(Math.random() * 60) + 180} minutos •{' '}
-                              {new Date(Date.now() - Math.random() * 10000000000).toLocaleString('pt-BR')}
-                            </p>
+                    {allAttempts.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Nenhuma tentativa registrada.
+                      </div>
+                    ) : (
+                      allAttempts.map((attempt) => (
+                        <div
+                          key={attempt.id}
+                          className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 p-3 md:p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium text-sm md:text-base text-foreground">{attempt.name}</p>
+                              <p className="text-xs md:text-sm text-muted-foreground">
+                                {attempt.duration} minutos • {attempt.date}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                attempt.score >= 60
+                                  ? "bg-green-500/10 border-green-500/20 text-green-600"
+                                  : "bg-orange-500/10 border-orange-500/20 text-orange-600"
+                              )}
+                            >
+                              {attempt.score}%
+                            </Badge>
+                            {!attempt.completed && (
+                              <Badge variant="outline" className="bg-yellow-500/10 border-yellow-500/20 text-yellow-600">
+                                Incompleto
+                              </Badge>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              Math.random() > 0.5
-                                ? "bg-green-500/10 border-green-500/20 text-green-600"
-                                : "bg-orange-500/10 border-orange-500/20 text-orange-600"
-                            )}
-                          >
-                            {Math.floor(Math.random() * 40) + 50}%
-                          </Badge>
-                          <Button variant="outline" size="sm">
-                            Ver Detalhes
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               </CardContent>

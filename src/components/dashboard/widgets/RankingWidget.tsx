@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { 
+import { logger } from '@/lib/logger'
   rankingService, 
   type UserPosition, 
   type UserRanking,
@@ -59,7 +60,7 @@ function RankingWidget({ className }: RankingWidgetProps) {
         setTopRanking(rankingData)
         setRecentAchievements(achievementsData.slice(0, 3))
       } catch (error) {
-        console.error('Erro ao carregar dados do ranking:', error)
+        logger.error('Erro ao carregar dados do ranking:', error)
       } finally {
         setIsLoading(false)
       }

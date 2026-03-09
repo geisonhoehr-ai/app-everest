@@ -5,6 +5,7 @@
 
 import { offlineStorage } from './offlineStorage'
 import { supabase } from './supabase/client'
+import { logger } from '@/lib/logger'
 
 class SyncService {
   private isOnline: boolean = navigator.onLine
@@ -90,13 +91,13 @@ class SyncService {
           await offlineStorage.removeFromSyncQueue(item.id)
           synced++
         } catch (error) {
-          console.error(`[SyncService] Erro ao sincronizar ${item.type}:`, error)
+          logger.error(`[SyncService] Erro ao sincronizar ${item.type}:`, error)
           await offlineStorage.incrementRetries(item.id)
           failed++
 
           // Remover da fila se exceder 5 tentativas
           if (item.retries >= 5) {
-            console.warn(
+            logger.warn(
               `[SyncService] Item ${item.id} excedeu máximo de tentativas`,
             )
             await offlineStorage.removeFromSyncQueue(item.id)
@@ -113,7 +114,7 @@ class SyncService {
           await offlineStorage.markFlashcardProgressSynced(progress.session_id)
           synced++
         } catch (error) {
-          console.error(
+          logger.error(
             '[SyncService] Erro ao sincronizar progresso flashcard:',
             error,
           )
@@ -132,7 +133,7 @@ class SyncService {
           )
           synced++
         } catch (error) {
-          console.error(
+          logger.error(
             '[SyncService] Erro ao sincronizar progresso quiz:',
             error,
           )
@@ -142,7 +143,7 @@ class SyncService {
 
       return { success: true, synced, failed }
     } catch (error) {
-      console.error('[SyncService] Erro durante sincronização:', error)
+      logger.error('[SyncService] Erro durante sincronização:', error)
       return { success: false, synced, failed }
     } finally {
       this.syncInProgress = false
@@ -164,7 +165,7 @@ class SyncService {
         await this.syncQuizAttempt(item.data)
         break
       default:
-        console.warn(`[SyncService] Tipo desconhecido: ${item.type}`)
+        logger.warn(`[SyncService] Tipo desconhecido: ${item.type}`)
     }
   }
 

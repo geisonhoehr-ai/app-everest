@@ -9,6 +9,7 @@ import { offlineStorage } from '@/lib/offlineStorage'
 import { Wifi, WifiOff, CloudUpload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { logger } from '@/lib/logger'
 
 export function OfflineIndicator() {
   const [isOnline, setIsOnline] = useState(syncService.getOnlineStatus())
@@ -61,7 +62,7 @@ export function OfflineIndicator() {
       // Limpar mensagem após 5 segundos
       setTimeout(() => setLastSyncResult(null), 5000)
     } catch (error) {
-      console.error('Erro ao sincronizar:', error)
+      logger.error('Erro ao sincronizar:', error)
     } finally {
       setIsSyncing(false)
     }

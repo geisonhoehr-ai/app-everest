@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 export interface DashboardStats {
   courses: number
@@ -60,7 +61,7 @@ export const dashboardService = {
         students: studentsResult.count || 0
       }
     } catch (error) {
-      console.error('Erro ao buscar estatísticas do dashboard:', error)
+      logger.error('Erro ao buscar estatísticas do dashboard:', error)
       // Retorna valores padrão em caso de erro
       return {
         courses: 0,
@@ -90,7 +91,7 @@ export const dashboardService = {
         image: c.image
       }));
     } catch (error) {
-      console.error('Erro ao buscar cursos do usuário:', error)
+      logger.error('Erro ao buscar cursos do usuário:', error)
       return []
     }
   },
@@ -131,7 +132,7 @@ export const dashboardService = {
           event.event_type === 'ESSAY_DEADLINE' ? 'deadline' : 'exam'
       })) || []
     } catch (error) {
-      console.error('Erro ao buscar eventos:', error)
+      logger.error('Erro ao buscar eventos:', error)
       return []
     }
   },
@@ -157,7 +158,7 @@ export const dashboardService = {
         activeStudents: studentsResult.count || 0
       }
     } catch (error) {
-      console.error('Erro ao buscar estatísticas do professor:', error)
+      logger.error('Erro ao buscar estatísticas do professor:', error)
       return {
         essaysToCorrect: 0,
         forumQuestions: 0,

@@ -4,6 +4,7 @@ import { QuizResult } from '@/components/quizzes/QuizResult'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/hooks/use-toast'
 import { quizService, type Quiz } from '@/services/quizService'
+import { logger } from '@/lib/logger'
 
 interface LocationState {
   attemptId?: string
@@ -66,7 +67,7 @@ export default function QuizResultSummaryPage() {
         setQuiz(quizData)
         setAnswers({}) // Sem respostas históricas por enquanto
       } catch (error) {
-        console.error('Erro ao carregar resultados:', error)
+        logger.error('Erro ao carregar resultados:', error)
         toast({
           title: 'Erro ao carregar resultados',
           description: 'Ocorreu um erro ao buscar os resultados.',

@@ -32,10 +32,12 @@ import {
 import { cn } from '@/lib/utils'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/hooks/use-toast'
-import { 
-  getClasses, 
-  createClass, 
-  type Class 
+import {
+  getClasses,
+  createClass,
+  deleteClass,
+  getClassStudents,
+  type Class
 } from '@/services/classService'
 
 export default function AdminClassesPage() {
@@ -64,6 +66,29 @@ export default function AdminClassesPage() {
     }
   }
 
+
+  const handleDeleteClass = async (classItem: Class) => {
+    try {
+      const students = await getClassStudents(classItem.id)
+      if (students.length > 0) {
+        toast({
+          title: 'Não é possível excluir',
+          description: `A turma "${classItem.name}" possui ${students.length} aluno(s) matriculado(s). Remova os alunos antes de excluir.`,
+          variant: 'destructive',
+        })
+        return
+      }
+
+      if (!confirm(`Excluir a turma "${classItem.name}"? Esta ação não pode ser desfeita.`)) return
+
+      await deleteClass(classItem.id)
+      toast({ title: 'Turma excluída com sucesso' })
+      loadClasses()
+    } catch (error) {
+      logger.error('Erro ao excluir turma:', error)
+      toast({ title: 'Erro ao excluir turma', variant: 'destructive' })
+    }
+  }
 
   const filteredClasses = classes.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -280,6 +305,14 @@ export default function AdminClassesPage() {
                             <Link to={`/admin/classes/${classItem.id}/edit`}>
                               <Edit className="h-4 w-4 group-hover/btn:text-primary transition-colors" />
                             </Link>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteClass(classItem)}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>

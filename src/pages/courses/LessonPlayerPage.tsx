@@ -14,6 +14,7 @@ import {
   type LessonComment,
   type LessonRatingStats,
 } from '@/services/lessonInteractionService'
+import { logger } from '@/lib/logger'
 import {
   ArrowLeft,
   CheckCircle,
@@ -262,7 +263,7 @@ export default function LessonPlayerPage() {
         setNoteContent(noteData)
         setNoteLastSaved(noteData ? 'Salvo' : null)
       } catch (error) {
-        console.error('Error fetching lesson data:', error)
+        logger.error('Error fetching lesson data:', error)
         toast({ title: 'Erro ao carregar aula', variant: 'destructive' })
       } finally {
         setIsLoading(false)

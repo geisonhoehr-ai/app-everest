@@ -48,6 +48,8 @@ import { useToast } from '@/hooks/use-toast'
 import {
   getAchievements,
   createAchievement,
+  updateAchievement,
+  deleteAchievement,
   getRanking,
   getGamificationStats,
   type Achievement,
@@ -60,6 +62,7 @@ export default function AdminGamificationPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [editingAchievement, setEditingAchievement] = useState<Achievement | null>(null)
   const [newAchievement, setNewAchievement] = useState({
     name: '',
     description: '',
@@ -136,6 +139,58 @@ export default function AdminGamificationPage() {
         description: 'Não foi possível criar a conquista',
         variant: 'destructive'
       })
+    }
+  }
+
+  const handleEditAchievement = (achievement: Achievement) => {
+    setEditingAchievement(achievement)
+    setNewAchievement({
+      name: achievement.name,
+      description: achievement.description || '',
+      icon_url: achievement.icon_url || '🏆',
+      xp_reward: achievement.xp_reward,
+      category: achievement.category || 'general'
+    })
+    setIsCreateDialogOpen(true)
+  }
+
+  const handleSaveAchievement = async () => {
+    if (!newAchievement.name.trim()) {
+      toast({ title: 'Erro', description: 'Digite o nome da conquista', variant: 'destructive' })
+      return
+    }
+
+    try {
+      if (editingAchievement) {
+        await updateAchievement(editingAchievement.id, newAchievement)
+        toast({ title: 'Sucesso', description: 'Conquista atualizada com sucesso' })
+      } else {
+        await createAchievement(newAchievement)
+        toast({ title: 'Sucesso', description: 'Conquista criada com sucesso' })
+      }
+
+      setIsCreateDialogOpen(false)
+      setEditingAchievement(null)
+      setNewAchievement({ name: '', description: '', icon_url: '🏆', xp_reward: 100, category: 'general' })
+      loadData()
+    } catch (error) {
+      logger.error('Erro ao salvar conquista:', error)
+      toast({ title: 'Erro', description: 'Não foi possível salvar a conquista', variant: 'destructive' })
+    }
+  }
+
+  const handleDeleteAchievement = async (achievement: Achievement) => {
+    if (!confirm(`Tem certeza que deseja excluir "${achievement.name}"? Esta ação não pode ser desfeita.`)) {
+      return
+    }
+
+    try {
+      await deleteAchievement(achievement.id)
+      toast({ title: 'Sucesso', description: 'Conquista excluída com sucesso' })
+      loadData()
+    } catch (error) {
+      logger.error('Erro ao excluir conquista:', error)
+      toast({ title: 'Erro', description: 'Não foi possível excluir a conquista', variant: 'destructive' })
     }
   }
 
@@ -293,10 +348,6 @@ export default function AdminGamificationPage() {
                         <Badge>+200 XP</Badge>
                       </div>
                     </div>
-                    <Button className="w-full" variant="outline">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Configurar Pontos
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -331,10 +382,6 @@ export default function AdminGamificationPage() {
                         <Badge>1000 XP</Badge>
                       </div>
                     </div>
-                    <Button className="w-full" variant="outline">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Configurar Níveis
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -347,7 +394,13 @@ export default function AdminGamificationPage() {
               <CardContent className="p-5">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold text-foreground">Conquistas Disponíveis</h3>
-                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+                    setIsCreateDialogOpen(open)
+                    if (!open) {
+                      setEditingAchievement(null)
+                      setNewAchievement({ name: '', description: '', icon_url: '🏆', xp_reward: 100, category: 'general' })
+                    }
+                  }}>
                     <DialogTrigger asChild>
                       <Button>
                         <PlusCircle className="h-4 w-4 mr-2" />
@@ -356,9 +409,9 @@ export default function AdminGamificationPage() {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Criar Nova Conquista</DialogTitle>
+                        <DialogTitle>{editingAchievement ? 'Editar Conquista' : 'Criar Nova Conquista'}</DialogTitle>
                         <DialogDescription>
-                          Adicione uma nova conquista ao sistema de gamificação
+                          {editingAchievement ? 'Edite os dados da conquista' : 'Adicione uma nova conquista ao sistema de gamificação'}
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
@@ -405,8 +458,8 @@ export default function AdminGamificationPage() {
                         <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                           Cancelar
                         </Button>
-                        <Button onClick={handleCreateAchievement}>
-                          Criar Conquista
+                        <Button onClick={handleSaveAchievement}>
+                          {editingAchievement ? 'Salvar' : 'Criar Conquista'}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -456,10 +509,10 @@ export default function AdminGamificationPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditAchievement(achievement)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteAchievement(achievement)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>

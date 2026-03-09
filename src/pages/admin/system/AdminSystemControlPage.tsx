@@ -154,35 +154,35 @@ export default function AdminSystemControlPage() {
     },
   ]
 
-  // Estatísticas de performance
+  // Estatísticas de performance (based on real data we can access)
   const performanceStats = [
     {
-      label: 'Tempo de Resposta',
-      value: '120ms',
+      label: 'Alunos',
+      value: stats.totalStudents,
       status: 'success',
-      icon: Zap,
-      description: 'Média de resposta da API'
+      icon: Users,
+      description: 'Alunos cadastrados'
     },
     {
-      label: 'Uptime',
-      value: '99.9%',
-      status: 'success',
-      icon: Activity,
-      description: 'Disponibilidade do sistema'
+      label: 'Professores',
+      value: stats.totalTeachers,
+      status: 'info',
+      icon: GraduationCap,
+      description: 'Professores ativos'
     },
     {
-      label: 'Armazenamento',
-      value: '2.4TB / 5TB',
-      status: 'warning',
-      icon: HardDrive,
-      description: 'Uso de armazenamento'
+      label: 'Administradores',
+      value: stats.totalAdministrators,
+      status: 'info',
+      icon: Shield,
+      description: 'Admins do sistema'
     },
     {
-      label: 'Banda',
-      value: '340GB',
-      status: 'success',
-      icon: Network,
-      description: 'Tráfego mensal'
+      label: 'Conclusão',
+      value: `${stats.completionRate}%`,
+      status: stats.completionRate >= 50 ? 'success' : 'warning',
+      icon: TrendingUp,
+      description: 'Taxa de conclusão geral'
     },
   ]
 
@@ -479,7 +479,7 @@ export default function AdminSystemControlPage() {
                     <div>
                       <h3 className="text-xl font-bold text-foreground">Status do Banco de Dados</h3>
                       <p className="text-sm text-muted-foreground">
-                        Monitoramento em tempo real do Supabase
+                        Supabase — sa-east-1
                       </p>
                     </div>
                   </div>
@@ -489,12 +489,12 @@ export default function AdminSystemControlPage() {
                       <div className="text-xs text-muted-foreground">Status da Conexão</div>
                     </div>
                     <div className="text-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                      <div className="text-2xl font-bold text-blue-600 mb-1">1.2K</div>
-                      <div className="text-xs text-muted-foreground">Queries/min</div>
+                      <div className="text-2xl font-bold text-blue-600 mb-1">{stats.totalUsers}</div>
+                      <div className="text-xs text-muted-foreground">Registros de Usuários</div>
                     </div>
                     <div className="text-center p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                      <div className="text-2xl font-bold text-purple-600 mb-1">45ms</div>
-                      <div className="text-xs text-muted-foreground">Latência Média</div>
+                      <div className="text-2xl font-bold text-purple-600 mb-1">{stats.totalCourses + stats.totalFlashcards + stats.totalQuizzes}</div>
+                      <div className="text-xs text-muted-foreground">Registros de Conteúdo</div>
                     </div>
                   </div>
                 </div>

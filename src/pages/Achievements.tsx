@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/auth-provider'
 import { MagicLayout } from '@/components/ui/magic-layout'
 import { MagicCard } from '@/components/ui/magic-card'
@@ -33,9 +34,11 @@ import {
   type UserPosition 
 } from '@/services/rankingService'
 import { SectionLoader } from '@/components/SectionLoader'
+import { logger } from '@/lib/logger'
 
 export default function AchievementsPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('unlocked')
   const [isLoading, setIsLoading] = useState(true)
@@ -88,7 +91,7 @@ export default function AchievementsPage() {
         setUserAchievements(userAchievementsData)
         setUserPosition(positionData)
       } catch (error) {
-        console.error('Erro ao carregar dados das conquistas:', error)
+        logger.error('Erro ao carregar dados das conquistas:', error)
       } finally {
         setIsLoading(false)
       }
@@ -233,16 +236,6 @@ export default function AchievementsPage() {
             )}
           </div>
 
-          {/* Progresso (se aplicável) */}
-          {!isUnlocked && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Progresso</span>
-                <span>0%</span>
-              </div>
-              <Progress value={0} className="h-2" />
-            </div>
-          )}
         </div>
       </MagicCard>
     )
@@ -383,7 +376,10 @@ export default function AchievementsPage() {
                   <p className="text-muted-foreground mb-6">
                     Continue estudando e completando atividades para desbloquear suas primeiras conquistas!
                   </p>
-                  <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-8 py-3 rounded-2xl font-medium transition-transform duration-300 hover:scale-105 hover:shadow-lg inline-flex items-center justify-center">
+                  <Button
+                    onClick={() => navigate('/courses')}
+                    className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-8 py-3 rounded-2xl font-medium transition-transform duration-300 hover:scale-105 hover:shadow-lg inline-flex items-center justify-center"
+                  >
                     Começar a Estudar
                   </Button>
                 </div>

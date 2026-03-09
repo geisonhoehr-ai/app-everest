@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 export interface UserRanking {
   user_id: string
@@ -86,7 +87,7 @@ export const rankingService = {
       if (error) throw error
       return data || []
     } catch (error) {
-      console.error('Erro ao buscar ranking de usuários:', error)
+      logger.error('Erro ao buscar ranking de usuários:', error)
       return []
     }
   },
@@ -101,7 +102,7 @@ export const rankingService = {
       if (error) throw error
       return data?.[0] || null
     } catch (error) {
-      console.error('Erro ao buscar posição do usuário:', error)
+      logger.error('Erro ao buscar posição do usuário:', error)
       return null
     }
   },
@@ -117,7 +118,7 @@ export const rankingService = {
       if (error) throw error
       return data || []
     } catch (error) {
-      console.error('Erro ao buscar ranking por atividade:', error)
+      logger.error('Erro ao buscar ranking por atividade:', error)
       return []
     }
   },
@@ -140,7 +141,7 @@ export const rankingService = {
       if (error) throw error
       return true
     } catch (error) {
-      console.error('Erro ao adicionar pontuação:', error)
+      logger.error('Erro ao adicionar pontuação:', error)
       return false
     }
   },
@@ -156,7 +157,7 @@ export const rankingService = {
       if (error) throw error
       return data || []
     } catch (error) {
-      console.error('Erro ao buscar histórico de pontuação:', error)
+      logger.error('Erro ao buscar histórico de pontuação:', error)
       return []
     }
   },
@@ -169,7 +170,7 @@ export const rankingService = {
       if (error) throw error
       return data?.[0] || null
     } catch (error) {
-      console.error('Erro ao buscar estatísticas de XP:', error)
+      logger.error('Erro ao buscar estatísticas de XP:', error)
       return null
     }
   },
@@ -185,7 +186,7 @@ export const rankingService = {
       if (error) throw error
       return data || []
     } catch (error) {
-      console.error('Erro ao buscar conquistas:', error)
+      logger.error('Erro ao buscar conquistas:', error)
       return []
     }
   },
@@ -205,7 +206,7 @@ export const rankingService = {
       if (error) throw error
       return data || []
     } catch (error) {
-      console.error('Erro ao buscar conquistas do usuário:', error)
+      logger.error('Erro ao buscar conquistas do usuário:', error)
       return []
     }
   },
@@ -283,7 +284,7 @@ export const rankingService = {
 
       return newAchievements
     } catch (error) {
-      console.error('Erro ao verificar conquistas:', error)
+      logger.error('Erro ao verificar conquistas:', error)
       return []
     }
   },

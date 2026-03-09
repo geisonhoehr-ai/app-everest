@@ -35,10 +35,12 @@ import {
   Filter,
   ChevronRight,
   Users,
+  Pencil,
 } from 'lucide-react'
 import {
   getCalendarEvents,
   createEvent,
+  updateEvent,
   deleteEvent,
   type CalendarEvent,
 } from '@/services/calendarService'
@@ -91,6 +93,7 @@ export default function AdminCalendarPage() {
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [filterClass, setFilterClass] = useState<string>('ALL')
   const [filterType, setFilterType] = useState<string>('ALL')
   const { toast } = useToast()
@@ -159,7 +162,35 @@ export default function AdminCalendarPage() {
     return counts
   }, [events])
 
-  const handleCreateEvent = async () => {
+  const handleEditEvent = (event: CalendarEvent) => {
+    const startDate = parseISO(event.start_time)
+    setEditingEventId(event.id)
+    setFormData({
+      title: event.title,
+      description: event.description || '',
+      date: format(startDate, 'yyyy-MM-dd'),
+      startTime: format(startDate, 'HH:mm'),
+      endTime: event.end_time ? format(parseISO(event.end_time), 'HH:mm') : '',
+      type: event.event_type || 'GENERAL',
+      classId: event.class_id || 'global',
+    })
+    setIsDialogOpen(true)
+  }
+
+  const resetForm = () => {
+    setEditingEventId(null)
+    setFormData({
+      title: '',
+      description: '',
+      date: format(new Date(), 'yyyy-MM-dd'),
+      startTime: '19:30',
+      endTime: '21:00',
+      type: 'LIVE_CLASS',
+      classId: 'global',
+    })
+  }
+
+  const handleSaveEvent = async () => {
     if (!formData.title.trim()) {
       toast({ title: 'Título obrigatório', variant: 'destructive' })
       return
@@ -171,29 +202,28 @@ export default function AdminCalendarPage() {
         ? new Date(`${formData.date}T${formData.endTime}:00`)
         : undefined
 
-      await createEvent({
+      const eventData = {
         title: formData.title,
         description: formData.description || undefined,
         start_time: startDateTime.toISOString(),
         end_time: endDateTime?.toISOString(),
         event_type: formData.type as any,
         class_id: formData.classId === 'global' ? null : formData.classId,
-      })
+      }
 
-      toast({ title: 'Evento criado com sucesso' })
+      if (editingEventId) {
+        await updateEvent(editingEventId, eventData)
+        toast({ title: 'Evento atualizado com sucesso' })
+      } else {
+        await createEvent(eventData)
+        toast({ title: 'Evento criado com sucesso' })
+      }
+
       setIsDialogOpen(false)
-      setFormData({
-        title: '',
-        description: '',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        startTime: '19:30',
-        endTime: '21:00',
-        type: 'LIVE_CLASS',
-        classId: 'global',
-      })
+      resetForm()
       loadData()
     } catch {
-      toast({ title: 'Erro ao criar evento', variant: 'destructive' })
+      toast({ title: editingEventId ? 'Erro ao atualizar evento' : 'Erro ao criar evento', variant: 'destructive' })
     } finally {
       setIsSubmitting(false)
     }
@@ -226,7 +256,10 @@ export default function AdminCalendarPage() {
             Gerencie mentorias, simulados e prazos por turma
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open)
+          if (!open) resetForm()
+        }}>
           <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -235,7 +268,7 @@ export default function AdminCalendarPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Novo Evento</DialogTitle>
+              <DialogTitle>{editingEventId ? 'Editar Evento' : 'Novo Evento'}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
@@ -329,9 +362,9 @@ export default function AdminCalendarPage() {
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateEvent} disabled={isSubmitting}>
+              <Button onClick={handleSaveEvent} disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Criar Evento
+                {editingEventId ? 'Salvar' : 'Criar Evento'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -473,14 +506,24 @@ export default function AdminCalendarPage() {
                             </div>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive shrink-0"
-                          onClick={() => handleDeleteEvent(event.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                            onClick={() => handleEditEvent(event)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive shrink-0"
+                            onClick={() => handleDeleteEvent(event.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )

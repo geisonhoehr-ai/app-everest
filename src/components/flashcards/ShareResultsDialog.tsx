@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 
 interface ShareResultsDialogProps {
   isOpen: boolean
@@ -94,7 +95,7 @@ export const ShareResultsDialog = ({
           url: shareUrl,
         })
       } catch (error) {
-        console.error('Erro ao compartilhar:', error)
+        logger.error('Erro ao compartilhar:', error)
         toast({
           title: 'Compartilhamento cancelado',
           description: 'Você pode usar as outras opções abaixo.',

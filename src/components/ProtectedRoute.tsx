@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { PageLoader } from '@/components/PageLoader'
 import type { UserProfile } from '@/contexts/auth-provider'
+import { logger } from '@/lib/logger'
 
 interface ProtectedRouteProps {
   allowedRoles: Array<UserProfile['role']>
@@ -36,7 +37,7 @@ export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps
   // At this point we have session, fetch was attempted, but profile is null
   // This means the profile fetch failed after retries
   if (!profile) {
-    console.warn('⚠️ Profile failed to load')
+    logger.warn('⚠️ Profile failed to load')
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
         <h2 className="text-2xl font-bold mb-2">Erro ao carregar perfil</h2>
@@ -63,7 +64,7 @@ export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps
 
   // Prevent infinite redirect loops
   if (location.pathname === fallbackPath) {
-    console.warn('⚠️ Infinite redirect loop detected in ProtectedRoute')
+    logger.warn('⚠️ Infinite redirect loop detected in ProtectedRoute')
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
         <h2 className="text-2xl font-bold mb-2">Acesso Negado</h2>

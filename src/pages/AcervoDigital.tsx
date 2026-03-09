@@ -22,6 +22,7 @@ import {
 import { SectionLoader } from '@/components/SectionLoader'
 import { cn } from '@/lib/utils'
 import { acervoService, type AcervoItem, type ProvaGroup } from '@/services/acervoService'
+import { logger } from '@/lib/logger'
 
 const CONCURSO_COLORS: Record<string, { bg: string; text: string; badge: string; border: string }> = {
   livros: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20' },
@@ -68,7 +69,7 @@ export default function AcervoDigitalPage() {
         setLivros(l)
         setProvas(p)
       } catch (err) {
-        console.error('Error loading acervo:', err)
+        logger.error('Error loading acervo:', err)
       } finally {
         setIsLoading(false)
       }

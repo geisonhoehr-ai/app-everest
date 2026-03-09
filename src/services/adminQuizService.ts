@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import type { Database, Json } from '@/lib/supabase/types'
+import { logger } from '@/lib/logger'
 
 export type AdminQuiz = Database['public']['Tables']['quizzes']['Row'] & {
   topics: { name: string } | null
@@ -11,6 +12,12 @@ export type AdminTopic = Database['public']['Tables']['topics']['Row']
 export type QuizInsert = Database['public']['Tables']['quizzes']['Insert']
 export type QuestionInsert =
   Database['public']['Tables']['quiz_questions']['Insert']
+
+// Aliases used by adminSimulationService re-exports
+export type QuizQuestion = Database['public']['Tables']['quiz_questions']['Row']
+export type QuizQuestionInsert = Database['public']['Tables']['quiz_questions']['Insert']
+export type QuizQuestionUpdate = Database['public']['Tables']['quiz_questions']['Update']
+export type ReadingTextUpdate = Database['public']['Tables']['quiz_reading_texts']['Update']
 
 export interface QuestionPerformance {
   question_id: string
@@ -60,7 +67,7 @@ export const getAdminQuizzes = async (): Promise<AdminQuiz[]> => {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching quizzes:', error)
+    logger.error('Error fetching quizzes:', error)
     throw error
   }
 
@@ -71,7 +78,7 @@ export const getTopics = async (): Promise<AdminTopic[]> => {
   const { data, error } = await supabase.from('topics').select('id, name')
 
   if (error) {
-    console.error('Error fetching topics:', error)
+    logger.error('Error fetching topics:', error)
     throw error
   }
   return data
@@ -100,7 +107,7 @@ export const getAllQuestions = async () => {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching questions:', error)
+    logger.error('Error fetching questions:', error)
     throw error
   }
   return data
@@ -116,7 +123,7 @@ export const createQuiz = async (
     .single()
 
   if (error) {
-    console.error('Error creating quiz:', error)
+    logger.error('Error creating quiz:', error)
     throw error
   }
   return data as AdminQuiz
@@ -136,7 +143,7 @@ export const getQuizById = async (quizId: string): Promise<AdminQuiz | null> => 
     .single()
 
   if (error) {
-    console.error('Error fetching quiz:', error)
+    logger.error('Error fetching quiz:', error)
     throw error
   }
 
@@ -155,7 +162,7 @@ export const updateQuiz = async (
     .single()
 
   if (error) {
-    console.error('Error updating quiz:', error)
+    logger.error('Error updating quiz:', error)
     throw error
   }
   return data as AdminQuiz
@@ -165,7 +172,7 @@ export const deleteQuiz = async (quizId: string): Promise<void> => {
   const { error } = await supabase.from('quizzes').delete().eq('id', quizId)
 
   if (error) {
-    console.error('Error deleting quiz:', error)
+    logger.error('Error deleting quiz:', error)
     throw error
   }
 }
@@ -175,7 +182,7 @@ export const bulkInsertQuestions = async (
 ): Promise<void> => {
   const { error } = await supabase.from('quiz_questions').insert(questions)
   if (error) {
-    console.error('Error bulk inserting questions:', error)
+    logger.error('Error bulk inserting questions:', error)
     throw error
   }
 }
@@ -190,7 +197,7 @@ export const updateQuestion = async (
     .eq('id', questionId)
 
   if (error) {
-    console.error('Error updating question:', error)
+    logger.error('Error updating question:', error)
     throw error
   }
 }
@@ -202,7 +209,7 @@ export const deleteQuestion = async (questionId: string): Promise<void> => {
     .eq('id', questionId)
 
   if (error) {
-    console.error('Error deleting question:', error)
+    logger.error('Error deleting question:', error)
     throw error
   }
 }
@@ -217,7 +224,7 @@ export const getQuizReport = async (
     .single()
 
   if (quizError || !quizData) {
-    console.error('Error fetching quiz details:', quizError)
+    logger.error('Error fetching quiz details:', quizError)
     return null
   }
 
@@ -236,7 +243,7 @@ export const getQuizReport = async (
     .eq('quiz_id', quizId)
 
   if (attemptsError) {
-    console.error('Error fetching quiz attempts:', attemptsError)
+    logger.error('Error fetching quiz attempts:', attemptsError)
     return null
   }
 
@@ -285,7 +292,7 @@ export const getQuizReport = async (
   )
 
   if (qpError) {
-    console.error('Error fetching question performance:', qpError)
+    logger.error('Error fetching question performance:', qpError)
   }
 
   return {
@@ -317,7 +324,7 @@ export const getAttemptDetails = async (
     .eq('quiz_attempt_id', attemptId)
 
   if (error) {
-    console.error('Error fetching attempt details:', error)
+    logger.error('Error fetching attempt details:', error)
     return null
   }
 
@@ -338,7 +345,24 @@ export const getQuizQuestions = async (quizId: string) => {
     .order('created_at', { ascending: true })
 
   if (error) {
-    console.error('Error fetching quiz questions:', error)
+    logger.error('Error fetching quiz questions:', error)
+    throw error
+  }
+  return data
+}
+
+// Aliases for adminSimulationService compatibility
+export const getQuestions = getQuizQuestions
+
+export const createQuestion = async (question: QuizQuestionInsert): Promise<QuizQuestion> => {
+  const { data, error } = await supabase
+    .from('quiz_questions')
+    .insert(question)
+    .select()
+    .single()
+
+  if (error) {
+    logger.error('Error creating question:', error)
     throw error
   }
   return data
@@ -363,7 +387,7 @@ export const getReadingTexts = async (quizId: string): Promise<ReadingText[]> =>
     .order('display_order', { ascending: true })
 
   if (error) {
-    console.error('Error fetching reading texts:', error)
+    logger.error('Error fetching reading texts:', error)
     throw error
   }
   return data
@@ -377,7 +401,7 @@ export const createReadingText = async (textData: ReadingTextInsert): Promise<Re
     .single()
 
   if (error) {
-    console.error('Error creating reading text:', error)
+    logger.error('Error creating reading text:', error)
     throw error
   }
   return data
@@ -395,7 +419,7 @@ export const updateReadingText = async (
     .single()
 
   if (error) {
-    console.error('Error updating reading text:', error)
+    logger.error('Error updating reading text:', error)
     throw error
   }
   return data
@@ -405,7 +429,7 @@ export const deleteReadingText = async (id: string): Promise<void> => {
   const { error } = await supabase.from('quiz_reading_texts').delete().eq('id', id)
 
   if (error) {
-    console.error('Error deleting reading text:', error)
+    logger.error('Error deleting reading text:', error)
     throw error
   }
 }
@@ -431,7 +455,7 @@ export const saveQuizQuestions = async (
       .in('id', infoToDelete)
 
     if (error) {
-      console.error('Error deleting questions:', error)
+      logger.error('Error deleting questions:', error)
       throw error
     }
   }

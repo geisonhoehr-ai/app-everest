@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import { Database } from '@/lib/supabase/types'
+import { logger } from '@/lib/logger'
 
 export type SubjectWithTopicCount =
   Database['public']['Tables']['subjects']['Row'] & {
@@ -109,7 +110,7 @@ export const getSubjectsWithProgress = async (userId: string | null): Promise<Su
     })
 
   } catch (error) {
-    console.error('Error in getSubjectsWithProgress:', error)
+    logger.error('Error in getSubjectsWithProgress:', error)
     return []
   }
 }

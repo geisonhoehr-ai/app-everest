@@ -3,6 +3,7 @@ import { useToast } from '@/hooks/use-toast'
 import { difyService } from '@/services/difyService'
 import { pandaVideoService } from '@/services/pandaVideoService'
 import { memberkitService } from '@/services/memberkitService'
+import { logger } from '@/lib/logger'
 
 interface IntegrationConfig {
   id: string
@@ -47,7 +48,7 @@ export function useIntegrations() {
         updateStats(integrationsList)
       }
     } catch (error) {
-      console.error('Erro ao carregar integrações:', error)
+      logger.error('Erro ao carregar integrações:', error)
     }
   }, [])
 

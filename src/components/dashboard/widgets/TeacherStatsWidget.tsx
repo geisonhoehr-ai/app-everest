@@ -10,6 +10,7 @@ import { memo, useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { dashboardService } from '@/services/dashboardService'
 import { useAuth } from '@/hooks/use-auth'
+import { logger } from '@/lib/logger'
 
 const TeacherStatsWidget = memo(() => {
   const { user } = useAuth()
@@ -28,7 +29,7 @@ const TeacherStatsWidget = memo(() => {
         const stats = await dashboardService.getTeacherStats(user.id)
         setTeacherStats(stats)
       } catch (error) {
-        console.error('Erro ao carregar estatísticas do professor:', error)
+        logger.error('Erro ao carregar estatísticas do professor:', error)
       } finally {
         setLoading(false)
       }

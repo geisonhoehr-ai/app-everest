@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { audioLessonService, type AudioLesson } from '@/services/audioLessonService'
 import { useToast } from '@/hooks/use-toast'
 import { SectionLoader } from '@/components/SectionLoader'
+import { logger } from '@/lib/logger'
 
 export default function AudioLessonPlayerPage() {
   const { audioId } = useParams<{ audioId: string }>()
@@ -58,7 +59,7 @@ export default function AudioLessonPlayerPage() {
         // Incrementar contador de reproduções
         await audioLessonService.incrementListens(audioId)
       } catch (error) {
-        console.error('Erro ao carregar aula de áudio:', error)
+        logger.error('Erro ao carregar aula de áudio:', error)
         toast({
           title: 'Erro ao carregar aula',
           description: 'Não foi possível carregar a aula de áudio.',

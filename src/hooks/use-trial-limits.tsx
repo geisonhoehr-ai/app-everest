@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/use-auth'
+import { logger } from '@/lib/logger'
 import {
   getUserTrialStatus,
   getTrialAllowedContent,
@@ -66,7 +67,7 @@ export const useTrialLimits = (): UseTrialLimitsReturn => {
       setTrialStatus(status)
       setAllowedContent(content)
     } catch (error) {
-      console.error('❌ Erro ao carregar dados trial:', error)
+      logger.error('❌ Erro ao carregar dados trial:', error)
     } finally {
       setLoading(false)
     }
