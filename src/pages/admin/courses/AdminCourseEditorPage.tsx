@@ -576,8 +576,18 @@ export default function AdminCourseEditorPage() {
           .eq('id', courseId!)
           .single()
 
-        if (courseError) throw courseError
-        setCourse(courseData)
+        if (courseError) {
+          // Fallback: column may not exist yet, retry without evercast_enabled
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('video_courses')
+            .select('id, name, description, thumbnail_url, is_active')
+            .eq('id', courseId!)
+            .single()
+          if (fallbackError) throw fallbackError
+          setCourse({ ...fallbackData, evercast_enabled: false })
+        } else {
+          setCourse({ ...courseData, evercast_enabled: courseData.evercast_enabled ?? false })
+        }
 
         // Fetch modules with lessons and attachments
         const { data: modulesData, error: modulesError } = await supabase
@@ -901,35 +911,31 @@ export default function AdminCourseEditorPage() {
       let savedCourseId = course.id
 
       // 1. Save or create course
+      const baseFields = {
+        name: course.name,
+        description: course.description || null,
+        thumbnail_url: course.thumbnail_url || null,
+        is_active: course.is_active,
+      }
+
       if (isNewCourse || !savedCourseId) {
-        const { data: newCourse, error } = await supabase
-          .from('video_courses')
-          .insert({
-            name: course.name,
-            description: course.description || null,
-            thumbnail_url: course.thumbnail_url || null,
-            is_active: course.is_active,
-            evercast_enabled: course.evercast_enabled,
-            created_by_user_id: user?.id,
-          })
-          .select('id')
-          .single()
-        if (error) throw error
-        savedCourseId = newCourse.id
+        const insertData = { ...baseFields, evercast_enabled: course.evercast_enabled, created_by_user_id: user?.id }
+        let result = await supabase.from('video_courses').insert(insertData).select('id').single()
+        if (result.error) {
+          // Fallback: evercast_enabled column may not exist yet
+          result = await supabase.from('video_courses').insert({ ...baseFields, created_by_user_id: user?.id }).select('id').single()
+          if (result.error) throw result.error
+        }
+        savedCourseId = result.data!.id
         setCourse(prev => ({ ...prev, id: savedCourseId }))
       } else {
-        const { error } = await supabase
-          .from('video_courses')
-          .update({
-            name: course.name,
-            description: course.description || null,
-            thumbnail_url: course.thumbnail_url || null,
-            is_active: course.is_active,
-            evercast_enabled: course.evercast_enabled,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', savedCourseId)
-        if (error) throw error
+        const updateData = { ...baseFields, evercast_enabled: course.evercast_enabled, updated_at: new Date().toISOString() }
+        let result = await supabase.from('video_courses').update(updateData).eq('id', savedCourseId)
+        if (result.error) {
+          // Fallback: evercast_enabled column may not exist yet
+          result = await supabase.from('video_courses').update({ ...baseFields, updated_at: new Date().toISOString() }).eq('id', savedCourseId)
+          if (result.error) throw result.error
+        }
       }
 
       // 2. Delete removed items

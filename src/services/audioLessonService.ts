@@ -261,7 +261,12 @@ export const audioLessonService = {
       }
 
       const { data: courses, error: coursesErr } = await query
-      if (coursesErr) throw coursesErr
+
+      // If evercast_enabled column doesn't exist yet, return empty
+      if (coursesErr) {
+        logger.error('Evercast query failed (column may not exist yet):', coursesErr)
+        return []
+      }
       if (!courses || courses.length === 0) return []
 
       // Get modules and lessons for these courses
