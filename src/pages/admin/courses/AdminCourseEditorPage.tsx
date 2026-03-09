@@ -95,6 +95,7 @@ interface CourseDetails {
   description: string
   thumbnail_url: string | null
   is_active: boolean
+  evercast_enabled: boolean
 }
 
 /* ------------------------------------------------------------------ */
@@ -537,6 +538,7 @@ export default function AdminCourseEditorPage() {
     description: '',
     thumbnail_url: null,
     is_active: false,
+    evercast_enabled: false,
   })
 
   // Modules & lessons
@@ -570,7 +572,7 @@ export default function AdminCourseEditorPage() {
         // Fetch course
         const { data: courseData, error: courseError } = await supabase
           .from('video_courses')
-          .select('id, name, description, thumbnail_url, is_active')
+          .select('id, name, description, thumbnail_url, is_active, evercast_enabled')
           .eq('id', courseId!)
           .single()
 
@@ -907,6 +909,7 @@ export default function AdminCourseEditorPage() {
             description: course.description || null,
             thumbnail_url: course.thumbnail_url || null,
             is_active: course.is_active,
+            evercast_enabled: course.evercast_enabled,
             created_by_user_id: user?.id,
           })
           .select('id')
@@ -922,6 +925,7 @@ export default function AdminCourseEditorPage() {
             description: course.description || null,
             thumbnail_url: course.thumbnail_url || null,
             is_active: course.is_active,
+            evercast_enabled: course.evercast_enabled,
             updated_at: new Date().toISOString(),
           })
           .eq('id', savedCourseId)
@@ -1159,6 +1163,15 @@ export default function AdminCourseEditorPage() {
                     />
                     <span className={course.is_active ? 'text-emerald-500 font-medium' : 'text-muted-foreground'}>
                       {course.is_active ? 'Publicado' : 'Rascunho'}
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Switch
+                      checked={course.evercast_enabled}
+                      onCheckedChange={(v) => updateCourseField('evercast_enabled', v)}
+                    />
+                    <span className={course.evercast_enabled ? 'text-purple-500 font-medium' : 'text-muted-foreground'}>
+                      {course.evercast_enabled ? 'Evercast ativo' : 'Evercast desativado'}
                     </span>
                   </label>
                 </div>

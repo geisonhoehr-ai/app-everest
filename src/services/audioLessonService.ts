@@ -22,6 +22,23 @@ export interface AudioModule {
   course_id: string
 }
 
+export interface EvercastCourse {
+  id: string
+  name: string
+  description: string | null
+  thumbnail_url: string | null
+  modules: EvercastModule[]
+  total_lessons: number
+  total_duration_minutes: number
+}
+
+export interface EvercastModule {
+  id: string
+  name: string
+  order_index: number
+  lessons: AudioLesson[]
+}
+
 export const audioLessonService = {
   // Buscar todas as audioaulas
   async getAudioLessons(): Promise<AudioLesson[]> {
@@ -205,5 +222,120 @@ export const audioLessonService = {
   async incrementListens(id: string): Promise<void> {
     // Placeholder as DB doesn't have it yet
     logger.debug('Increment listen', id)
-  }
+  },
+
+  async getEvercastCourses(userId: string, isAdmin?: boolean): Promise<EvercastCourse[]> {
+    try {
+      let courseIds: string[] | null = null
+
+      // Students need enrollment check
+      if (!isAdmin) {
+        const { data: userClasses, error: classesError } = await supabase
+          .from('student_classes')
+          .select('class_id')
+          .eq('user_id', userId)
+
+        if (classesError) throw classesError
+        const classIds = userClasses?.map(uc => uc.class_id) || []
+        if (classIds.length === 0) return []
+
+        const { data: classCourses, error: coursesError } = await supabase
+          .from('class_courses')
+          .select('course_id')
+          .in('class_id', classIds)
+
+        if (coursesError) throw coursesError
+        courseIds = [...new Set(classCourses?.map(cc => cc.course_id) || [])]
+        if (courseIds.length === 0) return []
+      }
+
+      // Get evercast-enabled courses
+      let query = supabase
+        .from('video_courses')
+        .select('id, name, description, thumbnail_url')
+        .eq('evercast_enabled', true)
+        .eq('is_active', true)
+
+      if (courseIds) {
+        query = query.in('id', courseIds)
+      }
+
+      const { data: courses, error: coursesErr } = await query
+      if (coursesErr) throw coursesErr
+      if (!courses || courses.length === 0) return []
+
+      // Get modules and lessons for these courses
+      const result: EvercastCourse[] = await Promise.all(
+        courses.map(async (course) => {
+          const { data: modules } = await supabase
+            .from('video_modules')
+            .select('id, name, order_index')
+            .eq('course_id', course.id)
+            .eq('is_active', true)
+            .order('order_index')
+
+          const moduleIds = modules?.map(m => m.id) || []
+          let lessons: any[] = []
+
+          if (moduleIds.length > 0) {
+            const { data: lessonData } = await supabase
+              .from('video_lessons')
+              .select('id, title, description, duration_seconds, module_id, order_index, video_source_id, video_source_type')
+              .in('module_id', moduleIds)
+              .eq('is_active', true)
+              .order('order_index')
+
+            lessons = lessonData || []
+          }
+
+          const evercastModules: EvercastModule[] = (modules || []).map(mod => ({
+            id: mod.id,
+            name: mod.name,
+            order_index: mod.order_index,
+            lessons: lessons
+              .filter(l => l.module_id === mod.id)
+              .map(l => ({
+                id: `video_${l.id}`,
+                title: l.title,
+                description: l.description || '',
+                series: course.name,
+                module_id: l.module_id,
+                duration_minutes: l.duration_seconds ? Math.round(l.duration_seconds / 60) : 0,
+                audio_url: l.video_source_id
+                  ? `https://b-vz-d0b3ae60-2ea.tv.pandavideo.com.br/${l.video_source_id}/playlist.m3u8`
+                  : undefined,
+                audio_source_type: 'panda_video_hls' as const,
+                thumbnail_url: course.thumbnail_url || undefined,
+                created_at: undefined,
+              }))
+          }))
+
+          const totalLessons = lessons.length
+          const totalDuration = lessons.reduce((sum: number, l: any) => sum + (l.duration_seconds || 0), 0)
+
+          return {
+            id: course.id,
+            name: course.name,
+            description: course.description,
+            thumbnail_url: course.thumbnail_url,
+            modules: evercastModules,
+            total_lessons: totalLessons,
+            total_duration_minutes: Math.round(totalDuration / 60),
+          }
+        })
+      )
+
+      return result
+    } catch (error) {
+      logger.error('Error fetching evercast courses:', error)
+      return []
+    }
+  },
+
+  async getEvercastCourseFlatLessons(userId: string, isAdmin?: boolean): Promise<AudioLesson[]> {
+    const courses = await this.getEvercastCourses(userId, isAdmin)
+    return courses.flatMap(course =>
+      course.modules.flatMap(mod => mod.lessons)
+    )
+  },
 }

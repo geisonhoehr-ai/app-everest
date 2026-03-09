@@ -3,15 +3,13 @@ import {
   Search,
   Play,
   Clock,
-  Mic,
   Headphones,
-  Volume2,
-  Calendar,
   MoreHorizontal,
   Pause,
-  ListMusic,
-  Lock
+  Lock,
+  Disc3,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MagicLayout } from '@/components/ui/magic-layout'
@@ -36,21 +34,23 @@ import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { SectionLoader } from '@/components/SectionLoader'
-import { audioLessonService, type AudioLesson } from '@/services/audioLessonService'
+import { audioLessonService, type AudioLesson, type EvercastCourse } from '@/services/audioLessonService'
 import { AudioPlayer } from '@/components/AudioPlayer'
 
 export default function EvercastPage() {
-  const { isStudent } = useAuth()
+  const { isStudent, user } = useAuth()
+  const navigate = useNavigate()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [audioLessons, setAudioLessons] = useState<AudioLesson[]>([])
   const [filteredLessons, setFilteredLessons] = useState<AudioLesson[]>([])
+  const [evercastCourses, setEvercastCourses] = useState<EvercastCourse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [currentTrack, setCurrentTrack] = useState<AudioLesson | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     loadAudioLessons()
-  }, [])
+  }, [user])
 
   useEffect(() => {
     if (searchTerm) {
@@ -68,9 +68,18 @@ export default function EvercastPage() {
   const loadAudioLessons = async () => {
     try {
       setIsLoading(true)
-      const lessons = await audioLessonService.getAudioLessons()
-      setAudioLessons(lessons)
-      setFilteredLessons(lessons)
+      const [lessons, courseLessons] = await Promise.all([
+        audioLessonService.getAudioLessons(),
+        user ? audioLessonService.getEvercastCourseFlatLessons(user.id, !isStudent) : Promise.resolve([]),
+      ])
+      const allLessons = [...lessons, ...courseLessons]
+      setAudioLessons(allLessons)
+      setFilteredLessons(allLessons)
+
+      if (user) {
+        const courses = await audioLessonService.getEvercastCourses(user.id, !isStudent)
+        setEvercastCourses(courses)
+      }
     } catch (error) {
       console.error('Error loading audio lessons:', error)
     } finally {
@@ -162,6 +171,51 @@ export default function EvercastPage() {
             />
           </div>
         </div>
+
+        {/* Course Albums */}
+        {evercastCourses.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Cursos em Audio</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {evercastCourses.map(course => (
+                <div
+                  key={course.id}
+                  className="group cursor-pointer"
+                  onClick={() => navigate(`/evercast/curso/${course.id}`)}
+                >
+                  <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-3 shadow-lg">
+                    {course.thumbnail_url ? (
+                      <img
+                        src={course.thumbnail_url}
+                        alt={course.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary to-purple-700 flex items-center justify-center">
+                        <Disc3 className="w-16 h-16 text-white/80" />
+                      </div>
+                    )}
+                    <Button
+                      size="icon"
+                      className="absolute bottom-2 right-2 rounded-full w-12 h-12 bg-green-500 hover:bg-green-600 text-black shadow-lg opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const firstLesson = course.modules[0]?.lessons[0]
+                        if (firstLesson) handlePlay(firstLesson)
+                      }}
+                    >
+                      <Play className="h-5 w-5 ml-0.5 fill-black" />
+                    </Button>
+                  </div>
+                  <p className="font-medium text-sm truncate">{course.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {course.total_lessons} aulas · {Math.floor(course.total_duration_minutes / 60)}h {course.total_duration_minutes % 60}min
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tracks List */}
         <div className="rounded-md border-none">

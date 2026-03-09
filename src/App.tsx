@@ -57,6 +57,7 @@ const FlashcardSessionResultPage = lazy(
 const QuizzesPage = lazy(() => import('@/pages/Quizzes'))
 const QuizTopicsPage = lazy(() => import('@/pages/QuizTopics'))
 const EvercastPage = lazy(() => import('@/pages/Evercast'))
+const EvercastAlbumPage = lazy(() => import('@/pages/EvercastAlbumPage'))
 const QuestionBankPage = lazy(() => import('@/pages/QuestionBank'))
 const AcervoDigitalPage = lazy(() => import('@/pages/AcervoDigital'))
 const MyFlashcardSetsPage = lazy(() => import('@/pages/MyFlashcardSets'))
@@ -321,6 +322,10 @@ const App = () => (
                     element={<QuizResultSummaryPage />}
                   />
                   <Route path="/evercast" element={<EvercastPage />} />
+                  <Route
+                    path="/evercast/curso/:courseId"
+                    element={<EvercastAlbumPage />}
+                  />
                   <Route
                     path="/evercast/:audioId"
                     element={<AudioLessonPlayerPage />}

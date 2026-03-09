@@ -2157,6 +2157,7 @@ export type Database = {
           created_at: string
           created_by_user_id: string
           description: string | null
+          evercast_enabled: boolean
           id: string
           is_active: boolean | null
           name: string
@@ -2167,6 +2168,7 @@ export type Database = {
           created_at?: string
           created_by_user_id: string
           description?: string | null
+          evercast_enabled?: boolean
           id?: string
           is_active?: boolean | null
           name: string
@@ -2177,6 +2179,7 @@ export type Database = {
           created_at?: string
           created_by_user_id?: string
           description?: string | null
+          evercast_enabled?: boolean
           id?: string
           is_active?: boolean | null
           name?: string
