@@ -80,6 +80,19 @@ export default function EvercastAlbumPage() {
       showHeader={false}
       className={cn("pb-32", currentTrack ? "mb-20" : "")}
     >
+      {/* Back button */}
+      <div className="mb-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/evercast')}
+          className="gap-1 text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Voltar ao Evercast
+        </Button>
+      </div>
+
       {/* Album Header — full bleed over container padding */}
       <div className="-mx-6 flex flex-col items-center md:flex-row md:items-end gap-6 md:gap-8 p-6 md:p-8 bg-gradient-to-b from-emerald-900/30 via-cyan-900/10 to-background/0">
         <div className="w-44 h-44 md:w-52 md:h-52 shadow-2xl rounded-md overflow-hidden shrink-0">
@@ -108,24 +121,16 @@ export default function EvercastAlbumPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-6">
-        {/* Controls */}
+        {/* Play All */}
         <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/evercast')}
-            className="gap-1"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Voltar
-          </Button>
-          <Button
             size="lg"
-            className="rounded-full w-14 h-14 bg-green-500 hover:bg-green-600 text-black shadow-lg hover:scale-105 transition-transform"
+            className="rounded-full w-14 h-14 bg-emerald-500 hover:bg-emerald-600 text-black shadow-lg hover:scale-105 transition-transform"
             onClick={handlePlayAll}
           >
             <Play className="h-6 w-6 ml-1 fill-black" />
           </Button>
+          <span className="text-sm text-muted-foreground">Reproduzir tudo</span>
         </div>
 
         {/* Modules Accordion */}
