@@ -15,6 +15,7 @@ import {
   SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
 import {
@@ -43,6 +44,7 @@ import {
   Plug,
   Search,
   Bell,
+  Tooltip,
 } from 'lucide-react'
 
 // Student menu: grouped structure
@@ -217,25 +219,6 @@ const adminMenuItems = [
         badge: null,
         adminOnly: true
       },
-    ]
-  },
-  {
-    group: 'Sistema',
-    items: [
-      {
-        href: '/admin/system-control',
-        label: 'Controle Total',
-        icon: Shield,
-        badge: null,
-        adminOnly: true
-      },
-      {
-        href: '/admin/integrations',
-        label: 'Integrações',
-        icon: Plug,
-        badge: null,
-        adminOnly: true
-      },
       {
         href: '/admin/settings',
         label: 'Configurações',
@@ -246,11 +229,25 @@ const adminMenuItems = [
   }
 ]
 
+// Dark navy sidebar CSS variables — used for both admin and student in light mode
+const darkNavySidebarStyle = {
+  '--sidebar-background': '234 25% 18%',
+  '--sidebar-foreground': '0 0% 95%',
+  '--sidebar-accent': '234 25% 24%',
+  '--sidebar-accent-foreground': '0 0% 100%',
+  '--sidebar-border': '234 20% 26%',
+  '--sidebar-primary': '25 95% 53%',
+  '--sidebar-primary-foreground': '0 0% 100%',
+  '--sidebar-ring': '25 95% 53%',
+} as React.CSSProperties
+
 export function UnifiedSidebar() {
   const { profile, signOut } = useAuth()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const location = useLocation()
   const navigate = useNavigate()
+  const { state } = useSidebar()
+  const isCollapsed = state === 'collapsed'
 
   if (!profile) return null
 
@@ -283,138 +280,87 @@ export function UnifiedSidebar() {
   const visibleAdminMenuItems = adminMenuItems.map(group => ({
     ...group,
     items: group.items.filter(item => {
-      // Se tem adminOnly e o usuário é professor (não admin), não mostra
       if (item.adminOnly && !isAdministrator) return false
       return true
     })
-  })).filter(group => group.items.length > 0) // Remove grupos vazios
+  })).filter(group => group.items.length > 0)
 
-  // Admin uses dark sidebar — override CSS variables so Shadcn's built-in
-  // bg-sidebar / text-sidebar-foreground / accent classes all resolve to dark theme values
-  const adminSidebarStyle = isAdmin
-    ? {
-        '--sidebar-background': '234 25% 18%',         // slightly lighter navy
-        '--sidebar-foreground': '0 0% 95%',             // near-white
-        '--sidebar-accent': '234 25% 24%',              // lighter navy for hover/active
-        '--sidebar-accent-foreground': '0 0% 100%',     // pure white
-        '--sidebar-border': '234 20% 26%',              // subtle border
-        '--sidebar-primary': '25 95% 53%',              // brand orange
-        '--sidebar-primary-foreground': '0 0% 100%',
-        '--sidebar-ring': '25 95% 53%',
-      } as React.CSSProperties
-    : undefined
-
-  const adminSidebarClasses = isAdmin
-    ? "border-r-0"
-    : "border-r border-border/50 bg-card/50 backdrop-blur-sm"
+  // Render a menu group (shared between admin and student)
+  const renderMenuGroup = (
+    group: { group: string; items: any[] },
+    groupIndex: number,
+    isActiveCheck: (href: string) => boolean,
+  ) => (
+    <SidebarGroup key={groupIndex} className="py-1">
+      {group.group && (
+        <SidebarGroupLabel className="text-[10px] font-semibold !text-white/60 uppercase tracking-[0.1em] px-3 mb-1">
+          {group.group}
+        </SidebarGroupLabel>
+      )}
+      <SidebarMenu>
+        {group.items.map((item: any) => {
+          const isActive = isActiveCheck(item.href)
+          return (
+            <SidebarMenuItem key={item.href}>
+              <SidebarMenuButton
+                asChild
+                isActive={isActive}
+                tooltip={item.label}
+                className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 text-white/80 hover:!text-white data-[active=true]:!text-white"
+              >
+                <Link to={item.href}>
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span>{item.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  )
 
   return (
-    <Sidebar className={adminSidebarClasses} style={adminSidebarStyle}>
-      <SidebarHeader className="p-5 pb-4">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg",
-            isAdmin ? "bg-primary" : "bg-gradient-to-br from-primary to-primary/80"
-          )}>
+    <Sidebar collapsible="icon" className="border-r-0" style={darkNavySidebarStyle}>
+      <SidebarHeader className={cn("p-5 pb-4", isCollapsed && "p-2 pb-2")}>
+        <div className={cn("flex items-center gap-3", isCollapsed && "justify-center")}>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shrink-0">
             <Mountain className="h-5 w-5 text-white" />
           </div>
-          <div className="flex flex-col">
-            <h1 className={cn(
-              "text-base font-bold",
-              isAdmin ? "text-sidebar-foreground" : "text-foreground"
-            )}>
-              Everest
-            </h1>
-            <p className={cn(
-              "text-[11px]",
-              isAdmin ? "text-sidebar-foreground/50" : "text-muted-foreground"
-            )}>
-              {isAdmin ? 'Admin' : 'Plataforma de Estudos'}
-            </p>
-          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col">
+              <h1 className="text-base font-bold text-sidebar-foreground">
+                Everest
+              </h1>
+              <p className="text-[11px] text-sidebar-foreground/50">
+                {isAdmin ? 'Admin' : 'Plataforma de Estudos'}
+              </p>
+            </div>
+          )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3">
+      <SidebarContent className={cn("px-3", isCollapsed && "px-1.5")}>
         {isAdmin ? (
-          // Admin/Teacher Menu - Professional dark sidebar
           <>
-            {visibleAdminMenuItems.map((group, groupIndex) => (
-              <SidebarGroup key={groupIndex} className="py-1">
-                {group.group && (
-                  <SidebarGroupLabel className="text-[10px] font-semibold !text-white/60 uppercase tracking-[0.1em] px-3 mb-1">
-                    {group.group}
-                  </SidebarGroupLabel>
-                )}
-                <SidebarMenu>
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.href ||
-                      (item.href !== '/admin' && location.pathname.startsWith(item.href))
-                    return (
-                      <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 text-white/80 hover:!text-white data-[active=true]:!text-white"
-                        >
-                          <Link to={item.href}>
-                            <item.icon className="h-4 w-4 shrink-0" />
-                            <span>{item.label}</span>
-                            {item.badge && (
-                              <Badge variant="secondary" className="ml-auto text-[10px] bg-sidebar-accent text-sidebar-foreground/70 border-0">
-                                {item.badge}
-                              </Badge>
-                            )}
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )
-                  })}
-                </SidebarMenu>
-              </SidebarGroup>
-            ))}
+            {visibleAdminMenuItems.map((group, i) =>
+              renderMenuGroup(group, i, (href) =>
+                href === '/admin'
+                  ? location.pathname === href
+                  : location.pathname.startsWith(href)
+              )
+            )}
           </>
         ) : (
-          // Student Menu - Grouped structure
           <>
-            {visibleStudentGroups.map((group, groupIndex) => (
-              <SidebarGroup key={groupIndex} className="py-1">
-                {group.group && (
-                  <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-[0.1em] px-3 mb-1">
-                    {group.group}
-                  </SidebarGroupLabel>
-                )}
-                <SidebarMenu>
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.href
-                    return (
-                      <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          className={cn(
-                            "w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                            isActive
-                              ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25"
-                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                          )}
-                        >
-                          <Link to={item.href}>
-                            <item.icon className="h-4 w-4" />
-                            <span>{item.label}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )
-                  })}
-                </SidebarMenu>
-              </SidebarGroup>
-            ))}
+            {visibleStudentGroups.map((group, i) =>
+              renderMenuGroup(group, i, (href) => location.pathname === href)
+            )}
           </>
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-3 space-y-2">
+      <SidebarFooter className={cn("p-3 space-y-2", isCollapsed && "p-1.5")}>
         {/* Student footer nav items */}
         {!isAdmin && visibleStudentFooter.length > 0 && (
           <SidebarMenu>
@@ -425,15 +371,11 @@ export function UnifiedSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={isActive}
-                    className={cn(
-                      "w-full justify-start gap-3 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-200",
-                      isActive
-                        ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25"
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                    )}
+                    tooltip={item.label}
+                    className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 text-white/80 hover:!text-white data-[active=true]:!text-white"
                   >
                     <Link to={item.href}>
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4 shrink-0" />
                       <span>{item.label}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -444,41 +386,35 @@ export function UnifiedSidebar() {
         )}
         <div className={cn(
           "flex items-center gap-3 rounded-lg p-3",
-          isAdmin ? "bg-sidebar-accent" : "bg-muted/50"
+          "bg-sidebar-accent",
+          isCollapsed && "p-2 justify-center"
         )}>
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-8 w-8 shrink-0">
             <AvatarImage src={profile.avatar_url} alt={profile.first_name} />
             <AvatarFallback className="text-xs font-semibold bg-primary/20 text-primary">
               {profile.first_name?.[0]}{profile.last_name?.[0]}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className={cn(
-              "text-xs font-medium truncate",
-              isAdmin ? "text-sidebar-foreground/90" : "text-foreground"
-            )}>
-              {profile.first_name} {profile.last_name}
-            </p>
-            <p className={cn(
-              "text-[10px]",
-              isAdmin ? "text-sidebar-foreground/40" : "text-muted-foreground"
-            )}>
-              {profile.role === 'administrator' ? 'Administrador' :
-                profile.role === 'teacher' ? 'Professor' : 'Estudante'}
-            </p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className={cn(
-              "p-1.5 rounded-md transition-colors shrink-0",
-              isAdmin
-                ? "text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                : "text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
-            )}
-            title="Sair da conta"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          {!isCollapsed && (
+            <>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate text-sidebar-foreground/90">
+                  {profile.first_name} {profile.last_name}
+                </p>
+                <p className="text-[10px] text-sidebar-foreground/40">
+                  {profile.role === 'administrator' ? 'Administrador' :
+                    profile.role === 'teacher' ? 'Professor' : 'Estudante'}
+                </p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 rounded-md transition-colors shrink-0 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                title="Sair da conta"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </>
+          )}
         </div>
       </SidebarFooter>
     </Sidebar>
