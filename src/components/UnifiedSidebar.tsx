@@ -278,7 +278,7 @@ export function UnifiedSidebar() {
                         <SidebarMenuSubButton
                           asChild
                           isActive={isActive}
-                          className="text-white/70 hover:!text-white data-[active=true]:!text-white data-[active=true]:!bg-sidebar-accent"
+                          className="text-[13px] h-8 text-white/70 hover:!text-white data-[active=true]:!text-white data-[active=true]:!bg-sidebar-accent"
                         >
                           <Link to={item.href}>
                             <span>{item.label}</span>

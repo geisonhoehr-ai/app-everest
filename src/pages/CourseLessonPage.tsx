@@ -226,166 +226,172 @@ export default function CourseLessonPage() {
   const videoEmbedUrl = getVideoEmbedUrl()
 
   return (
-    <div className="space-y-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="space-y-0">
+      <div className="max-w-[1600px] mx-auto">
+        {/* Top Bar */}
+        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/courses/${courseId}`)}
+              className="hover:bg-accent"
+            >
+              <ChevronLeft className="mr-1.5 h-4 w-4" />
+              Voltar
+            </Button>
+            <div className="h-5 w-px bg-border" />
+            <div className="flex items-center gap-2 min-w-0">
+              <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+                {courseData.name}
+              </span>
+            </div>
+          </div>
+
           <Button
-            variant="outline"
-            onClick={() => navigate(`/courses/${courseId}`)}
-          >
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Voltar ao Curso
-          </Button>
-          <Button
+            size="sm"
             onClick={handleMarkAsComplete}
             disabled={lessonData.completed}
+            variant={lessonData.completed ? "outline" : "default"}
             className={cn(
-              lessonData.completed && "opacity-50 cursor-not-allowed"
+              "transition-all duration-200",
+              lessonData.completed
+                ? "text-green-600 border-green-200 dark:border-green-800 dark:text-green-400 cursor-default"
+                : "hover:shadow-md"
             )}
           >
-            <CheckCircle className="mr-2 h-4 w-4" />
-            {lessonData.completed ? 'Aula Concluída' : 'Marcar como Concluída'}
+            <CheckCircle className="mr-1.5 h-4 w-4" />
+            {lessonData.completed ? 'Concluída' : 'Marcar como Concluída'}
           </Button>
         </div>
 
-        {/* Lesson Info Card */}
-        <Card className="border-border shadow-sm">
-          <CardContent className="pt-6">
-            <div className="flex items-start justify-between flex-wrap gap-4">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-primary/10">
-                    <Play className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold text-foreground">
-                      {lessonData.title}
-                    </h1>
-                    <div className="flex items-center gap-4 mt-2 flex-wrap">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm">{formatDuration(lessonData.duration_seconds)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <BookOpen className="h-4 w-4" />
-                        <span className="text-sm">{courseData.name}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Main Content with Sidebar */}
-        <ResizablePanelGroup direction="horizontal" className="min-h-[600px] gap-4">
+        <ResizablePanelGroup direction="horizontal" className="min-h-[calc(100vh-120px)]">
           {/* Sidebar */}
-          <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
-            <Card className="border-border shadow-sm h-full overflow-hidden">
-              <CardContent className="p-0 h-full">
-                <CourseSidebarContent
-                  courseId={courseId!}
-                  modules={courseData.modules}
-                  currentLessonId={lessonId}
-                />
-              </CardContent>
-            </Card>
+          <ResizablePanel defaultSize={22} minSize={18} maxSize={32}>
+            <div className="h-full border-r border-border bg-card">
+              <CourseSidebarContent
+                courseId={courseId!}
+                modules={courseData.modules}
+                currentLessonId={lessonId}
+              />
+            </div>
           </ResizablePanel>
 
-          <ResizableHandle withHandle className="bg-border hover:bg-primary/50 transition-colors" />
+          <ResizableHandle withHandle className="bg-transparent hover:bg-primary/20 transition-colors data-[resize-handle-active]:bg-primary/30" />
 
           {/* Video and Details */}
-          <ResizablePanel defaultSize={pdfAttachment ? 50 : 75}>
-            <div className="flex flex-col h-full gap-6">
+          <ResizablePanel defaultSize={pdfAttachment ? 53 : 78}>
+            <div className="flex flex-col h-full">
               {/* Video Player */}
               {videoEmbedUrl && (
-                <Card className="border-border shadow-sm overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="aspect-video rounded-2xl overflow-hidden bg-black">
-                      <iframe
-                        src={videoEmbedUrl}
-                        title="Video player"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="w-full h-full"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="bg-black">
+                  <div className="aspect-video max-h-[65vh] mx-auto">
+                    <iframe
+                      src={videoEmbedUrl}
+                      title="Video player"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full"
+                    />
+                  </div>
+                </div>
               )}
 
-              {/* Lesson Details */}
-              <Card className="border-border shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-xl font-bold mb-2">Sobre esta aula</h2>
-                      <p className="text-muted-foreground">{lessonData.description || 'Sem descrição disponível.'}</p>
-                    </div>
-
-                    {attachments.length > 0 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold flex items-center gap-2">
-                          <FileText className="h-5 w-5 text-primary" />
-                          Materiais de Apoio
-                        </h3>
-                        <div className="grid gap-3">
-                          {attachments.map((att) => (
-                            <div
-                              key={att.id}
-                              className="group flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border hover:border-primary/30 transition-all duration-200 hover:shadow-md"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-primary/10">
-                                  <Download className="h-4 w-4 text-primary" />
-                                </div>
-                                <div>
-                                  <span className="font-medium">{att.name || 'Arquivo'}</span>
-                                  <div className="text-sm text-muted-foreground">
-                                    {att.file_type || 'Material de apoio'}
-                                  </div>
-                                </div>
-                              </div>
-                              <Button
-                                variant="outline"
-                                asChild
-                              >
-                                <a href={att.file_url} download target="_blank" rel="noopener noreferrer">
-                                  <Download className="mr-2 h-4 w-4" />
-                                  Baixar
-                                </a>
-                              </Button>
-                            </div>
-                          ))}
+              {/* Lesson Details - below video */}
+              <div className="flex-1 bg-background">
+                <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
+                  {/* Title and meta */}
+                  <div>
+                    <h1 className="text-xl font-bold text-foreground">
+                      {lessonData.title}
+                    </h1>
+                    <div className="flex items-center gap-4 mt-2">
+                      {lessonData.duration_seconds && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span className="text-sm">{formatDuration(lessonData.duration_seconds)}</span>
                         </div>
-                      </div>
-                    )}
+                      )}
+                      {lessonData.completed && (
+                        <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          <span className="text-sm font-medium">Concluída</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+
+                  {/* Description */}
+                  {lessonData.description && (
+                    <div className="rounded-xl border border-border bg-card p-5">
+                      <h2 className="text-sm font-semibold text-foreground mb-2">Sobre esta aula</h2>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {lessonData.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Attachments */}
+                  {attachments.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                        <FileText className="h-4 w-4 text-primary" />
+                        Materiais de Apoio
+                      </h3>
+                      <div className="grid gap-2">
+                        {attachments.map((att) => (
+                          <div
+                            key={att.id}
+                            className="group flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:border-primary/30 hover:shadow-sm transition-all duration-200"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors">
+                                <Download className="h-4 w-4 text-primary" />
+                              </div>
+                              <div className="min-w-0">
+                                <span className="text-sm font-medium truncate block">{att.name || 'Arquivo'}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {att.file_type || 'Material de apoio'}
+                                </span>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              asChild
+                              className="shrink-0 hover:bg-primary/10 hover:text-primary"
+                            >
+                              <a href={att.file_url} download target="_blank" rel="noopener noreferrer">
+                                <Download className="mr-1.5 h-3.5 w-3.5" />
+                                Baixar
+                              </a>
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </ResizablePanel>
 
           {/* PDF Viewer (if available) */}
           {pdfAttachment && (
             <>
-              <ResizableHandle withHandle className="bg-border hover:bg-primary/50 transition-colors" />
+              <ResizableHandle withHandle className="bg-transparent hover:bg-primary/20 transition-colors data-[resize-handle-active]:bg-primary/30" />
               <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-                <Card className="border-border shadow-sm h-full overflow-hidden">
-                  <CardContent className="p-0 h-full">
-                    <div className="h-full">
-                      <div className="flex items-center gap-2 p-4 border-b border-border">
-                        <FileText className="h-5 w-5 text-primary" />
-                        <span className="font-semibold">Material de Apoio</span>
-                      </div>
-                      <div className="h-[calc(100%-60px)]">
-                        <PdfViewer fileUrl={pdfAttachment.file_url} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="h-full border-l border-border bg-card">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold">Material de Apoio</span>
+                  </div>
+                  <div className="h-[calc(100%-49px)]">
+                    <PdfViewer fileUrl={pdfAttachment.file_url} />
+                  </div>
+                </div>
               </ResizablePanel>
             </>
           )}
