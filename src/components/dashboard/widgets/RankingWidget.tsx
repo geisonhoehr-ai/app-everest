@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-provider'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -71,13 +71,13 @@ function RankingWidget({ className }: RankingWidgetProps) {
 
   if (isLoading) {
     return (
-      <MagicCard variant="glass" className={cn("p-6", className)}>
+      <Card className={cn("border-border shadow-sm", className)}><CardContent className="p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-4 bg-muted/50 rounded w-1/3"></div>
           <div className="h-8 bg-muted/50 rounded w-1/2"></div>
           <div className="h-2 bg-muted/50 rounded"></div>
         </div>
-      </MagicCard>
+      </CardContent></Card>
     )
   }
 
@@ -107,7 +107,7 @@ function RankingWidget({ className }: RankingWidgetProps) {
   }
 
   return (
-    <MagicCard variant="glass" className={cn("p-6", className)}>
+    <Card className={cn("border-border shadow-sm", className)}><CardContent className="p-6">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -279,7 +279,7 @@ function RankingWidget({ className }: RankingWidgetProps) {
           </Link>
         </div>
       </div>
-    </MagicCard>
+    </CardContent></Card>
   )
 }
 

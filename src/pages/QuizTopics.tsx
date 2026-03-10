@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { MagicCard } from '@/components/ui/magic-card'
-import { MagicLayout } from '@/components/ui/magic-layout'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Play, Target, BookOpen, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -82,9 +81,10 @@ export default function QuizTopicsPage() {
     logger.debug(`Topics: ${topics.length}, HasQuizzes: ${hasQuizzes}`)
 
     return (
-      <MagicLayout title={subjectName || 'Matéria'}>
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">{subjectName || 'Matéria'}</h1>
         <div className="text-center py-12">
-          <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-primary/10 flex items-center justify-center">
             <BookOpen className="w-10 h-10 text-primary" />
           </div>
           <h2 className="text-2xl font-bold mb-4">Nenhum quiz disponível</h2>
@@ -96,15 +96,15 @@ export default function QuizTopicsPage() {
             Voltar para Matérias
           </Button>
         </div>
-      </MagicLayout>
+      </div>
     )
   }
 
   return (
-    <MagicLayout
-      title={subjectName}
-      description="Selecione um tópico para ver os quizzes disponíveis"
-    >
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-foreground">{subjectName}</h1>
+      <p className="text-muted-foreground">Selecione um tópico para ver os quizzes disponíveis</p>
+
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Back Button */}
         <div>
@@ -126,18 +126,9 @@ export default function QuizTopicsPage() {
             const totalQuizzes = topic.quizzes.length
 
             return (
-              <MagicCard
+              <Card
                 key={topic.id}
-                variant="premium"
-                size="lg"
-                className="flex flex-col overflow-hidden transition-colors duration-300 hover:scale-[1.02] hover:shadow-2xl h-full"
-                led
-                ledColor={
-                  index % 4 === 0 ? 'cyan' :
-                    index % 4 === 1 ? 'purple' :
-                      index % 4 === 2 ? 'orange' :
-                        'green'
-                }
+                className="border-border shadow-sm flex flex-col overflow-hidden transition-colors duration-300 hover:shadow-md h-full"
               >
                 {/* Image Header */}
                 <div className="relative h-32 sm:h-36 overflow-hidden">
@@ -208,7 +199,7 @@ export default function QuizTopicsPage() {
 
                   {/* Action Button */}
                   {totalQuizzes > 0 ? (
-                    <Button asChild className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/20">
+                    <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md">
                       <Link to={`/quiz/${topic.quizzes[0].id}`}>
                         <Play className="h-3.5 w-3.5 mr-2" />
                         Iniciar Agora
@@ -220,11 +211,11 @@ export default function QuizTopicsPage() {
                     </Button>
                   )}
                 </div>
-              </MagicCard>
+              </Card>
             )
           })}
         </div>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

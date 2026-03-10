@@ -1,8 +1,8 @@
+import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Sidebar,
@@ -12,64 +12,74 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarGroup,
   SidebarGroupLabel,
   useSidebar,
 } from '@/components/ui/sidebar'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
   BookOpen,
   Calendar,
   Users,
-  Radio,
   FileText,
   ClipboardCheck,
   Settings,
   LogOut,
-  Mountain,
   Archive,
   Brain,
   Target,
   Mic,
   MessageSquare,
   BarChart3,
-  Shield,
   GraduationCap,
   Award,
   TrendingUp,
   Trophy,
   Lock,
-  Plug,
   Search,
   Bell,
-  Tooltip,
+  ChevronRight,
 } from 'lucide-react'
 
-// Student menu: grouped structure
-// featureKey null = always visible, otherwise controlled by class permissions
-type StudentMenuItem = {
+// ─── Menu structure types ─────────────────────────────────────────────────────
+
+type MenuItem = {
   label: string
   href: string
   icon: any
-  featureKey: string | null
+  featureKey?: string | null
+  adminOnly?: boolean
 }
 
-type StudentMenuGroup = {
+type MenuGroup = {
   group: string
-  items: StudentMenuItem[]
+  icon?: any           // icon for collapsible trigger
+  collapsible?: boolean
+  items: MenuItem[]
 }
 
-const studentMenuGroups: StudentMenuGroup[] = [
+// ─── Student menu ─────────────────────────────────────────────────────────────
+
+const studentMenuGroups: MenuGroup[] = [
   {
     group: '',
     items: [
-      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, featureKey: null },
+      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     ],
   },
   {
     group: 'Estudos',
+    icon: BookOpen,
+    collapsible: true,
     items: [
       { label: 'Meus Cursos', href: '/courses', icon: BookOpen, featureKey: FEATURE_KEYS.VIDEO_LESSONS },
       { label: 'Flashcards', href: '/flashcards', icon: Brain, featureKey: FEATURE_KEYS.FLASHCARDS },
@@ -78,6 +88,8 @@ const studentMenuGroups: StudentMenuGroup[] = [
   },
   {
     group: 'Avaliações',
+    icon: ClipboardCheck,
+    collapsible: true,
     items: [
       { label: 'Simulados', href: '/simulados', icon: ClipboardCheck, featureKey: FEATURE_KEYS.QUIZ },
       { label: 'Redações', href: '/redacoes', icon: FileText, featureKey: FEATURE_KEYS.ESSAYS },
@@ -85,151 +97,94 @@ const studentMenuGroups: StudentMenuGroup[] = [
   },
   {
     group: 'Conteúdo',
+    icon: Archive,
+    collapsible: true,
     items: [
-      { label: 'Acervo Digital', href: '/acervo', icon: Archive, featureKey: null },
+      { label: 'Acervo Digital', href: '/acervo', icon: Archive },
       { label: 'Evercast', href: '/evercast', icon: Mic, featureKey: FEATURE_KEYS.EVERCAST },
     ],
   },
   {
     group: 'Agenda',
+    icon: Calendar,
+    collapsible: true,
     items: [
-      { label: 'Calendário', href: '/calendario', icon: Calendar, featureKey: null },
-      { label: 'Plano de Estudos', href: '/study-planner', icon: Target, featureKey: null },
+      { label: 'Calendário', href: '/calendario', icon: Calendar },
+      { label: 'Plano de Estudos', href: '/study-planner', icon: Target },
     ],
   },
   {
     group: 'Desempenho',
+    icon: TrendingUp,
+    collapsible: true,
     items: [
-      { label: 'Progresso', href: '/progresso', icon: TrendingUp, featureKey: null },
-      { label: 'Ranking', href: '/ranking', icon: Trophy, featureKey: null },
-      { label: 'Conquistas', href: '/achievements', icon: Award, featureKey: null },
+      { label: 'Progresso', href: '/progresso', icon: TrendingUp },
+      { label: 'Ranking', href: '/ranking', icon: Trophy },
+      { label: 'Conquistas', href: '/achievements', icon: Award },
     ],
   },
 ]
 
-// Footer items shown below the main menu
-const studentFooterItems: StudentMenuItem[] = [
-  { label: 'Comunidade', href: '/forum', icon: MessageSquare, featureKey: null },
-  { label: 'Notificações', href: '/notificacoes', icon: Bell, featureKey: null },
-  { label: 'Configurações', href: '/configuracoes', icon: Settings, featureKey: null },
+const studentFooterItems: MenuItem[] = [
+  { label: 'Comunidade', href: '/forum', icon: MessageSquare },
+  { label: 'Notificações', href: '/notificacoes', icon: Bell },
+  { label: 'Configurações', href: '/configuracoes', icon: Settings },
 ]
 
-// Menu items for teachers and administrators
-const adminMenuItems = [
+// ─── Admin menu ───────────────────────────────────────────────────────────────
+
+const adminMenuGroups: MenuGroup[] = [
   {
     group: '',
     items: [
-      {
-        href: '/admin',
-        label: 'Dashboard',
-        icon: LayoutDashboard,
-        badge: null
-      },
-    ]
+      { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    ],
   },
   {
     group: 'Pessoas',
+    icon: Users,
+    collapsible: true,
     items: [
-      {
-        href: '/admin/management',
-        label: 'Usuários',
-        icon: Users,
-        badge: null
-      },
-      {
-        href: '/admin/classes',
-        label: 'Turmas',
-        icon: GraduationCap,
-        badge: null
-      },
-      {
-        href: '/admin/permissions',
-        label: 'Permissões',
-        icon: Lock,
-        badge: null,
-        adminOnly: true
-      },
-    ]
+      { label: 'Usuários', href: '/admin/management', icon: Users },
+      { label: 'Turmas', href: '/admin/classes', icon: GraduationCap },
+      { label: 'Permissões', href: '/admin/permissions', icon: Lock, adminOnly: true },
+    ],
   },
   {
     group: 'Conteúdo',
+    icon: BookOpen,
+    collapsible: true,
     items: [
-      {
-        href: '/admin/courses',
-        label: 'Cursos',
-        icon: BookOpen,
-        badge: null
-      },
-      {
-        href: '/admin/flashcards',
-        label: 'Flashcards',
-        icon: Brain,
-        badge: null
-      },
-      {
-        href: '/admin/quizzes',
-        label: 'Quizzes',
-        icon: Target,
-        badge: null
-      },
-      {
-        href: '/admin/essays',
-        label: 'Redações',
-        icon: FileText,
-        badge: null
-      },
-      {
-        href: '/admin/simulations',
-        label: 'Simulados',
-        icon: ClipboardCheck,
-        badge: null
-      },
-      {
-        href: '/admin/evercast',
-        label: 'Evercast',
-        icon: Mic,
-        badge: null
-      },
-    ]
+      { label: 'Cursos', href: '/admin/courses', icon: BookOpen },
+      { label: 'Flashcards', href: '/admin/flashcards', icon: Brain },
+      { label: 'Quizzes', href: '/admin/quizzes', icon: Target },
+      { label: 'Redações', href: '/admin/essays', icon: FileText },
+      { label: 'Simulados', href: '/admin/simulations', icon: ClipboardCheck },
+      { label: 'Evercast', href: '/admin/evercast', icon: Mic },
+    ],
   },
   {
     group: 'Agenda',
+    icon: Calendar,
+    collapsible: true,
     items: [
-      {
-        href: '/admin/calendar',
-        label: 'Calendário',
-        icon: Calendar,
-        badge: null
-      },
-    ]
+      { label: 'Calendário', href: '/admin/calendar', icon: Calendar },
+    ],
   },
   {
     group: 'Análise',
+    icon: BarChart3,
+    collapsible: true,
     items: [
-      {
-        href: '/admin/reports',
-        label: 'Relatórios',
-        icon: BarChart3,
-        badge: null
-      },
-      {
-        href: '/admin/gamification',
-        label: 'Gamificação',
-        icon: Trophy,
-        badge: null,
-        adminOnly: true
-      },
-      {
-        href: '/admin/settings',
-        label: 'Configurações',
-        icon: Settings,
-        badge: null
-      },
-    ]
-  }
+      { label: 'Relatórios', href: '/admin/reports', icon: BarChart3 },
+      { label: 'Gamificação', href: '/admin/gamification', icon: Trophy, adminOnly: true },
+      { label: 'Configurações', href: '/admin/settings', icon: Settings },
+    ],
+  },
 ]
 
-// Dark navy sidebar CSS variables — used for both admin and student in light mode
+// ─── Dark navy sidebar CSS variables ──────────────────────────────────────────
+
 const darkNavySidebarStyle = {
   '--sidebar-background': '234 25% 18%',
   '--sidebar-foreground': '0 0% 95%',
@@ -240,6 +195,8 @@ const darkNavySidebarStyle = {
   '--sidebar-primary-foreground': '0 0% 100%',
   '--sidebar-ring': '25 95% 53%',
 } as React.CSSProperties
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function UnifiedSidebar() {
   const { profile, signOut } = useAuth()
@@ -261,45 +218,91 @@ export function UnifiedSidebar() {
     navigate('/login')
   }
 
-  // Filter student menu groups based on permissions
-  const filterStudentItems = (items: StudentMenuItem[]) =>
+  // Permission filter for student items
+  const filterItems = (items: MenuItem[]) =>
     items.filter(item => {
+      if (item.adminOnly && !isAdministrator) return false
       if (!item.featureKey) return true
       if (isStudent && permissionsLoading) return false
       if (isStudent) return hasFeature(item.featureKey)
       return true
     })
 
-  const visibleStudentGroups = studentMenuGroups
-    .map(group => ({ ...group, items: filterStudentItems(group.items) }))
-    .filter(group => group.items.length > 0)
+  const isActiveHref = (href: string) => {
+    if (isAdmin) {
+      return href === '/admin'
+        ? location.pathname === href
+        : location.pathname.startsWith(href)
+    }
+    return location.pathname === href
+  }
 
-  const visibleStudentFooter = filterStudentItems(studentFooterItems)
+  // Check if any item in a group is active (to auto-open the group)
+  const isGroupActive = (items: MenuItem[]) =>
+    items.some(item => isActiveHref(item.href))
 
-  // Filtra itens admin-only do menu (professores não veem)
-  const visibleAdminMenuItems = adminMenuItems.map(group => ({
-    ...group,
-    items: group.items.filter(item => {
-      if (item.adminOnly && !isAdministrator) return false
-      return true
-    })
-  })).filter(group => group.items.length > 0)
+  const menuGroups = isAdmin ? adminMenuGroups : studentMenuGroups
+  const visibleGroups = menuGroups
+    .map(g => ({ ...g, items: filterItems(g.items) }))
+    .filter(g => g.items.length > 0)
 
-  // Render a menu group (shared between admin and student)
-  const renderMenuGroup = (
-    group: { group: string; items: any[] },
-    groupIndex: number,
-    isActiveCheck: (href: string) => boolean,
-  ) => (
-    <SidebarGroup key={groupIndex} className="py-1">
-      {group.group && (
-        <SidebarGroupLabel className="text-[10px] font-semibold !text-white/60 uppercase tracking-[0.1em] px-3 mb-1">
-          {group.group}
-        </SidebarGroupLabel>
-      )}
+  const footerItems = isAdmin ? [] : filterItems(studentFooterItems)
+
+  // ─── Render a collapsible group ─────────────────────────────────────────────
+
+  const renderCollapsibleGroup = (group: MenuGroup, groupIndex: number) => {
+    const GroupIcon = group.icon
+    const active = isGroupActive(group.items)
+
+    return (
+      <SidebarGroup key={groupIndex} className="py-0.5">
+        <Collapsible defaultOpen={active} className="group/collapsible">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton
+                  tooltip={group.group}
+                  className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 text-white/80 hover:!text-white"
+                >
+                  {GroupIcon && <GroupIcon className="h-4 w-4 shrink-0" />}
+                  <span className="flex-1">{group.group}</span>
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-white/40 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  {group.items.map((item) => {
+                    const isActive = isActiveHref(item.href)
+                    return (
+                      <SidebarMenuSubItem key={item.href}>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={isActive}
+                          className="text-white/70 hover:!text-white data-[active=true]:!text-white data-[active=true]:!bg-sidebar-accent"
+                        >
+                          <Link to={item.href}>
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    )
+                  })}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </Collapsible>
+      </SidebarGroup>
+    )
+  }
+
+  // ─── Render a flat group (Dashboard, etc) ───────────────────────────────────
+
+  const renderFlatGroup = (group: MenuGroup, groupIndex: number) => (
+    <SidebarGroup key={groupIndex} className="py-0.5">
       <SidebarMenu>
-        {group.items.map((item: any) => {
-          const isActive = isActiveCheck(item.href)
+        {group.items.map((item) => {
+          const isActive = isActiveHref(item.href)
           return (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
@@ -324,9 +327,11 @@ export function UnifiedSidebar() {
     <Sidebar collapsible="icon" className="border-r-0" style={darkNavySidebarStyle}>
       <SidebarHeader className={cn("p-5 pb-4", isCollapsed && "p-2 pb-2")}>
         <div className={cn("flex items-center gap-3", isCollapsed && "justify-center")}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shrink-0">
-            <Mountain className="h-5 w-5 text-white" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Everest"
+            className="h-9 w-9 rounded-lg object-cover shrink-0"
+          />
           {!isCollapsed && (
             <div className="flex flex-col">
               <h1 className="text-base font-bold text-sidebar-foreground">
@@ -341,30 +346,17 @@ export function UnifiedSidebar() {
       </SidebarHeader>
 
       <SidebarContent className={cn("px-3", isCollapsed && "px-1.5")}>
-        {isAdmin ? (
-          <>
-            {visibleAdminMenuItems.map((group, i) =>
-              renderMenuGroup(group, i, (href) =>
-                href === '/admin'
-                  ? location.pathname === href
-                  : location.pathname.startsWith(href)
-              )
-            )}
-          </>
-        ) : (
-          <>
-            {visibleStudentGroups.map((group, i) =>
-              renderMenuGroup(group, i, (href) => location.pathname === href)
-            )}
-          </>
+        {visibleGroups.map((group, i) =>
+          group.collapsible
+            ? renderCollapsibleGroup(group, i)
+            : renderFlatGroup(group, i)
         )}
       </SidebarContent>
 
       <SidebarFooter className={cn("p-3 space-y-2", isCollapsed && "p-1.5")}>
-        {/* Student footer nav items */}
-        {!isAdmin && visibleStudentFooter.length > 0 && (
+        {footerItems.length > 0 && (
           <SidebarMenu>
-            {visibleStudentFooter.map((item) => {
+            {footerItems.map((item) => {
               const isActive = location.pathname === item.href
               return (
                 <SidebarMenuItem key={item.href}>

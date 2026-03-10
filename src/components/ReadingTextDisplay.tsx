@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { BookOpen, User, FileText } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
@@ -20,7 +20,7 @@ interface ReadingTextDisplayProps {
 
 export function ReadingTextDisplay({ text, showStats = true }: ReadingTextDisplayProps) {
   return (
-    <MagicCard variant="glass" size="lg" className="mb-6">
+    <Card className="border-border shadow-sm mb-6"><CardContent className="p-6">
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -75,6 +75,6 @@ export function ReadingTextDisplay({ text, showStats = true }: ReadingTextDispla
           )}
         </div>
       </div>
-    </MagicCard>
+    </CardContent></Card>
   )
 }

@@ -6,8 +6,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -16,14 +15,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { 
-  Mountain, 
-  Loader2, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  ArrowRight, 
+import {
+  Mountain,
+  Loader2,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
   Star,
   Sparkles,
   Shield,
@@ -67,37 +66,33 @@ export default function LoginPage() {
   }
 
   return (
-    <MagicLayout 
-      title="Bem-vindo de volta"
-      description="Acesse sua conta e continue sua jornada de aprendizado"
-      showHeader={false}
-    >
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-8">
-          {/* Logo and Brand */}
-          <div className="text-center space-y-6">
-            <div className="flex justify-center items-center gap-3">
-              <div className="p-4 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10">
-                <Mountain className="h-12 w-12 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                  Everest
-                </h1>
-                <p className="text-sm text-muted-foreground">Plataforma de Ensino</p>
-              </div>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo and Brand */}
+        <div className="text-center space-y-6">
+          <div className="flex justify-center items-center gap-3">
+            <div className="p-4 rounded-3xl bg-primary/10">
+              <Mountain className="h-12 w-12 text-primary" />
             </div>
-            
-            <div className="space-y-2">
-              <h2 className="text-2xl font-semibold">Acesse sua Conta</h2>
-              <p className="text-muted-foreground">
-                Bem-vindo de volta! Insira seus dados para continuar.
-              </p>
+            <div>
+              <h1 className="text-4xl font-bold">
+                Everest
+              </h1>
+              <p className="text-sm text-muted-foreground">Plataforma de Ensino</p>
             </div>
           </div>
 
-          {/* Login Form */}
-          <MagicCard variant="premium" size="lg">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold">Acesse sua Conta</h2>
+            <p className="text-muted-foreground">
+              Bem-vindo de volta! Insira seus dados para continuar.
+            </p>
+          </div>
+        </div>
+
+        {/* Login Form */}
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
             <div className="space-y-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -114,7 +109,7 @@ export default function LoginPage() {
                               type="email"
                               placeholder="seu@email.com"
                               autoComplete="email"
-                              className="pl-10 bg-card/50 backdrop-blur-sm border-border/50 h-12 rounded-xl"
+                              className="pl-10 h-12 rounded-xl"
                               {...field}
                             />
                           </div>
@@ -123,7 +118,7 @@ export default function LoginPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="password"
@@ -137,7 +132,7 @@ export default function LoginPage() {
                               type={showPassword ? "text" : "password"}
                               placeholder="••••••••"
                               autoComplete="current-password"
-                              className="pl-10 pr-10 bg-card/50 backdrop-blur-sm border-border/50 h-12 rounded-xl"
+                              className="pl-10 pr-10 h-12 rounded-xl"
                               {...field}
                             />
                             <button
@@ -159,8 +154,8 @@ export default function LoginPage() {
                   />
 
                   <div className="flex items-center justify-between">
-                    <Button 
-                      variant="link" 
+                    <Button
+                      variant="link"
                       asChild
                       className="text-sm text-muted-foreground hover:text-foreground p-0 h-auto"
                     >
@@ -168,9 +163,9 @@ export default function LoginPage() {
                     </Button>
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white h-12 rounded-xl font-semibold transition-transform duration-300 hover:scale-105 hover:shadow-lg inline-flex items-center justify-center" 
+                  <Button
+                    type="submit"
+                    className="w-full h-12 rounded-xl font-semibold inline-flex items-center justify-center"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -202,8 +197,8 @@ export default function LoginPage() {
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
                   Não tem uma conta?{' '}
-                  <Button 
-                    variant="link" 
+                  <Button
+                    variant="link"
                     asChild
                     className="text-primary hover:text-primary/80 p-0 h-auto font-semibold"
                   >
@@ -212,30 +207,32 @@ export default function LoginPage() {
                 </p>
               </div>
             </div>
-          </MagicCard>
+          </CardContent>
+        </Card>
 
-          {/* Features */}
-          <MagicCard variant="glass" size="lg">
+        {/* Features */}
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-center">Por que escolher o Everest?</h3>
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <div className="text-center p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
                   <Shield className="h-6 w-6 text-blue-500 mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground">Seguro</p>
                 </div>
-                <div className="text-center p-3 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <div className="text-center p-3 rounded-xl bg-green-500/10 border border-green-500/20">
                   <Zap className="h-6 w-6 text-green-500 mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground">Rápido</p>
                 </div>
-                <div className="text-center p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <div className="text-center p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
                   <Sparkles className="h-6 w-6 text-purple-500 mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground">Inteligente</p>
                 </div>
               </div>
             </div>
-          </MagicCard>
-        </div>
+          </CardContent>
+        </Card>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

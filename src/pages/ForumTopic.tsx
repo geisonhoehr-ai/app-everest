@@ -3,8 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   ArrowLeft,
   CornerUpRight,
@@ -112,206 +111,212 @@ export default function ForumTopicPage() {
 
   if (!topic) {
     return (
-      <MagicLayout title="Tópico não encontrado">
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">Tópico não encontrado</h1>
         <div className="text-center py-20">
           <h2 className="text-2xl font-bold">Tópico não encontrado</h2>
           <Link to="/forum">
             <Button className="mt-4">Voltar para o Fórum</Button>
           </Link>
         </div>
-      </MagicLayout>
+      </div>
     )
   }
 
   return (
-    <MagicLayout
-      title={topic.title}
-      description={`Tópico do fórum • ${topic.category?.name || 'Geral'} • ${posts.length} respostas`}
-      showHeader={false}
-    >
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-foreground">{topic.title}</h1>
+
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Back Navigation */}
-        <MagicCard variant="premium" size="lg">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              asChild
-              className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
-            >
-              <Link to="/forum">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-xl font-semibold">Voltar para o Fórum</h1>
-              <p className="text-sm text-muted-foreground">Retornar à lista de tópicos</p>
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                asChild
+              >
+                <Link to="/forum">
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-xl font-semibold">Voltar para o Fórum</h1>
+                <p className="text-sm text-muted-foreground">Retornar à lista de tópicos</p>
+              </div>
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Topic Header */}
-        <MagicCard variant="glass" size="lg">
-          <div className="space-y-6">
-            <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                    <MessageSquare className="h-6 w-6 text-primary" />
-                  </div>
-                  <span className={cn(
-                    "px-3 py-1 rounded-full text-sm font-medium border",
-                    "bg-blue-500/10 border-blue-500/20 text-blue-600"
-                  )}>
-                    {topic.category?.name || 'Geral'}
-                  </span>
-                </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                  {topic.title}
-                </h1>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50">
-              <Avatar className="h-12 w-12 border-2 border-border/50">
-                <AvatarImage src={topic.author?.avatar_url || ''} />
-                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
-                  {topic.author?.first_name?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-grow">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">
-                    {topic.author ? `${topic.author.first_name} ${topic.author.last_name}` : 'Usuário'}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      {formatDistanceToNow(new Date(topic.created_at), { addSuffix: true, locale: ptBR })}
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <MessageSquare className="h-6 w-6 text-primary" />
+                    </div>
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-sm font-medium border",
+                      "bg-blue-500/10 border-blue-500/20 text-blue-600"
+                    )}>
+                      {topic.category?.name || 'Geral'}
                     </span>
                   </div>
+                  <h1 className="text-3xl font-bold text-foreground">
+                    {topic.title}
+                  </h1>
+              </div>
+
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-border/50">
+                <Avatar className="h-12 w-12 border-2 border-border/50">
+                  <AvatarImage src={topic.author?.avatar_url || ''} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    {topic.author?.first_name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-grow">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">
+                      {topic.author ? `${topic.author.first_name} ${topic.author.last_name}` : 'Usuário'}
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        {formatDistanceToNow(new Date(topic.created_at), { addSuffix: true, locale: ptBR })}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Autor do tópico</p>
                 </div>
-                <p className="text-sm text-muted-foreground">Autor do tópico</p>
+              </div>
+
+              <div className="p-6 rounded-xl bg-muted/20 border border-border/50">
+                <p className="text-foreground/90 leading-relaxed text-lg whitespace-pre-wrap">
+                  {topic.content}
+                </p>
               </div>
             </div>
-
-            <div className="p-6 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50">
-              <p className="text-foreground/90 leading-relaxed text-lg whitespace-pre-wrap">
-                {topic.content}
-              </p>
-            </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Replies Section */}
-        <MagicCard variant="glass" size="lg">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                <Reply className="h-6 w-6 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold">
-                {posts.length} Respostas
-              </h2>
-            </div>
-
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
             <div className="space-y-6">
-              {posts.map((post, index) => (
-                <div
-                  key={post.id}
-                  className={cn(
-                    "p-6 rounded-xl border transition-colors duration-300",
-                    "bg-gradient-to-r from-muted/20 to-muted/10 border-border/50"
-                  )}
-                >
-                  <div className="flex items-start gap-4">
-                    <Avatar className="h-12 w-12 border-2 border-border/50">
-                      <AvatarImage src={post.author?.avatar_url || ''} />
-                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
-                        {post.author?.first_name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Reply className="h-6 w-6 text-primary" />
+                </div>
+                <h2 className="text-2xl font-bold">
+                  {posts.length} Respostas
+                </h2>
+              </div>
 
-                    <div className="flex-grow space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <h3 className="font-semibold">
-                            {post.author ? `${post.author.first_name} ${post.author.last_name}` : 'Usuário'}
-                          </h3>
-                          {/* Teacher badge logic could be added here if we check user roles */}
+              <div className="space-y-6">
+                {posts.map((post, index) => (
+                  <div
+                    key={post.id}
+                    className={cn(
+                      "p-6 rounded-xl border transition-colors duration-300",
+                      "bg-muted/20 border-border/50"
+                    )}
+                  >
+                    <div className="flex items-start gap-4">
+                      <Avatar className="h-12 w-12 border-2 border-border/50">
+                        <AvatarImage src={post.author?.avatar_url || ''} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {post.author?.first_name?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="flex-grow space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-semibold">
+                              {post.author ? `${post.author.first_name} ${post.author.last_name}` : 'Usuário'}
+                            </h3>
+                            {/* Teacher badge logic could be added here if we check user roles */}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4" />
+                            <span>
+                              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>
-                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
-                          </span>
+
+                        <div className="p-4 rounded-lg bg-card border border-border">
+                          <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                            {post.content}
+                          </p>
                         </div>
-                      </div>
 
-                      <div className="p-4 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
-                        <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                          {post.content}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={() => {
-                            document.querySelector('textarea')?.focus()
-                          }}
-                        >
-                          <Reply className="h-4 w-4 mr-1" />
-                          Responder
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={() => {
+                              document.querySelector('textarea')?.focus()
+                            }}
+                          >
+                            <Reply className="h-4 w-4 mr-1" />
+                            Responder
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Reply Form */}
-        <MagicCard variant="premium" size="lg">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                <CornerUpRight className="h-6 w-6 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold">Sua Resposta</h2>
-            </div>
-
-            <div className="space-y-4">
-              <Textarea
-                placeholder="Digite sua resposta aqui..."
-                rows={6}
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                className="bg-card/50 backdrop-blur-sm border-border/50 resize-none"
-              />
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Sua resposta será pública e visível para todos os usuários
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <CornerUpRight className="h-6 w-6 text-primary" />
                 </div>
-                <Button
-                  onClick={handleSubmitReply}
-                  disabled={isSubmitting || !replyContent.trim()}
-                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold transition-transform duration-300 hover:scale-105 hover:shadow-lg inline-flex items-center justify-center"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <CornerUpRight className="mr-2 h-4 w-4" />
-                  )}
-                  Publicar Resposta
-                </Button>
+                <h2 className="text-2xl font-bold">Sua Resposta</h2>
+              </div>
+
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Digite sua resposta aqui..."
+                  rows={6}
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  className="border-border/50 resize-none"
+                />
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    Sua resposta será pública e visível para todos os usuários
+                  </div>
+                  <Button
+                    onClick={handleSubmitReply}
+                    disabled={isSubmitting || !replyContent.trim()}
+                    className="text-white font-semibold hover:shadow-md"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CornerUpRight className="mr-2 h-4 w-4" />
+                    )}
+                    Publicar Resposta
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

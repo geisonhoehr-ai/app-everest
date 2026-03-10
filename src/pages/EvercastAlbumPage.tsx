@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Play, Clock, ChevronLeft, Disc3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { MagicLayout } from '@/components/ui/magic-layout'
 import { SectionLoader } from '@/components/SectionLoader'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
@@ -61,7 +60,8 @@ export default function EvercastAlbumPage() {
 
   if (!course) {
     return (
-      <MagicLayout title="Curso não encontrado" description="">
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">Curso não encontrado</h1>
         <div className="text-center py-24">
           <p className="text-muted-foreground mb-4">Este curso não está disponível no Evercast.</p>
           <Button variant="outline" onClick={() => navigate('/evercast')}>
@@ -69,17 +69,12 @@ export default function EvercastAlbumPage() {
             Voltar ao Evercast
           </Button>
         </div>
-      </MagicLayout>
+      </div>
     )
   }
 
   return (
-    <MagicLayout
-      title={course.name}
-      description=""
-      showHeader={false}
-      className={cn("pb-32", currentTrack ? "mb-20" : "")}
-    >
+    <div className={cn("space-y-6 pb-32", currentTrack ? "mb-20" : "")}>
       {/* Back button */}
       <div className="mb-2">
         <Button
@@ -93,20 +88,20 @@ export default function EvercastAlbumPage() {
         </Button>
       </div>
 
-      {/* Album Header — full bleed over container padding */}
-      <div className="-mx-6 flex flex-col items-center md:flex-row md:items-end gap-6 md:gap-8 p-6 md:p-8 bg-gradient-to-b from-emerald-900/30 via-cyan-900/10 to-background/0">
-        <div className="w-44 h-44 md:w-52 md:h-52 shadow-2xl rounded-md overflow-hidden shrink-0">
+      {/* Album Header */}
+      <div className="flex flex-col items-center md:flex-row md:items-end gap-6 p-6">
+        <div className="w-32 h-32 shadow-sm rounded-md overflow-hidden shrink-0">
           {course.thumbnail_url ? (
             <img src={course.thumbnail_url} alt={course.name} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-emerald-600 to-cyan-700 flex items-center justify-center">
-              <Disc3 className="w-24 h-24 text-white" />
+            <div className="w-full h-full bg-emerald-600 flex items-center justify-center">
+              <Disc3 className="w-12 h-12 text-white" />
             </div>
           )}
         </div>
         <div className="flex flex-col gap-2 text-center md:text-left">
           <span className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Curso em Audio</span>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">{course.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{course.name}</h1>
           {course.description && (
             <p className="text-muted-foreground max-w-2xl">{course.description}</p>
           )}
@@ -125,7 +120,7 @@ export default function EvercastAlbumPage() {
         <div className="flex items-center gap-4">
           <Button
             size="lg"
-            className="rounded-full w-14 h-14 bg-emerald-500 hover:bg-emerald-600 text-black shadow-lg hover:scale-105 transition-transform"
+            className="rounded-full w-14 h-14 bg-emerald-500 hover:bg-emerald-600 text-black shadow-sm hover:shadow-md transition-shadow"
             onClick={handlePlayAll}
           >
             <Play className="h-6 w-6 ml-1 fill-black" />
@@ -199,6 +194,6 @@ export default function EvercastAlbumPage() {
         playlist={allLessons}
         onTrackChange={setCurrentTrack}
       />
-    </MagicLayout>
+    </div>
   )
 }

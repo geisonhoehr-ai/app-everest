@@ -211,11 +211,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfileFetchAttempted(false)
 
       // Single attempt - no retries to keep login fast
-      const userProfile = await fetchUserProfile(newSession.user.id)
-
-      isFetchingProfileRef.current = false
-      setProfile(userProfile)
-      setProfileFetchAttempted(true)
+      try {
+        const userProfile = await fetchUserProfile(newSession.user.id)
+        setProfile(userProfile)
+      } catch (error) {
+        logger.error('❌ Failed to fetch profile in handleSessionChange:', error)
+        setProfile(null)
+      } finally {
+        isFetchingProfileRef.current = false
+        setProfileFetchAttempted(true)
+      }
     } else {
       // Clear profile for unauthenticated state
       isFetchingProfileRef.current = false

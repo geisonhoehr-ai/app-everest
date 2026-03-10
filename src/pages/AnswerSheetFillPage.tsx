@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   AlertDialog,
@@ -201,23 +200,27 @@ export default function AnswerSheetFillPage() {
 
   if (loading) {
     return (
-      <MagicLayout title="Carregando..." description="Aguarde...">
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Carregando...</h1>
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </MagicLayout>
+      </div>
     )
   }
 
   if (!answerSheet) {
     return (
-      <MagicLayout title="Erro" description="Cartão não encontrado">
-        <MagicCard>
-          <p className="text-center text-muted-foreground">
-            Cartão resposta não encontrado
-          </p>
-        </MagicCard>
-      </MagicLayout>
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Erro</h1>
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              Cartão resposta não encontrado
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
@@ -225,204 +228,204 @@ export default function AnswerSheetFillPage() {
   const progress = (answeredCount / answerSheet.questions.length) * 100
 
   return (
-    <MagicLayout
-      title={answerSheet.title}
-      description="Preencha o cartão resposta da prova presencial"
-      showHeader={false}
-    >
+    <div className="space-y-6">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <MagicCard variant="premium" size="lg">
-          <div className="space-y-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <FileCheck className="h-8 w-8 text-primary" />
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-primary/10">
+                    <FileCheck className="h-8 w-8 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold">{answerSheet.title}</h1>
+                    <p className="text-muted-foreground">
+                      {answerSheet.description || 'Prova Presencial'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/20">
+                  <Target className="h-5 w-5 text-primary" />
+                  <span className="font-semibold">{answerSheet.total_points} pontos</span>
+                </div>
+              </div>
+
+              {/* Progress */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Progresso</span>
+                  <span className="font-medium">
+                    {answeredCount}/{answerSheet.questions.length} respondidas ({progress.toFixed(0)}%)
+                  </span>
+                </div>
+                <div className="w-full bg-muted/50 rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Instructions */}
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <BookText className="h-5 w-5 text-blue-500 mt-1" />
+              <div>
+                <h3 className="font-bold mb-2">Instruções</h3>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Selecione a alternativa correta para cada questão</li>
+                  <li>• Você pode pular questões e voltar depois</li>
+                  <li>• Confira suas respostas antes de enviar</li>
+                  <li>• Após enviar, você verá o resultado imediatamente</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Answer Grid */}
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <FileCheck className="h-6 w-6 text-primary" />
+                Cartão Resposta
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {answerSheet.questions.map((question) => (
+                  <div
+                    key={question.id}
+                    className={cn(
+                      "p-4 rounded-xl border-2 transition-all",
+                      answers[question.id]
+                        ? "border-primary/50 bg-primary/5"
+                        : "border-border/50 bg-card/50"
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-bold text-lg">
+                        {question.question_number}
+                      </span>
+                      {answers[question.id] ? (
+                        <CheckCircle className="h-5 w-5 text-primary" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      {ANSWER_OPTIONS.map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => handleAnswerChange(question.id, option)}
+                          className={cn(
+                            "flex-1 py-2 rounded-lg font-semibold transition-all",
+                            answers[question.id] === option
+                              ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                              : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submit */}
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "p-3 rounded-xl",
+                  answeredCount === answerSheet.questions.length
+                    ? "bg-green-500/10"
+                    : "bg-orange-500/10"
+                )}>
+                  {answeredCount === answerSheet.questions.length ? (
+                    <CheckCircle className="h-6 w-6 text-green-500" />
+                  ) : (
+                    <AlertTriangle className="h-6 w-6 text-orange-500" />
+                  )}
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">{answerSheet.title}</h1>
-                  <p className="text-muted-foreground">
-                    {answerSheet.description || 'Prova Presencial'}
+                  <h3 className="font-bold">
+                    {answeredCount === answerSheet.questions.length
+                      ? 'Todas as questões respondidas!'
+                      : `Faltam ${answerSheet.questions.length - answeredCount} questões`}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {answeredCount === answerSheet.questions.length
+                      ? 'Você pode enviar seu cartão resposta'
+                      : 'Certifique-se de responder todas antes de enviar'}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                <Target className="h-5 w-5 text-primary" />
-                <span className="font-semibold">{answerSheet.total_points} pontos</span>
-              </div>
-            </div>
-
-            {/* Progress */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Progresso</span>
-                <span className="font-medium">
-                  {answeredCount}/{answerSheet.questions.length} respondidas ({progress.toFixed(0)}%)
-                </span>
-              </div>
-              <div className="w-full bg-muted/50 rounded-full h-2">
-                <div
-                  className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </MagicCard>
-
-        {/* Instructions */}
-        <MagicCard variant="glass">
-          <div className="flex items-start gap-3">
-            <BookText className="h-5 w-5 text-blue-500 mt-1" />
-            <div>
-              <h3 className="font-bold mb-2">Instruções</h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Selecione a alternativa correta para cada questão</li>
-                <li>• Você pode pular questões e voltar depois</li>
-                <li>• Confira suas respostas antes de enviar</li>
-                <li>• Após enviar, você verá o resultado imediatamente</li>
-              </ul>
-            </div>
-          </div>
-        </MagicCard>
-
-        {/* Answer Grid */}
-        <MagicCard variant="glass" size="lg">
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <FileCheck className="h-6 w-6 text-primary" />
-              Cartão Resposta
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {answerSheet.questions.map((question) => (
-                <div
-                  key={question.id}
-                  className={cn(
-                    "p-4 rounded-xl border-2 transition-all",
-                    answers[question.id]
-                      ? "border-primary/50 bg-primary/5"
-                      : "border-border/50 bg-card/50"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-bold text-lg">
-                      {question.question_number}
-                    </span>
-                    {answers[question.id] ? (
-                      <CheckCircle className="h-5 w-5 text-primary" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    {ANSWER_OPTIONS.map((option) => (
-                      <button
-                        key={option}
-                        onClick={() => handleAnswerChange(question.id, option)}
-                        className={cn(
-                          "flex-1 py-2 rounded-lg font-semibold transition-all",
-                          answers[question.id] === option
-                            ? "bg-primary text-primary-foreground shadow-lg scale-105"
-                            : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </MagicCard>
-
-        {/* Submit */}
-        <MagicCard variant="premium" size="lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "p-3 rounded-xl",
-                answeredCount === answerSheet.questions.length
-                  ? "bg-green-500/10"
-                  : "bg-orange-500/10"
-              )}>
-                {answeredCount === answerSheet.questions.length ? (
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                ) : (
-                  <AlertTriangle className="h-6 w-6 text-orange-500" />
-                )}
-              </div>
-              <div>
-                <h3 className="font-bold">
-                  {answeredCount === answerSheet.questions.length
-                    ? 'Todas as questões respondidas!'
-                    : `Faltam ${answerSheet.questions.length - answeredCount} questões`}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {answeredCount === answerSheet.questions.length
-                    ? 'Você pode enviar seu cartão resposta'
-                    : 'Certifique-se de responder todas antes de enviar'}
-                </p>
-              </div>
-            </div>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  size="lg"
-                  disabled={submitting}
-                  className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-semibold px-8"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-5 w-5" />
-                      Enviar Cartão
-                    </>
-                  )}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="bg-card/95 backdrop-blur-xl border-border/50">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                    Confirmar Envio
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Você respondeu {answeredCount} de {answerSheet.questions.length} questões.
-                    {answeredCount < answerSheet.questions.length && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    disabled={submitting}
+                    className="font-semibold px-8"
+                  >
+                    {submitting ? (
                       <>
-                        <br /><br />
-                        <strong className="text-orange-500">
-                          Atenção: {answerSheet.questions.length - answeredCount} questões ficarão em branco.
-                        </strong>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-5 w-5" />
+                        Enviar Cartão
                       </>
                     )}
-                    <br /><br />
-                    Após enviar, você verá seu resultado imediatamente. Esta ação não pode ser desfeita.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleSubmit}
-                    className="bg-gradient-to-r from-primary to-primary/80"
-                  >
-                    Confirmar e Enviar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </MagicCard>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                      Confirmar Envio
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Você respondeu {answeredCount} de {answerSheet.questions.length} questões.
+                      {answeredCount < answerSheet.questions.length && (
+                        <>
+                          <br /><br />
+                          <strong className="text-orange-500">
+                            Atenção: {answerSheet.questions.length - answeredCount} questões ficarão em branco.
+                          </strong>
+                        </>
+                      )}
+                      <br /><br />
+                      Após enviar, você verá seu resultado imediatamente. Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSubmit}>
+                      Confirmar e Enviar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

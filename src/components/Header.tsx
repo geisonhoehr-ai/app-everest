@@ -1,20 +1,17 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
-import { Bell, Menu, Search, Mountain } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Menu, Search, Mountain } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { MobileSidebar } from './MobileSidebar'
 import { ThemeToggle } from './ThemeToggle'
 import { CommandPalette } from './CommandPalette'
 import { useAuth } from '@/hooks/use-auth'
-import { useNotifications } from '@/hooks/useNotifications'
 import { SidebarTrigger } from './ui/sidebar'
 
 export const Header = () => {
-  const { unreadCount } = useNotifications()
   const { profile } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const isAdmin = profile?.role === 'administrator' || profile?.role === 'teacher'
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/40 bg-card px-4 md:px-6">
@@ -78,23 +75,7 @@ export const Header = () => {
 
       <div className="flex items-center gap-1 md:gap-2">
         {profile ? (
-          <>
-            {!isAdmin && <ThemeToggle />}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-muted-foreground hover:text-foreground h-9 w-9"
-              asChild
-            >
-              <NavLink to="/notificacoes">
-                <Bell className="h-4 w-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
-                )}
-                <span className="sr-only">Notificações</span>
-              </NavLink>
-            </Button>
-          </>
+          <ThemeToggle />
         ) : (
           <div className="flex items-center gap-2">
             <Button variant="ghost" asChild size="sm">

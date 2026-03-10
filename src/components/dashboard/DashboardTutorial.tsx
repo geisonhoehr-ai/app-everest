@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { X, ChevronLeft, ChevronRight, LayoutDashboard, Trophy, BookOpen, Target, TrendingUp, Calendar } from 'lucide-react'
@@ -97,7 +97,7 @@ export function DashboardTutorial({ onClose }: DashboardTutorialProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <MagicCard variant="premium" size="lg" className="max-w-2xl w-full">
+      <Card className="border-border shadow-sm max-w-2xl w-full">
         <div className="relative p-8">
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
@@ -197,7 +197,7 @@ export function DashboardTutorial({ onClose }: DashboardTutorialProps) {
             </div>
           )}
         </div>
-      </MagicCard>
+      </Card>
     </div>
   )
 }

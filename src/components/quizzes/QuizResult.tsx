@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { 
   CheckCircle, 
   XCircle, 
@@ -83,10 +82,12 @@ export const QuizResult = ({
   const PerformanceIcon = performance.icon
 
   return (
-    <MagicLayout 
-      title="Resultado do Quiz"
-      description={`${topic.title} • ${percentage}% de acerto`}
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Resultado do Quiz</h1>
+        <p className="text-sm text-muted-foreground mt-1">{topic.title} - {percentage}% de acerto</p>
+      </div>
+
       <ShareQuizResultsDialog
         isOpen={isShareOpen}
         onOpenChange={setIsShareOpen}
@@ -98,22 +99,22 @@ export const QuizResult = ({
 
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Results Header */}
-        <MagicCard variant="premium" size="lg" className="text-center">
+        <Card className="border-border shadow-sm text-center"><CardContent className="p-6">
           <div className="space-y-8">
             <div className="flex items-center justify-center gap-4">
-              <div className="p-4 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 animate-pulse">
-                <PerformanceIcon className="h-12 w-12 text-primary" />
+              <div className="p-3 rounded-2xl bg-primary/10">
+                <PerformanceIcon className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                <h2 className="text-2xl font-bold text-foreground">
                   Quiz Concluído!
-                </h1>
+                </h2>
                 <p className="text-muted-foreground text-lg">{topic.title}</p>
               </div>
             </div>
             
             {/* Motivational Message */}
-            <div className="px-6 py-4 rounded-xl bg-gradient-to-r from-primary/5 via-purple-500/5 to-cyan-500/5 border border-primary/10">
+            <div className="px-6 py-4 rounded-xl bg-primary/5 border border-primary/10">
               <p className="text-lg font-semibold text-foreground">
                 {motivationalMessage}
               </p>
@@ -122,7 +123,7 @@ export const QuizResult = ({
             {/* Score Display */}
             <div className="space-y-6">
               <div className="relative">
-                <div className="text-8xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+                <div className="text-7xl font-bold text-primary">
                   {percentage}%
                 </div>
                 <div className="text-2xl font-semibold text-muted-foreground">
@@ -145,30 +146,30 @@ export const QuizResult = ({
 
             {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-6">
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+              <div className="text-center p-6 rounded-xl bg-green-500/10 border border-green-500/20">
                 <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-3" />
                 <div className="text-3xl font-bold text-green-600">{score}</div>
                 <div className="text-sm text-muted-foreground">Corretas</div>
               </div>
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20">
+              <div className="text-center p-6 rounded-xl bg-red-500/10 border border-red-500/20">
                 <XCircle className="h-8 w-8 text-red-500 mx-auto mb-3" />
                 <div className="text-3xl font-bold text-red-600">{questions.length - score}</div>
                 <div className="text-sm text-muted-foreground">Incorretas</div>
               </div>
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+              <div className="text-center p-6 rounded-xl bg-blue-500/10 border border-blue-500/20">
                 <Clock className="h-8 w-8 text-blue-500 mx-auto mb-3" />
                 <div className="text-3xl font-bold text-blue-600">5min</div>
                 <div className="text-sm text-muted-foreground">Tempo total</div>
               </div>
             </div>
           </div>
-        </MagicCard>
+        </CardContent></Card>
 
         {/* Question Review */}
-        <MagicCard variant="glass" size="lg">
+        <Card className="border-border shadow-sm"><CardContent className="p-6">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
+              <div className="p-2 rounded-lg bg-primary/10">
                 <Award className="h-6 w-6 text-primary" />
               </div>
               <h2 className="text-2xl font-bold">Revisão das Questões</h2>
@@ -240,14 +241,14 @@ export const QuizResult = ({
               })}
             </Accordion>
           </div>
-        </MagicCard>
+        </CardContent></Card>
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Button
             onClick={() => setIsShareOpen(true)}
             size="lg"
-            className="bg-gradient-to-r from-primary via-purple-600 to-cyan-600 hover:from-primary/90 hover:via-purple-600/90 hover:to-cyan-600/90 text-white font-semibold py-3 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl shadow-lg"
+            className="font-semibold"
           >
             <Share2 className="mr-2 h-5 w-5" />
             Compartilhar Resultado
@@ -256,7 +257,7 @@ export const QuizResult = ({
           <Button 
             asChild 
             size="lg"
-            className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-3 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold"
           >
             <Link to={retakeLink}>
               <RotateCcw className="mr-2 h-5 w-5" />
@@ -268,7 +269,7 @@ export const QuizResult = ({
             variant="outline" 
             size="lg"
             asChild
-            className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all duration-300 py-3 px-8 rounded-xl font-semibold"
+            className="font-semibold"
           >
             <Link to={backLink}>
               <ArrowRight className="mr-2 h-4 w-4" />
@@ -277,6 +278,6 @@ export const QuizResult = ({
           </Button>
         </div>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

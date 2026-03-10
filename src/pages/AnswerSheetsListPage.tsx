@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   Table,
@@ -191,211 +190,212 @@ export default function AnswerSheetsListPage() {
 
   if (loading) {
     return (
-      <MagicLayout title="Carregando..." description="Aguarde...">
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Carregando...</h1>
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </MagicLayout>
+      </div>
     )
   }
 
   return (
-    <MagicLayout
-      title="Cartões Resposta"
-      description="Preencha os cartões das provas presenciais"
-    >
+    <div className="space-y-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Stats */}
-        <MagicCard variant="premium" size="lg">
-          <div className="space-y-4 md:space-y-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <FileCheck className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">
-                    Cartões Resposta
-                  </h1>
-                  <p className="text-muted-foreground text-sm md:text-base">
-                    Provas presenciais - Preencha o cartão online
-                  </p>
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="space-y-4 md:space-y-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-primary/10">
+                    <FileCheck className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">
+                      Cartões Resposta
+                    </h1>
+                    <p className="text-muted-foreground text-sm md:text-base">
+                      Provas presenciais - Preencha o cartão online
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                <Send className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-green-600">{stats.available}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Disponíveis</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                <CheckCircle className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.submitted}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Enviados</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                <BarChart2 className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-purple-600">{stats.average}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Média</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
-                <Trophy className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-orange-600">{stats.best}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Melhor</div>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="text-center p-3 md:p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                  <Send className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
+                  <div className="text-xl md:text-2xl font-bold text-green-600">{stats.available}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Disponíveis</div>
+                </div>
+                <div className="text-center p-3 md:p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                  <CheckCircle className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
+                  <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.submitted}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Enviados</div>
+                </div>
+                <div className="text-center p-3 md:p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                  <BarChart2 className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
+                  <div className="text-xl md:text-2xl font-bold text-purple-600">{stats.average}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Média</div>
+                </div>
+                <div className="text-center p-3 md:p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                  <Trophy className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
+                  <div className="text-xl md:text-2xl font-bold text-orange-600">{stats.best}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Melhor</div>
+                </div>
               </div>
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Sheets Table */}
-        <MagicCard variant="glass" size="lg">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                <Target className="h-6 w-6 text-primary" />
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Target className="h-6 w-6 text-primary" />
+                </div>
+                <h2 className="text-2xl font-bold">Provas Disponíveis</h2>
               </div>
-              <h2 className="text-2xl font-bold">Provas Disponíveis</h2>
-            </div>
 
-            <div className="rounded-xl overflow-hidden border border-border/50">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-muted/20 to-muted/10 border-border/50">
-                    <TableHead className="font-semibold">Nome da Prova</TableHead>
-                    <TableHead className="hidden md:table-cell font-semibold">Data</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="text-right font-semibold">Nota</TableHead>
-                    <TableHead className="text-right font-semibold">Ação</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sheets.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        Nenhum cartão resposta disponível no momento
-                      </TableCell>
+              <div className="rounded-xl overflow-hidden border border-border/50">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/20 border-border/50">
+                      <TableHead className="font-semibold">Nome da Prova</TableHead>
+                      <TableHead className="hidden md:table-cell font-semibold">Data</TableHead>
+                      <TableHead className="font-semibold">Status</TableHead>
+                      <TableHead className="text-right font-semibold">Nota</TableHead>
+                      <TableHead className="text-right font-semibold">Ação</TableHead>
                     </TableRow>
-                  ) : (
-                    sheets.map((sheet, index) => {
-                      const status = getSheetStatus(sheet)
-                      const lastAttempt = sheet.user_attempts?.[0]
-                      const formattedDate = sheet.scheduled_start
-                        ? format(new Date(sheet.scheduled_start), "dd/MM/yyyy", { locale: ptBR })
-                        : '-'
+                  </TableHeader>
+                  <TableBody>
+                    {sheets.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Nenhum cartão resposta disponível no momento
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      sheets.map((sheet, index) => {
+                        const status = getSheetStatus(sheet)
+                        const lastAttempt = sheet.user_attempts?.[0]
+                        const formattedDate = sheet.scheduled_start
+                          ? format(new Date(sheet.scheduled_start), "dd/MM/yyyy", { locale: ptBR })
+                          : '-'
 
-                      return (
-                        <TableRow
-                          key={sheet.id}
-                          className={cn(
-                            "group hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10 transition-all duration-300",
-                            "border-border/50"
-                          )}
-                        >
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
-                                <span className="text-sm font-bold text-primary">
-                                  {String(index + 1).padStart(2, '0')}
-                                </span>
-                              </div>
-                              <div>
-                                <div className="font-semibold">{sheet.title}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {sheet.description || 'Prova presencial'}
+                        return (
+                          <TableRow
+                            key={sheet.id}
+                            className={cn(
+                              "group hover:bg-primary/5 transition-all duration-300",
+                              "border-border/50"
+                            )}
+                          >
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-primary/10">
+                                  <span className="text-sm font-bold text-primary">
+                                    {String(index + 1).padStart(2, '0')}
+                                  </span>
+                                </div>
+                                <div>
+                                  <div className="font-semibold">{sheet.title}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {sheet.description || 'Prova presencial'}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">{formattedDate}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={cn(
-                              "flex items-center gap-2 px-3 py-1 rounded-full border font-medium",
-                              getStatusColor(status)
-                            )}>
-                              {getStatusIcon(status)}
-                              {getStatusLabel(status)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {lastAttempt && lastAttempt.status === 'submitted' ? (
-                              <div className="flex items-center justify-end gap-2">
-                                <Trophy className="h-4 w-4 text-primary" />
-                                <span className="font-semibold text-primary">
-                                  {lastAttempt.percentage?.toFixed(0)}%
-                                </span>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{formattedDate}</span>
                               </div>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex gap-2 justify-end">
-                              {status === 'available' && (
-                                <Button
-                                  size="sm"
-                                  asChild
-                                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold"
-                                >
-                                  <Link to={`/cartao-resposta/${sheet.id}`}>
-                                    <Send className="mr-2 h-4 w-4" />
-                                    Preencher
-                                  </Link>
-                                </Button>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={cn(
+                                "flex items-center gap-2 px-3 py-1 rounded-full border font-medium",
+                                getStatusColor(status)
+                              )}>
+                                {getStatusIcon(status)}
+                                {getStatusLabel(status)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {lastAttempt && lastAttempt.status === 'submitted' ? (
+                                <div className="flex items-center justify-end gap-2">
+                                  <Trophy className="h-4 w-4 text-primary" />
+                                  <span className="font-semibold text-primary">
+                                    {lastAttempt.percentage?.toFixed(0)}%
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
                               )}
-                              {status === 'submitted' && lastAttempt && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  asChild
-                                >
-                                  <Link to={`/cartao-resposta/${sheet.id}/resultado?attemptId=${lastAttempt.id}`}>
-                                    <BarChart2 className="mr-2 h-4 w-4" />
-                                    Ver Nota
-                                  </Link>
-                                </Button>
-                              )}
-                              {status === 'expired' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  disabled
-                                  className="opacity-50 cursor-not-allowed"
-                                >
-                                  <AlertCircle className="mr-2 h-4 w-4" />
-                                  Encerrado
-                                </Button>
-                              )}
-                              {status === 'scheduled' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  disabled
-                                  className="opacity-50 cursor-not-allowed"
-                                >
-                                  <Clock className="mr-2 h-4 w-4" />
-                                  Agendado
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })
-                  )}
-                </TableBody>
-              </Table>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex gap-2 justify-end">
+                                {status === 'available' && (
+                                  <Button
+                                    size="sm"
+                                    asChild
+                                  >
+                                    <Link to={`/cartao-resposta/${sheet.id}`}>
+                                      <Send className="mr-2 h-4 w-4" />
+                                      Preencher
+                                    </Link>
+                                  </Button>
+                                )}
+                                {status === 'submitted' && lastAttempt && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                  >
+                                    <Link to={`/cartao-resposta/${sheet.id}/resultado?attemptId=${lastAttempt.id}`}>
+                                      <BarChart2 className="mr-2 h-4 w-4" />
+                                      Ver Nota
+                                    </Link>
+                                  </Button>
+                                )}
+                                {status === 'expired' && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled
+                                    className="opacity-50 cursor-not-allowed"
+                                  >
+                                    <AlertCircle className="mr-2 h-4 w-4" />
+                                    Encerrado
+                                  </Button>
+                                )}
+                                {status === 'scheduled' && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled
+                                    className="opacity-50 cursor-not-allowed"
+                                  >
+                                    <Clock className="mr-2 h-4 w-4" />
+                                    Agendado
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

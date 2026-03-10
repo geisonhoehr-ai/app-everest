@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { X, ChevronLeft, ChevronRight, Layers, Brain, RotateCw, Check, X as XIcon, BookOpen } from 'lucide-react'
@@ -83,7 +83,7 @@ export function FlashcardsTutorial({ onClose }: FlashcardsTutorialProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <MagicCard variant="premium" size="lg" className="max-w-2xl w-full">
+      <Card className="border-border shadow-sm max-w-2xl w-full">
         <div className="relative p-8">
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -148,7 +148,7 @@ export function FlashcardsTutorial({ onClose }: FlashcardsTutorialProps) {
             </div>
           )}
         </div>
-      </MagicCard>
+      </Card>
     </div>
   )
 }

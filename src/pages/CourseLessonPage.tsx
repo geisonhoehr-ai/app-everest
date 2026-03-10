@@ -6,8 +6,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { courseService } from '@/services/courseService'
 import { useAuth } from '@/hooks/use-auth'
 import {
@@ -207,9 +206,9 @@ export default function CourseLessonPage() {
 
   if (!lessonData || !courseData) {
     return (
-      <MagicLayout title="Aula não encontrada">
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">Aula não encontrada</h1>
         <div className="text-center py-12">
-          <div className="text-6xl mb-4">📚</div>
           <h2 className="text-2xl font-bold mb-2">Aula não encontrada</h2>
           <p className="text-muted-foreground mb-6">
             A aula que você está procurando não existe ou foi removida.
@@ -219,7 +218,7 @@ export default function CourseLessonPage() {
             Voltar ao Curso
           </Button>
         </div>
-      </MagicLayout>
+      </div>
     )
   }
 
@@ -227,18 +226,13 @@ export default function CourseLessonPage() {
   const videoEmbedUrl = getVideoEmbedUrl()
 
   return (
-    <MagicLayout
-      title={lessonData.title}
-      description={`Duração: ${formatDuration(lessonData.duration_seconds)} • Aula do curso`}
-      showHeader={false}
-    >
+    <div className="space-y-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <Button
             variant="outline"
             onClick={() => navigate(`/courses/${courseId}`)}
-            className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all duration-300"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Voltar ao Curso
@@ -247,8 +241,6 @@ export default function CourseLessonPage() {
             onClick={handleMarkAsComplete}
             disabled={lessonData.completed}
             className={cn(
-              "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
-              "text-white font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg",
               lessonData.completed && "opacity-50 cursor-not-allowed"
             )}
           >
@@ -258,138 +250,147 @@ export default function CourseLessonPage() {
         </div>
 
         {/* Lesson Info Card */}
-        <MagicCard variant="premium" size="lg" className="mb-6">
-          <div className="flex items-start justify-between flex-wrap gap-4">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <Play className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                    {lessonData.title}
-                  </h1>
-                  <div className="flex items-center gap-4 mt-2 flex-wrap">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span className="text-sm">{formatDuration(lessonData.duration_seconds)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <BookOpen className="h-4 w-4" />
-                      <span className="text-sm">{courseData.name}</span>
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between flex-wrap gap-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-primary/10">
+                    <Play className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-foreground">
+                      {lessonData.title}
+                    </h1>
+                    <div className="flex items-center gap-4 mt-2 flex-wrap">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm">{formatDuration(lessonData.duration_seconds)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <BookOpen className="h-4 w-4" />
+                        <span className="text-sm">{courseData.name}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Main Content with Sidebar */}
         <ResizablePanelGroup direction="horizontal" className="min-h-[600px] gap-4">
           {/* Sidebar */}
           <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
-            <MagicCard variant="glass" size="lg" className="h-full overflow-hidden">
-              <CourseSidebarContent
-                courseId={courseId!}
-                modules={courseData.modules}
-                currentLessonId={lessonId}
-              />
-            </MagicCard>
+            <Card className="border-border shadow-sm h-full overflow-hidden">
+              <CardContent className="p-0 h-full">
+                <CourseSidebarContent
+                  courseId={courseId!}
+                  modules={courseData.modules}
+                  currentLessonId={lessonId}
+                />
+              </CardContent>
+            </Card>
           </ResizablePanel>
 
-          <ResizableHandle withHandle className="bg-border/50 hover:bg-primary/50 transition-colors" />
+          <ResizableHandle withHandle className="bg-border hover:bg-primary/50 transition-colors" />
 
           {/* Video and Details */}
           <ResizablePanel defaultSize={pdfAttachment ? 50 : 75}>
             <div className="flex flex-col h-full gap-6">
               {/* Video Player */}
               {videoEmbedUrl && (
-                <MagicCard variant="glass" size="lg" className="overflow-hidden">
-                  <div className="aspect-video rounded-2xl overflow-hidden bg-black">
-                    <iframe
-                      src={videoEmbedUrl}
-                      title="Video player"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full h-full"
-                    />
-                  </div>
-                </MagicCard>
+                <Card className="border-border shadow-sm overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="aspect-video rounded-2xl overflow-hidden bg-black">
+                      <iframe
+                        src={videoEmbedUrl}
+                        title="Video player"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Lesson Details */}
-              <MagicCard variant="premium" size="lg">
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-bold mb-2">Sobre esta aula</h2>
-                    <p className="text-muted-foreground">{lessonData.description || 'Sem descrição disponível.'}</p>
-                  </div>
+              <Card className="border-border shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-xl font-bold mb-2">Sobre esta aula</h2>
+                      <p className="text-muted-foreground">{lessonData.description || 'Sem descrição disponível.'}</p>
+                    </div>
 
-                  {attachments.length > 0 && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-primary" />
-                        Materiais de Apoio
-                      </h3>
-                      <div className="grid gap-3">
-                        {attachments.map((att) => (
-                          <div
-                            key={att.id}
-                            className="group flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/20 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:scale-[1.02]"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                                <Download className="h-4 w-4 text-primary" />
-                              </div>
-                              <div>
-                                <span className="font-medium">{att.name || 'Arquivo'}</span>
-                                <div className="text-sm text-muted-foreground">
-                                  {att.file_type || 'Material de apoio'}
+                    {attachments.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-primary" />
+                          Materiais de Apoio
+                        </h3>
+                        <div className="grid gap-3">
+                          {attachments.map((att) => (
+                            <div
+                              key={att.id}
+                              className="group flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border hover:border-primary/30 transition-all duration-200 hover:shadow-md"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-primary/10">
+                                  <Download className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <span className="font-medium">{att.name || 'Arquivo'}</span>
+                                  <div className="text-sm text-muted-foreground">
+                                    {att.file_type || 'Material de apoio'}
+                                  </div>
                                 </div>
                               </div>
+                              <Button
+                                variant="outline"
+                                asChild
+                              >
+                                <a href={att.file_url} download target="_blank" rel="noopener noreferrer">
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Baixar
+                                </a>
+                              </Button>
                             </div>
-                            <Button
-                              variant="outline"
-                              asChild
-                              className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all duration-300"
-                            >
-                              <a href={att.file_url} download target="_blank" rel="noopener noreferrer">
-                                <Download className="mr-2 h-4 w-4" />
-                                Baixar
-                              </a>
-                            </Button>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </MagicCard>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </ResizablePanel>
 
           {/* PDF Viewer (if available) */}
           {pdfAttachment && (
             <>
-              <ResizableHandle withHandle className="bg-border/50 hover:bg-primary/50 transition-colors" />
+              <ResizableHandle withHandle className="bg-border hover:bg-primary/50 transition-colors" />
               <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-                <MagicCard variant="glass" size="lg" className="h-full overflow-hidden">
-                  <div className="h-full">
-                    <div className="flex items-center gap-2 p-4 border-b border-border/50">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <span className="font-semibold">Material de Apoio</span>
+                <Card className="border-border shadow-sm h-full overflow-hidden">
+                  <CardContent className="p-0 h-full">
+                    <div className="h-full">
+                      <div className="flex items-center gap-2 p-4 border-b border-border">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <span className="font-semibold">Material de Apoio</span>
+                      </div>
+                      <div className="h-[calc(100%-60px)]">
+                        <PdfViewer fileUrl={pdfAttachment.file_url} />
+                      </div>
                     </div>
-                    <div className="h-[calc(100%-60px)]">
-                      <PdfViewer fileUrl={pdfAttachment.file_url} />
-                    </div>
-                  </div>
-                </MagicCard>
+                  </CardContent>
+                </Card>
               </ResizablePanel>
             </>
           )}
         </ResizablePanelGroup>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

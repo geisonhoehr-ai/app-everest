@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/use-auth'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -217,17 +216,17 @@ export default function SettingsPage() {
       await refreshProfile()
 
       toast({
-        title: 'Sucesso! ✅',
+        title: 'Sucesso!',
         description: 'Suas configurações foram salvas com sucesso.',
       })
 
-      logger.debug('✅ Configurações salvas:', {
+      logger.debug('Configurações salvas:', {
         firstName: settings.profile.firstName,
         lastName: settings.profile.lastName,
         bio: settings.profile.bio
       })
     } catch (error: any) {
-      logger.error('❌ Erro ao salvar configurações:', error)
+      logger.error('Erro ao salvar configurações:', error)
       toast({
         title: 'Erro ao salvar',
         description: error.message || 'Não foi possível salvar suas configurações. Tente novamente.',
@@ -255,7 +254,7 @@ export default function SettingsPage() {
 
     try {
       const gravatarUrl = getGravatarUrl(profile.email)
-      logger.debug('🖼️ Usando Gravatar:', gravatarUrl)
+      logger.debug('Usando Gravatar:', gravatarUrl)
 
       // Atualizar no banco de dados
       const { error: updateError } = await supabase
@@ -278,13 +277,13 @@ export default function SettingsPage() {
       await refreshProfile()
 
       toast({
-        title: 'Sucesso! ✅',
+        title: 'Sucesso!',
         description: 'Sua foto do Gravatar foi configurada.',
       })
 
-      logger.debug('✅ Gravatar configurado com sucesso')
+      logger.debug('Gravatar configurado com sucesso')
     } catch (error: any) {
-      logger.error('❌ Erro ao configurar Gravatar:', error)
+      logger.error('Erro ao configurar Gravatar:', error)
       toast({
         title: 'Erro',
         description: error.message || 'Não foi possível configurar o Gravatar.',
@@ -323,7 +322,7 @@ export default function SettingsPage() {
     setShowAvatarDialog(false)
 
     try {
-      logger.debug('🔗 Usando URL de avatar:', avatarUrl)
+      logger.debug('Usando URL de avatar:', avatarUrl)
 
       // Atualizar no banco de dados
       const { error: updateError } = await supabase
@@ -346,14 +345,14 @@ export default function SettingsPage() {
       await refreshProfile()
 
       toast({
-        title: 'Sucesso! ✅',
+        title: 'Sucesso!',
         description: 'Sua foto de perfil foi atualizada.',
       })
 
       setAvatarUrl('')
-      logger.debug('✅ Avatar URL configurada com sucesso')
+      logger.debug('Avatar URL configurada com sucesso')
     } catch (error: any) {
-      logger.error('❌ Erro ao configurar avatar URL:', error)
+      logger.error('Erro ao configurar avatar URL:', error)
       toast({
         title: 'Erro',
         description: error.message || 'Não foi possível configurar a URL do avatar.',
@@ -400,7 +399,7 @@ export default function SettingsPage() {
         try {
           const base64String = reader.result as string
 
-          logger.debug('📤 Salvando avatar como base64')
+          logger.debug('Salvando avatar como base64')
 
           // Salvar base64 direto no banco (alternativa ao storage)
           const { error: updateError } = await supabase
@@ -423,13 +422,13 @@ export default function SettingsPage() {
           await refreshProfile()
 
           toast({
-            title: 'Sucesso! ✅',
+            title: 'Sucesso!',
             description: 'Sua foto de perfil foi atualizada.',
           })
 
-          logger.debug('✅ Avatar atualizado com sucesso')
+          logger.debug('Avatar atualizado com sucesso')
         } catch (error: any) {
-          logger.error('❌ Erro ao salvar avatar:', error)
+          logger.error('Erro ao salvar avatar:', error)
           toast({
             title: 'Erro ao salvar',
             description: 'Não foi possível salvar a imagem. Tente usar uma URL externa.',
@@ -445,7 +444,7 @@ export default function SettingsPage() {
       }
 
       reader.onerror = () => {
-        logger.error('❌ Erro ao ler arquivo')
+        logger.error('Erro ao ler arquivo')
         toast({
           title: 'Erro',
           description: 'Não foi possível ler o arquivo.',
@@ -456,7 +455,7 @@ export default function SettingsPage() {
 
       reader.readAsDataURL(file)
     } catch (error: any) {
-      logger.error('❌ Erro ao processar arquivo:', error)
+      logger.error('Erro ao processar arquivo:', error)
       toast({
         title: 'Erro',
         description: 'Não foi possível processar o arquivo.',
@@ -470,358 +469,375 @@ export default function SettingsPage() {
   }
 
   return (
-    <MagicLayout
-      title="Configurações"
-      description="Personalize sua experiência e gerencie suas preferências."
-    >
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
+
       <div className="space-y-8">
         {/* Profile Settings */}
-        <MagicCard className="p-6" glow>
-          <div className="flex items-center gap-4 mb-6">
-            <User className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-bold">Perfil</h2>
-          </div>
-          
-          {/* Input file oculto */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-            onChange={handleAvatarChange}
-            className="hidden"
-          />
+        <Card className="border-border shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-4">
+              <User className="h-6 w-6 text-primary" />
+              Perfil
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Input file oculto */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
 
-          <div className="flex items-center gap-6 mb-6">
-            <div className="relative">
-              <Avatar className="h-20 w-20 ring-4 ring-primary/20">
-                <AvatarImage src={settings.profile.avatar} alt="Avatar" />
-                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-bold text-xl">
-                  {settings.profile.firstName?.[0]?.toUpperCase()}{settings.profile.lastName?.[0]?.toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <Button
-                size="sm"
-                className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
-                onClick={handleAvatarClick}
-                disabled={isUploadingAvatar}
-                title="Alterar foto de perfil"
-              >
-                {isUploadingAvatar ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Camera className="h-4 w-4" />
-                )}
-              </Button>
+            <div className="flex items-center gap-6 mb-6">
+              <div className="relative">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={settings.profile.avatar} alt="Avatar" />
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
+                    {settings.profile.firstName?.[0]?.toUpperCase()}{settings.profile.lastName?.[0]?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <Button
+                  size="sm"
+                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                  onClick={handleAvatarClick}
+                  disabled={isUploadingAvatar}
+                  title="Alterar foto de perfil"
+                >
+                  {isUploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">{settings.profile.firstName} {settings.profile.lastName}</h3>
+                <p className="text-muted-foreground">{settings.profile.email}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-lg">{settings.profile.firstName} {settings.profile.lastName}</h3>
-              <p className="text-muted-foreground">{settings.profile.email}</p>
-            </div>
-          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">Nome</Label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">Nome</Label>
+                <Input
+                  id="firstName"
+                  value={settings.profile.firstName}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    profile: { ...prev.profile, firstName: e.target.value }
+                  }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Sobrenome</Label>
+                <Input
+                  id="lastName"
+                  value={settings.profile.lastName}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    profile: { ...prev.profile, lastName: e.target.value }
+                  }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="firstName"
-                value={settings.profile.firstName}
+                id="email"
+                type="email"
+                value={settings.profile.email}
+                disabled
+                className="bg-muted cursor-not-allowed"
+                title="O email não pode ser alterado"
+              />
+              <p className="text-xs text-muted-foreground">
+                O email não pode ser alterado. Entre em contato com o suporte se precisar mudar.
+              </p>
+            </div>
+
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="bio">Bio (opcional)</Label>
+              <Input
+                id="bio"
+                value={settings.profile.bio}
                 onChange={(e) => setSettings(prev => ({
                   ...prev,
-                  profile: { ...prev.profile, firstName: e.target.value }
+                  profile: { ...prev.profile, bio: e.target.value }
                 }))}
+                placeholder="Conte um pouco sobre você..."
+                maxLength={200}
               />
+              <p className="text-xs text-muted-foreground">
+                {settings.profile.bio?.length || 0}/200 caracteres
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Sobrenome</Label>
-              <Input
-                id="lastName"
-                value={settings.profile.lastName}
-                onChange={(e) => setSettings(prev => ({
-                  ...prev,
-                  profile: { ...prev.profile, lastName: e.target.value }
-                }))}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2 mt-4">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={settings.profile.email}
-              disabled
-              className="bg-muted cursor-not-allowed"
-              title="O email não pode ser alterado"
-            />
-            <p className="text-xs text-muted-foreground">
-              O email não pode ser alterado. Entre em contato com o suporte se precisar mudar.
-            </p>
-          </div>
-
-          <div className="space-y-2 mt-4">
-            <Label htmlFor="bio">Bio (opcional)</Label>
-            <Input
-              id="bio"
-              value={settings.profile.bio}
-              onChange={(e) => setSettings(prev => ({
-                ...prev,
-                profile: { ...prev.profile, bio: e.target.value }
-              }))}
-              placeholder="Conte um pouco sobre você..."
-              maxLength={200}
-            />
-            <p className="text-xs text-muted-foreground">
-              {settings.profile.bio?.length || 0}/200 caracteres
-            </p>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Notifications */}
-        <MagicCard className="p-6" glow>
-          <div className="flex items-center gap-4 mb-6">
-            <Bell className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-bold">Notificações</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="email-notifications">Notificações por email</Label>
-                <p className="text-sm text-muted-foreground">Receba notificações importantes por email</p>
+        <Card className="border-border shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-4">
+              <Bell className="h-6 w-6 text-primary" />
+              Notificações
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="email-notifications">Notificações por email</Label>
+                  <p className="text-sm text-muted-foreground">Receba notificações importantes por email</p>
+                </div>
+                <Switch
+                  id="email-notifications"
+                  checked={settings.notifications.email}
+                  onCheckedChange={(checked) => setSettings(prev => ({
+                    ...prev,
+                    notifications: { ...prev.notifications, email: checked }
+                  }))}
+                />
               </div>
-              <Switch
-                id="email-notifications"
-                checked={settings.notifications.email}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  notifications: { ...prev.notifications, email: checked }
-                }))}
-              />
-            </div>
 
-            <Separator />
+              <Separator />
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="push-notifications">Notificações push</Label>
-                <p className="text-sm text-muted-foreground">Receba notificações no navegador</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="push-notifications">Notificações push</Label>
+                  <p className="text-sm text-muted-foreground">Receba notificações no navegador</p>
+                </div>
+                <Switch
+                  id="push-notifications"
+                  checked={settings.notifications.push}
+                  onCheckedChange={(checked) => setSettings(prev => ({
+                    ...prev,
+                    notifications: { ...prev.notifications, push: checked }
+                  }))}
+                />
               </div>
-              <Switch
-                id="push-notifications"
-                checked={settings.notifications.push}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  notifications: { ...prev.notifications, push: checked }
-                }))}
-              />
-            </div>
 
-            <Separator />
+              <Separator />
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="achievements">Conquistas</Label>
-                <p className="text-sm text-muted-foreground">Seja notificado quando ganhar novas conquistas</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="achievements">Conquistas</Label>
+                  <p className="text-sm text-muted-foreground">Seja notificado quando ganhar novas conquistas</p>
+                </div>
+                <Switch
+                  id="achievements"
+                  checked={settings.notifications.achievements}
+                  onCheckedChange={(checked) => setSettings(prev => ({
+                    ...prev,
+                    notifications: { ...prev.notifications, achievements: checked }
+                  }))}
+                />
               </div>
-              <Switch
-                id="achievements"
-                checked={settings.notifications.achievements}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  notifications: { ...prev.notifications, achievements: checked }
-                }))}
-              />
-            </div>
 
-            <Separator />
+              <Separator />
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="courses">Novos cursos</Label>
-                <p className="text-sm text-muted-foreground">Seja notificado sobre novos cursos disponíveis</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="courses">Novos cursos</Label>
+                  <p className="text-sm text-muted-foreground">Seja notificado sobre novos cursos disponíveis</p>
+                </div>
+                <Switch
+                  id="courses"
+                  checked={settings.notifications.courses}
+                  onCheckedChange={(checked) => setSettings(prev => ({
+                    ...prev,
+                    notifications: { ...prev.notifications, courses: checked }
+                  }))}
+                />
               </div>
-              <Switch
-                id="courses"
-                checked={settings.notifications.courses}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  notifications: { ...prev.notifications, courses: checked }
-                }))}
-              />
-            </div>
 
-            <Separator />
+              <Separator />
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="reminders">Lembretes de estudo</Label>
-                <p className="text-sm text-muted-foreground">Receba lembretes para suas sessões de estudo</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="reminders">Lembretes de estudo</Label>
+                  <p className="text-sm text-muted-foreground">Receba lembretes para suas sessões de estudo</p>
+                </div>
+                <Switch
+                  id="reminders"
+                  checked={settings.notifications.reminders}
+                  onCheckedChange={(checked) => setSettings(prev => ({
+                    ...prev,
+                    notifications: { ...prev.notifications, reminders: checked }
+                  }))}
+                />
               </div>
-              <Switch
-                id="reminders"
-                checked={settings.notifications.reminders}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  notifications: { ...prev.notifications, reminders: checked }
-                }))}
-              />
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Privacy */}
-        <MagicCard className="p-6" glow>
-          <div className="flex items-center gap-4 mb-6">
-            <Shield className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-bold">Privacidade</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="show-progress">Mostrar progresso</Label>
-                <p className="text-sm text-muted-foreground">Permitir que outros vejam seu progresso</p>
+        <Card className="border-border shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-4">
+              <Shield className="h-6 w-6 text-primary" />
+              Privacidade
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="show-progress">Mostrar progresso</Label>
+                  <p className="text-sm text-muted-foreground">Permitir que outros vejam seu progresso</p>
+                </div>
+                <Switch
+                  id="show-progress"
+                  checked={settings.privacy.showProgress}
+                  onCheckedChange={(checked) => setSettings(prev => ({
+                    ...prev,
+                    privacy: { ...prev.privacy, showProgress: checked }
+                  }))}
+                />
               </div>
-              <Switch
-                id="show-progress"
-                checked={settings.privacy.showProgress}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  privacy: { ...prev.privacy, showProgress: checked }
-                }))}
-              />
-            </div>
 
-            <Separator />
+              <Separator />
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="show-achievements">Mostrar conquistas</Label>
-                <p className="text-sm text-muted-foreground">Permitir que outros vejam suas conquistas</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="show-achievements">Mostrar conquistas</Label>
+                  <p className="text-sm text-muted-foreground">Permitir que outros vejam suas conquistas</p>
+                </div>
+                <Switch
+                  id="show-achievements"
+                  checked={settings.privacy.showAchievements}
+                  onCheckedChange={(checked) => setSettings(prev => ({
+                    ...prev,
+                    privacy: { ...prev.privacy, showAchievements: checked }
+                  }))}
+                />
               </div>
-              <Switch
-                id="show-achievements"
-                checked={settings.privacy.showAchievements}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  privacy: { ...prev.privacy, showAchievements: checked }
-                }))}
-              />
-            </div>
 
-            <Separator />
+              <Separator />
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="allow-messages">Permitir mensagens</Label>
-                <p className="text-sm text-muted-foreground">Permitir que outros usuários enviem mensagens</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="allow-messages">Permitir mensagens</Label>
+                  <p className="text-sm text-muted-foreground">Permitir que outros usuários enviem mensagens</p>
+                </div>
+                <Switch
+                  id="allow-messages"
+                  checked={settings.privacy.allowMessages}
+                  onCheckedChange={(checked) => setSettings(prev => ({
+                    ...prev,
+                    privacy: { ...prev.privacy, allowMessages: checked }
+                  }))}
+                />
               </div>
-              <Switch
-                id="allow-messages"
-                checked={settings.privacy.allowMessages}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  privacy: { ...prev.privacy, allowMessages: checked }
-                }))}
-              />
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Appearance */}
-        <MagicCard className="p-6" glow>
-          <div className="flex items-center gap-4 mb-6">
-            <Palette className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-bold">Aparência</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="animations">Animações</Label>
-                <p className="text-sm text-muted-foreground">Habilitar animações e transições</p>
+        <Card className="border-border shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-4">
+              <Palette className="h-6 w-6 text-primary" />
+              Aparência
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="animations">Animações</Label>
+                  <p className="text-sm text-muted-foreground">Habilitar animações e transições</p>
+                </div>
+                <Switch
+                  id="animations"
+                  checked={settings.appearance.animations}
+                  onCheckedChange={(checked) => setSettings(prev => ({
+                    ...prev,
+                    appearance: { ...prev.appearance, animations: checked }
+                  }))}
+                />
               </div>
-              <Switch
-                id="animations"
-                checked={settings.appearance.animations}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  appearance: { ...prev.appearance, animations: checked }
-                }))}
-              />
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* PWA Settings */}
-        <MagicCard className="p-6" glow>
-          <div className="flex items-center gap-4 mb-6">
-            <Globe className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-bold">Aplicativo</h2>
-          </div>
+        <Card className="border-border shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-4">
+              <Globe className="h-6 w-6 text-primary" />
+              Aplicativo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="pwa-install">Instalar App</Label>
+                  <p className="text-sm text-muted-foreground">Instale o Everest como aplicativo no seu dispositivo</p>
+                </div>
+                <Button
+                  id="pwa-install"
+                  variant="outline"
+                  onClick={() => {
+                    // Trigger PWA install prompt
+                    const event = new Event('beforeinstallprompt')
+                    window.dispatchEvent(event)
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Instalar
+                </Button>
+              </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="pwa-install">Instalar App</Label>
-                <p className="text-sm text-muted-foreground">Instale o Everest como aplicativo no seu dispositivo</p>
-              </div>
-              <Button
-                id="pwa-install"
-                variant="outline"
-                onClick={() => {
-                  // Trigger PWA install prompt
-                  const event = new Event('beforeinstallprompt')
-                  window.dispatchEvent(event)
-                }}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Instalar
-              </Button>
-            </div>
-            
-            <Separator />
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="pwa-status">Status do App</Label>
-                <p className="text-sm text-muted-foreground">
-                  {window.matchMedia('(display-mode: standalone)').matches 
-                    ? 'App instalado e funcionando' 
-                    : 'App não instalado'}
-                </p>
-              </div>
-              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                window.matchMedia('(display-mode: standalone)').matches
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-              }`}>
-                {window.matchMedia('(display-mode: standalone)').matches ? 'Instalado' : 'Não Instalado'}
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="pwa-status">Status do App</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {window.matchMedia('(display-mode: standalone)').matches
+                      ? 'App instalado e funcionando'
+                      : 'App não instalado'}
+                  </p>
+                </div>
+                <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  window.matchMedia('(display-mode: standalone)').matches
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                }`}>
+                  {window.matchMedia('(display-mode: standalone)').matches ? 'Instalado' : 'Não Instalado'}
+                </div>
               </div>
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Data Management */}
-        <MagicCard className="p-6" glow>
-          <div className="flex items-center gap-4 mb-6">
-            <Download className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-bold">Gerenciamento de Dados</h2>
-          </div>
-
-          <div className="space-y-4">
-            <Button variant="outline" className="w-full justify-start" onClick={handleExportData}>
-              <Download className="mr-2 h-4 w-4" />
-              Exportar meus dados
-            </Button>
-            <Separator />
-            <Button variant="destructive" className="w-full justify-start" onClick={handleDeleteAccount}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Excluir conta
-            </Button>
-          </div>
-        </MagicCard>
+        <Card className="border-border shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-4">
+              <Download className="h-6 w-6 text-primary" />
+              Gerenciamento de Dados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Button variant="outline" className="w-full justify-start" onClick={handleExportData}>
+                <Download className="mr-2 h-4 w-4" />
+                Exportar meus dados
+              </Button>
+              <Separator />
+              <Button variant="destructive" className="w-full justify-start" onClick={handleDeleteAccount}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir conta
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Save Button */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
@@ -832,7 +848,7 @@ export default function SettingsPage() {
             onClick={handleSave}
             disabled={isSaving || isUploadingAvatar}
             size="lg"
-            className="group transition-all duration-300 hover:bg-primary/90 w-full sm:w-auto"
+            className="w-full sm:w-auto"
           >
             {isSaving ? (
               <>
@@ -841,7 +857,7 @@ export default function SettingsPage() {
               </>
             ) : (
               <>
-                <Save className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
+                <Save className="mr-2 h-4 w-4" />
                 Salvar Configurações
               </>
             )}
@@ -929,6 +945,6 @@ export default function SettingsPage() {
           </div>
         </ResponsiveDialogContent>
       </ResponsiveDialog>
-    </MagicLayout>
+    </div>
   )
 }

@@ -9,8 +9,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
@@ -59,42 +58,37 @@ export default function EvercastPage() {
   // Se for aluno e não tiver permissão, mostra página bloqueada
   if (isStudent && !hasFeature(FEATURE_KEYS.EVERCAST)) {
     return (
-      <MagicLayout
-        title="Evercast"
-        description="Sistema de áudio-aulas bloqueado"
-      >
-        <MagicCard variant="glass" size="lg" className="text-center py-24">
-          <div className="max-w-md mx-auto">
-            <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center">
-              <Lock className="w-10 h-10 text-purple-600" />
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">Evercast</h1>
+        <Card className="border-border shadow-sm">
+          <CardContent className="text-center py-24">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-purple-500/10 flex items-center justify-center">
+                <Lock className="w-10 h-10 text-purple-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                Recurso Bloqueado
+              </h3>
+              <p className="text-muted-foreground mb-8">
+                O Evercast (áudio-aulas) não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
+              </p>
             </div>
-            <h3 className="text-2xl font-bold text-foreground mb-4">
-              Recurso Bloqueado
-            </h3>
-            <p className="text-muted-foreground mb-8">
-              O Evercast (áudio-aulas) não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
-            </p>
-          </div>
-        </MagicCard>
-      </MagicLayout>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
   return (
-    <MagicLayout
-      title="Evercast"
-      description="Suas aulas em áudio para ouvir onde e quando quiser"
-      showHeader={false}
-      className={cn("pb-32", currentTrack ? "mb-20" : "")} // Add padding for player
-    >
+    <div className={cn("space-y-6 pb-32", currentTrack ? "mb-20" : "")}>
       {/* Hero Section */}
-      <div className="flex flex-col md:flex-row gap-8 items-end p-8 bg-gradient-to-b from-emerald-900/30 via-cyan-900/10 to-background/0">
-        <div className="w-52 h-52 shadow-2xl rounded-md bg-gradient-to-br from-emerald-500 to-cyan-700 flex items-center justify-center shrink-0">
-          <Headphones className="w-24 h-24 text-white" />
+      <div className="flex flex-col md:flex-row gap-6 items-end p-6">
+        <div className="w-32 h-32 shadow-sm rounded-md bg-emerald-600 flex items-center justify-center shrink-0">
+          <Headphones className="w-12 h-12 text-white" />
         </div>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
           <span className="uppercase text-xs font-bold tracking-wider text-muted-foreground">Seus Cursos em Audio</span>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight">Evercast</h1>
+          <h1 className="text-2xl font-bold text-foreground">Evercast</h1>
           <p className="text-muted-foreground max-w-2xl">
             Suas aulas em formato de audio para estudar em qualquer lugar.
           </p>
@@ -118,15 +112,15 @@ export default function EvercastPage() {
                 className="group cursor-pointer"
                 onClick={() => navigate(`/evercast/curso/${course.id}`)}
               >
-                <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-3 shadow-lg">
+                <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-3 shadow-sm hover:shadow-md transition-shadow">
                   {course.thumbnail_url ? (
                     <img
                       src={course.thumbnail_url}
                       alt={course.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-emerald-600 to-cyan-700 flex items-center justify-center">
+                    <div className="w-full h-full bg-emerald-600 flex items-center justify-center">
                       <Disc3 className="w-16 h-16 text-white/80" />
                     </div>
                   )}
@@ -163,7 +157,6 @@ export default function EvercastPage() {
         playlist={allLessons}
         onTrackChange={setCurrentTrack}
       />
-    </MagicLayout >
+    </div>
   )
 }
-

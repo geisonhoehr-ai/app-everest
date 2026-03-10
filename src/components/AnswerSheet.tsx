@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -88,7 +88,7 @@ export function AnswerSheet({
   }
 
   return (
-    <MagicCard variant="glass" size="lg" className={className}>
+    <Card className={cn("border-border shadow-sm", className)}><CardContent className="p-6">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -185,6 +185,6 @@ export function AnswerSheet({
           </div>
         </CollapsibleContent>
       </Collapsible>
-    </MagicCard>
+    </CardContent></Card>
   )
 }

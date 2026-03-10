@@ -1,11 +1,10 @@
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Search, Play, Clock, Users, Star, BookOpen, Brain, ArrowRight, Award, TrendingUp, Zap, Lock } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useStaggeredAnimation } from '@/hooks/useAnimations'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { courseService, CourseTrail } from '@/services/courseService'
@@ -70,144 +69,146 @@ export default function CoursesPage() {
   // Se for aluno e não tiver permissão, mostra página bloqueada
   if (isStudent && !hasFeature(FEATURE_KEYS.VIDEO_LESSONS)) {
     return (
-      <MagicLayout
-        title="Meus Cursos"
-        description="Sistema de videoaulas bloqueado"
-      >
-        <MagicCard variant="glass" size="lg" className="text-center py-24">
-          <div className="max-w-md mx-auto">
-            <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-              <Lock className="w-10 h-10 text-primary" />
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">Meus Cursos</h1>
+        <Card className="border-border shadow-sm">
+          <CardContent className="text-center py-16">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-8 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Lock className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                Recurso Bloqueado
+              </h3>
+              <p className="text-muted-foreground mb-8">
+                O sistema de videoaulas não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
+              </p>
             </div>
-            <h3 className="text-2xl font-bold text-foreground mb-4">
-              Recurso Bloqueado
-            </h3>
-            <p className="text-muted-foreground mb-8">
-              O sistema de videoaulas não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
-            </p>
-          </div>
-        </MagicCard>
-      </MagicLayout>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
   return (
-    <MagicLayout
-      title="Meus Cursos"
-      description="Aprenda com os melhores professores e domine qualquer assunto com nossos cursos especializados"
-    >
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-foreground">Meus Cursos</h1>
+
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Stats */}
-        <MagicCard variant="premium" size="lg">
-          <div className="space-y-4 md:space-y-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <BookOpen className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="space-y-4 md:space-y-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-primary/10">
+                    <BookOpen className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Plataforma de Cursos
+                    </h2>
+                    <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
+                      Aprenda com os melhores professores e domine qualquer assunto
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                    Plataforma de Cursos
-                  </h1>
-                  <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
-                    Aprenda com os melhores professores e domine qualquer assunto
-                  </p>
+                <div className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-primary/5 border border-primary/20">
+                  <Star className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                  <span className="text-xs md:text-sm font-medium">Ensino Inteligente</span>
                 </div>
               </div>
-              <div className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
-                <Star className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-                <span className="text-xs md:text-sm font-medium">Ensino Inteligente</span>
-              </div>
-            </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-blue-600">{totalActiveCourses}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Cursos Ativos</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                <Play className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-green-600">{totalLessonsCompleted}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Aulas Concluídas</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                <Clock className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-purple-600">{totalLessons}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Total Aulas</div>
-              </div>
-              <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
-                <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                <div className="text-xl md:text-2xl font-bold text-orange-600">{Math.round(averageProgress)}%</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Progresso Médio</div>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="text-center p-3 md:p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                  <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
+                  <div className="text-xl md:text-2xl font-bold text-blue-600">{totalActiveCourses}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Cursos Ativos</div>
+                </div>
+                <div className="text-center p-3 md:p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                  <Play className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
+                  <div className="text-xl md:text-2xl font-bold text-green-600">{totalLessonsCompleted}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Aulas Concluidas</div>
+                </div>
+                <div className="text-center p-3 md:p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                  <Clock className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
+                  <div className="text-xl md:text-2xl font-bold text-purple-600">{totalLessons}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Total Aulas</div>
+                </div>
+                <div className="text-center p-3 md:p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                  <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
+                  <div className="text-xl md:text-2xl font-bold text-orange-600">{Math.round(averageProgress)}%</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">Progresso Medio</div>
+                </div>
               </div>
             </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Search and Filter */}
-        <MagicCard variant="glass" size="lg">
-          <div className="flex flex-col gap-3 md:gap-4">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar cursos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-card/50 backdrop-blur-sm border-border/50"
-              />
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex flex-col gap-3 md:gap-4">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar cursos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 border-border"
+                />
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {categories.map((category) => (
+                  <Button
+                    key={category}
+                    variant={filterCategory === category ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilterCategory(category)}
+                    className={cn(
+                      "transition-colors duration-300 whitespace-nowrap flex-shrink-0",
+                      filterCategory !== category && "hover:bg-muted"
+                    )}
+                  >
+                    {category}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={filterCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFilterCategory(category)}
-                  className={cn(
-                    "transition-colors duration-300 whitespace-nowrap flex-shrink-0",
-                    filterCategory === category
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-white"
-                      : "bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80"
-                  )}
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Course Trails */}
         {filteredTrails.length === 0 ? (
-          <MagicCard variant="glass" size="lg" className="text-center py-24">
-            <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                <BookOpen className="w-10 h-10 text-primary" />
+          <Card className="border-border shadow-sm">
+            <CardContent className="text-center py-16">
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 mx-auto mb-8 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <BookOpen className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold text-foreground mb-4">
+                  Nenhum curso encontrado
+                </h3>
+                <p className="text-muted-foreground mb-8">
+                  {searchTerm || filterCategory !== 'Todos'
+                    ? 'Tente ajustar seus filtros de busca'
+                    : 'Voce ainda nao tem acesso a nenhum curso. Entre em contato com seu professor.'
+                  }
+                </p>
+                {(searchTerm || filterCategory !== 'Todos') && (
+                  <Button
+                    onClick={() => {
+                      setSearchTerm('')
+                      setFilterCategory('Todos')
+                    }}
+                  >
+                    Limpar Filtros
+                  </Button>
+                )}
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Nenhum curso encontrado
-              </h3>
-              <p className="text-muted-foreground mb-8">
-                {searchTerm || filterCategory !== 'Todos'
-                  ? 'Tente ajustar seus filtros de busca'
-                  : 'Você ainda não tem acesso a nenhum curso. Entre em contato com seu professor.'
-                }
-              </p>
-              {(searchTerm || filterCategory !== 'Todos') && (
-                <Button
-                  onClick={() => {
-                    setSearchTerm('')
-                    setFilterCategory('Todos')
-                  }}
-                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-8 py-3 rounded-2xl font-medium transition-transform duration-300 hover:scale-105 hover:shadow-lg inline-flex items-center justify-center"
-                >
-                  Limpar Filtros
-                </Button>
-              )}
-            </div>
-          </MagicCard>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-12 pb-24">
             {filteredTrails.map((trail, index) => (
@@ -221,7 +222,7 @@ export default function CoursesPage() {
                       </span>
                     </h2>
                     <p className="text-muted-foreground text-sm mt-1">
-                      {trail.courses.length} curso{trail.courses.length !== 1 ? 's' : ''} • {Math.round(trail.averageProgress)}% concluído
+                      {trail.courses.length} curso{trail.courses.length !== 1 ? 's' : ''} • {Math.round(trail.averageProgress)}% concluido
                     </p>
                   </div>
                 </div>
@@ -229,10 +230,7 @@ export default function CoursesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {trail.courses.map((course) => (
                     <Link key={course.id} to={`/meus-cursos/${course.id}`} className="group block h-full">
-                      <MagicCard
-                        className="h-full flex flex-col overflow-hidden border-border/50 bg-card/50 hover:bg-card/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl group-hover:border-primary/50 p-0"
-                        variant="glass"
-                      >
+                      <Card className="h-full flex flex-col overflow-hidden border-border hover:shadow-md transition-all duration-300 group-hover:border-primary/50 p-0">
                         {/* Course Thumbnail */}
                         <div className="relative aspect-video w-full overflow-hidden bg-muted">
                           <img
@@ -241,15 +239,15 @@ export default function CoursesPage() {
                             className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
                           />
                           {/* Overlay Play Button */}
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                            <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300 delay-75 shadow-2xl">
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <div className="w-14 h-14 rounded-full bg-white/20 border border-white/40 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300 delay-75 shadow-2xl">
                               <Play className="w-6 h-6 text-white ml-1" fill="currentColor" />
                             </div>
                           </div>
                           {/* Tags/Badges */}
                           <div className="absolute top-2 right-2 flex gap-1 z-10">
                             {course.progress === 100 && (
-                              <div className="px-2 py-1 rounded-md bg-green-500/90 text-white text-xs font-bold backdrop-blur-sm shadow-sm flex items-center gap-1">
+                              <div className="px-2 py-1 rounded-md bg-green-500/90 text-white text-xs font-bold shadow-sm flex items-center gap-1">
                                 <Award className="w-3 h-3" />
                               </div>
                             )}
@@ -283,7 +281,7 @@ export default function CoursesPage() {
                             <Progress value={course.progress} className={cn("h-1.5", course.progress === 100 ? "[&>div]:bg-green-500" : "")} />
                           </div>
                         </div>
-                      </MagicCard>
+                      </Card>
                     </Link>
                   ))}
                 </div>
@@ -292,6 +290,6 @@ export default function CoursesPage() {
           </div>
         )}
       </div>
-    </MagicLayout>
+    </div>
   )
 }

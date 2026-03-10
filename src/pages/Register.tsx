@@ -6,8 +6,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -80,37 +79,33 @@ export default function RegisterPage() {
   }
 
   return (
-    <MagicLayout
-      title="Criar Conta"
-      description="Junte-se à nossa comunidade de estudantes e comece sua jornada de aprendizado"
-      showHeader={false}
-    >
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-8">
-          {/* Logo and Brand */}
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-2xl shadow-primary/25">
-                  <Mountain className="h-10 w-10 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-                  <Star className="h-3 w-3 text-white" />
-                </div>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo and Brand */}
+        <div className="text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/25">
+                <Mountain className="h-10 w-10 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
+                <Star className="h-3 w-3 text-white" />
               </div>
             </div>
-            <div className="space-y-2">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                Bem-vindo ao Everest
-              </h1>
-              <p className="text-muted-foreground text-lg">
-                Crie sua conta e comece sua jornada de aprendizado
-              </p>
-            </div>
           </div>
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold">
+              Bem-vindo ao Everest
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Crie sua conta e comece sua jornada de aprendizado
+            </p>
+          </div>
+        </div>
 
-          {/* Register Form */}
-          <MagicCard variant="premium" size="lg">
+        {/* Register Form */}
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="space-y-4">
@@ -127,7 +122,7 @@ export default function RegisterPage() {
                               type="email"
                               placeholder="seu@email.com"
                               autoComplete="email"
-                              className="pl-10 bg-card/50 backdrop-blur-sm border-border/50 h-12 rounded-xl"
+                              className="pl-10 h-12 rounded-xl"
                               {...field}
                             />
                           </div>
@@ -150,7 +145,7 @@ export default function RegisterPage() {
                               type={showPassword ? "text" : "password"}
                               placeholder="••••••••"
                               autoComplete="new-password"
-                              className="pl-10 pr-10 bg-card/50 backdrop-blur-sm border-border/50 h-12 rounded-xl"
+                              className="pl-10 pr-10 h-12 rounded-xl"
                               {...field}
                             />
                             <button
@@ -180,7 +175,7 @@ export default function RegisterPage() {
                               type={showConfirmPassword ? "text" : "password"}
                               placeholder="••••••••"
                               autoComplete="new-password"
-                              className="pl-10 pr-10 bg-card/50 backdrop-blur-sm border-border/50 h-12 rounded-xl"
+                              className="pl-10 pr-10 h-12 rounded-xl"
                               {...field}
                             />
                             <button
@@ -200,7 +195,7 @@ export default function RegisterPage() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white h-12 rounded-xl font-semibold transition-transform duration-300 hover:scale-105 hover:shadow-lg inline-flex items-center justify-center"
+                  className="w-full h-12 rounded-xl font-semibold inline-flex items-center justify-center"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -226,16 +221,18 @@ export default function RegisterPage() {
             </div>
 
             <div className="mt-6">
-              <Button variant="outline" className="w-full bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80" asChild>
+              <Button variant="outline" className="w-full" asChild>
                 <Link to="/login">
                   Já tem uma conta? Faça login
                 </Link>
               </Button>
             </div>
-          </MagicCard>
+          </CardContent>
+        </Card>
 
-          {/* Features */}
-          <MagicCard variant="glass" size="lg">
+        {/* Features */}
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
             <div className="space-y-6">
               <div className="text-center">
                 <h3 className="text-xl font-semibold mb-2">Por que escolher o Everest?</h3>
@@ -245,21 +242,21 @@ export default function RegisterPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
                   <Shield className="h-6 w-6 text-blue-500" />
                   <div>
                     <h4 className="font-semibold text-sm">Seguro e Confiável</h4>
                     <p className="text-xs text-muted-foreground">Seus dados protegidos com criptografia</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
                   <Zap className="h-6 w-6 text-green-500" />
                   <div>
                     <h4 className="font-semibold text-sm">Aprendizado Rápido</h4>
                     <p className="text-xs text-muted-foreground">Métodos eficazes para acelerar seu progresso</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
                   <Sparkles className="h-6 w-6 text-purple-500" />
                   <div>
                     <h4 className="font-semibold text-sm">Experiência Inteligente</h4>
@@ -268,9 +265,9 @@ export default function RegisterPage() {
                 </div>
               </div>
             </div>
-          </MagicCard>
-        </div>
+          </CardContent>
+        </Card>
       </div>
-    </MagicLayout>
+    </div>
   )
 }

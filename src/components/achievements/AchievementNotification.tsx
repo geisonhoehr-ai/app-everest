@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -119,9 +119,9 @@ export function AchievementNotification({
 
   return (
     <div className="fixed top-4 right-4 z-50 max-w-sm w-full">
-      <MagicCard
-        variant="premium"
+      <Card
         className={cn(
+          "border-border shadow-sm",
           "transform transition-all duration-500 ease-out",
           isAnimating 
             ? "translate-x-0 opacity-100 scale-100" 
@@ -182,7 +182,7 @@ export function AchievementNotification({
             <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-green-400 rounded-full animate-bounce"></div>
           </div>
         </div>
-      </MagicCard>
+      </Card>
     </div>
   )
 }

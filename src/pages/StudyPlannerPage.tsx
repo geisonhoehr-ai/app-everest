@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/components/ui/use-toast'
@@ -184,7 +183,10 @@ export default function StudyPlannerPage() {
 
   // Load data
   const loadData = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id) {
+      setIsLoading(false)
+      return
+    }
 
     setIsLoading(true)
     try {
@@ -545,32 +547,36 @@ export default function StudyPlannerPage() {
   // Se for aluno e não tiver permissão, mostra página bloqueada
   if (isStudent && !hasFeature(FEATURE_KEYS.CALENDAR)) {
     return (
-      <MagicLayout
-        title="Planejamento"
-        description="Recurso bloqueado"
-      >
-        <MagicCard variant="glass" size="lg" className="text-center py-24">
-          <div className="max-w-md mx-auto">
-            <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-              <Lock className="w-10 h-10 text-primary" />
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Planejamento</h1>
+          <p className="text-muted-foreground">Recurso bloqueado</p>
+        </div>
+        <Card className="border-border shadow-sm">
+          <CardContent className="text-center py-24">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-primary/10 flex items-center justify-center">
+                <Lock className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                Recurso Bloqueado
+              </h3>
+              <p className="text-muted-foreground mb-8">
+                Este recurso não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
+              </p>
             </div>
-            <h3 className="text-2xl font-bold text-foreground mb-4">
-              Recurso Bloqueado
-            </h3>
-            <p className="text-muted-foreground mb-8">
-              Este recurso não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
-            </p>
-          </div>
-        </MagicCard>
-      </MagicLayout>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
   return (
-    <MagicLayout
-      title="Planejamento de Estudos"
-      description="Organize seus estudos com a técnica Pomodoro"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Planejamento de Estudos</h1>
+        <p className="text-muted-foreground">Organize seus estudos com a técnica Pomodoro</p>
+      </div>
       {/* Screen reader announcements */}
       <div
         role="status"
@@ -584,13 +590,14 @@ export default function StudyPlannerPage() {
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         
         {/* Header com Stats */}
-        <MagicCard variant="premium" size="lg">
+        <Card className="border-border shadow-sm">
+          <CardContent className="pt-6">
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
                   Meu Plano de Estudos
-                </h1>
+                </h2>
                 <p className="text-muted-foreground mt-1">
                   Organize seus estudos de forma inteligente com a técnica Pomodoro
                 </p>
@@ -607,7 +614,7 @@ export default function StudyPlannerPage() {
                 </Button>
                 <Button
                   onClick={() => { setEditingTopic(null); setShowAddModal(true); }}
-                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 flex-1 md:flex-none"
+                  className="flex-1 md:flex-none"
                   aria-label="Adicionar novo conteúdo de estudo"
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -618,7 +625,7 @@ export default function StudyPlannerPage() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-              <div className="p-4 md:p-6 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+              <div className="p-4 md:p-6 rounded-xl bg-green-500/10 border border-green-500/20">
                 <div className="flex items-center justify-between mb-2">
                   <CheckCircle className="w-8 h-8 md:w-10 md:h-10 text-green-500 opacity-50" />
                 </div>
@@ -626,7 +633,7 @@ export default function StudyPlannerPage() {
                 <p className="text-2xl md:text-3xl font-bold text-green-600">{completedTopics}</p>
               </div>
 
-              <div className="p-4 md:p-6 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+              <div className="p-4 md:p-6 rounded-xl bg-blue-500/10 border border-blue-500/20">
                 <div className="flex items-center justify-between mb-2">
                   <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-blue-500 opacity-50" />
                 </div>
@@ -634,7 +641,7 @@ export default function StudyPlannerPage() {
                 <p className="text-2xl md:text-3xl font-bold text-blue-600">{topics.length}</p>
               </div>
 
-              <div className="p-4 md:p-6 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+              <div className="p-4 md:p-6 rounded-xl bg-purple-500/10 border border-purple-500/20">
                 <div className="flex items-center justify-between mb-2">
                   <Clock className="w-8 h-8 md:w-10 md:h-10 text-purple-500 opacity-50" />
                 </div>
@@ -642,7 +649,7 @@ export default function StudyPlannerPage() {
                 <p className="text-2xl md:text-3xl font-bold text-purple-600">{totalPomodoros}</p>
               </div>
 
-              <div className="p-4 md:p-6 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+              <div className="p-4 md:p-6 rounded-xl bg-orange-500/10 border border-orange-500/20">
                 <div className="flex items-center justify-between mb-2">
                   <TrendingUp className="w-8 h-8 md:w-10 md:h-10 text-orange-500 opacity-50" />
                 </div>
@@ -660,7 +667,8 @@ export default function StudyPlannerPage() {
               <Progress value={progressPercentage} className="h-3" />
             </div>
           </div>
-        </MagicCard>
+          </CardContent>
+        </Card>
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="Seções do plano de estudos">
@@ -669,7 +677,7 @@ export default function StudyPlannerPage() {
             variant={activeTab === 'planner' ? 'default' : 'outline'}
             className={cn(
               "flex-1 md:flex-none",
-              activeTab === 'planner' && "bg-gradient-to-r from-primary to-primary/80"
+              activeTab === 'planner' && ""
             )}
             role="tab"
             aria-selected={activeTab === 'planner'}
@@ -683,7 +691,7 @@ export default function StudyPlannerPage() {
             variant={activeTab === 'timer' ? 'default' : 'outline'}
             className={cn(
               "flex-1 md:flex-none",
-              activeTab === 'timer' && "bg-gradient-to-r from-primary to-primary/80"
+              activeTab === 'timer' && ""
             )}
             role="tab"
             aria-selected={activeTab === 'timer'}
@@ -697,7 +705,7 @@ export default function StudyPlannerPage() {
             variant={activeTab === 'history' ? 'default' : 'outline'}
             className={cn(
               "flex-1 md:flex-none",
-              activeTab === 'history' && "bg-gradient-to-r from-primary to-primary/80"
+              activeTab === 'history' && ""
             )}
             role="tab"
             aria-selected={activeTab === 'history'}
@@ -710,7 +718,8 @@ export default function StudyPlannerPage() {
 
         {/* Search and Filter Bar - Only visible in planner tab */}
         {activeTab === 'planner' && (
-          <MagicCard variant="glass" size="lg">
+          <Card className="border-border shadow-sm">
+            <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -738,7 +747,8 @@ export default function StudyPlannerPage() {
                 </SelectContent>
               </Select>
             </div>
-          </MagicCard>
+            </CardContent>
+          </Card>
         )}
 
         {/* Content */}
@@ -747,9 +757,10 @@ export default function StudyPlannerPage() {
             <>
             {/* Empty State */}
             {topics.length === 0 ? (
-              <MagicCard variant="glass" size="lg" className="text-center py-24">
+              <Card className="border-border shadow-sm">
+                <CardContent className="text-center py-24">
                 <div className="max-w-md mx-auto">
-                  <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                  <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-primary/10 flex items-center justify-center">
                     <BookOpen className="w-10 h-10 text-primary" />
                   </div>
                   <h3 className="text-2xl font-bold text-foreground mb-4">
@@ -760,15 +771,16 @@ export default function StudyPlannerPage() {
                   </p>
                   <Button
                     onClick={() => { setEditingTopic(null); setShowAddModal(true); }}
-                    className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Adicionar Primeiro Conteúdo
                   </Button>
                 </div>
-              </MagicCard>
+                </CardContent>
+              </Card>
             ) : filteredTopics.length === 0 ? (
-              <MagicCard variant="glass" size="lg" className="text-center py-16">
+              <Card className="border-border shadow-sm">
+                <CardContent className="text-center py-16">
                 <div className="max-w-md mx-auto">
                   <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h3 className="text-xl font-semibold mb-2">Nenhum resultado encontrado</h3>
@@ -785,7 +797,8 @@ export default function StudyPlannerPage() {
                     Limpar Filtros
                   </Button>
                 </div>
-              </MagicCard>
+                </CardContent>
+              </Card>
             ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Renderizar todas as categorias que têm tópicos */}
@@ -976,7 +989,7 @@ export default function StudyPlannerPage() {
         onOpenChange={setShowTutorial}
         onComplete={handleTutorialComplete}
       />
-    </MagicLayout>
+    </div>
   )
 }
 
@@ -1042,7 +1055,8 @@ function CategoryCard({
   }
 
   return (
-    <MagicCard variant="glass" size="lg">
+    <Card className="border-border shadow-sm">
+      <CardContent className="pt-6">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -1084,7 +1098,8 @@ function CategoryCard({
           ))}
         </div>
       </div>
-    </MagicCard>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -1205,7 +1220,8 @@ function PomodoroTimer({
   const progress = ((totalTime - timeLeft) / totalTime) * 100
 
   return (
-    <MagicCard variant="premium" size="lg" className="max-w-3xl mx-auto">
+    <Card className="border-border shadow-sm max-w-3xl mx-auto">
+      <CardContent className="pt-6">
       <div className="space-y-8">
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-2">
@@ -1230,8 +1246,8 @@ function PomodoroTimer({
         <div className={cn(
           "text-center p-8 md:p-12 rounded-2xl transition-colors",
           timerMode === 'study'
-            ? "bg-gradient-to-br from-primary/10 to-primary/5"
-            : "bg-gradient-to-br from-green-500/10 to-green-600/5"
+            ? "bg-primary/5"
+            : "bg-green-500/5"
         )}>
           <div className={cn(
             "text-6xl md:text-8xl font-bold mb-4 transition-colors",
@@ -1289,8 +1305,8 @@ function PomodoroTimer({
             className={cn(
               "flex-1 font-semibold shadow-lg",
               timerMode === 'study'
-                ? "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                : "bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600"
+                ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                : "bg-green-600 hover:bg-green-700 text-white"
             )}
             aria-label={timerActive ? 'Pausar cronômetro' : 'Iniciar cronômetro'}
           >
@@ -1341,7 +1357,8 @@ function PomodoroTimer({
           />
         </div>
       </div>
-    </MagicCard>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -1394,7 +1411,8 @@ function StudyHistory({
 
   return (
     <div className="space-y-6">
-      <MagicCard variant="premium" size="lg">
+      <Card className="border-border shadow-sm">
+        <CardContent className="pt-6">
         <div className="space-y-6">
           <div className="flex items-center gap-3">
             <Trophy className="w-8 h-8 text-primary" />
@@ -1405,29 +1423,31 @@ function StudyHistory({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-6 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+            <div className="text-center p-6 rounded-xl bg-primary/5 border border-primary/20">
               <Clock className="w-12 h-12 text-primary mx-auto mb-3" />
               <p className="text-4xl font-bold text-primary mb-1">{totalPomodoros}</p>
               <p className="text-sm text-muted-foreground">Total de Pomodoros</p>
             </div>
 
-            <div className="text-center p-6 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+            <div className="text-center p-6 rounded-xl bg-green-500/10 border border-green-500/20">
               <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
               <p className="text-4xl font-bold text-green-600 mb-1">{completedTopics}</p>
               <p className="text-sm text-muted-foreground">Conteúdos Concluídos</p>
             </div>
 
-            <div className="text-center p-6 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+            <div className="text-center p-6 rounded-xl bg-orange-500/10 border border-orange-500/20">
               <Zap className="w-12 h-12 text-orange-500 mx-auto mb-3" />
               <p className="text-4xl font-bold text-orange-600 mb-1">{totalPomodoros * 25}</p>
               <p className="text-sm text-muted-foreground">Minutos Estudados</p>
             </div>
           </div>
         </div>
-      </MagicCard>
+        </CardContent>
+      </Card>
 
       {/* Pomodoros Graph - Last 7 Days */}
-      <MagicCard variant="glass" size="lg">
+      <Card className="border-border shadow-sm">
+        <CardContent className="pt-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold">Últimos 7 Dias</h3>
@@ -1449,7 +1469,7 @@ function StudyHistory({
                       </span>
                     )}
                     <div
-                      className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t-lg transition-colors duration-500 hover:from-primary/90 hover:to-primary/80"
+                      className="w-full bg-primary rounded-t-lg transition-colors duration-500 hover:bg-primary/90"
                       style={{ height: `${height}%`, minHeight: data.pomodoros > 0 ? '8px' : '0' }}
                       title={`${data.pomodoros} pomodoros em ${data.day} ${data.date}`}
                     />
@@ -1463,10 +1483,12 @@ function StudyHistory({
             })}
           </div>
         </div>
-      </MagicCard>
+        </CardContent>
+      </Card>
 
       {/* Recent Sessions List */}
-      <MagicCard variant="glass" size="lg">
+      <Card className="border-border shadow-sm">
+        <CardContent className="pt-6">
         <div className="space-y-4">
           <h3 className="text-lg font-bold">Sessões Recentes</h3>
 
@@ -1518,7 +1540,8 @@ function StudyHistory({
             </div>
           )}
         </div>
-      </MagicCard>
+        </CardContent>
+      </Card>
     </div>
   )
 }

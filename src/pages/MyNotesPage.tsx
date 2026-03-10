@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
-import { MagicLayout } from '@/components/ui/magic-layout'
 import { SectionLoader } from '@/components/SectionLoader'
 import { cn } from '@/lib/utils'
 import { logger } from '@/lib/logger'
@@ -137,14 +136,17 @@ export default function MyNotesPage() {
 
   if (loading) {
     return (
-      <MagicLayout title="Minhas Anotacoes" showHeader>
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">Minhas Anotações</h1>
         <SectionLoader />
-      </MagicLayout>
+      </div>
     )
   }
 
   return (
-    <MagicLayout title="Minhas Anotações" description="Todas as suas anotações de aulas em um só lugar" showHeader>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-foreground">Minhas Anotações</h1>
+
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Search bar */}
         <div className="relative">
@@ -247,6 +249,6 @@ export default function MyNotesPage() {
           </div>
         )}
       </div>
-    </MagicLayout>
+    </div>
   )
 }

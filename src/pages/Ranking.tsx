@@ -1,35 +1,33 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MagicLayout } from '@/components/ui/magic-layout'
-import { MagicCard } from '@/components/ui/magic-card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import { 
-  Trophy, 
-  Crown, 
-  Star, 
-  Target, 
-  TrendingUp, 
-  Award, 
-  Users, 
+import {
+  Trophy,
+  Crown,
+  Star,
+  Target,
+  TrendingUp,
+  Award,
+  Users,
   Zap,
   Medal,
-  Flame,
-  Sparkles,
   ChevronUp,
   ChevronDown,
-  Minus
-, Lock } from 'lucide-react'
-import { 
-  rankingService, 
-  type UserRanking, 
-  type UserPosition, 
+  Minus,
+  Lock,
+} from 'lucide-react'
+import {
+  rankingService,
+  type UserRanking,
+  type UserPosition,
   type XPStatistics,
-  type UserAchievement 
+  type UserAchievement
 } from '@/services/rankingService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { logger } from '@/lib/logger'
@@ -43,7 +41,7 @@ export default function RankingPage() {
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [activeTab, setActiveTab] = useState('global')
   const [isLoading, setIsLoading] = useState(true)
-  
+
   // Estados para dados
   const [globalRanking, setGlobalRanking] = useState<UserRanking[]>([])
   const [userPosition, setUserPosition] = useState<UserPosition | null>(null)
@@ -58,7 +56,7 @@ export default function RankingPage() {
 
       try {
         setIsLoading(true)
-        
+
         const [
           globalData,
           positionData,
@@ -98,24 +96,24 @@ export default function RankingPage() {
   // Se for aluno e não tiver permissão, mostra página bloqueada
   if (isStudent && !hasFeature(FEATURE_KEYS.RANKING)) {
     return (
-      <MagicLayout
-        title="Ranking"
-        description="Recurso bloqueado"
-      >
-        <MagicCard variant="glass" size="lg" className="text-center py-24">
-          <div className="max-w-md mx-auto">
-            <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-              <Lock className="w-10 h-10 text-primary" />
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-foreground">Ranking</h1>
+        <Card className="border-border shadow-sm">
+          <CardContent className="text-center py-16">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-8 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Lock className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                Recurso Bloqueado
+              </h3>
+              <p className="text-muted-foreground mb-8">
+                Este recurso não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
+              </p>
             </div>
-            <h3 className="text-2xl font-bold text-foreground mb-4">
-              Recurso Bloqueado
-            </h3>
-            <p className="text-muted-foreground mb-8">
-              Este recurso não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
-            </p>
-          </div>
-        </MagicCard>
-      </MagicLayout>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
@@ -130,10 +128,10 @@ export default function RankingPage() {
 
   const getRankColor = (position: number) => {
     switch (position) {
-      case 1: return 'from-yellow-400 to-yellow-600'
-      case 2: return 'from-gray-300 to-gray-500'
-      case 3: return 'from-amber-500 to-amber-700'
-      default: return 'from-primary/20 to-primary/10'
+      case 1: return 'bg-yellow-500'
+      case 2: return 'bg-gray-400'
+      case 3: return 'bg-amber-600'
+      default: return 'bg-primary/15'
     }
   }
 
@@ -153,20 +151,19 @@ export default function RankingPage() {
     return { type: 'same', value: 0 }
   }
 
-  const RankingCard = ({ user, position, showChange = false }: { 
-    user: UserRanking, 
+  const RankingCard = ({ user, position, showChange = false }: {
+    user: UserRanking,
     position: number,
-    showChange?: boolean 
+    showChange?: boolean
   }) => {
     const levelInfo = getLevelInfo(user.total_xp)
     const progressInfo = getProgressInfo(user.total_xp)
     const positionChange = showChange ? getPositionChange(position, user.rank_position) : null
 
     return (
-      <MagicCard 
-        variant={position <= 3 ? "premium" : "glass"} 
+      <Card
         className={cn(
-          "transition-all duration-300 hover:scale-105",
+          "border-border shadow-sm transition-all duration-300 hover:shadow-md",
           position <= 3 && "ring-2 ring-primary/20"
         )}
       >
@@ -179,7 +176,7 @@ export default function RankingPage() {
           {/* Avatar */}
           <Avatar className="h-12 w-12">
             <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} />
-            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10">
+            <AvatarFallback className="bg-primary/10">
               {user.first_name[0]}{user.last_name[0]}
             </AvatarFallback>
           </Avatar>
@@ -191,18 +188,18 @@ export default function RankingPage() {
                 {user.first_name} {user.last_name}
               </h3>
               {position <= 3 && (
-                <Badge className={cn("text-xs", `bg-gradient-to-r ${getRankColor(position)} text-white`)}>
+                <Badge className={cn("text-xs", `${getRankColor(position)} text-white`)}>
                   {levelInfo.title}
                 </Badge>
               )}
             </div>
-            
+
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 text-yellow-500" />
                 <span className="font-medium">{user.total_xp} XP</span>
               </div>
-              
+
               {positionChange && (
                 <div className={cn(
                   "flex items-center gap-1 text-xs",
@@ -224,8 +221,8 @@ export default function RankingPage() {
                 <span>Nível {levelInfo.level}</span>
                 <span>{progressInfo.xpToNext} XP para próximo</span>
               </div>
-              <Progress 
-                value={progressInfo.progress} 
+              <Progress
+                value={progressInfo.progress}
                 className="h-2"
               />
             </div>
@@ -234,246 +231,187 @@ export default function RankingPage() {
           {/* Badge de nível */}
           <div className="flex-shrink-0">
             <div className={cn(
-              "w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center text-2xl",
+              "w-12 h-12 rounded-full flex items-center justify-center text-2xl",
               getRankColor(position)
             )}>
               {levelInfo.icon}
             </div>
           </div>
         </div>
-      </MagicCard>
+      </Card>
     )
   }
 
   return (
-    <MagicLayout 
-      title="Ranking"
-      description="Veja sua posição e compare seu desempenho com outros estudantes"
-    >
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header com estatísticas */}
-        <MagicCard variant="premium" size="lg">
-          <div className="space-y-4 md:space-y-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <Trophy className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                    Sistema de Ranking
-                  </h1>
-                  <p className="text-muted-foreground text-sm md:text-base lg:text-lg">
-                    Compete e evolua com outros estudantes
-                  </p>
-                </div>
-              </div>
-              
-              {userPosition && (
-                <div className="text-left md:text-right">
-                  <div className="text-xl md:text-2xl font-bold text-primary">#{userPosition.rank_position}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Sua posição</div>
-                </div>
-              )}
-            </div>
-
-            {/* Estatísticas gerais */}
-            {xpStats && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
-                  <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
-                  <div className="text-xl md:text-2xl font-bold text-blue-600">{xpStats.total_users}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Estudantes</div>
-                </div>
-                <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
-                  <Star className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
-                  <div className="text-xl md:text-2xl font-bold text-green-600">{xpStats.total_xp_distributed.toLocaleString()}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">XP Total</div>
-                </div>
-                <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
-                  <TrendingUp className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
-                  <div className="text-xl md:text-2xl font-bold text-purple-600">{Math.round(xpStats.average_xp)}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">XP Médio</div>
-                </div>
-                <div className="text-center p-3 md:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20">
-                  <Crown className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                  <div className="text-xl md:text-2xl font-bold text-orange-600">{xpStats.max_xp.toLocaleString()}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">XP Máximo</div>
-                </div>
-              </div>
-            )}
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Ranking</h1>
+          <p className="text-sm text-muted-foreground mt-1">Compete e evolua com outros estudantes</p>
+        </div>
+        {userPosition && (
+          <div className="text-left md:text-right">
+            <div className="text-xl font-bold text-primary">#{userPosition.rank_position}</div>
+            <div className="text-xs text-muted-foreground">Sua posição</div>
           </div>
-        </MagicCard>
+        )}
+      </div>
 
-        {/* Tabs de ranking */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-xl">
-            <TabsTrigger 
-              value="global" 
-              className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white"
-            >
-              <Trophy className="h-4 w-4 mr-2" />
-              Global
-            </TabsTrigger>
-            <TabsTrigger 
-              value="flashcards" 
-              className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white"
-            >
-              <Target className="h-4 w-4 mr-2" />
-              Flashcards
-            </TabsTrigger>
-            <TabsTrigger 
-              value="quizzes" 
-              className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white"
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              Quizzes
-            </TabsTrigger>
-          </TabsList>
+      {/* Stats */}
+      {xpStats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-border shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-500/30">
+            <CardContent className="p-4 text-center">
+              <Users className="h-5 w-5 text-blue-500 mx-auto mb-1.5" />
+              <div className="text-xl font-bold text-foreground">{xpStats.total_users}</div>
+              <div className="text-xs text-muted-foreground">Estudantes</div>
+            </CardContent>
+          </Card>
+          <Card className="border-border shadow-sm transition-all duration-200 hover:shadow-md hover:border-green-500/30">
+            <CardContent className="p-4 text-center">
+              <Star className="h-5 w-5 text-green-500 mx-auto mb-1.5" />
+              <div className="text-xl font-bold text-foreground">{xpStats.total_xp_distributed.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">XP Total</div>
+            </CardContent>
+          </Card>
+          <Card className="border-border shadow-sm transition-all duration-200 hover:shadow-md hover:border-purple-500/30">
+            <CardContent className="p-4 text-center">
+              <TrendingUp className="h-5 w-5 text-purple-500 mx-auto mb-1.5" />
+              <div className="text-xl font-bold text-foreground">{Math.round(xpStats.average_xp)}</div>
+              <div className="text-xs text-muted-foreground">XP Médio</div>
+            </CardContent>
+          </Card>
+          <Card className="border-border shadow-sm transition-all duration-200 hover:shadow-md hover:border-orange-500/30">
+            <CardContent className="p-4 text-center">
+              <Crown className="h-5 w-5 text-orange-500 mx-auto mb-1.5" />
+              <div className="text-xl font-bold text-foreground">{xpStats.max_xp.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">XP Máximo</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-          {/* Ranking Global */}
-          <TabsContent value="global" className="space-y-4">
-            <MagicCard variant="glass" size="lg">
-              <div className="flex items-center gap-4 p-6">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                  <Trophy className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold">Ranking Global</h2>
-                  <p className="text-muted-foreground">
-                    Top {globalRanking.length} estudantes da plataforma
-                  </p>
-                </div>
+      {/* Tabs de ranking */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-xl">
+          <TabsTrigger value="global" className="rounded-lg">
+            <Trophy className="h-4 w-4 mr-2" />
+            Global
+          </TabsTrigger>
+          <TabsTrigger value="flashcards" className="rounded-lg">
+            <Target className="h-4 w-4 mr-2" />
+            Flashcards
+          </TabsTrigger>
+          <TabsTrigger value="quizzes" className="rounded-lg">
+            <Zap className="h-4 w-4 mr-2" />
+            Quizzes
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Ranking Global */}
+        <TabsContent value="global" className="space-y-4">
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <h2 className="text-lg font-semibold mb-4">Ranking Global</h2>
+              <div className="space-y-3">
+                {globalRanking.map((user, index) => (
+                  <RankingCard
+                    key={user.user_id}
+                    user={user}
+                    position={index + 1}
+                    showChange={true}
+                  />
+                ))}
               </div>
-            </MagicCard>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <div className="space-y-3">
-              {globalRanking.map((user, index) => (
-                <RankingCard 
-                  key={user.user_id} 
-                  user={user} 
-                  position={index + 1}
-                  showChange={true}
-                />
-              ))}
-            </div>
-          </TabsContent>
-
-          {/* Ranking de Flashcards */}
-          <TabsContent value="flashcards" className="space-y-4">
-            <MagicCard variant="glass" size="lg">
-              <div className="flex items-center gap-4 p-6">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-green-600/10">
-                  <Target className="h-6 w-6 text-green-500" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold">Ranking de Flashcards</h2>
-                  <p className="text-muted-foreground">
-                    Top estudantes em flashcards
-                  </p>
-                </div>
+        {/* Ranking de Flashcards */}
+        <TabsContent value="flashcards" className="space-y-4">
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <h2 className="text-lg font-semibold mb-4">Ranking de Flashcards</h2>
+              <div className="space-y-3">
+                {flashcardRanking.map((user, index) => (
+                  <RankingCard
+                    key={user.user_id}
+                    user={user}
+                    position={index + 1}
+                  />
+                ))}
               </div>
-            </MagicCard>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <div className="space-y-3">
-              {flashcardRanking.map((user, index) => (
-                <RankingCard 
-                  key={user.user_id} 
-                  user={user} 
-                  position={index + 1}
-                />
-              ))}
-            </div>
-          </TabsContent>
-
-          {/* Ranking de Quizzes */}
-          <TabsContent value="quizzes" className="space-y-4">
-            <MagicCard variant="glass" size="lg">
-              <div className="flex items-center gap-4 p-6">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/10">
-                  <Zap className="h-6 w-6 text-blue-500" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold">Ranking de Quizzes</h2>
-                  <p className="text-muted-foreground">
-                    Top estudantes em quizzes
-                  </p>
-                </div>
+        {/* Ranking de Quizzes */}
+        <TabsContent value="quizzes" className="space-y-4">
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <h2 className="text-lg font-semibold mb-4">Ranking de Quizzes</h2>
+              <div className="space-y-3">
+                {quizRanking.map((user, index) => (
+                  <RankingCard
+                    key={user.user_id}
+                    user={user}
+                    position={index + 1}
+                  />
+                ))}
               </div>
-            </MagicCard>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-            <div className="space-y-3">
-              {quizRanking.map((user, index) => (
-                <RankingCard 
-                  key={user.user_id} 
-                  user={user} 
-                  position={index + 1}
-                />
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Seção de Conquistas */}
-        {userAchievements.length > 0 && (
-          <MagicCard variant="glass" size="lg">
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500/20 to-yellow-600/10">
-                  <Award className="h-6 w-6 text-yellow-500" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold">Suas Conquistas</h2>
-                  <p className="text-muted-foreground">
-                    {userAchievements.length} conquistas desbloqueadas
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userAchievements.slice(0, 6).map((achievement) => (
-                  <div 
-                    key={achievement.id}
-                    className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 hover:scale-105 transition-transform duration-300"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-xl">
-                        🏆
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground truncate">
-                          {achievement.achievement.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {achievement.achievement.description}
-                        </p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <Star className="h-3 w-3 text-yellow-500" />
-                          <span className="text-xs font-medium text-yellow-600">
-                            +{achievement.achievement.xp_reward} XP
-                          </span>
-                        </div>
+      {/* Seção de Conquistas */}
+      {userAchievements.length > 0 && (
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5">
+            <h2 className="text-lg font-semibold mb-4">Suas Conquistas</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {userAchievements.slice(0, 6).map((achievement) => (
+                <div
+                  key={achievement.id}
+                  className="p-4 rounded-xl bg-primary/5 border border-primary/20 hover:shadow-md transition-all duration-300"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-xl">
+                      <Award className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground truncate">
+                        {achievement.achievement.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {achievement.achievement.description}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="h-3 w-3 text-yellow-500" />
+                        <span className="text-xs font-medium text-yellow-600">
+                          +{achievement.achievement.xp_reward} XP
+                        </span>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {userAchievements.length > 6 && (
-                <div className="text-center">
-                  <Button
-                    variant="outline"
-                    className="rounded-xl"
-                    onClick={() => navigate('/achievements')}
-                  >
-                    Ver Todas as Conquistas
-                  </Button>
                 </div>
-              )}
+              ))}
             </div>
-          </MagicCard>
-        )}
-      </div>
-    </MagicLayout>
+
+            {userAchievements.length > 6 && (
+              <div className="text-center mt-4">
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => navigate('/achievements')}
+                >
+                  Ver Todas as Conquistas
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
   )
 }
