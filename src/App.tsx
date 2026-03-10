@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -45,8 +45,10 @@ const SimulationResultsPage = lazy(() => import('@/pages/SimulationResults'))
 const AnswerSheetsListPage = lazy(() => import('@/pages/AnswerSheetsListPage'))
 const AnswerSheetFillPage = lazy(() => import('@/pages/AnswerSheetFillPage'))
 const AnswerSheetResultPage = lazy(() => import('@/pages/AnswerSheetResultPage'))
-const ForumPage = lazy(() => import('@/pages/Forum'))
-const ForumTopicPage = lazy(() => import('@/pages/ForumTopic'))
+const CommunityPage = lazy(() => import('@/pages/community/CommunityPage'))
+const SpaceFeedPage = lazy(() => import('@/pages/community/SpaceFeedPage'))
+const PostDetailPage = lazy(() => import('@/pages/community/PostDetailPage'))
+const ModerationPage = lazy(() => import('@/pages/community/ModerationPage'))
 const SettingsPage = lazy(() => import('@/pages/Settings'))
 const FlashcardsPage = lazy(() => import('@/pages/Flashcards'))
 const FlashcardTopicsPage = lazy(() => import('@/pages/FlashcardTopics'))
@@ -250,7 +252,7 @@ const App = () => (
 
               <Route
                 element={
-                  <ProtectedRoute allowedRoles={['student', 'teacher']} />
+                  <ProtectedRoute allowedRoles={['student', 'teacher', 'administrator']} />
                 }
               >
                 {/* Lesson player renders WITHOUT main sidebar for immersive experience */}
@@ -378,8 +380,12 @@ const App = () => (
                     element={<QuestionBankPage />}
                   />
                   <Route path="/acervo" element={<AcervoDigitalPage />} />
-                  <Route path="/forum" element={<ForumPage />} />
-                  <Route path="/forum/:topicId" element={<ForumTopicPage />} />
+                  <Route path="/comunidade" element={<CommunityPage />} />
+                  <Route path="/comunidade/:spaceSlug" element={<SpaceFeedPage />} />
+                  <Route path="/comunidade/post/:postId" element={<PostDetailPage />} />
+                  <Route path="/comunidade/moderacao" element={<ModerationPage />} />
+                  <Route path="/forum" element={<Navigate to="/comunidade" replace />} />
+                  <Route path="/forum/:topicId" element={<Navigate to="/comunidade" replace />} />
                   <Route path="/configuracoes" element={<SettingsPage />} />
                   <Route path="/notificacoes" element={<NotificationsPage />} />
                   <Route path="/ranking" element={<RankingPage />} />

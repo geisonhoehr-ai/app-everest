@@ -48,6 +48,9 @@ import {
   Search,
   Bell,
   ChevronRight,
+  Shield,
+  Plug,
+  HelpCircle,
 } from 'lucide-react'
 
 // ─── Menu structure types ─────────────────────────────────────────────────────
@@ -126,7 +129,7 @@ const studentMenuGroups: MenuGroup[] = [
 ]
 
 const studentFooterItems: MenuItem[] = [
-  { label: 'Comunidade', href: '/forum', icon: MessageSquare },
+  { label: 'Comunidade', href: '/comunidade', icon: MessageSquare },
   { label: 'Notificações', href: '/notificacoes', icon: Bell },
   { label: 'Configurações', href: '/configuracoes', icon: Settings },
 ]
@@ -158,9 +161,19 @@ const adminMenuGroups: MenuGroup[] = [
       { label: 'Cursos', href: '/admin/courses', icon: BookOpen },
       { label: 'Flashcards', href: '/admin/flashcards', icon: Brain },
       { label: 'Quizzes', href: '/admin/quizzes', icon: Target },
+      { label: 'Questões', href: '/admin/questions', icon: HelpCircle },
       { label: 'Redações', href: '/admin/essays', icon: FileText },
       { label: 'Simulados', href: '/admin/simulations', icon: ClipboardCheck },
-      { label: 'Evercast', href: '/admin/evercast', icon: Mic },
+      { label: 'Acervo Digital', href: '/admin/acervo', icon: Archive, adminOnly: true },
+    ],
+  },
+  {
+    group: 'Comunidade',
+    icon: MessageSquare,
+    collapsible: true,
+    items: [
+      { label: 'Feed', href: '/comunidade', icon: MessageSquare },
+      { label: 'Moderação', href: '/comunidade/moderacao', icon: Settings },
     ],
   },
   {
@@ -178,7 +191,17 @@ const adminMenuGroups: MenuGroup[] = [
     items: [
       { label: 'Relatórios', href: '/admin/reports', icon: BarChart3 },
       { label: 'Gamificação', href: '/admin/gamification', icon: Trophy, adminOnly: true },
+    ],
+  },
+  {
+    group: 'Sistema',
+    icon: Shield,
+    collapsible: true,
+    items: [
+      { label: 'Controle', href: '/admin/system-control', icon: Shield, adminOnly: true },
+      { label: 'Integrações', href: '/admin/integrations', icon: Plug, adminOnly: true },
       { label: 'Configurações', href: '/admin/settings', icon: Settings },
+      { label: 'Notificações', href: '/notificacoes', icon: Bell },
     ],
   },
 ]
@@ -262,9 +285,9 @@ export function UnifiedSidebar() {
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton
                   tooltip={group.group}
-                  className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 text-white/80 hover:!text-white"
+                  className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 text-white/80 hover:!text-white"
                 >
-                  {GroupIcon && <GroupIcon className="h-4 w-4 shrink-0" />}
+                  {GroupIcon && <GroupIcon className="h-[18px] w-[18px] shrink-0" />}
                   <span className="flex-1">{group.group}</span>
                   <ChevronRight className="h-3.5 w-3.5 shrink-0 text-white/40 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                 </SidebarMenuButton>
@@ -278,7 +301,7 @@ export function UnifiedSidebar() {
                         <SidebarMenuSubButton
                           asChild
                           isActive={isActive}
-                          className="text-[13px] h-8 text-white/70 hover:!text-white data-[active=true]:!text-white data-[active=true]:!bg-sidebar-accent"
+                          className="text-sm h-8 text-white/70 hover:!text-white data-[active=true]:!text-white data-[active=true]:!bg-sidebar-accent"
                         >
                           <Link to={item.href}>
                             <span>{item.label}</span>
@@ -309,10 +332,10 @@ export function UnifiedSidebar() {
                 asChild
                 isActive={isActive}
                 tooltip={item.label}
-                className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 text-white/80 hover:!text-white data-[active=true]:!text-white"
+                className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 text-white/80 hover:!text-white data-[active=true]:!text-white"
               >
                 <Link to={item.href}>
-                  <item.icon className="h-4 w-4 shrink-0" />
+                  <item.icon className="h-[18px] w-[18px] shrink-0" />
                   <span>{item.label}</span>
                 </Link>
               </SidebarMenuButton>
@@ -364,10 +387,10 @@ export function UnifiedSidebar() {
                     asChild
                     isActive={isActive}
                     tooltip={item.label}
-                    className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 text-white/80 hover:!text-white data-[active=true]:!text-white"
+                    className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 text-white/80 hover:!text-white data-[active=true]:!text-white"
                   >
                     <Link to={item.href}>
-                      <item.icon className="h-4 w-4 shrink-0" />
+                      <item.icon className="h-[18px] w-[18px] shrink-0" />
                       <span>{item.label}</span>
                     </Link>
                   </SidebarMenuButton>

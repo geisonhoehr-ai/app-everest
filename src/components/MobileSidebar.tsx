@@ -92,7 +92,7 @@ const studentMenuGroups: MenuGroup[] = [
 ]
 
 const studentFooterItems: MenuItem[] = [
-  { label: 'Comunidade', href: '/forum', icon: MessageSquare },
+  { label: 'Comunidade', href: '/comunidade', icon: MessageSquare },
   { label: 'Notificações', href: '/notificacoes', icon: Bell },
   { label: 'Configurações', href: '/configuracoes', icon: Settings },
 ]
@@ -142,11 +142,6 @@ const contentMenuItems = [
     label: 'Gerenciar Redações',
     href: '/admin/essays',
     icon: FileText,
-  },
-  {
-    label: 'Gerenciar Evercast',
-    href: '/admin/evercast',
-    icon: Radio,
   },
 ]
 

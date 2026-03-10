@@ -43,7 +43,8 @@ const commands: CommandItem[] = [
   { label: 'Progresso', href: '/progresso', icon: TrendingUp, group: 'Desempenho', keywords: ['desempenho', 'estatisticas'] },
   { label: 'Ranking', href: '/ranking', icon: Trophy, group: 'Desempenho', keywords: ['posicao', 'classificacao', 'xp'] },
   { label: 'Conquistas', href: '/achievements', icon: Award, group: 'Desempenho', keywords: ['badges', 'medalhas'] },
-  { label: 'Comunidade', href: '/forum', icon: MessageSquare, group: 'Social', keywords: ['forum', 'discussao', 'chat'] },
+  { label: 'Comunidade', href: '/comunidade', icon: MessageSquare, group: 'Social', keywords: ['forum', 'discussao', 'chat', 'comunidade'] },
+  { label: 'Moderação', href: '/comunidade/moderacao', icon: MessageSquare, group: 'Social', keywords: ['moderacao', 'denuncias', 'filtro'] },
   { label: 'Notificações', href: '/notificacoes', icon: Bell, group: 'Sistema', keywords: ['avisos', 'alertas'] },
   { label: 'Configurações', href: '/configuracoes', icon: Settings, group: 'Sistema', keywords: ['perfil', 'conta', 'tema'] },
 ]
