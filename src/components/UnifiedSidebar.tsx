@@ -289,13 +289,27 @@ export function UnifiedSidebar() {
     })
   })).filter(group => group.items.length > 0) // Remove grupos vazios
 
-  // Admin uses dark sidebar on light background
+  // Admin uses dark sidebar — override CSS variables so Shadcn's built-in
+  // bg-sidebar / text-sidebar-foreground / accent classes all resolve to dark theme values
+  const adminSidebarStyle = isAdmin
+    ? {
+        '--sidebar-background': '234 25% 18%',         // slightly lighter navy
+        '--sidebar-foreground': '0 0% 95%',             // near-white
+        '--sidebar-accent': '234 25% 24%',              // lighter navy for hover/active
+        '--sidebar-accent-foreground': '0 0% 100%',     // pure white
+        '--sidebar-border': '234 20% 26%',              // subtle border
+        '--sidebar-primary': '25 95% 53%',              // brand orange
+        '--sidebar-primary-foreground': '0 0% 100%',
+        '--sidebar-ring': '25 95% 53%',
+      } as React.CSSProperties
+    : undefined
+
   const adminSidebarClasses = isAdmin
-    ? "border-r-0 bg-[#1a1a2e] text-white [&_*]:!border-white/10"
+    ? "border-r-0"
     : "border-r border-border/50 bg-card/50 backdrop-blur-sm"
 
   return (
-    <Sidebar className={adminSidebarClasses}>
+    <Sidebar className={adminSidebarClasses} style={adminSidebarStyle}>
       <SidebarHeader className="p-5 pb-4">
         <div className="flex items-center gap-3">
           <div className={cn(
@@ -307,13 +321,13 @@ export function UnifiedSidebar() {
           <div className="flex flex-col">
             <h1 className={cn(
               "text-base font-bold",
-              isAdmin ? "text-white" : "text-foreground"
+              isAdmin ? "text-sidebar-foreground" : "text-foreground"
             )}>
               Everest
             </h1>
             <p className={cn(
               "text-[11px]",
-              isAdmin ? "text-white/50" : "text-muted-foreground"
+              isAdmin ? "text-sidebar-foreground/50" : "text-muted-foreground"
             )}>
               {isAdmin ? 'Admin' : 'Plataforma de Estudos'}
             </p>
@@ -328,7 +342,7 @@ export function UnifiedSidebar() {
             {visibleAdminMenuItems.map((group, groupIndex) => (
               <SidebarGroup key={groupIndex} className="py-1">
                 {group.group && (
-                  <SidebarGroupLabel className="text-[10px] font-semibold text-white/30 uppercase tracking-[0.1em] px-3 mb-1">
+                  <SidebarGroupLabel className="text-[10px] font-semibold !text-white/60 uppercase tracking-[0.1em] px-3 mb-1">
                     {group.group}
                   </SidebarGroupLabel>
                 )}
@@ -341,18 +355,13 @@ export function UnifiedSidebar() {
                         <SidebarMenuButton
                           asChild
                           isActive={isActive}
-                          className={cn(
-                            "w-full justify-start gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150",
-                            isActive
-                              ? "bg-white/10 text-white"
-                              : "text-white/60 hover:bg-white/5 hover:text-white/90"
-                          )}
+                          className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 text-white/80 hover:!text-white data-[active=true]:!text-white"
                         >
                           <Link to={item.href}>
                             <item.icon className="h-4 w-4 shrink-0" />
                             <span>{item.label}</span>
                             {item.badge && (
-                              <Badge variant="secondary" className="ml-auto text-[10px] bg-white/10 text-white/70 border-0">
+                              <Badge variant="secondary" className="ml-auto text-[10px] bg-sidebar-accent text-sidebar-foreground/70 border-0">
                                 {item.badge}
                               </Badge>
                             )}
@@ -435,27 +444,24 @@ export function UnifiedSidebar() {
         )}
         <div className={cn(
           "flex items-center gap-3 rounded-lg p-3",
-          isAdmin ? "bg-white/5" : "bg-muted/50"
+          isAdmin ? "bg-sidebar-accent" : "bg-muted/50"
         )}>
           <Avatar className="h-8 w-8">
             <AvatarImage src={profile.avatar_url} alt={profile.first_name} />
-            <AvatarFallback className={cn(
-              "text-xs font-semibold",
-              isAdmin ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
-            )}>
+            <AvatarFallback className="text-xs font-semibold bg-primary/20 text-primary">
               {profile.first_name?.[0]}{profile.last_name?.[0]}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className={cn(
               "text-xs font-medium truncate",
-              isAdmin ? "text-white/90" : "text-foreground"
+              isAdmin ? "text-sidebar-foreground/90" : "text-foreground"
             )}>
               {profile.first_name} {profile.last_name}
             </p>
             <p className={cn(
               "text-[10px]",
-              isAdmin ? "text-white/40" : "text-muted-foreground"
+              isAdmin ? "text-sidebar-foreground/40" : "text-muted-foreground"
             )}>
               {profile.role === 'administrator' ? 'Administrador' :
                 profile.role === 'teacher' ? 'Professor' : 'Estudante'}
@@ -466,7 +472,7 @@ export function UnifiedSidebar() {
             className={cn(
               "p-1.5 rounded-md transition-colors shrink-0",
               isAdmin
-                ? "text-white/40 hover:text-white hover:bg-white/10"
+                ? "text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                 : "text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
             )}
             title="Sair da conta"
