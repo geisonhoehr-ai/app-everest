@@ -16,7 +16,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import {
-  Mountain,
   Loader2,
   Mail,
   Lock,
@@ -151,9 +150,7 @@ export default function LoginPage() {
         {/* Logo and Brand */}
         <div className="text-center space-y-6">
           <div className="flex justify-center items-center gap-3">
-            <div className="p-4 rounded-3xl bg-primary/10">
-              <Mountain className="h-12 w-12 text-primary" />
-            </div>
+            <img src="/logo.png" alt="Everest Preparatórios" className="h-16 w-16 rounded-2xl object-contain" />
             <div>
               <h1 className="text-4xl font-bold">Everest</h1>
               <p className="text-sm text-muted-foreground">Preparatórios</p>
