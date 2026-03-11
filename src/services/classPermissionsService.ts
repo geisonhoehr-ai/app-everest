@@ -26,7 +26,6 @@ export const FEATURE_KEYS = {
   ESSAYS: 'essays',
   RANKING: 'ranking',
   VIDEO_LESSONS: 'video_lessons',
-  AUDIO_LESSONS: 'audio_lessons',
   CALENDAR: 'calendar',
 } as const
 

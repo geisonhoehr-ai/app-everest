@@ -23,7 +23,6 @@ import {
   FileText,
   Trophy,
   BookOpen,
-  Headphones,
   Calendar,
   Save,
   RotateCcw,
@@ -105,13 +104,6 @@ const FEATURE_OPTIONS: FeatureOption[] = [
     label: 'Videoaulas',
     description: 'Cursos em video',
     icon: BookOpen,
-    category: 'content'
-  },
-  {
-    key: FEATURE_KEYS.AUDIO_LESSONS,
-    label: 'Aulas em Audio',
-    description: 'Modulos de audio e podcasts educativos',
-    icon: Headphones,
     category: 'content'
   },
 ]

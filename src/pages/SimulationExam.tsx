@@ -15,6 +15,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
+import { useActivityScoring } from '@/hooks/useAchievements'
 import {
   Timer,
   ChevronLeft,
@@ -52,6 +53,7 @@ export default function SimulationExamPage() {
   const [timeLeft, setTimeLeft] = useState(0)
   const [showAnswerSheet, setShowAnswerSheet] = useState(false)
   const { user } = useAuth()
+  const { scoreSimulationActivity } = useActivityScoring()
 
   useEffect(() => {
     if (simulationId && user) loadSimulation()
@@ -103,10 +105,16 @@ export default function SimulationExamPage() {
   }
 
   const handleFinish = async () => {
-    if (!attemptId) return
+    if (!attemptId || !simulation) return
     try {
       setLoading(true)
       await submitSimulation(attemptId)
+
+      // Score the simulation activity
+      const totalQuestions = simulation.questions.length
+      const correctAnswers = Object.keys(answers).length // approximate - real score comes from backend
+      await scoreSimulationActivity(correctAnswers, totalQuestions, attemptId)
+
       toast({ title: 'Simulado enviado!', description: 'Suas respostas foram salvas com sucesso.' })
       navigate(`/simulados/${simulationId}/resultado`)
     } catch {
