@@ -1,8 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts"
+import { encode as hexEncode } from "https://deno.land/std@0.168.0/encoding/hex.ts"
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? ''
 const KIWIFY_WEBHOOK_TOKEN = Deno.env.get('KIWIFY_WEBHOOK_TOKEN') ?? ''
+const KIWIFY_CLIENT_SECRET = Deno.env.get('KIWIFY_CLIENT_SECRET') ?? ''
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,15 +25,42 @@ serve(async (req) => {
   }
 
   try {
-    // Validate webhook token
+    // Read raw body for signature validation
+    const rawBody = await req.text()
+
+    // Validate: Kiwify signature (HMAC SHA256) or our custom token
+    const kiwifySignature = req.headers.get('x-kiwify-signature') || req.headers.get('signature')
     const url = new URL(req.url)
     const token = url.searchParams.get('token') || req.headers.get('x-kiwify-token')
 
-    if (KIWIFY_WEBHOOK_TOKEN && token !== KIWIFY_WEBHOOK_TOKEN) {
-      return jsonResponse({ error: 'Invalid webhook token' }, 401)
+    let isValid = false
+
+    // Method 1: Kiwify HMAC signature validation
+    if (kiwifySignature && KIWIFY_CLIENT_SECRET) {
+      const encoder = new TextEncoder()
+      const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(KIWIFY_CLIENT_SECRET),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      )
+      const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody))
+      const computed = new TextDecoder().decode(hexEncode(new Uint8Array(sig)))
+      isValid = computed === kiwifySignature
     }
 
-    const body = await req.json()
+    // Method 2: Custom token in URL
+    if (!isValid && KIWIFY_WEBHOOK_TOKEN && token === KIWIFY_WEBHOOK_TOKEN) {
+      isValid = true
+    }
+
+    // If neither method validates and we have secrets configured, reject
+    if (!isValid && (KIWIFY_CLIENT_SECRET || KIWIFY_WEBHOOK_TOKEN)) {
+      return jsonResponse({ error: 'Invalid webhook signature or token' }, 401)
+    }
+
+    const body = JSON.parse(rawBody)
 
     // Only process paid/approved orders
     if (body.order_status !== 'paid' && body.order_status !== 'approved') {
