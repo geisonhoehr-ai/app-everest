@@ -37,6 +37,7 @@ interface AuthContextType {
   session: Session | null
   profile: UserProfile | null
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signInWithMagicLink: (email: string) => Promise<{ error: AuthError | null }>
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
   loading: boolean
@@ -370,6 +371,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error }
   }, [])
 
+  const signInWithMagicLink = useCallback(async (email: string) => {
+    const redirectUrl = `${window.location.origin}/dashboard`
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    })
+
+    if (error) {
+      logger.error('Magic link error:', error)
+    }
+
+    return { error }
+  }, [])
+
   const signUp = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({
       email,
@@ -427,6 +444,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     session,
     profile,
     signIn,
+    signInWithMagicLink,
     signUp,
     signOut,
     loading,

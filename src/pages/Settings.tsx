@@ -29,15 +29,95 @@ import {
   Save,
   Camera,
   Loader2,
+  Lock,
   Link as LinkIcon,
   Image as ImageIcon
 } from 'lucide-react'
+import { updateUserPassword } from '@/services/authService'
 
 // Função para gerar Gravatar URL
 const getGravatarUrl = (email: string, size: number = 200) => {
   // Criar hash MD5 do email (simplificado usando crypto web API)
   const emailLower = email.toLowerCase().trim()
   return `https://www.gravatar.com/avatar/${emailLower}?s=${size}&d=identicon`
+}
+
+function SecurityPasswordForm() {
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [isSavingPassword, setIsSavingPassword] = useState(false)
+  const { toast } = useToast()
+
+  const handleSetPassword = async () => {
+    if (newPassword.length < 6) {
+      toast({
+        title: 'Senha muito curta',
+        description: 'A senha deve ter pelo menos 6 caracteres.',
+        variant: 'destructive',
+      })
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: 'Senhas não coincidem',
+        description: 'A confirmação de senha não corresponde.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsSavingPassword(true)
+    const { error } = await updateUserPassword(newPassword)
+    if (error) {
+      toast({
+        title: 'Erro ao definir senha',
+        description: 'Não foi possível salvar a senha. Tente novamente.',
+        variant: 'destructive',
+      })
+    } else {
+      toast({
+        title: 'Senha definida!',
+        description: 'Agora você pode usar email + senha para entrar.',
+      })
+      setNewPassword('')
+      setConfirmPassword('')
+    }
+    setIsSavingPassword(false)
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <Label>Nova Senha</Label>
+        <Input
+          type="password"
+          placeholder="Mínimo 6 caracteres"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Confirmar Senha</Label>
+        <Input
+          type="password"
+          placeholder="Repita a senha"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+        />
+      </div>
+      <Button
+        onClick={handleSetPassword}
+        disabled={isSavingPassword || !newPassword || !confirmPassword}
+      >
+        {isSavingPassword ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Lock className="mr-2 h-4 w-4" />
+        )}
+        Definir Senha
+      </Button>
+    </div>
+  )
 }
 
 export default function SettingsPage() {
@@ -812,6 +892,25 @@ export default function SettingsPage() {
                   {window.matchMedia('(display-mode: standalone)').matches ? 'Instalado' : 'Não Instalado'}
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Security */}
+        <Card className="border-border shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-4">
+              <Lock className="h-6 w-6 text-primary" />
+              Segurança
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Defina uma senha para usar como alternativa ao link mágico de acesso.
+                Se preferir, pode continuar entrando apenas com o link enviado por email.
+              </p>
+              <SecurityPasswordForm />
             </div>
           </CardContent>
         </Card>

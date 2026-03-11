@@ -16,8 +16,6 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 const Layout = lazy(() => import('@/components/Layout'))
 const Index = lazy(() => import('@/pages/Index'))
 const LoginPage = lazy(() => import('@/pages/Login'))
-const RegisterPage = lazy(() => import('@/pages/Register'))
-const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPassword'))
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPassword'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 const FaqPage = lazy(() => import('@/pages/Faq'))
@@ -242,11 +240,8 @@ const App = () => (
               <Route element={<PublicRoute />}>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route
-                  path="/forgot-password"
-                  element={<ForgotPasswordPage />}
-                />
+                <Route path="/register" element={<Navigate to="/login" replace />} />
+                <Route path="/forgot-password" element={<Navigate to="/login" replace />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
               </Route>
 

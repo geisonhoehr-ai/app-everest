@@ -23,36 +23,61 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  Star,
   Sparkles,
   Shield,
-  Zap
+  Zap,
+  MailCheck,
+  KeyRound,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { cn } from '@/lib/utils'
 
-const loginSchema = z.object({
+const magicLinkSchema = z.object({
+  email: z.string().email('Por favor, insira um email válido.'),
+})
+
+const passwordSchema = z.object({
   email: z.string().email('Por favor, insira um email válido.'),
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
 })
 
-type LoginFormValues = z.infer<typeof loginSchema>
+type MagicLinkValues = z.infer<typeof magicLinkSchema>
+type PasswordValues = z.infer<typeof passwordSchema>
 
 export default function LoginPage() {
-  const { signIn } = useAuth()
+  const { signIn, signInWithMagicLink } = useAuth()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [usePasswordMode, setUsePasswordMode] = useState(false)
+  const [magicLinkSent, setMagicLinkSent] = useState(false)
+  const [sentEmail, setSentEmail] = useState('')
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+  const magicLinkForm = useForm<MagicLinkValues>({
+    resolver: zodResolver(magicLinkSchema),
+    defaultValues: { email: '' },
   })
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const passwordForm = useForm<PasswordValues>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { email: '', password: '' },
+  })
+
+  const onMagicLinkSubmit = async (data: MagicLinkValues) => {
+    setIsLoading(true)
+    const { error } = await signInWithMagicLink(data.email)
+    if (error) {
+      toast({
+        title: 'Erro ao enviar link',
+        description: 'Não foi possível enviar o link de acesso. Verifique seu email e tente novamente.',
+        variant: 'destructive',
+      })
+    } else {
+      setSentEmail(data.email)
+      setMagicLinkSent(true)
+    }
+    setIsLoading(false)
+  }
+
+  const onPasswordSubmit = async (data: PasswordValues) => {
     setIsLoading(true)
     const { error } = await signIn(data.email, data.password)
     if (error) {
@@ -65,6 +90,64 @@ export default function LoginPage() {
     setIsLoading(false)
   }
 
+  // Success state after magic link sent
+  if (magicLinkSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="p-4 rounded-3xl bg-green-500/10">
+                <MailCheck className="h-12 w-12 text-green-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold">Verifique seu Email</h2>
+              <p className="text-muted-foreground">
+                Enviamos um link de acesso para{' '}
+                <span className="font-medium text-foreground">{sentEmail}</span>
+              </p>
+            </div>
+          </div>
+
+          <Card className="border-border shadow-sm">
+            <CardContent className="pt-6 space-y-4">
+              <div className="text-center text-sm text-muted-foreground space-y-2">
+                <p>Clique no link enviado para seu email para acessar a plataforma.</p>
+                <p>O link expira em 1 hora.</p>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setMagicLinkSent(false)
+                  setSentEmail('')
+                }}
+              >
+                Tentar com outro email
+              </Button>
+
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground"
+                onClick={() => onMagicLinkSubmit({ email: sentEmail })}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="mr-2 h-4 w-4" />
+                )}
+                Reenviar link
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md space-y-8">
@@ -75,9 +158,7 @@ export default function LoginPage() {
               <Mountain className="h-12 w-12 text-primary" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold">
-                Everest
-              </h1>
+              <h1 className="text-4xl font-bold">Everest</h1>
               <p className="text-sm text-muted-foreground">Plataforma de Ensino</p>
             </div>
           </div>
@@ -85,7 +166,9 @@ export default function LoginPage() {
           <div className="space-y-2">
             <h2 className="text-2xl font-semibold">Acesse sua Conta</h2>
             <p className="text-muted-foreground">
-              Bem-vindo de volta! Insira seus dados para continuar.
+              {usePasswordMode
+                ? 'Entre com seu email e senha.'
+                : 'Informe seu email para receber o link de acesso.'}
             </p>
           </div>
         </div>
@@ -94,96 +177,131 @@ export default function LoginPage() {
         <Card className="border-border shadow-sm">
           <CardContent className="pt-6">
             <div className="space-y-6">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold">Email</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="email"
-                              placeholder="seu@email.com"
-                              autoComplete="email"
-                              className="pl-10 h-12 rounded-xl"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              {usePasswordMode ? (
+                /* Password login mode */
+                <Form {...passwordForm}>
+                  <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+                    <FormField
+                      control={passwordForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-semibold">Email</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                type="email"
+                                placeholder="seu@email.com"
+                                autoComplete="email"
+                                className="pl-10 h-12 rounded-xl"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold">Senha</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type={showPassword ? "text" : "password"}
-                              placeholder="••••••••"
-                              autoComplete="current-password"
-                              className="pl-10 pr-10 h-12 rounded-xl"
-                              {...field}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              {showPassword ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={passwordForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-semibold">Senha</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="••••••••"
+                                autoComplete="current-password"
+                                className="pl-10 pr-10 h-12 rounded-xl"
+                                {...field}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <div className="flex items-center justify-between">
                     <Button
-                      variant="link"
-                      asChild
-                      className="text-sm text-muted-foreground hover:text-foreground p-0 h-auto"
+                      type="submit"
+                      className="w-full h-12 rounded-xl font-semibold hover:bg-green-600"
+                      disabled={isLoading}
                     >
-                      <Link to="/forgot-password">Esqueceu a senha?</Link>
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Entrando...
+                        </>
+                      ) : (
+                        <>
+                          Entrar
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
                     </Button>
-                  </div>
+                  </form>
+                </Form>
+              ) : (
+                /* Magic link mode (default) */
+                <Form {...magicLinkForm}>
+                  <form onSubmit={magicLinkForm.handleSubmit(onMagicLinkSubmit)} className="space-y-6">
+                    <FormField
+                      control={magicLinkForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-semibold">Email</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                type="email"
+                                placeholder="seu@email.com"
+                                autoComplete="email"
+                                className="pl-10 h-12 rounded-xl"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <Button
-                    type="submit"
-                    className="w-full h-12 rounded-xl font-semibold inline-flex items-center justify-center"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Entrando...
-                      </>
-                    ) : (
-                      <>
-                        Entrar
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </Form>
+                    <Button
+                      type="submit"
+                      className="w-full h-12 rounded-xl font-semibold hover:bg-green-600"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Enviar Link de Acesso
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              )}
 
-              {/* Divider */}
+              {/* Toggle between modes */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-border/50" />
@@ -193,19 +311,14 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Register Link */}
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">
-                  Não tem uma conta?{' '}
-                  <Button
-                    variant="link"
-                    asChild
-                    className="text-primary hover:text-primary/80 p-0 h-auto font-semibold"
-                  >
-                    <Link to="/register">Registre-se</Link>
-                  </Button>
-                </p>
-              </div>
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground"
+                onClick={() => setUsePasswordMode(!usePasswordMode)}
+              >
+                <KeyRound className="mr-2 h-4 w-4" />
+                {usePasswordMode ? 'Entrar com link mágico' : 'Entrar com senha'}
+              </Button>
             </div>
           </CardContent>
         </Card>
