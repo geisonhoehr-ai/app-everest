@@ -61,7 +61,7 @@ export const useAuth = () => {
 const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
     // First try to fetch existing profile
-    const { data: existingProfile, error: fetchError } = await Promise.race([
+    const fetchWithTimeout = () => Promise.race([
       supabase
         .from('users')
         .select(`
@@ -77,14 +77,31 @@ const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => 
         .eq('id', userId)
         .single(),
       new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 20000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
       )
     ])
 
-    // If profile exists, return it
-    if (!fetchError && existingProfile) {
-      return existingProfile
+    // Try up to 2 times (initial + 1 retry)
+    let lastError: any = null
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { data: existingProfile, error: fetchError } = await fetchWithTimeout()
+        if (!fetchError && existingProfile) return existingProfile
+        if (fetchError && fetchError.code === 'PGRST116') {
+          lastError = fetchError
+          break // No rows — proceed to create profile below
+        }
+        lastError = fetchError
+      } catch (err) {
+        lastError = err
+        if (attempt === 0) {
+          logger.warn('Profile fetch attempt 1 failed, retrying...')
+          await new Promise(r => setTimeout(r, 1000))
+        }
+      }
     }
+
+    const fetchError = lastError
 
     // If profile doesn't exist (PGRST116 = no rows returned), try to create one
     if (fetchError && fetchError.code === 'PGRST116') {
