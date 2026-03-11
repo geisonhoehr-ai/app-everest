@@ -275,10 +275,13 @@ export default function AdminClassFormPage() {
                   name="end_date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Data de Término *</FormLabel>
+                      <FormLabel>Data da Prova (fim do acesso) *</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
+                      <FormDescription>
+                        Os alunos perdem acesso à plataforma após esta data
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

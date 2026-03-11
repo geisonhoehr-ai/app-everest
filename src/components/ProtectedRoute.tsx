@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
+import { useAccessExpiration } from '@/hooks/use-access-expiration'
 import { PageLoader } from '@/components/PageLoader'
 import type { UserProfile } from '@/contexts/auth-provider'
 import { logger } from '@/lib/logger'
@@ -18,6 +19,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps) => {
   const { profile, loading, session, profileFetchAttempted, getRedirectPath } = useAuth()
   const location = useLocation()
+  const { expired, expirationLoading } = useAccessExpiration()
 
   // Show loading while authentication is being determined
   if (loading) {
@@ -50,6 +52,28 @@ export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps
         >
           Recarregar Página
         </button>
+      </div>
+    )
+  }
+
+  // Check access expiration for students only
+  if (profile.role === 'student' && !expirationLoading && expired) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+        <div className="max-w-md space-y-4">
+          <div className="p-4 rounded-full bg-orange-100 dark:bg-orange-900/30 w-fit mx-auto">
+            <svg className="h-12 w-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold">Acesso Expirado</h2>
+          <p className="text-muted-foreground">
+            Seu acesso à plataforma expirou. O período da sua turma chegou ao fim.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Para renovar seu acesso, entre em contato ou adquira uma nova turma.
+          </p>
+        </div>
       </div>
     )
   }

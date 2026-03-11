@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react'
 
 const highlights = [
-  'Acesso ilimitado a todas as videoaulas',
+  'Acesso a todas as videoaulas até a data da prova',
   'Flashcards com repetição espaçada',
   'Simulados no formato oficial do concurso',
   'Correção de redações por especialistas',
