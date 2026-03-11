@@ -573,9 +573,30 @@ export default function StudyPlannerPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Planejamento de Estudos</h1>
-        <p className="text-muted-foreground">Organize seus estudos com a técnica Pomodoro</p>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Plano de Estudos</h1>
+          <p className="text-sm text-muted-foreground mt-1">Organize seus estudos com a técnica Pomodoro</p>
+        </div>
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowTutorial(true)}
+            className="hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+            aria-label="Ver tutorial do plano de estudos"
+          >
+            <HelpCircle className="h-5 w-5" />
+          </Button>
+          <Button
+            onClick={() => { setEditingTopic(null); setShowAddModal(true); }}
+            className="flex-1 md:flex-none"
+            aria-label="Adicionar novo conteúdo de estudo"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Adicionar Conteúdo
+          </Button>
+        </div>
       </div>
       {/* Screen reader announcements */}
       <div
@@ -588,40 +609,11 @@ export default function StudyPlannerPage() {
       </div>
 
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-        
-        {/* Header com Stats */}
+
+        {/* Stats */}
         <Card className="border-border shadow-sm">
           <CardContent className="pt-6">
           <div className="space-y-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                  Meu Plano de Estudos
-                </h2>
-                <p className="text-muted-foreground mt-1">
-                  Organize seus estudos de forma inteligente com a técnica Pomodoro
-                </p>
-              </div>
-              <div className="flex gap-2 w-full md:w-auto">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowTutorial(true)}
-                  className="hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-                  aria-label="Ver tutorial do plano de estudos"
-                >
-                  <HelpCircle className="h-5 w-5" />
-                </Button>
-                <Button
-                  onClick={() => { setEditingTopic(null); setShowAddModal(true); }}
-                  className="flex-1 md:flex-none"
-                  aria-label="Adicionar novo conteúdo de estudo"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Conteúdo
-                </Button>
-              </div>
-            </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
