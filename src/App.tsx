@@ -180,9 +180,6 @@ const AdminReportsPage = lazy(
 const AdminSettingsPage = lazy(
   () => import('@/pages/admin/settings/AdminSettingsPage'),
 )
-const AdminSystemControlPage = lazy(
-  () => import('@/pages/admin/system/AdminSystemControlPage'),
-)
 const AdminClassPermissionsPage = lazy(
   () => import('@/pages/admin/permissions/AdminClassPermissionsPage'),
 )
@@ -401,7 +398,6 @@ const App = () => (
               >
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
-                  <Route path="system-control" element={<AdminSystemControlPage />} />
                   <Route path="permissions" element={<AdminClassPermissionsPage />} />
                   <Route path="management" element={<AdminManagementPage />} />
                   <Route path="classes" element={<AdminClassesPage />} />

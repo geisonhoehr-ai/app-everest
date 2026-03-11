@@ -24,8 +24,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, PlusCircle, Search, RefreshCw } from 'lucide-react'
+import { MoreHorizontal, PlusCircle, Search, RefreshCw, Edit, Users, Shield, Trash2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { getClasses, type Class } from '@/services/classService'
+import { supabase } from '@/lib/supabase/client'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
 import { logger } from '@/lib/logger'
@@ -188,11 +190,37 @@ export const ClassManagement = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem>Editar</DropdownMenuItem>
-                          <DropdownMenuItem>Gerenciar Alunos</DropdownMenuItem>
-                          <DropdownMenuItem>Gerenciar Permissões</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
-                            Remover
+                          <DropdownMenuItem asChild>
+                            <Link to={`/admin/classes/${cls.id}/edit`}>
+                              <Edit className="mr-2 h-4 w-4" /> Editar
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to={`/admin/classes/${cls.id}/students`}>
+                              <Users className="mr-2 h-4 w-4" /> Gerenciar Alunos
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to={`/admin/permissions`}>
+                              <Shield className="mr-2 h-4 w-4" /> Gerenciar Permissões
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={async () => {
+                              if (!confirm(`Deseja remover a turma "${cls.name}"?`)) return
+                              try {
+                                const { error } = await supabase.from('classes').delete().eq('id', cls.id)
+                                if (error) throw error
+                                toast({ title: 'Turma removida com sucesso' })
+                                loadClasses()
+                              } catch (error) {
+                                logger.error('Erro ao remover turma:', error)
+                                toast({ title: 'Erro', description: 'Não foi possível remover a turma.', variant: 'destructive' })
+                              }
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Remover
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

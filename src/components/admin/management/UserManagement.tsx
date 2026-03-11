@@ -58,6 +58,11 @@ export const UserManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [classFilter, setClassFilter] = useState<string>('all')
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [editingUser, setEditingUser] = useState<UserWithClasses | null>(null)
+  const [editFirstName, setEditFirstName] = useState('')
+  const [editLastName, setEditLastName] = useState('')
+  const [editRole, setEditRole] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [newUserEmail, setNewUserEmail] = useState('')
   const [newUserFirstName, setNewUserFirstName] = useState('')
@@ -202,6 +207,45 @@ export const UserManagement = () => {
         description: 'Não foi possível atualizar o status do usuário.',
         variant: 'destructive'
       })
+    }
+  }
+
+  const openEditDialog = (user: UserWithClasses) => {
+    setEditingUser(user)
+    setEditFirstName(user.first_name || '')
+    setEditLastName(user.last_name || '')
+    setEditRole(user.role)
+    setShowEditDialog(true)
+  }
+
+  const handleEditUser = async () => {
+    if (!editingUser) return
+    try {
+      await updateUser(editingUser.id, {
+        first_name: editFirstName,
+        last_name: editLastName,
+        role: editRole as 'student' | 'teacher' | 'administrator',
+      })
+      toast({ title: 'Sucesso', description: 'Usuário atualizado com sucesso.' })
+      setShowEditDialog(false)
+      setEditingUser(null)
+      loadUsers()
+    } catch (error) {
+      logger.error('Erro ao editar usuário:', error)
+      toast({ title: 'Erro', description: 'Não foi possível atualizar o usuário.', variant: 'destructive' })
+    }
+  }
+
+  const handleDeleteUser = async (user: User) => {
+    if (!confirm(`Deseja realmente deletar "${user.first_name} ${user.last_name}"? Esta ação não pode ser desfeita.`)) return
+    try {
+      const { error } = await supabase.from('users').delete().eq('id', user.id)
+      if (error) throw error
+      toast({ title: 'Sucesso', description: 'Usuário deletado com sucesso.' })
+      loadUsers()
+    } catch (error) {
+      logger.error('Erro ao deletar usuário:', error)
+      toast({ title: 'Erro', description: 'Não foi possível deletar o usuário.', variant: 'destructive' })
     }
   }
 
@@ -468,10 +512,8 @@ export const UserManagement = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link to={`/admin/users/${user.id}/edit`}>
-                              <Edit className="mr-2 h-4 w-4" /> Editar
-                            </Link>
+                          <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                            <Edit className="mr-2 h-4 w-4" /> Editar
                           </DropdownMenuItem>
                           {user.role === 'student' && (
                             <DropdownMenuItem asChild>
@@ -491,6 +533,13 @@ export const UserManagement = () => {
                                 <UserCheck className="mr-2 h-4 w-4" /> Ativar
                               </>
                             )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => handleDeleteUser(user)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Deletar
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -565,6 +614,56 @@ export const UserManagement = () => {
               <PlusCircle className="mr-2 h-4 w-4" />
             )}
             Criar Aluno
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    {/* Edit User Dialog */}
+    <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Usuário</DialogTitle>
+          <DialogDescription>
+            Altere os dados do usuário {editingUser?.email}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nome</Label>
+              <Input
+                value={editFirstName}
+                onChange={(e) => setEditFirstName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Sobrenome</Label>
+              <Input
+                value={editLastName}
+                onChange={(e) => setEditLastName(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Perfil</Label>
+            <Select value={editRole} onValueChange={setEditRole}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="student">Aluno</SelectItem>
+                <SelectItem value="teacher">Professor</SelectItem>
+                <SelectItem value="administrator">Administrador</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleEditUser}>
+            Salvar Alterações
           </Button>
         </DialogFooter>
       </DialogContent>

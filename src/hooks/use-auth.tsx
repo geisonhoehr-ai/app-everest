@@ -1,4 +1,5 @@
 import { useAuth as useAuthContext } from '@/contexts/auth-provider'
+import { useViewMode } from '@/contexts/view-mode-context'
 
 /**
  * Enhanced Auth Hook with Additional Utilities
@@ -9,19 +10,26 @@ import { useAuth as useAuthContext } from '@/contexts/auth-provider'
 
 export const useAuth = () => {
   const auth = useAuthContext()
+  const { viewingAsStudent } = useViewMode()
+
+  // When viewing as student, override role checks
+  const effectiveRole = viewingAsStudent && auth.profile?.role !== 'student'
+    ? 'student'
+    : auth.profile?.role
 
   // Computed properties for convenience
   const isAuthenticated = !!auth.session && !!auth.profile
   const isLoading = auth.loading
-  const isAdmin = auth.profile?.role === 'administrator'
-  const isTeacher = auth.profile?.role === 'teacher'
-  const isStudent = auth.profile?.role === 'student'
+  const isAdmin = effectiveRole === 'administrator'
+  const isTeacher = effectiveRole === 'teacher'
+  const isStudent = effectiveRole === 'student'
+  const realRole = auth.profile?.role
 
   // Helper functions
   const hasRole = (role: string | string[]) => {
-    if (!auth.profile) return false
+    if (!effectiveRole) return false
     const roles = Array.isArray(role) ? role : [role]
-    return roles.includes(auth.profile.role)
+    return roles.includes(effectiveRole)
   }
 
   const hasPermission = (requiredRoles: string[]) => {
@@ -71,6 +79,8 @@ export const useAuth = () => {
     isAdmin,
     isTeacher,
     isStudent,
+    realRole,
+    viewingAsStudent,
 
     // Helper functions
     hasRole,

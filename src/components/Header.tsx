@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Menu, Search, Mountain } from 'lucide-react'
+import { Menu, Search, Mountain, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { MobileSidebar } from './MobileSidebar'
 import { ThemeToggle } from './ThemeToggle'
 import { CommandPalette } from './CommandPalette'
 import { useAuth } from '@/hooks/use-auth'
+import { useViewMode } from '@/contexts/view-mode-context'
 import { SidebarTrigger } from './ui/sidebar'
 
 export const Header = () => {
-  const { profile } = useAuth()
+  const { profile, realRole, viewingAsStudent } = useAuth()
+  const { toggleViewAsStudent } = useViewMode()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
@@ -74,6 +76,17 @@ export const Header = () => {
       </div>
 
       <div className="flex items-center gap-1 md:gap-2">
+        {profile && (realRole === 'administrator' || realRole === 'teacher') && (
+          <Button
+            variant={viewingAsStudent ? 'default' : 'ghost'}
+            size="sm"
+            className="hidden md:flex gap-1.5 text-xs"
+            onClick={toggleViewAsStudent}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            {viewingAsStudent ? 'Modo Aluno' : 'Ver como Aluno'}
+          </Button>
+        )}
         {profile ? (
           <ThemeToggle />
         ) : (

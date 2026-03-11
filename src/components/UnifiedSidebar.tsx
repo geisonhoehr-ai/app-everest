@@ -205,7 +205,6 @@ const adminMenuGroups: MenuGroup[] = [
     icon: Shield,
     collapsible: true,
     items: [
-      { label: 'Controle', href: '/admin/system-control', icon: Shield, adminOnly: true },
       { label: 'Integrações', href: '/admin/integrations', icon: Plug, adminOnly: true },
       { label: 'Configurações', href: '/admin/settings', icon: Settings },
       { label: 'Notificações', href: '/notificacoes', icon: Bell },

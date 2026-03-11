@@ -109,12 +109,6 @@ const adminMenuItems = [
     icon: Shield,
   },
   {
-    label: 'Controle Total',
-    href: '/admin/system-control',
-    icon: Settings,
-    adminOnly: true,
-  },
-  {
     label: 'Gestão de Usuários',
     href: '/admin/management',
     icon: Users,
