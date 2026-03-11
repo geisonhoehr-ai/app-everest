@@ -625,37 +625,45 @@ export default function StudyPlannerPage() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-              <div className="p-4 md:p-6 rounded-xl bg-green-500/10 border border-green-500/20">
-                <div className="flex items-center justify-between mb-2">
-                  <CheckCircle className="w-8 h-8 md:w-10 md:h-10 text-green-500 opacity-50" />
-                </div>
-                <p className="text-xs md:text-sm text-muted-foreground mb-1">Conteúdos Completos</p>
-                <p className="text-2xl md:text-3xl font-bold text-green-600">{completedTopics}</p>
-              </div>
+              <Card className="border-border shadow-sm">
+                <CardContent className="p-4">
+                  <div className="p-2 rounded-lg w-fit mb-3 bg-emerald-500/10">
+                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">{completedTopics}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Conteúdos Completos</div>
+                </CardContent>
+              </Card>
 
-              <div className="p-4 md:p-6 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                <div className="flex items-center justify-between mb-2">
-                  <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-blue-500 opacity-50" />
-                </div>
-                <p className="text-xs md:text-sm text-muted-foreground mb-1">Total de Tópicos</p>
-                <p className="text-2xl md:text-3xl font-bold text-blue-600">{topics.length}</p>
-              </div>
+              <Card className="border-border shadow-sm">
+                <CardContent className="p-4">
+                  <div className="p-2 rounded-lg w-fit mb-3 bg-blue-500/10">
+                    <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">{topics.length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Total de Tópicos</div>
+                </CardContent>
+              </Card>
 
-              <div className="p-4 md:p-6 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                <div className="flex items-center justify-between mb-2">
-                  <Clock className="w-8 h-8 md:w-10 md:h-10 text-purple-500 opacity-50" />
-                </div>
-                <p className="text-xs md:text-sm text-muted-foreground mb-1">Pomodoros Feitos</p>
-                <p className="text-2xl md:text-3xl font-bold text-purple-600">{totalPomodoros}</p>
-              </div>
+              <Card className="border-border shadow-sm">
+                <CardContent className="p-4">
+                  <div className="p-2 rounded-lg w-fit mb-3 bg-violet-500/10">
+                    <Clock className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">{totalPomodoros}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Pomodoros Feitos</div>
+                </CardContent>
+              </Card>
 
-              <div className="p-4 md:p-6 rounded-xl bg-orange-500/10 border border-orange-500/20">
-                <div className="flex items-center justify-between mb-2">
-                  <TrendingUp className="w-8 h-8 md:w-10 md:h-10 text-orange-500 opacity-50" />
-                </div>
-                <p className="text-xs md:text-sm text-muted-foreground mb-1">Progresso Geral</p>
-                <p className="text-2xl md:text-3xl font-bold text-orange-600">{progressPercentage}%</p>
-              </div>
+              <Card className="border-border shadow-sm">
+                <CardContent className="p-4">
+                  <div className="p-2 rounded-lg w-fit mb-3 bg-amber-500/10">
+                    <TrendingUp className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">{progressPercentage}%</div>
+                  <div className="text-xs text-muted-foreground mt-1">Progresso Geral</div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Progress Bar */}
@@ -1423,23 +1431,35 @@ function StudyHistory({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-6 rounded-xl bg-primary/5 border border-primary/20">
-              <Clock className="w-12 h-12 text-primary mx-auto mb-3" />
-              <p className="text-4xl font-bold text-primary mb-1">{totalPomodoros}</p>
-              <p className="text-sm text-muted-foreground">Total de Pomodoros</p>
-            </div>
+            <Card className="border-border shadow-sm">
+              <CardContent className="p-4 text-center">
+                <div className="p-2 rounded-lg w-fit mb-3 mx-auto bg-violet-500/10">
+                  <Clock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <p className="text-3xl font-bold text-foreground mb-1">{totalPomodoros}</p>
+                <p className="text-xs text-muted-foreground">Total de Pomodoros</p>
+              </CardContent>
+            </Card>
 
-            <div className="text-center p-6 rounded-xl bg-green-500/10 border border-green-500/20">
-              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-              <p className="text-4xl font-bold text-green-600 mb-1">{completedTopics}</p>
-              <p className="text-sm text-muted-foreground">Conteúdos Concluídos</p>
-            </div>
+            <Card className="border-border shadow-sm">
+              <CardContent className="p-4 text-center">
+                <div className="p-2 rounded-lg w-fit mb-3 mx-auto bg-emerald-500/10">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <p className="text-3xl font-bold text-foreground mb-1">{completedTopics}</p>
+                <p className="text-xs text-muted-foreground">Conteúdos Concluídos</p>
+              </CardContent>
+            </Card>
 
-            <div className="text-center p-6 rounded-xl bg-orange-500/10 border border-orange-500/20">
-              <Zap className="w-12 h-12 text-orange-500 mx-auto mb-3" />
-              <p className="text-4xl font-bold text-orange-600 mb-1">{totalPomodoros * 25}</p>
-              <p className="text-sm text-muted-foreground">Minutos Estudados</p>
-            </div>
+            <Card className="border-border shadow-sm">
+              <CardContent className="p-4 text-center">
+                <div className="p-2 rounded-lg w-fit mb-3 mx-auto bg-amber-500/10">
+                  <Zap className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <p className="text-3xl font-bold text-foreground mb-1">{totalPomodoros * 25}</p>
+                <p className="text-xs text-muted-foreground">Minutos Estudados</p>
+              </CardContent>
+            </Card>
           </div>
         </div>
         </CardContent>
