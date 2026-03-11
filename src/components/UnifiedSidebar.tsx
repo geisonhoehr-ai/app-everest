@@ -77,6 +77,7 @@ const studentMenuGroups: MenuGroup[] = [
     group: '',
     items: [
       { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { label: 'Notificações', href: '/notificacoes', icon: Bell },
     ],
   },
   {
@@ -126,11 +127,17 @@ const studentMenuGroups: MenuGroup[] = [
       { label: 'Conquistas', href: '/achievements', icon: Award },
     ],
   },
+  {
+    group: 'Social',
+    icon: MessageSquare,
+    collapsible: true,
+    items: [
+      { label: 'Comunidade', href: '/comunidade', icon: MessageSquare },
+    ],
+  },
 ]
 
 const studentFooterItems: MenuItem[] = [
-  { label: 'Comunidade', href: '/comunidade', icon: MessageSquare },
-  { label: 'Notificações', href: '/notificacoes', icon: Bell },
   { label: 'Configurações', href: '/configuracoes', icon: Settings },
 ]
 
