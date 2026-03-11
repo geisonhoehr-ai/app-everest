@@ -157,7 +157,7 @@ export default function AchievementsPage() {
     return (
       <Card
         className={cn(
-          "border-border shadow-sm transition-all duration-300 hover:shadow-md",
+          "border-border shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30",
           isUnlocked && "ring-2 ring-primary/20",
           !isUnlocked && "opacity-60"
         )}
@@ -326,7 +326,7 @@ export default function AchievementsPage() {
                 ))}
               </div>
             ) : (
-              <Card className="border-border shadow-sm">
+              <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
                 <CardContent className="text-center py-16">
                   <div className="max-w-md mx-auto">
                     <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">

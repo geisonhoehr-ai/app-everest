@@ -167,7 +167,7 @@ export default function ProgressPage() {
       </div>
 
       {/* Recent Activity */}
-      <Card className="border-border shadow-sm">
+      <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
         <CardHeader>
           <CardTitle>Atividade Recente</CardTitle>
         </CardHeader>
@@ -215,7 +215,7 @@ export default function ProgressPage() {
       </Card>
 
       {/* Achievements */}
-      <Card className="border-border shadow-sm">
+      <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Star className="h-5 w-5 text-yellow-500" />

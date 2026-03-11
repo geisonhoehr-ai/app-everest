@@ -122,7 +122,7 @@ export default function NotificationsPage() {
 
       <div className="space-y-6">
         {/* Header */}
-        <Card className="border-border shadow-sm">
+        <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -154,7 +154,7 @@ export default function NotificationsPage() {
         </Card>
 
         {/* Filters */}
-        <Card className="border-border shadow-sm">
+        <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-muted-foreground">Filtrar:</span>
@@ -198,7 +198,7 @@ export default function NotificationsPage() {
         {/* Notifications List */}
         <div className="space-y-4">
           {filteredNotifications.length === 0 ? (
-            <Card className="border-border shadow-sm">
+            <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
               <CardContent className="p-12 text-center">
                 <div className="w-16 h-16 bg-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Bell className="h-8 w-8 text-muted-foreground" />
@@ -221,7 +221,7 @@ export default function NotificationsPage() {
                 <Card
                   key={notification.id}
                   className={cn(
-                    "border-border shadow-sm transition-all duration-300",
+                    "border-border shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30",
                     !notification.is_read && "ring-2 ring-primary/20 bg-primary/5"
                   )}
                 >

@@ -98,7 +98,7 @@ export default function RankingPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Ranking</h1>
-        <Card className="border-border shadow-sm">
+        <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
           <CardContent className="text-center py-16">
             <div className="max-w-md mx-auto">
               <div className="w-16 h-16 mx-auto mb-8 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -163,7 +163,7 @@ export default function RankingPage() {
     return (
       <Card
         className={cn(
-          "border-border shadow-sm transition-all duration-300 hover:shadow-md",
+          "border-border shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30",
           position <= 3 && "ring-2 ring-primary/20"
         )}
       >
@@ -310,7 +310,7 @@ export default function RankingPage() {
 
         {/* Ranking Global */}
         <TabsContent value="global" className="space-y-4">
-          <Card className="border-border shadow-sm">
+          <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
             <CardContent className="p-5">
               <h2 className="text-lg font-semibold mb-4">Ranking Global</h2>
               <div className="space-y-3">
@@ -329,7 +329,7 @@ export default function RankingPage() {
 
         {/* Ranking de Flashcards */}
         <TabsContent value="flashcards" className="space-y-4">
-          <Card className="border-border shadow-sm">
+          <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
             <CardContent className="p-5">
               <h2 className="text-lg font-semibold mb-4">Ranking de Flashcards</h2>
               <div className="space-y-3">
@@ -347,7 +347,7 @@ export default function RankingPage() {
 
         {/* Ranking de Quizzes */}
         <TabsContent value="quizzes" className="space-y-4">
-          <Card className="border-border shadow-sm">
+          <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
             <CardContent className="p-5">
               <h2 className="text-lg font-semibold mb-4">Ranking de Quizzes</h2>
               <div className="space-y-3">
@@ -366,14 +366,14 @@ export default function RankingPage() {
 
       {/* Seção de Conquistas */}
       {userAchievements.length > 0 && (
-        <Card className="border-border shadow-sm">
+        <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
           <CardContent className="p-5">
             <h2 className="text-lg font-semibold mb-4">Suas Conquistas</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {userAchievements.slice(0, 6).map((achievement) => (
                 <div
                   key={achievement.id}
-                  className="p-4 rounded-xl bg-primary/5 border border-primary/20 hover:shadow-md transition-all duration-300"
+                  className="p-4 rounded-xl bg-primary/5 border border-primary/20 hover:border-primary/30 hover:shadow-md transition-all duration-300"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-xl">
