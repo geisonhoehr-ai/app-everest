@@ -135,9 +135,9 @@ export function RichTextEditor({
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-lg overflow-hidden bg-white dark:bg-card">
       {/* Toolbar */}
-      <div className="bg-muted/50 border-b p-2 flex flex-wrap gap-1">
+      <div className="bg-white dark:bg-muted/50 border-b p-2 flex flex-wrap gap-1">
         {/* Undo/Redo */}
         <div className="flex gap-1">
           <Toggle
@@ -356,7 +356,7 @@ export function RichTextEditor({
       </div>
 
       {/* Editor */}
-      <EditorContent editor={editor} className="bg-background" />
+      <EditorContent editor={editor} className="bg-white dark:bg-card" />
     </div>
   )
 }

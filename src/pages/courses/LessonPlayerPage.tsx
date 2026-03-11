@@ -2,6 +2,12 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/use-toast'
 import { courseService } from '@/services/courseService'
 import { useAuth } from '@/hooks/use-auth'
@@ -35,8 +41,6 @@ import {
   PanelRightOpen,
   PanelRightClose,
   Eye,
-  Maximize2,
-  Minimize2,
   ListVideo,
   MessageSquare,
   Star,
@@ -124,7 +128,7 @@ export default function LessonPlayerPage() {
   const { courseId, lessonId } = useParams()
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   const [courseData, setCourseData] = useState<CourseData | null>(null)
   const [lessonData, setLessonData] = useState<LessonData | null>(null)
@@ -142,8 +146,8 @@ export default function LessonPlayerPage() {
   const isDragging = useRef(false)
   const splitContainerRef = useRef<HTMLDivElement>(null)
 
-  // Sidebar - collapsed by default
-  const [desktopSidebarVisible, setDesktopSidebarVisible] = useState(false)
+  // Sidebar - visible by default
+  const [desktopSidebarVisible, setDesktopSidebarVisible] = useState(true)
 
   // XP animation
   const [showXpAnimation, setShowXpAnimation] = useState(false)
@@ -157,6 +161,7 @@ export default function LessonPlayerPage() {
   const [submittingComment, setSubmittingComment] = useState(false)
   const [hoverRating, setHoverRating] = useState(0)
   const [activeTab, setActiveTab] = useState<'comments' | 'resources' | 'notes'>('comments')
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   // Notes
   const [noteContent, setNoteContent] = useState('')
@@ -211,8 +216,13 @@ export default function LessonPlayerPage() {
 
   /* ---- fetch course + lesson data ---- */
   useEffect(() => {
+    if (authLoading) return
+    if (!user?.id) {
+      navigate('/login')
+      return
+    }
     const fetchData = async () => {
-      if (!user?.id || !courseId || !lessonId) return
+      if (!courseId || !lessonId) return
       try {
         setIsLoading(true)
 
@@ -270,7 +280,7 @@ export default function LessonPlayerPage() {
       }
     }
     fetchData()
-  }, [courseId, lessonId, user?.id, navigate, toast])
+  }, [courseId, lessonId, user?.id, authLoading, navigate, toast])
 
   /* ---- scroll to top when lesson changes ---- */
   useEffect(() => {
@@ -527,197 +537,212 @@ export default function LessonPlayerPage() {
     <div className="shrink-0 relative">
       <button onClick={() => setShowModuleSelector((v) => !v)}
         className={cn(
-          "w-full px-4 flex items-center gap-3 hover:bg-accent/50 transition-colors border-b border-border",
-          isMobile ? "py-2.5" : "py-3"
+          "w-full px-3 flex items-center gap-2 transition-colors border-b border-border",
+          "py-1.5",
+          showModuleSelector ? "bg-muted/30" : "hover:bg-muted/20"
         )}>
         <div className={cn(
-          "rounded-lg flex items-center justify-center shrink-0",
-          isMobile ? "w-6 h-6" : "w-7 h-7",
+          "rounded-md flex items-center justify-center shrink-0 font-bold w-6 h-6 text-[10px]",
           modCompleted === modTotal && modTotal > 0
-            ? "bg-emerald-500/15 text-emerald-600"
-            : "bg-primary text-primary-foreground"
+            ? "bg-emerald-500/10 text-emerald-600"
+            : "bg-primary/10 text-primary"
         )}>
           {modCompleted === modTotal && modTotal > 0 ? (
-            <CheckCircle className={cn(isMobile ? "h-3.5 w-3.5" : "h-4 w-4")} />
+            <CheckCircle className="h-3 w-3" />
           ) : (
-            <span className={cn("font-bold", isMobile ? "text-[10px]" : "text-[11px]")}>
-              {currentModuleIndex + 1}
-            </span>
+            <span>{currentModuleIndex + 1}</span>
           )}
         </div>
         <div className="flex-1 text-left min-w-0">
-          <div className={cn(
-            "font-medium text-foreground truncate",
-            isMobile ? "text-xs" : "text-[13px]"
-          )}>
+          <div className="text-xs font-semibold text-foreground truncate">
             {currentModule?.name}
           </div>
-          <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden max-w-[100px]">
-              <div className={cn(
-                "h-full rounded-full transition-all",
-                modCompleted === modTotal && modTotal > 0 ? "bg-emerald-500" : "bg-primary"
-              )} style={{ width: `${modTotal > 0 ? (modCompleted / modTotal) * 100 : 0}%` }} />
-            </div>
-            <span className="text-[10px] text-muted-foreground tabular-nums">{modCompleted}/{modTotal} concluidas</span>
-          </div>
+          <span className="text-[10px] text-muted-foreground tabular-nums">{modCompleted}/{modTotal} concluídas</span>
         </div>
         <ChevronDown className={cn(
-          "text-muted-foreground shrink-0 transition-transform",
-          isMobile ? "h-3 w-3" : "h-3.5 w-3.5",
+          "text-muted-foreground shrink-0 transition-transform duration-200 h-3 w-3",
           showModuleSelector ? "rotate-180" : ""
         )} />
       </button>
       {showModuleSelector && (
-        <div className="absolute left-4 right-4 top-[calc(100%+8px)] z-20 bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl shadow-black/30 max-h-[360px] overflow-y-auto overflow-x-hidden p-2">
-          {sortedModules.map((mod, idx) => {
-            const mc = mod.lessons.filter((l) => l.completed).length
-            const mt = mod.lessons.length
-            const modProgress = mt > 0 ? Math.round((mc / mt) * 100) : 0
-            const isSel = mod.id === currentModule?.id
-            return (
-              <button key={mod.id}
-                onClick={() => { setSelectedModuleId(mod.id); setShowModuleSelector(false) }}
-                className={cn(
-                  "w-full px-3 py-3 mb-1.5 flex items-center gap-3 text-left rounded-lg transition-all group/mod",
-                  isSel ? "bg-emerald-500/10 ring-1 ring-emerald-500/20" : "hover:bg-muted/60"
-                )}>
-                <div className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold transition-all shadow-sm",
-                  modProgress === 100
-                    ? "bg-emerald-500 text-white"
-                    : isSel
-                      ? "bg-emerald-500 text-emerald-50"
-                      : "bg-muted-foreground/10 text-muted-foreground group-hover/mod:bg-emerald-500/20 group-hover/mod:text-emerald-500"
-                )}>
-                  {modProgress === 100 ? <CheckCircle className="h-4 w-4" /> : idx + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className={cn(
-                    "text-[13px] truncate block mb-1 tracking-tight transition-colors",
-                    isSel ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-foreground/80 group-hover/mod:text-foreground font-medium"
-                  )}>{mod.name}</span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[120px]">
-                      <div className={cn(
-                        "h-full rounded-full transition-all duration-500",
-                        modProgress === 100 ? "bg-emerald-500" : isSel ? "bg-emerald-400" : "bg-primary/40 group-hover/mod:bg-emerald-400"
-                      )} style={{ width: `${modProgress}%` }} />
-                    </div>
-                    <span className={cn(
-                      "text-[10px] font-semibold tabular-nums shrink-0",
-                      isSel ? "text-emerald-600/80 dark:text-emerald-400/80" : "text-muted-foreground"
-                    )}>{mc} / {mt}</span>
+        <div className="absolute left-0 right-0 top-full z-20 bg-card border-b border-border shadow-md max-h-[400px] overflow-y-auto">
+          <div className="p-2 space-y-0.5">
+            {sortedModules.map((mod, idx) => {
+              const mc = mod.lessons.filter((l) => l.completed).length
+              const mt = mod.lessons.length
+              const modProgress = mt > 0 ? Math.round((mc / mt) * 100) : 0
+              const isSel = mod.id === currentModule?.id
+              return (
+                <button key={mod.id}
+                  onClick={() => { setSelectedModuleId(mod.id); setShowModuleSelector(false) }}
+                  className={cn(
+                    "w-full px-3 py-3 flex items-center gap-3 text-left rounded-lg transition-all group/mod",
+                    isSel ? "bg-primary/5 border border-primary/15" : "border border-transparent hover:bg-muted/40"
+                  )}>
+                  <div className={cn(
+                    "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold transition-all",
+                    modProgress === 100
+                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                      : isSel
+                        ? "bg-primary/10 text-primary border border-primary/20"
+                        : "bg-muted text-muted-foreground group-hover/mod:bg-primary/10 group-hover/mod:text-primary group-hover/mod:border-primary/20 border border-transparent"
+                  )}>
+                    {modProgress === 100 ? <CheckCircle className="h-4 w-4" /> : idx + 1}
                   </div>
-                </div>
-              </button>
-            )
-          })}
+                  <div className="flex-1 min-w-0">
+                    <span className={cn(
+                      "text-[13px] truncate block tracking-tight transition-colors",
+                      isSel ? "text-foreground font-semibold" : "text-foreground/80 group-hover/mod:text-foreground font-medium"
+                    )}>{mod.name}</span>
+                    <div className="flex items-center gap-2.5 mt-1.5">
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden max-w-[140px]">
+                        <div className={cn(
+                          "h-full rounded-full transition-all duration-500",
+                          modProgress === 100 ? "bg-gradient-to-r from-emerald-500 to-emerald-400" : isSel ? "bg-gradient-to-r from-primary to-primary/70" : "bg-muted-foreground/30 group-hover/mod:bg-primary"
+                        )} style={{ width: `${modProgress}%` }} />
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-medium tabular-nums shrink-0",
+                        modProgress === 100 ? "text-emerald-500" : "text-muted-foreground"
+                      )}>{modProgress}%</span>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
   )
 
   const renderLessonList = (isMobile: boolean) => (
-    <div className="flex-1 overflow-y-auto flex flex-col">
-      {/* Search */}
-      <div className="px-3 py-2.5 shrink-0 border-b border-border/50">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
-          <input
-            type="text"
-            value={lessonSearch}
-            onChange={(e) => setLessonSearch(e.target.value)}
-            placeholder="Buscar aula..."
-            className="w-full pl-8 pr-3 py-2 text-xs bg-muted/40 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-muted/60 text-foreground placeholder:text-muted-foreground/50 transition-all"
-          />
+    <>
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        {/* Search */}
+        <div className="px-3 py-2 shrink-0 border-b border-border/50">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+            <input
+              type="text"
+              value={lessonSearch}
+              onChange={(e) => setLessonSearch(e.target.value)}
+              placeholder="Buscar aula..."
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-muted/40 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary focus:bg-muted/60 text-foreground placeholder:text-muted-foreground/50 transition-all"
+            />
+          </div>
         </div>
-      </div>
-      <div className="flex-1 overflow-y-auto">
-        {filteredLessons.map((lesson, idx) => {
-          const isCurrent = lesson.id === lessonId
-          const isLast = idx === filteredLessons.length - 1
-          const prevCompleted = idx > 0 && filteredLessons[idx - 1]?.completed
-          const nextCompleted = !isLast && filteredLessons[idx + 1]?.completed
-          return (
-            <Link key={lesson.id}
-              ref={isCurrent ? currentLessonRef : undefined}
-              to={`/courses/${courseId}/lessons/${lesson.id}`}
-              onClick={isMobile ? () => setIsSidebarOpen(false) : undefined}
-              className={cn(
-                "group/lesson relative flex items-center gap-3 pl-4 pr-4 py-2.5 transition-all",
-                isCurrent
-                  ? "bg-primary/10"
-                  : "hover:bg-muted/40"
-              )}>
-              {/* Timeline node + lines */}
-              <div className="relative shrink-0 w-6 flex flex-col items-center self-stretch">
-                {/* Line above (from top of cell to node) */}
-                {idx > 0 && (
-                  <div className={cn(
-                    "w-0.5 flex-1 min-h-1",
-                    prevCompleted && lesson.completed
-                      ? "bg-emerald-500"
-                      : prevCompleted
-                        ? "bg-gradient-to-b from-emerald-500 to-border"
-                        : "bg-border"
-                  )} />
-                )}
-                {idx === 0 && <div className="flex-1" />}
-                {/* Node */}
-                <div className={cn(
-                  "relative z-10 flex items-center justify-center rounded-full border-2 shrink-0 transition-all duration-200",
-                  isMobile ? "w-5 h-5" : "w-6 h-6",
-                  lesson.completed
-                    ? "border-emerald-500 bg-emerald-500 text-white"
-                    : isCurrent
-                      ? "border-primary bg-primary text-white shadow-md shadow-primary/30"
-                      : "border-muted-foreground/30 bg-card group-hover/lesson:border-primary/50"
+        <div className="flex-1 overflow-y-auto">
+          {filteredLessons.map((lesson, idx) => {
+            const isCurrent = lesson.id === lessonId
+            const isLast = idx === filteredLessons.length - 1
+            const prevCompleted = idx > 0 && filteredLessons[idx - 1]?.completed
+            return (
+              <Link key={lesson.id}
+                ref={isCurrent ? currentLessonRef : undefined}
+                to={`/courses/${courseId}/lessons/${lesson.id}`}
+                onClick={isMobile ? () => setIsSidebarOpen(false) : undefined}
+                className={cn(
+                  "group/lesson relative flex items-start gap-3 pl-4 pr-4 py-0 transition-all",
+                  isCurrent
+                    ? "bg-primary/10"
+                    : "hover:bg-muted/40"
                 )}>
-                  {lesson.completed ? (
-                    <CheckCircle className={cn(isMobile ? "h-3 w-3" : "h-3.5 w-3.5")} />
-                  ) : isCurrent ? (
-                    <Play className={cn(isMobile ? "h-2.5 w-2.5" : "h-3 w-3", "ml-px")} />
+                {/* Timeline node + lines */}
+                <div className="relative shrink-0 w-6 flex flex-col items-center self-stretch">
+                  {/* Line above */}
+                  {idx > 0 ? (
+                    <div className={cn(
+                      "w-0.5 h-3",
+                      prevCompleted && lesson.completed ? "bg-emerald-500"
+                        : prevCompleted || (idx > 0 && filteredLessons[idx - 1]?.completed) ? "bg-emerald-500/30"
+                        : "bg-border"
+                    )} />
                   ) : (
-                    <span className="text-[9px] font-bold text-muted-foreground tabular-nums">{idx + 1}</span>
+                    <div className="h-3" />
+                  )}
+                  {/* Node */}
+                  <div className={cn(
+                    "relative z-10 flex items-center justify-center rounded-full shrink-0 transition-all duration-200",
+                    isMobile ? "w-5 h-5" : "w-7 h-7",
+                    lesson.completed
+                      ? "bg-emerald-500 text-white border-2 border-emerald-500"
+                      : isCurrent
+                        ? "bg-primary text-white border-2 border-primary"
+                        : "border-2 border-muted-foreground/20 bg-card group-hover/lesson:border-primary/40"
+                  )}>
+                    {lesson.completed ? (
+                      <CheckCircle className={cn(isMobile ? "h-3 w-3" : "h-3.5 w-3.5")} />
+                    ) : isCurrent ? (
+                      <Play className={cn(isMobile ? "h-2.5 w-2.5" : "h-3 w-3", "ml-px")} />
+                    ) : (
+                      <span className="text-[9px] font-bold text-muted-foreground tabular-nums">{idx + 1}</span>
+                    )}
+                  </div>
+                  {/* Line below */}
+                  {!isLast ? (
+                    <div className={cn(
+                      "w-0.5 flex-1 min-h-[12px]",
+                      lesson.completed ? "bg-emerald-500" : "bg-border"
+                    )} />
+                  ) : (
+                    <div className="h-3" />
                   )}
                 </div>
-                {/* Line below (from node to bottom of cell) */}
-                {!isLast ? (
+                <div className="flex-1 min-w-0 py-2">
                   <div className={cn(
-                    "w-0.5 flex-1 min-h-1",
-                    lesson.completed && nextCompleted
-                      ? "bg-emerald-500"
-                      : lesson.completed
-                        ? "bg-gradient-to-b from-emerald-500 to-border"
-                        : "bg-border"
-                  )} />
-                ) : (
-                  <div className="flex-1" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className={cn(
-                  "truncate leading-tight",
-                  isMobile ? "text-xs" : "text-[13px]",
-                  isCurrent ? "text-primary font-semibold" : lesson.completed ? "text-foreground/60" : "text-foreground/80 group-hover/lesson:text-foreground"
-                )}>
-                  {cleanTitle(lesson.title)}
-                </div>
-                {lesson.duration_seconds != null && lesson.duration_seconds > 0 && (
-                  <div className="text-[11px] text-muted-foreground/70 mt-0.5 tabular-nums">
-                    {formatDuration(lesson.duration_seconds)}
+                    "truncate leading-tight",
+                    isMobile ? "text-xs" : "text-[13px]",
+                    isCurrent ? "text-primary font-semibold" : lesson.completed ? "text-foreground/60" : "text-foreground/80 group-hover/lesson:text-foreground"
+                  )}>
+                    {cleanTitle(lesson.title)}
                   </div>
-                )}
-              </div>
-            </Link>
-          )
-        })}
-        {filteredLessons.length === 0 && (
-          <div className="px-4 py-6 text-center text-xs text-muted-foreground/60">Nenhuma aula encontrada</div>
+                  {lesson.duration_seconds != null && lesson.duration_seconds > 0 && (
+                    <div className="text-[11px] text-muted-foreground/70 mt-0.5 tabular-nums">
+                      {formatDuration(lesson.duration_seconds)}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            )
+          })}
+          {filteredLessons.length === 0 && (
+            <div className="px-4 py-6 text-center text-xs text-muted-foreground/60">Nenhuma aula encontrada</div>
+          )}
+        </div>
+      </div>
+      {/* Sidebar footer - always visible */}
+      <div className="shrink-0 border-t border-border bg-muted/20 px-4 py-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-foreground font-medium">Avalie esta aula</span>
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                onClick={() => handleRate(star)}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
+                className="p-0.5 transition-transform hover:scale-110"
+              >
+                <Star className={cn(
+                  "h-5 w-5 transition-colors",
+                  (hoverRating || ratingStats.userRating || 0) >= star
+                    ? "text-amber-500 fill-amber-500"
+                    : "text-muted-foreground/25"
+                )} />
+              </button>
+            ))}
+          </div>
+        </div>
+        {ratingStats.total > 0 && (
+          <div className="flex items-center gap-1.5 mt-1 text-[11px] text-muted-foreground">
+            <span>{ratingStats.average.toFixed(1)} média</span>
+            <span>·</span>
+            <span>{ratingStats.total} {ratingStats.total === 1 ? 'voto' : 'votos'}</span>
+          </div>
         )}
       </div>
-    </div>
+    </>
   )
 
   /* ---------------------------------------------------------------- */
@@ -729,7 +754,7 @@ export default function LessonPlayerPage() {
       {/* Theater overlay */}
       {theaterMode && (
         <div
-          className="fixed inset-0 z-[60] bg-black/92 backdrop-blur-md"
+          className="fixed inset-0 z-[60] bg-black/90"
           onClick={() => setTheaterMode(false)}
           style={{ animation: 'lp-fade-in 0.3s ease-out' }}
         />
@@ -742,7 +767,7 @@ export default function LessonPlayerPage() {
         {/* ============================================================ */}
         <header className={cn(
           "sticky top-0 z-[70] h-16 flex items-center gap-4 px-6 border-b transition-colors duration-300",
-          theaterMode ? "bg-black/80 border-transparent backdrop-blur-sm" : "bg-card border-border"
+          theaterMode ? "bg-black border-transparent" : "bg-card border-border"
         )}>
           {theaterMode ? (
             /* Theater mode: only show "Acender Luz" button */
@@ -815,11 +840,15 @@ export default function LessonPlayerPage() {
 
         {/* Progress bar below header */}
         {!theaterMode && (
-          <div className="h-1 bg-muted/50 shrink-0">
+          <div className="h-1.5 bg-muted/40 shrink-0 relative overflow-hidden">
             <div
-              className="h-full bg-emerald-500 rounded-r-full transition-all duration-700 ease-out"
+              className="h-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 rounded-r-full transition-all duration-700 ease-out relative"
               style={{ width: `${modTotal > 0 ? (modCompleted / modTotal) * 100 : 0}%` }}
-            />
+            >
+              {modCompleted > 0 && modCompleted < modTotal && (
+                <div className="absolute right-0 top-0 h-full w-3 bg-white/40 rounded-full animate-pulse" />
+              )}
+            </div>
           </div>
         )}
 
@@ -844,7 +873,7 @@ export default function LessonPlayerPage() {
                   <>
                     {/* Desktop split */}
                     <div className="hidden md:flex w-full px-4 pt-4" style={{ height: '70vh' }}>
-                      <div style={{ width: `${splitRatio}%` }} className="relative shrink-0 bg-black rounded-xl overflow-hidden ring-1 ring-border/50 shadow-md">
+                      <div style={{ width: `${splitRatio}%` }} className="relative shrink-0 bg-black rounded-xl overflow-hidden border border-border shadow-sm">
                         {videoEmbedUrl ? (
                           <iframe src={videoEmbedUrl} title={lessonData.title}
                             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
@@ -883,7 +912,7 @@ export default function LessonPlayerPage() {
                     </div>
                     {/* Mobile stacked */}
                     <div className="md:hidden p-3 pb-0">
-                      <div className="relative w-full bg-black rounded-lg overflow-hidden ring-1 ring-border/50 shadow-sm" style={{ paddingBottom: '56.25%' }}>
+                      <div className="relative w-full bg-black rounded-lg overflow-hidden border border-border shadow-sm" style={{ paddingBottom: '56.25%' }}>
                         {videoEmbedUrl ? (
                           <iframe src={videoEmbedUrl} title={lessonData.title}
                             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
@@ -911,7 +940,7 @@ export default function LessonPlayerPage() {
                 ) : (
                   /* Normal video */
                   <div className={cn("relative w-full transition-all duration-300", theaterMode ? "bg-black" : "px-4 md:px-6 lg:px-8 py-4 sm:py-6 bg-background")}>
-                    <div className={cn("relative bg-black transition-all duration-300", theaterMode ? "w-full" : "rounded-2xl overflow-hidden ring-1 ring-border/50 shadow-xl")}>
+                    <div className={cn("relative bg-black transition-all duration-300", theaterMode ? "w-full" : "rounded-2xl overflow-hidden border border-border shadow-sm")}>
                       {videoEmbedUrl ? (
                         <div style={{ paddingBottom: theaterMode ? '52%' : '56.25%' }} className="relative transition-all duration-300">
                           <iframe src={videoEmbedUrl} title={lessonData.title}
@@ -963,22 +992,26 @@ export default function LessonPlayerPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2 shrink-0 relative">
-                    {/* PDF button */}
-                    {pdfAttachments.length > 0 && pdfAttachments.map((pdf) => (
-                      <button key={pdf.id} onClick={() => openPdfViewer(pdf.file_url)}
-                        className={cn(
-                          "flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-medium transition-all border min-h-[44px]",
-                          pdfViewerUrl === pdf.file_url
-                            ? "bg-primary/10 text-primary border-primary/30"
-                            : "text-muted-foreground border-border hover:border-foreground/20 hover:text-foreground bg-muted/30 hover:bg-muted/50"
-                        )}
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline max-w-[100px] truncate">PDF</span>
-                        {pdfViewerUrl === pdf.file_url ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-                      </button>
-                    ))}
+                  <div className="flex items-center gap-3 shrink-0 relative">
+                    {/* Auto-play toggle */}
+                    <button
+                      onClick={toggleAutoPlay}
+                      className={cn(
+                        "flex items-center gap-1.5 text-xs transition-colors",
+                        autoPlayNext ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <div className={cn(
+                        "relative w-7 h-[16px] rounded-full transition-colors",
+                        autoPlayNext ? "bg-primary" : "bg-muted"
+                      )}>
+                        <div className={cn(
+                          "absolute top-[2px] w-[12px] h-[12px] rounded-full bg-white shadow-sm transition-all",
+                          autoPlayNext ? "left-[13px]" : "left-[2px]"
+                        )} />
+                      </div>
+                      Auto-play
+                    </button>
 
                     {/* Mark complete */}
                     <button onClick={handleMarkComplete} disabled={lessonData.completed}
@@ -986,7 +1019,7 @@ export default function LessonPlayerPage() {
                         "flex items-center gap-2.5 h-10 px-5 rounded-xl text-sm font-semibold transition-all min-h-[44px]",
                         lessonData.completed
                           ? "bg-emerald-500/10 text-emerald-500 cursor-default"
-                          : "bg-primary hover:bg-emerald-500 text-primary-foreground hover:text-white shadow-lg shadow-primary/20 hover:shadow-emerald-500/30 active:scale-[0.97]"
+                          : "bg-primary hover:bg-emerald-500 text-primary-foreground hover:text-white shadow-sm hover:shadow-md active:scale-[0.97]"
                       )}
                     >
                       <CheckCircle className="h-4 w-4" />
@@ -1003,28 +1036,6 @@ export default function LessonPlayerPage() {
                       </span>
                     )}
                   </div>
-                </div>
-
-                {/* Auto-play toggle */}
-                <div className="flex items-center justify-end mt-4">
-                  <button
-                    onClick={toggleAutoPlay}
-                    className={cn(
-                      "flex items-center gap-2 text-xs transition-colors",
-                      autoPlayNext ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <div className={cn(
-                      "relative w-8 h-[18px] rounded-full transition-colors",
-                      autoPlayNext ? "bg-primary" : "bg-muted"
-                    )}>
-                      <div className={cn(
-                        "absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-all",
-                        autoPlayNext ? "left-[15px]" : "left-[2px]"
-                      )} />
-                    </div>
-                    Auto-play
-                  </button>
                 </div>
 
                 {/* Navigation */}
@@ -1057,86 +1068,69 @@ export default function LessonPlayerPage() {
               </div>
 
               {/* ======================================================== */}
-              {/* Description                                                 */}
+              {/* Action buttons — open drawer for content                    */}
               {/* ======================================================== */}
-              {sanitizedDescription && (
-                <div className={cn("px-4 sm:px-6 lg:px-8 py-4 bg-muted/30", theaterMode ? "hidden" : "")}>
-                  <div className="rounded-lg bg-card border border-border p-5">
-                    <div className="prose prose-sm dark:prose-invert max-w-none prose-p:text-muted-foreground prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground"
-                      dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />
-                  </div>
+              <div className={cn("px-4 sm:px-6 lg:px-8 py-4 bg-card border-t border-border", theaterMode ? "hidden" : "")}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => { setActiveTab('comments'); setDrawerOpen(true) }}
+                    className="flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-medium transition-all border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    Comentários
+                    {comments.length > 0 && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-muted min-w-[18px] text-center">
+                        {comments.reduce((sum, c) => sum + 1 + (c.replies?.length || 0), 0)}
+                      </span>
+                    )}
+                  </button>
+                  {attachments.length > 0 && (
+                    <button
+                      onClick={() => { setActiveTab('resources'); setDrawerOpen(true) }}
+                      className="flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-medium transition-all border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                    >
+                      <Paperclip className="h-3.5 w-3.5" />
+                      Arquivos
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-muted min-w-[18px] text-center">{attachments.length}</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setActiveTab('notes'); setDrawerOpen(true) }}
+                    className="flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-medium transition-all border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                  >
+                    <StickyNote className="h-3.5 w-3.5" />
+                    Anotações
+                  </button>
                 </div>
-              )}
+              </div>
 
               {/* ======================================================== */}
-              {/* Rating + Tabs (Comments / Resources)                       */}
+              {/* Drawer / Sheet for Comments, Resources, Notes             */}
               {/* ======================================================== */}
-              <div className={cn("px-4 sm:px-6 lg:px-8 pb-16 pt-10 bg-muted/10 border-t border-border mt-4", theaterMode ? "hidden" : "")}>
-                <div className="w-full space-y-6">
-
-                  {/* Star Rating Box */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-5 px-6 border border-border bg-card rounded-2xl shadow-sm">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
-                        <Star className="h-6 w-6 text-amber-500 drop-shadow-sm" />
-                      </div>
-                      <div>
-                        <span className="text-base font-semibold text-foreground block mb-0.5">Avaliação da aula</span>
-                        <span className="text-xs sm:text-sm text-muted-foreground leading-snug">O que você achou deste conteúdo? Deixe seu voto.</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 bg-muted/30 sm:bg-transparent px-4 sm:px-0 py-3 sm:py-0 rounded-xl sm:rounded-none">
-                      <div className="flex items-center gap-1.5">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            onClick={() => handleRate(star)}
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
-                            className="p-1 transition-transform hover:scale-110 active:scale-90"
-                          >
-                            <Star className={cn(
-                              "h-6 w-6 sm:h-7 sm:w-7 transition-all duration-300",
-                              (hoverRating || ratingStats.userRating || 0) >= star
-                                ? "fill-amber-400 text-amber-400 drop-shadow-md"
-                                : "text-border hover:text-amber-400/50"
-                            )} />
-                          </button>
-                        ))}
-                      </div>
-                      {ratingStats.total > 0 && (
-                        <div className="pl-3 sm:pl-4 border-l border-border flex flex-col items-center justify-center min-w-[50px]">
-                          <span className="text-lg font-bold text-foreground leading-none mb-0.5">
-                            {ratingStats.average.toFixed(1)}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground uppercase font-semibold">
-                            {ratingStats.total} {ratingStats.total === 1 ? 'voto' : 'votos'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+              <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+                <SheetContent side="bottom" className="h-[75vh] flex flex-col p-0 rounded-t-2xl border-t-2 border-primary/20 !bg-white dark:!bg-card">
+                  {/* Drawer handle */}
+                  <div className="flex justify-center pt-3 pb-1 shrink-0">
+                    <div className="w-10 h-1 rounded-full bg-border" />
                   </div>
-
-                  {/* Interaction Card */}
-                  <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-                    {/* Tab buttons */}
-                    <div className="flex flex-col sm:flex-row gap-2 border-b border-border p-3 sm:px-6">
+                  {/* Header with tabs */}
+                  <SheetHeader className="px-6 pb-3 shrink-0">
+                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-muted/40 rounded-xl p-1 border border-border/30">
                       <button
                         onClick={() => setActiveTab('comments')}
                         className={cn(
-                          "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border",
+                          "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-all rounded-lg flex-1 justify-center",
                           activeTab === 'comments'
-                            ? "bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400 shadow-sm"
-                            : "border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                            ? "bg-white dark:bg-background text-primary shadow border border-border/40"
+                            : "text-muted-foreground hover:text-foreground hover:bg-white/50"
                         )}
                       >
                         <MessageSquare className="h-4 w-4" />
                         Comentários
                         {comments.length > 0 && (
                           <span className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors",
-                            activeTab === 'comments' ? "bg-orange-500/20 text-orange-600 dark:text-orange-400" : "bg-muted-foreground/15 text-muted-foreground"
+                            "text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center",
+                            activeTab === 'comments' ? "bg-primary text-white" : "bg-gray-200 dark:bg-muted text-muted-foreground"
                           )}>
                             {comments.reduce((sum, c) => sum + 1 + (c.replies?.length || 0), 0)}
                           </span>
@@ -1146,245 +1140,282 @@ export default function LessonPlayerPage() {
                         <button
                           onClick={() => setActiveTab('resources')}
                           className={cn(
-                            "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border",
+                            "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-all rounded-lg flex-1 justify-center",
                             activeTab === 'resources'
-                              ? "bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400 shadow-sm"
-                              : "border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                              ? "bg-white dark:bg-background text-primary shadow border border-border/40"
+                              : "text-muted-foreground hover:text-foreground hover:bg-white/50"
                           )}
                         >
                           <Paperclip className="h-4 w-4" />
                           Arquivos
                           <span className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors",
-                            activeTab === 'resources' ? "bg-orange-500/20 text-orange-600 dark:text-orange-400" : "bg-muted-foreground/15 text-muted-foreground"
+                            "text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center",
+                            activeTab === 'resources' ? "bg-primary text-white" : "bg-gray-200 dark:bg-muted text-muted-foreground"
                           )}>{attachments.length}</span>
                         </button>
                       )}
                       <button
                         onClick={() => setActiveTab('notes')}
                         className={cn(
-                          "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border",
+                          "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-all rounded-lg flex-1 justify-center",
                           activeTab === 'notes'
-                            ? "bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400 shadow-sm"
-                            : "border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                            ? "bg-white dark:bg-background text-primary shadow border border-border/40"
+                            : "text-muted-foreground hover:text-foreground hover:bg-white/50"
                         )}
                       >
                         <StickyNote className="h-4 w-4" />
                         Anotações
                       </button>
                     </div>
+                    <SheetTitle className="sr-only">
+                      {activeTab === 'comments' ? 'Comentários' : activeTab === 'resources' ? 'Arquivos' : 'Anotações'}
+                    </SheetTitle>
+                  </SheetHeader>
 
-                    {/* Tab content wrapper */}
-                    <div className="flex-1 p-5 sm:p-6 lg:p-8 bg-transparent">
-
-                      {/* Tab content: Comments */}
-                      {activeTab === 'comments' && (
-                        <div className="space-y-4">
-                          {/* Comment input */}
-                          <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
-                              <span className="text-xs font-bold text-primary">
-                                {user?.email?.[0]?.toUpperCase() || 'A'}
-                              </span>
-                            </div>
-                            <div className="flex-1 space-y-2">
-                              <textarea
-                                value={commentText}
-                                onChange={(e) => setCommentText(e.target.value)}
-                                placeholder="Deixe um comentario sobre esta aula..."
-                                rows={2}
-                                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-foreground placeholder:text-muted-foreground/60 shadow-sm"
-                              />
-                              {commentText.trim() && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] text-muted-foreground">{commentText.length}/2000</span>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleSubmitComment()}
-                                    disabled={submittingComment || !commentText.trim()}
-                                    className="h-8 px-3 text-xs gap-1.5"
-                                  >
-                                    <Send className="h-3 w-3" />
-                                    Enviar (+5 XP)
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
+                  <div className="flex-1 overflow-y-auto px-6 py-5 bg-[#f5f5f7] dark:bg-background">
+                    {/* Comments */}
+                    {activeTab === 'comments' && (
+                      <div className="space-y-5 max-w-3xl mx-auto">
+                        {/* Comment input */}
+                        <div className="flex gap-3 bg-white dark:bg-card rounded-2xl p-4 border border-border/40 shadow">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center shrink-0 shadow-sm">
+                            <span className="text-sm font-bold text-white">
+                              {user?.email?.[0]?.toUpperCase() || 'A'}
+                            </span>
                           </div>
-
-                          {/* Comments list */}
-                          {comments.length === 0 ? (
-                            <div className="text-center py-8">
-                              <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                              <p className="text-sm text-muted-foreground">Nenhum comentario ainda. Seja o primeiro!</p>
-                            </div>
-                          ) : (
-                            <div className="space-y-3">
-                              {comments.map((comment) => (
-                                <div key={comment.id} className="space-y-2">
-                                  {/* Main comment */}
-                                  <div className="flex gap-3 group">
-                                    <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center shrink-0 mt-0.5">
-                                      {comment.user_avatar ? (
-                                        <img src={comment.user_avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
-                                      ) : (
-                                        <span className="text-xs font-bold text-muted-foreground">
-                                          {(comment.user_name || 'A')[0].toUpperCase()}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-0.5">
-                                        <span className="text-xs font-medium text-foreground">{comment.user_name || 'Aluno'}</span>
-                                        <span className="text-[10px] text-muted-foreground/60">
-                                          {new Date(comment.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                      </div>
-                                      <p className="text-sm text-foreground/80 whitespace-pre-wrap break-words">{comment.content}</p>
-                                      <div className="flex items-center gap-3 mt-1">
-                                        <button
-                                          onClick={() => { setReplyingTo(replyingTo === comment.id ? null : comment.id); setReplyText('') }}
-                                          className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
-                                        >
-                                          <Reply className="h-3 w-3" />
-                                          Responder
-                                        </button>
-                                        {comment.user_id === user?.id && (
-                                          <button
-                                            onClick={() => handleDeleteComment(comment.id)}
-                                            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                                          >
-                                            <Trash2 className="h-3 w-3" />
-                                            Excluir
-                                          </button>
-                                        )}
-                                      </div>
-
-                                      {/* Reply input */}
-                                      {replyingTo === comment.id && (
-                                        <div className="flex gap-2 mt-2">
-                                          <input
-                                            value={replyText}
-                                            onChange={(e) => setReplyText(e.target.value)}
-                                            placeholder="Escreva uma resposta..."
-                                            maxLength={2000}
-                                            className="flex-1 px-3 py-1.5 text-xs bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 text-foreground shadow-sm placeholder:text-muted-foreground/60"
-                                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitComment(comment.id) } }}
-                                          />
-                                          <Button
-                                            size="sm"
-                                            onClick={() => handleSubmitComment(comment.id)}
-                                            disabled={submittingComment || !replyText.trim()}
-                                            className="h-7 px-2 text-[11px]"
-                                          >
-                                            <Send className="h-3 w-3" />
-                                          </Button>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Replies */}
-                                  {comment.replies && comment.replies.length > 0 && (
-                                    <div className="ml-11 space-y-2 border-l-2 border-border/50 pl-3">
-                                      {comment.replies.map((reply) => (
-                                        <div key={reply.id} className="flex gap-2.5 group">
-                                          <div className="w-6 h-6 rounded-full bg-muted/50 flex items-center justify-center shrink-0 mt-0.5">
-                                            {reply.user_avatar ? (
-                                              <img src={reply.user_avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
-                                            ) : (
-                                              <span className="text-[10px] font-bold text-muted-foreground">
-                                                {(reply.user_name || 'A')[0].toUpperCase()}
-                                              </span>
-                                            )}
-                                          </div>
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-0.5">
-                                              <span className="text-[11px] font-medium text-foreground">{reply.user_name || 'Aluno'}</span>
-                                              <span className="text-[10px] text-muted-foreground/60">
-                                                {new Date(reply.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                              </span>
-                                            </div>
-                                            <p className="text-xs text-foreground/80 whitespace-pre-wrap break-words">{reply.content}</p>
-                                            {reply.user_id === user?.id && (
-                                              <button
-                                                onClick={() => handleDeleteComment(reply.id)}
-                                                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 mt-0.5"
-                                              >
-                                                <Trash2 className="h-2.5 w-2.5" />
-                                                Excluir
-                                              </button>
-                                            )}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          <div className="flex-1">
+                            <textarea
+                              value={commentText}
+                              onChange={(e) => setCommentText(e.target.value)}
+                              placeholder="Compartilhe sua dúvida ou comentário sobre esta aula..."
+                              rows={2}
+                              className="w-full px-4 py-3 text-sm bg-muted/30 border-0 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-muted/50 text-foreground placeholder:text-muted-foreground/50 transition-all"
+                            />
+                            {commentText.trim() && (
+                              <div className="flex items-center justify-between mt-2">
+                                <span className="text-[11px] text-muted-foreground tabular-nums">{commentText.length}/2000</span>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSubmitComment()}
+                                  disabled={submittingComment || !commentText.trim()}
+                                  className="h-9 px-4 text-xs gap-2 bg-primary hover:bg-primary/90"
+                                >
+                                  <Send className="h-3.5 w-3.5" />
+                                  Enviar
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
 
-                      {/* Tab content: Resources */}
-                      {activeTab === 'resources' && attachments.length > 0 && (
-                        <div className="space-y-1.5">
+                        {/* Comments list */}
+                        {comments.length === 0 ? (
+                          <div className="text-center py-14 bg-white dark:bg-card rounded-2xl border border-border/40 shadow">
+                            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                              <MessageSquare className="h-7 w-7 text-primary/60" />
+                            </div>
+                            <h3 className="text-base font-semibold text-foreground mb-1.5">Nenhum comentário ainda</h3>
+                            <p className="text-sm text-muted-foreground max-w-[300px] mx-auto leading-relaxed">Seja o primeiro a comentar! Compartilhe suas dúvidas ou insights sobre esta aula.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {comments.map((comment) => (
+                              <div key={comment.id} className="bg-white dark:bg-card rounded-xl border border-border/40 shadow overflow-hidden">
+                                {/* Main comment */}
+                                <div className="flex gap-3 p-4 group">
+                                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shrink-0 shadow-sm">
+                                    {comment.user_avatar ? (
+                                      <img src={comment.user_avatar} alt="" className="w-9 h-9 rounded-full object-cover" />
+                                    ) : (
+                                      <span className="text-xs font-bold text-white">
+                                        {(comment.user_name || 'A')[0].toUpperCase()}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-sm font-semibold text-foreground">{comment.user_name || 'Aluno'}</span>
+                                      <span className="text-[11px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                                        {new Date(comment.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">{comment.content}</p>
+                                    <div className="flex items-center gap-3 mt-2.5">
+                                      <button
+                                        onClick={() => { setReplyingTo(replyingTo === comment.id ? null : comment.id); setReplyText('') }}
+                                        className="flex items-center gap-1.5 text-xs text-primary/70 hover:text-primary transition-colors font-semibold"
+                                      >
+                                        <Reply className="h-3.5 w-3.5" />
+                                        Responder
+                                      </button>
+                                      {comment.user_id === user?.id && (
+                                        <button
+                                          onClick={() => handleDeleteComment(comment.id)}
+                                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 font-medium"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                          Excluir
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {/* Reply input */}
+                                    {replyingTo === comment.id && (
+                                      <div className="flex gap-2 mt-3 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                                        <input
+                                          value={replyText}
+                                          onChange={(e) => setReplyText(e.target.value)}
+                                          placeholder="Escreva uma resposta..."
+                                          maxLength={2000}
+                                          className="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground placeholder:text-muted-foreground/50"
+                                          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmitComment(comment.id) } }}
+                                        />
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleSubmitComment(comment.id)}
+                                          disabled={submittingComment || !replyText.trim()}
+                                          className="h-9 px-3 text-xs"
+                                        >
+                                          <Send className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Replies */}
+                                {comment.replies && comment.replies.length > 0 && (
+                                  <div className="ml-12 mr-4 mb-3 border-l-2 border-primary/15 pl-4 space-y-1 bg-muted/20 rounded-r-lg py-2">
+                                    {comment.replies.map((reply) => (
+                                      <div key={reply.id} className="flex gap-3 p-3 rounded-lg hover:bg-background/60 transition-colors group">
+                                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shrink-0">
+                                          {reply.user_avatar ? (
+                                            <img src={reply.user_avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
+                                          ) : (
+                                            <span className="text-[10px] font-bold text-white">
+                                              {(reply.user_name || 'A')[0].toUpperCase()}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-0.5">
+                                            <span className="text-xs font-semibold text-foreground">{reply.user_name || 'Aluno'}</span>
+                                            <span className="text-[10px] text-muted-foreground">
+                                              {new Date(reply.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                          </div>
+                                          <p className="text-xs text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">{reply.content}</p>
+                                          {reply.user_id === user?.id && (
+                                            <button
+                                              onClick={() => handleDeleteComment(reply.id)}
+                                              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 mt-1 font-medium"
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                              Excluir
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Resources */}
+                    {activeTab === 'resources' && attachments.length > 0 && (
+                      <div className="max-w-3xl mx-auto">
+                        <div className="grid gap-3 sm:grid-cols-2">
                           {attachments.map((att) => {
                             const isPdf = att.file_type?.includes('pdf') || att.file_name?.endsWith('.pdf')
                             return (
-                              <div key={att.id} className="flex items-center justify-between p-2.5 rounded-md bg-muted/20 hover:bg-muted/40 transition-colors group">
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <FileText className={cn("h-4 w-4 shrink-0", isPdf ? "text-red-400" : "text-muted-foreground")} />
-                                  <span className="text-xs text-muted-foreground truncate group-hover:text-foreground">{att.file_name}</span>
+                              <div key={att.id} className={cn(
+                                "flex flex-col p-4 rounded-xl border bg-white dark:bg-card transition-all group hover:shadow-lg shadow",
+                                isPdf ? "border-border/60 hover:border-red-500/30" : "border-border/60 hover:border-primary/20"
+                              )}>
+                                <div className="flex items-start gap-3">
+                                  <div className={cn(
+                                    "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+                                    isPdf ? "bg-red-500/10 text-red-500" : "bg-primary/10 text-primary"
+                                  )}>
+                                    <FileText className="h-6 w-6" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <span className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">{att.file_name}</span>
+                                    <span className={cn(
+                                      "text-[11px] font-medium mt-1 block",
+                                      isPdf ? "text-red-500/70" : "text-muted-foreground"
+                                    )}>{isPdf ? 'PDF' : 'Arquivo'}</span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-0.5 shrink-0">
+                                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
                                   {isPdf && (
-                                    <button onClick={() => openPdfViewer(att.file_url)}
-                                      className="p-1.5 rounded text-muted-foreground hover:text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title="Abrir ao lado">
+                                    <button onClick={() => { openPdfViewer(att.file_url); setDrawerOpen(false) }}
+                                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold text-white bg-primary hover:bg-primary/90 transition-all shadow-sm">
                                       <Eye className="h-3.5 w-3.5" />
+                                      Visualizar
                                     </button>
                                   )}
                                   <a href={att.file_url} download target="_blank" rel="noopener noreferrer"
-                                    className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title="Baixar">
+                                    className={cn(
+                                      "flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold transition-all",
+                                      isPdf
+                                        ? "flex-1 text-foreground bg-gray-100 hover:bg-gray-200 border border-border/60"
+                                        : "flex-1 text-white bg-primary hover:bg-primary/90 shadow-sm"
+                                    )}>
                                     <Download className="h-3.5 w-3.5" />
+                                    Baixar
                                   </a>
                                 </div>
                               </div>
                             )
                           })}
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                      {/* Tab content: Notes */}
-                      {activeTab === 'notes' && (
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground">Suas anotações pessoais sobre esta aula. Apenas você pode vê-las.</p>
-                            {noteLastSaved && (
-                              <span className={cn(
-                                "flex items-center gap-1 text-[11px] transition-colors",
-                                noteLastSaved === 'Salvando...' ? "text-muted-foreground" :
-                                  noteLastSaved === 'Erro ao salvar' ? "text-red-400" :
-                                    "text-emerald-500"
-                              )}>
-                                {noteSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                                {noteLastSaved}
-                              </span>
-                            )}
+                    {/* Notes */}
+                    {activeTab === 'notes' && (
+                      <div className="space-y-4 max-w-3xl mx-auto">
+                        <div className="flex items-center justify-between bg-white dark:bg-card rounded-xl p-4 border border-border/40 shadow">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                              <StickyNote className="h-4.5 w-4.5 text-amber-500" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-semibold text-foreground">Suas anotações</h3>
+                              <p className="text-[11px] text-muted-foreground">Privado · Salvo automaticamente</p>
+                            </div>
                           </div>
+                          {noteLastSaved && (
+                            <span className={cn(
+                              "flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors",
+                              noteLastSaved === 'Salvando...' ? "text-muted-foreground bg-muted/50" :
+                                noteLastSaved === 'Erro ao salvar' ? "text-red-500 bg-red-500/5" :
+                                  "text-emerald-600 bg-emerald-500/5"
+                            )}>
+                              {noteSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                              {noteLastSaved}
+                            </span>
+                          )}
+                        </div>
+                        <div className="border border-border/40 rounded-xl overflow-hidden bg-white dark:bg-card shadow">
                           <RichTextEditor
                             content={noteContent}
                             onChange={handleNoteChange}
-                            placeholder="Escreva suas anotações aqui... (salva automaticamente)"
-                            minHeight="180px"
+                            placeholder="Escreva suas anotações aqui..."
+                            minHeight="250px"
                           />
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
 
@@ -1392,16 +1423,17 @@ export default function LessonPlayerPage() {
           {/* Desktop Sidebar                                               */}
           {/* ============================================================ */}
           <aside className={cn(
-            "hidden lg:flex flex-col overflow-hidden transition-all duration-300 border-l",
+            "hidden lg:block shrink-0 overflow-hidden transition-all duration-300 border-l",
             "bg-card border-border",
             theaterMode ? "w-0 min-w-0 border-l-0" :
               desktopSidebarVisible ? "w-[320px] min-w-[320px]" : "w-0 min-w-0 border-l-0"
           )}>
             {desktopSidebarVisible && (
-              <>
+              <div className="sticky top-[calc(4rem+1.5px)] flex flex-col h-[calc(100vh-4rem-1.5px)] overflow-hidden">
                 {renderModuleSelector(false)}
                 {renderLessonList(false)}
-              </>
+                <div className="shrink-0 h-[0.80rem]" />
+              </div>
             )}
           </aside>
 
@@ -1410,9 +1442,9 @@ export default function LessonPlayerPage() {
           {/* ============================================================ */}
           {isSidebarOpen && (
             <>
-              <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden"
+              <div className="fixed inset-0 z-40 bg-black/60 lg:hidden"
                 onClick={() => setIsSidebarOpen(false)} />
-              <aside className="fixed inset-y-0 right-0 z-50 w-[85%] max-w-[360px] lg:hidden bg-card border-l border-border shadow-2xl flex flex-col">
+              <aside className="fixed inset-y-0 right-0 z-50 w-[85%] max-w-[360px] lg:hidden bg-card border-l border-border shadow-lg flex flex-col">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
                   <div className="flex items-center gap-2">
                     <ListVideo className="h-4 w-4 text-primary" />
