@@ -34,10 +34,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { MoreHorizontal, PlusCircle, Search, Edit, Trash2, UserX, UserCheck, RefreshCw, GraduationCap, Users as UsersIcon } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { MoreHorizontal, PlusCircle, Search, Edit, Trash2, UserX, UserCheck, RefreshCw, GraduationCap, Users as UsersIcon, Loader2 } from 'lucide-react'
 import { getUsers, updateUser, type User, getUsersWithClasses, type UserWithClasses } from '@/services/adminUserService'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
+import { supabase } from '@/lib/supabase/client'
 
 export const UserManagement = () => {
   const [users, setUsers] = useState<UserWithClasses[]>([])
@@ -47,10 +57,18 @@ export const UserManagement = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [classFilter, setClassFilter] = useState<string>('all')
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [newUserEmail, setNewUserEmail] = useState('')
+  const [newUserFirstName, setNewUserFirstName] = useState('')
+  const [newUserLastName, setNewUserLastName] = useState('')
+  const [newUserClassId, setNewUserClassId] = useState('')
+  const [availableClasses, setAvailableClasses] = useState<{ id: string; name: string }[]>([])
   const { toast } = useToast()
 
   useEffect(() => {
     loadUsers()
+    loadClasses()
   }, [])
 
   useEffect(() => {
@@ -72,6 +90,64 @@ export const UserManagement = () => {
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadClasses = async () => {
+    try {
+      const { data } = await supabase
+        .from('classes')
+        .select('id, name')
+        .order('name')
+      if (data) setAvailableClasses(data)
+    } catch (error) {
+      logger.error('Erro ao carregar turmas:', error)
+    }
+  }
+
+  const handleCreateUser = async () => {
+    if (!newUserEmail || !newUserFirstName || !newUserLastName) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha email, nome e sobrenome.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsCreating(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email: newUserEmail,
+          first_name: newUserFirstName,
+          last_name: newUserLastName,
+          class_id: newUserClassId || null,
+        },
+      })
+
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+
+      toast({
+        title: 'Aluno criado!',
+        description: 'Um email de boas-vindas será enviado com o link de acesso.',
+      })
+
+      setShowCreateDialog(false)
+      setNewUserEmail('')
+      setNewUserFirstName('')
+      setNewUserLastName('')
+      setNewUserClassId('')
+      loadUsers()
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao criar aluno',
+        description: error.message || 'Não foi possível criar o aluno.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -233,7 +309,7 @@ export const UserManagement = () => {
             >
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
-            <Button>
+            <Button onClick={() => setShowCreateDialog(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Adicionar Usuário
             </Button>
@@ -425,6 +501,74 @@ export const UserManagement = () => {
         </Table>
       </CardContent>
     </Card>
+    {/* Create User Dialog */}
+    <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Adicionar Aluno</DialogTitle>
+          <DialogDescription>
+            O aluno receberá um email de boas-vindas com link de acesso à plataforma.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Email *</Label>
+            <Input
+              type="email"
+              placeholder="aluno@email.com"
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nome *</Label>
+              <Input
+                placeholder="Nome"
+                value={newUserFirstName}
+                onChange={(e) => setNewUserFirstName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Sobrenome *</Label>
+              <Input
+                placeholder="Sobrenome"
+                value={newUserLastName}
+                onChange={(e) => setNewUserLastName(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Turma (opcional)</Label>
+            <Select value={newUserClassId} onValueChange={setNewUserClassId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma turma" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableClasses.map((cls) => (
+                  <SelectItem key={cls.id} value={cls.id}>
+                    {cls.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleCreateUser} disabled={isCreating}>
+            {isCreating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <PlusCircle className="mr-2 h-4 w-4" />
+            )}
+            Criar Aluno
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   )
 }
