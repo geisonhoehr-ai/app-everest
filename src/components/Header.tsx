@@ -78,11 +78,8 @@ export const Header = () => {
           <ThemeToggle />
         ) : (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" asChild size="sm">
-              <Link to="/login">Entrar</Link>
-            </Button>
             <Button asChild size="sm">
-              <Link to="/register">Começar agora</Link>
+              <Link to="/login">Entrar</Link>
             </Button>
           </div>
         )}

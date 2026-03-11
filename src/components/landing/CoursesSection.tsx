@@ -1,33 +1,91 @@
+import { Card, CardContent } from '@/components/ui/card'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+  BookOpen,
+  Brain,
+  FileText,
+  Trophy,
+  Target,
+  Headphones,
+  BarChart3,
+  MessageSquare,
+  Timer,
+  Library,
+  ClipboardList,
+  Layers,
+} from 'lucide-react'
 
-const courses = [
+const features = [
   {
-    title: 'Matemática para Concursos',
-    description:
-      'Domine os principais tópicos de matemática exigidos nos maiores concursos do país.',
-    image: 'https://img.usecurling.com/p/400/250?q=mathematics%20formulas',
-    tag: 'Exatas',
+    title: 'Videoaulas',
+    description: 'Aulas gravadas com professores especialistas, organizadas por módulos.',
+    icon: BookOpen,
+    color: 'text-blue-500 bg-blue-500/10',
   },
   {
-    title: 'Redação Nota Mil',
-    description:
-      'Aprenda a estruturar redações dissertativas-argumentativas e alcance a nota máxima.',
-    image: 'https://img.usecurling.com/p/400/250?q=writing%20essay',
-    tag: 'Linguagens',
+    title: 'Flashcards',
+    description: 'Revisão espaçada com sistema de repetição inteligente para fixar conteúdo.',
+    icon: Brain,
+    color: 'text-purple-500 bg-purple-500/10',
   },
   {
-    title: 'História do Brasil Completa',
-    description:
-      'Um curso aprofundado sobre todos os períodos da história brasileira, do descobrimento à atualidade.',
-    image: 'https://img.usecurling.com/p/400/250?q=brazil%20history',
-    tag: 'Humanas',
+    title: 'Simulados',
+    description: 'Provas completas no formato oficial com correção automática e ranking.',
+    icon: ClipboardList,
+    color: 'text-red-500 bg-red-500/10',
+  },
+  {
+    title: 'Redações',
+    description: 'Envie suas redações e receba correção detalhada com nota por competência.',
+    icon: FileText,
+    color: 'text-emerald-500 bg-emerald-500/10',
+  },
+  {
+    title: 'Quizzes',
+    description: 'Teste seus conhecimentos com questões organizadas por matéria e tópico.',
+    icon: Layers,
+    color: 'text-amber-500 bg-amber-500/10',
+  },
+  {
+    title: 'Ranking',
+    description: 'Compare seu desempenho com outros alunos e suba no ranking geral.',
+    icon: Trophy,
+    color: 'text-yellow-500 bg-yellow-500/10',
+  },
+  {
+    title: 'Plano de Estudos',
+    description: 'Organize sua rotina com cronograma, Pomodoro e acompanhamento de metas.',
+    icon: Target,
+    color: 'text-primary bg-primary/10',
+  },
+  {
+    title: 'Evercast',
+    description: 'Audioaulas para estudar em qualquer lugar, no ônibus ou na academia.',
+    icon: Headphones,
+    color: 'text-pink-500 bg-pink-500/10',
+  },
+  {
+    title: 'Progresso',
+    description: 'Acompanhe sua evolução com gráficos detalhados e histórico de estudos.',
+    icon: BarChart3,
+    color: 'text-cyan-500 bg-cyan-500/10',
+  },
+  {
+    title: 'Comunidade',
+    description: 'Fórum de discussão com outros alunos e professores para tirar dúvidas.',
+    icon: MessageSquare,
+    color: 'text-indigo-500 bg-indigo-500/10',
+  },
+  {
+    title: 'Pomodoro',
+    description: 'Timer integrado com técnica Pomodoro e janela flutuante Picture-in-Picture.',
+    icon: Timer,
+    color: 'text-rose-500 bg-rose-500/10',
+  },
+  {
+    title: 'Acervo Digital',
+    description: 'Biblioteca com provas anteriores, livros e materiais complementares.',
+    icon: Library,
+    color: 'text-teal-500 bg-teal-500/10',
   },
 ]
 
@@ -37,34 +95,28 @@ export const CoursesSection = () => {
       <div className="container">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Nossos Cursos em Destaque
+            Tudo que você precisa para ser aprovado
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Conteúdo de alta qualidade para acelerar sua aprovação.
+            Uma plataforma completa com todas as ferramentas para sua preparação.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {features.map((feature) => (
             <Card
-              key={course.title}
-              className="rounded-2xl border transition-all duration-200 hover:shadow-xl hover:-translate-y-2 hover:scale-102 cursor-pointer overflow-hidden"
+              key={feature.title}
+              className="rounded-2xl border transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
             >
-              <CardHeader className="p-0">
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="w-full h-48 object-cover"
-                  loading="lazy"
-                />
-              </CardHeader>
               <CardContent className="p-6">
-                <Badge variant="outline" className="mb-2">
-                  {course.tag}
-                </Badge>
-                <CardTitle className="text-xl font-semibold mb-2 text-card-foreground">
-                  {course.title}
-                </CardTitle>
-                <CardDescription>{course.description}</CardDescription>
+                <div className={`inline-flex p-3 rounded-xl mb-4 ${feature.color}`}>
+                  <feature.icon className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2 text-card-foreground">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {feature.description}
+                </p>
               </CardContent>
             </Card>
           ))}

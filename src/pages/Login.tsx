@@ -23,9 +23,6 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  Sparkles,
-  Shield,
-  Zap,
   MailCheck,
   KeyRound,
 } from 'lucide-react'
@@ -93,12 +90,12 @@ export default function LoginPage() {
   // Success state after magic link sent
   if (magicLinkSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-background to-orange-50/30 dark:from-orange-950/20 dark:via-background dark:to-orange-950/10">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center space-y-6">
             <div className="flex justify-center">
-              <div className="p-4 rounded-3xl bg-green-500/10">
-                <MailCheck className="h-12 w-12 text-green-500" />
+              <div className="p-4 rounded-3xl bg-primary/10">
+                <MailCheck className="h-12 w-12 text-primary" />
               </div>
             </div>
             <div className="space-y-2">
@@ -149,7 +146,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-background to-orange-50/30 dark:from-orange-950/20 dark:via-background dark:to-orange-950/10">
       <div className="w-full max-w-md space-y-8">
         {/* Logo and Brand */}
         <div className="text-center space-y-6">
@@ -159,7 +156,7 @@ export default function LoginPage() {
             </div>
             <div>
               <h1 className="text-4xl font-bold">Everest</h1>
-              <p className="text-sm text-muted-foreground">Plataforma de Ensino</p>
+              <p className="text-sm text-muted-foreground">Preparatórios</p>
             </div>
           </div>
 
@@ -236,7 +233,7 @@ export default function LoginPage() {
 
                     <Button
                       type="submit"
-                      className="w-full h-12 rounded-xl font-semibold hover:bg-green-600"
+                      className="w-full h-12 rounded-xl font-semibold"
                       disabled={isLoading}
                     >
                       {isLoading ? (
@@ -282,7 +279,7 @@ export default function LoginPage() {
 
                     <Button
                       type="submit"
-                      className="w-full h-12 rounded-xl font-semibold hover:bg-green-600"
+                      className="w-full h-12 rounded-xl font-semibold"
                       disabled={isLoading}
                     >
                       {isLoading ? (
@@ -323,28 +320,12 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        {/* Features */}
-        <Card className="border-border shadow-sm">
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-center">Por que escolher o Everest?</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                  <Shield className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">Seguro</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-green-500/10 border border-green-500/20">
-                  <Zap className="h-6 w-6 text-green-500 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">Rápido</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                  <Sparkles className="h-6 w-6 text-purple-500 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">Inteligente</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <p className="text-center text-xs text-muted-foreground">
+          Ao acessar, você concorda com nossos{' '}
+          <a href="/termos" className="underline hover:text-foreground">Termos de Uso</a>
+          {' '}e{' '}
+          <a href="/privacidade" className="underline hover:text-foreground">Política de Privacidade</a>.
+        </p>
       </div>
     </div>
   )
