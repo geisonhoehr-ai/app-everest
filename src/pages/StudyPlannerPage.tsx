@@ -590,7 +590,7 @@ export default function StudyPlannerPage() {
           </Button>
           <Button
             onClick={() => { setEditingTopic(null); setShowAddModal(true); }}
-            className="flex-1 md:flex-none"
+            className="flex-1 md:flex-none hover:bg-green-600"
             aria-label="Adicionar novo conteúdo de estudo"
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -617,7 +617,7 @@ export default function StudyPlannerPage() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-              <Card className="border-border shadow-sm">
+              <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
                 <CardContent className="p-4">
                   <div className="p-2 rounded-lg w-fit mb-3 bg-emerald-500/10">
                     <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -627,7 +627,7 @@ export default function StudyPlannerPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border shadow-sm">
+              <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
                 <CardContent className="p-4">
                   <div className="p-2 rounded-lg w-fit mb-3 bg-blue-500/10">
                     <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -637,7 +637,7 @@ export default function StudyPlannerPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border shadow-sm">
+              <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
                 <CardContent className="p-4">
                   <div className="p-2 rounded-lg w-fit mb-3 bg-violet-500/10">
                     <Clock className="h-4 w-4 text-violet-600 dark:text-violet-400" />
@@ -647,7 +647,7 @@ export default function StudyPlannerPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-border shadow-sm">
+              <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
                 <CardContent className="p-4">
                   <div className="p-2 rounded-lg w-fit mb-3 bg-amber-500/10">
                     <TrendingUp className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -771,6 +771,7 @@ export default function StudyPlannerPage() {
                   </p>
                   <Button
                     onClick={() => { setEditingTopic(null); setShowAddModal(true); }}
+                    className="hover:bg-green-600"
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Adicionar Primeiro Conteúdo
@@ -1423,7 +1424,7 @@ function StudyHistory({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-border shadow-sm">
+            <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
               <CardContent className="p-4 text-center">
                 <div className="p-2 rounded-lg w-fit mb-3 mx-auto bg-violet-500/10">
                   <Clock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
@@ -1433,7 +1434,7 @@ function StudyHistory({
               </CardContent>
             </Card>
 
-            <Card className="border-border shadow-sm">
+            <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
               <CardContent className="p-4 text-center">
                 <div className="p-2 rounded-lg w-fit mb-3 mx-auto bg-emerald-500/10">
                   <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -1443,7 +1444,7 @@ function StudyHistory({
               </CardContent>
             </Card>
 
-            <Card className="border-border shadow-sm">
+            <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
               <CardContent className="p-4 text-center">
                 <div className="p-2 rounded-lg w-fit mb-3 mx-auto bg-amber-500/10">
                   <Zap className="h-5 w-5 text-amber-600 dark:text-amber-400" />
