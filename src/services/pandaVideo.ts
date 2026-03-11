@@ -4,18 +4,14 @@
  * ========================================
  *
  * API Docs: https://pandavideo.readme.io/reference/list-videos
- * API Key: panda-33e2092c0e0334f9a6b353db3ce0ccf89d46dbe076b0aaabd3a88ac1a4ecfd6d
  *
- * Funcionalidades:
- * - ✅ Listar vídeos
- * - ✅ Buscar vídeos
- * - ✅ Obter detalhes de vídeo
- * - ✅ Obter embed URL
+ * - Localhost: Vite proxy (/panda-api) → api-v2.pandavideo.com.br
+ * - Produção: Supabase Edge Function (panda-proxy) para evitar CORS
  */
 
+import { supabase } from '@/lib/supabase/client'
+
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-const PANDA_API_URL = isLocalhost ? '/panda-api' : 'https://api-v2.pandavideo.com.br'
-const PANDA_API_KEY = 'panda-33e2092c0e0334f9a6b353db3ce0ccf89d46dbe076b0aaabd3a88ac1a4ecfd6d'
 
 export interface PandaVideo {
   id: string
@@ -39,35 +35,51 @@ export interface PandaVideosResponse {
   videos: PandaVideo[]
   total: number
   page: number
-  per_page: number
+}
+
+/**
+ * Map raw Panda API video object to our PandaVideo interface
+ */
+function mapPandaVideo(raw: any): PandaVideo {
+  return {
+    id: raw.id,
+    title: raw.title || '',
+    description: raw.description || '',
+    thumbnail: raw.thumbnail || raw.preview || '',
+    duration: Math.round(raw.length || raw.duration || 0),
+    created_at: raw.created_at || '',
+    folder_id: raw.folder_id,
+    embed_url: raw.video_player,
+    hls_url: raw.video_hls,
+  }
 }
 
 /**
  * Cliente HTTP para PandaVideo
+ * - Localhost: chamada direta via Vite proxy (header injetado pelo proxy)
+ * - Produção: chamada via Supabase Edge Function panda-proxy
  */
-async function pandaRequest(endpoint: string, options: RequestInit = {}) {
-  const url = `${PANDA_API_URL}${endpoint}`
-
-  // On localhost, proxy injects the API key server-side, so skip Authorization header
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
+async function pandaRequest(endpoint: string, method = 'GET', body?: any) {
+  if (isLocalhost) {
+    const url = `/panda-api${endpoint}`
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }))
+      throw new Error(error.errMsg || error.message || `Erro ${response.status}`)
+    }
+    return response.json()
   }
-  if (!isLocalhost) {
-    headers['Authorization'] = PANDA_API_KEY
-  }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
+  // Produção: usa Edge Function com auth do usuário
+  const { data, error } = await supabase.functions.invoke('panda-proxy', {
+    body: { endpoint, method, body },
   })
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }))
-    throw new Error(error.message || `Erro ${response.status}: ${response.statusText}`)
-  }
-
-  return response.json()
+  if (error) throw new Error(error.message || 'Erro ao chamar panda-proxy')
+  return data
 }
 
 /**
@@ -77,23 +89,22 @@ export async function getPandaVideos(params?: {
   search?: string
   folder_id?: string
   page?: number
-  per_page?: number
 }): Promise<PandaVideosResponse> {
   const queryParams = new URLSearchParams()
 
-  if (params?.search) queryParams.append('search', params.search)
+  if (params?.search) queryParams.append('title', params.search)
   if (params?.folder_id) queryParams.append('folder_id', params.folder_id)
   if (params?.page) queryParams.append('page', params.page.toString())
-  if (params?.per_page) queryParams.append('per_page', params.per_page.toString())
 
   const query = queryParams.toString() ? `?${queryParams.toString()}` : ''
   const response = await pandaRequest(`/videos${query}`)
 
+  const rawVideos = response.videos || response.data || []
+
   return {
-    videos: response.data || [],
-    total: response.total || 0,
+    videos: rawVideos.map(mapPandaVideo),
+    total: response.total || rawVideos.length,
     page: response.page || 1,
-    per_page: response.per_page || 20,
   }
 }
 
@@ -114,21 +125,22 @@ export async function searchPandaVideos(searchTerm: string): Promise<PandaVideo[
  * Obtém detalhes de um vídeo específico
  */
 export async function getPandaVideoById(videoId: string): Promise<PandaVideo> {
-  return pandaRequest(`/videos/${videoId}`)
+  const raw = await pandaRequest(`/videos/${videoId}`)
+  return mapPandaVideo(raw)
 }
 
 /**
  * Obtém URL de embed do vídeo
  */
 export function getPandaVideoEmbedUrl(videoId: string): string {
-  return `https://player-vz-d0b3ae60-2ea.tv.pandavideo.com.br/embed/?v=${videoId}`
+  return `https://player-vz-e9d62059-4a4.tv.pandavideo.com.br/embed/?v=${videoId}`
 }
 
 /**
  * Obtém URL HLS do vídeo
  */
 export function getPandaVideoHlsUrl(videoId: string): string {
-  return `https://b-vz-d0b3ae60-2ea.tv.pandavideo.com.br/${videoId}/playlist.m3u8`
+  return `https://b-vz-e9d62059-4a4.tv.pandavideo.com.br/${videoId}/playlist.m3u8`
 }
 
 /**
@@ -136,7 +148,7 @@ export function getPandaVideoHlsUrl(videoId: string): string {
  */
 export async function getPandaFolders(): Promise<PandaFolder[]> {
   const response = await pandaRequest('/folders')
-  return response.data || []
+  return response.folders || response.data || []
 }
 
 /**
@@ -147,17 +159,8 @@ export async function testPandaConnection(): Promise<{
   message: string
   videosCount?: number
 }> {
-  // Modo desenvolvimento - simular resposta se estiver em localhost
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return {
-      success: true,
-      message: 'Conexão simulada (modo desenvolvimento)',
-      videosCount: 15, // Simular 15 vídeos
-    }
-  }
-
   try {
-    const response = await getPandaVideos({ per_page: 1 })
+    const response = await getPandaVideos()
     return {
       success: true,
       message: 'Conexão estabelecida com sucesso!',
