@@ -59,6 +59,7 @@ const studentMenuGroups: MenuGroup[] = [
       { label: 'Meus Cursos', href: '/courses', icon: BookOpen, featureKey: FEATURE_KEYS.VIDEO_LESSONS },
       { label: 'Flashcards', href: '/flashcards', icon: Brain, featureKey: FEATURE_KEYS.FLASHCARDS },
       { label: 'Banco de Questões', href: '/banco-de-questoes', icon: Search, featureKey: FEATURE_KEYS.QUIZ },
+      { label: 'Ao Vivo', href: '/lives', icon: Radio, featureKey: FEATURE_KEYS.LIVE_EVENTS },
     ],
   },
   {
@@ -141,6 +142,11 @@ const contentMenuItems = [
     label: 'Gerenciar Redações',
     href: '/admin/essays',
     icon: FileText,
+  },
+  {
+    label: 'Gerenciar Lives',
+    href: '/admin/lives',
+    icon: Radio,
   },
 ]
 

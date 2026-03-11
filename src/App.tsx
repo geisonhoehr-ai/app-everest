@@ -79,6 +79,9 @@ const RankingPage = lazy(() => import('@/pages/Ranking'))
 const AchievementsPage = lazy(() => import('@/pages/Achievements'))
 const StudyPlannerPage = lazy(() => import('@/pages/StudyPlannerPage'))
 
+const LiveEventsPage = lazy(() => import('@/pages/LiveEvents'))
+const LivePlayerPage = lazy(() => import('@/pages/LivePlayer'))
+
 const AdminLayout = lazy(() => import('@/components/admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
 const AdminManagementPage = lazy(
@@ -149,6 +152,9 @@ const AdminQuestionFormPage = lazy(
 )
 const AdminCalendarPage = lazy(
   () => import('@/pages/admin/calendar/AdminCalendarPage'),
+)
+const AdminLiveEventsPage = lazy(
+  () => import('@/pages/admin/lives/AdminLiveEventsPage'),
 )
 const AdminEvercastPage = lazy(
   () => import('@/pages/admin/evercast/AdminEvercastPage'),
@@ -319,6 +325,8 @@ const App = () => (
                     element={<QuizResultSummaryPage />}
                   />
                   <Route path="/evercast" element={<EvercastPage />} />
+                  <Route path="/lives" element={<LiveEventsPage />} />
+                  <Route path="/lives/:liveId" element={<LivePlayerPage />} />
                   <Route
                     path="/evercast/curso/:courseId"
                     element={<EvercastAlbumPage />}
@@ -494,6 +502,7 @@ const App = () => (
                     path="simulations/:simulationId/reports"
                     element={<AdminSimulationReportsPage />}
                   />
+                  <Route path="lives" element={<AdminLiveEventsPage />} />
                   <Route path="questions" element={<AdminQuestionsPage />} />
                   <Route
                     path="questions/new"

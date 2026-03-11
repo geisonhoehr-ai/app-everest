@@ -77,6 +77,7 @@ export const createEvent = async (event: {
   end_time?: string
   event_type: 'LIVE_CLASS' | 'ESSAY_DEADLINE' | 'SIMULATION' | 'GENERAL'
   class_id?: string | null
+  related_entity_id?: string | null
 }): Promise<CalendarEvent> => {
   const { data, error } = await supabase
     .from('calendar_events')

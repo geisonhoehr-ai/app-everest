@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { LiveBanner } from '@/components/LiveBanner'
 import { useAuth } from '@/hooks/use-auth'
 import {
   getUserSettings,
@@ -226,6 +227,9 @@ export default function DashboardPage() {
           Acompanhe seu progresso e continue aprendendo.
         </p>
       </div>
+
+      {/* Live Banner */}
+      <LiveBanner />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">

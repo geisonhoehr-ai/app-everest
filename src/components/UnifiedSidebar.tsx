@@ -51,6 +51,7 @@ import {
   Shield,
   Plug,
   HelpCircle,
+  Radio,
 } from 'lucide-react'
 
 // ─── Menu structure types ─────────────────────────────────────────────────────
@@ -88,6 +89,7 @@ const studentMenuGroups: MenuGroup[] = [
       { label: 'Meus Cursos', href: '/courses', icon: BookOpen, featureKey: FEATURE_KEYS.VIDEO_LESSONS },
       { label: 'Flashcards', href: '/flashcards', icon: Brain, featureKey: FEATURE_KEYS.FLASHCARDS },
       { label: 'Banco de Questões', href: '/banco-de-questoes', icon: Search, featureKey: FEATURE_KEYS.QUIZ },
+      { label: 'Ao Vivo', href: '/lives', icon: Radio, featureKey: FEATURE_KEYS.LIVE_EVENTS },
     ],
   },
   {
@@ -171,6 +173,7 @@ const adminMenuGroups: MenuGroup[] = [
       { label: 'Questões', href: '/admin/questions', icon: HelpCircle },
       { label: 'Redações', href: '/admin/essays', icon: FileText },
       { label: 'Simulados', href: '/admin/simulations', icon: ClipboardCheck },
+      { label: 'Lives', href: '/admin/lives', icon: Radio },
       { label: 'Acervo Digital', href: '/admin/acervo', icon: Archive, adminOnly: true },
     ],
   },
