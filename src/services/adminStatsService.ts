@@ -164,15 +164,15 @@ export async function getWeeklyActivityData(rangeDays: number = 7): Promise<Acti
           .gte('login_at', dayStart.toISOString())
           .lt('login_at', dayEnd.toISOString()),
         supabase
-          .from('quiz_history')
+          .from('quiz_attempts')
           .select('*', { count: 'exact', head: true })
           .gte('created_at', dayStart.toISOString())
           .lt('created_at', dayEnd.toISOString()),
         supabase
-          .from('flashcard_sessions')
+          .from('flashcard_session_history')
           .select('*', { count: 'exact', head: true })
-          .gte('created_at', dayStart.toISOString())
-          .lt('created_at', dayEnd.toISOString())
+          .gte('started_at', dayStart.toISOString())
+          .lt('started_at', dayEnd.toISOString())
       ])
 
       const totalActivities = (sessions.count || 0) + (quizHistory.count || 0) + (flashcardSessions.count || 0)
@@ -266,7 +266,7 @@ export async function getRecentActivities(limit: number = 5): Promise<RecentActi
     const { count: todayAchievements } = await supabase
       .from('user_achievements')
       .select('*', { count: 'exact', head: true })
-      .gte('earned_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+      .gte('achieved_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
 
     if (todayAchievements && todayAchievements > 0) {
       activities.push({

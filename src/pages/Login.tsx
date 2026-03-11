@@ -308,7 +308,14 @@ export default function LoginPage() {
               <Button
                 variant="ghost"
                 className="w-full text-muted-foreground"
-                onClick={() => setUsePasswordMode(!usePasswordMode)}
+                onClick={() => {
+                  if (usePasswordMode) {
+                    magicLinkForm.setValue('email', passwordForm.getValues('email'))
+                  } else {
+                    passwordForm.setValue('email', magicLinkForm.getValues('email'))
+                  }
+                  setUsePasswordMode(!usePasswordMode)
+                }}
               >
                 <KeyRound className="mr-2 h-4 w-4" />
                 {usePasswordMode ? 'Entrar com link mágico' : 'Entrar com senha'}

@@ -190,13 +190,15 @@ class SyncService {
   private async syncFlashcardSession(session: any): Promise<void> {
     // Criar sessão
     const { data: sessionData, error: sessionError } = await supabase
-      .from('flashcard_sessions')
+      .from('flashcard_session_history')
       .insert({
         user_id: session.user_id,
         topic_id: session.topic_id,
-        cards_studied: session.cards_studied,
-        session_duration: session.session_duration,
-        created_at: new Date(session.timestamp).toISOString(),
+        cards_reviewed: session.cards_studied || 0,
+        correct_answers: session.correct_answers || 0,
+        incorrect_answers: session.incorrect_answers || 0,
+        started_at: new Date(session.timestamp).toISOString(),
+        ended_at: new Date().toISOString(),
       })
       .select()
       .single()
