@@ -361,20 +361,28 @@ export default function AdminGamificationPage() {
                     </div>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Nível 1 → 2</span>
-                        <Badge>100 XP</Badge>
+                        <span className="text-sm font-medium">🥉 Nv 1 Iniciante</span>
+                        <Badge>0–100 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Nível 2 → 3</span>
-                        <Badge>250 XP</Badge>
+                        <span className="text-sm font-medium">🥈 Nv 2 Estudante</span>
+                        <Badge>101–300 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Nível 3 → 4</span>
-                        <Badge>500 XP</Badge>
+                        <span className="text-sm font-medium">🥇 Nv 3 Aprendiz</span>
+                        <Badge>301–600 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Nível 4 → 5</span>
-                        <Badge>1000 XP</Badge>
+                        <span className="text-sm font-medium">💎 Nv 4 Especialista</span>
+                        <Badge>601–1000 XP</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                        <span className="text-sm font-medium">👑 Nv 5 Mestre</span>
+                        <Badge>1001–2000 XP</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                        <span className="text-sm font-medium">🌟 Nv 6 Lenda</span>
+                        <Badge>2001+ XP</Badge>
                       </div>
                     </div>
                   </div>
