@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const MEMBERKIT_API_URL = "https://api.memberkit.com.br"
+const MEMBERKIT_API_URL = "https://memberkit.com.br/api/v1"
 
 serve(async (req) => {
     const corsHeaders = {
@@ -28,20 +28,26 @@ serve(async (req) => {
             })
         }
 
-        const { endpoint, method = 'GET', body } = await req.json()
-        const MEMBERKIT_API_KEY = Deno.env.get('MEMBERKIT_API_KEY')
+        const { endpoint, method = 'GET', body, apiKey } = await req.json()
+
+        // Use provided apiKey or fall back to env secret
+        const MEMBERKIT_API_KEY = apiKey || Deno.env.get('MEMBERKIT_API_KEY')
 
         if (!MEMBERKIT_API_KEY) {
-            return new Response(JSON.stringify({ error: 'Memberkit API key not configured in Supabase Secrets' }), {
+            return new Response(JSON.stringify({ error: 'MemberKit API key not provided and not configured in secrets' }), {
                 status: 500,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             })
         }
 
-        const response = await fetch(`${MEMBERKIT_API_URL}${endpoint}`, {
+        // MemberKit uses api_key as query parameter
+        const separator = endpoint.includes('?') ? '&' : '?'
+        const url = `${MEMBERKIT_API_URL}${endpoint}${separator}api_key=${MEMBERKIT_API_KEY}`
+
+        const response = await fetch(url, {
             method,
             headers: {
-                'Authorization': `Bearer ${MEMBERKIT_API_KEY}`,
+                'Accept': 'application/json',
                 'Content-Type': 'application/json',
             },
             body: body ? JSON.stringify(body) : undefined,

@@ -11,6 +11,8 @@
 import { supabase } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
 
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -118,19 +120,37 @@ function delay(ms: number): Promise<void> {
 }
 
 async function mkFetch<T>(path: string, apiKey: string): Promise<T> {
-  const separator = path.includes('?') ? '&' : '?'
-  const url = `${MEMBERKIT_BASE}${path}${separator}api_key=${apiKey}`
+  if (isLocalhost) {
+    // Direct call in localhost (no CORS issue)
+    const separator = path.includes('?') ? '&' : '?'
+    const url = `${MEMBERKIT_BASE}${path}${separator}api_key=${apiKey}`
 
-  const res = await fetch(url, {
-    headers: { Accept: 'application/json' },
-  })
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+    })
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`MemberKit API error ${res.status} on ${path}: ${body}`)
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      throw new Error(`MemberKit API error ${res.status} on ${path}: ${body}`)
+    }
+
+    return res.json() as Promise<T>
   }
 
-  return res.json() as Promise<T>
+  // Production: route through Supabase Edge Function to avoid CORS
+  const { data, error } = await supabase.functions.invoke('memberkit-proxy', {
+    body: { endpoint: path, method: 'GET', apiKey },
+  })
+
+  if (error) {
+    throw new Error(`MemberKit proxy error: ${error.message}`)
+  }
+
+  if (data?.error) {
+    throw new Error(`MemberKit API error: ${data.error}`)
+  }
+
+  return data as T
 }
 
 interface PandaListResponse {

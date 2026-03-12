@@ -63,9 +63,9 @@ export default function MemberkitImportPage() {
   // Step state: 1=config, 2=select course, 3=course detail (turmas + import)
   const [step, setStep] = useState(1)
 
-  // Config state
-  const [memberkitApiKey, setMemberkitApiKey] = useState('')
-  const [pandaApiKey, setPandaApiKey] = useState('')
+  // Config state - pre-filled with known keys
+  const [memberkitApiKey, setMemberkitApiKey] = useState('3cG57cb4CAgAKMX7Fg59qY8f')
+  const [pandaApiKey, setPandaApiKey] = useState('panda-33e2092c0e0334f9a6b353db3ce0ccf89d46dbe076b0aaabd3a88ac1a4ecfd6d')
   const [serviceRoleKey, setServiceRoleKey] = useState('')
   const [connected, setConnected] = useState(false)
   const [connecting, setConnecting] = useState(false)
