@@ -388,7 +388,7 @@ export async function importMemberkitCourse(
       if (videoUid) {
         const pandaInfo = pandaVideoMap.get(videoUid)
         if (pandaInfo) {
-          videoSourceId = videoUid
+          videoSourceId = pandaInfo.id
           durationSeconds =
             pandaInfo.duration != null
               ? Math.round(pandaInfo.duration)
