@@ -319,6 +319,111 @@ export const deleteLesson = async (lessonId: string): Promise<void> => {
 }
 
 /**
+ * Duplicar curso com todos os módulos, aulas e anexos
+ */
+export const duplicateCourse = async (
+  courseId: string,
+  adminUserId: string,
+): Promise<VideoCourse> => {
+  // 1. Fetch course with all modules, lessons, and attachments
+  const { data: course, error: courseError } = await supabase
+    .from('video_courses')
+    .select(`
+      *,
+      video_modules (
+        *,
+        video_lessons (
+          *,
+          lesson_attachments (*)
+        )
+      )
+    `)
+    .eq('id', courseId)
+    .single()
+
+  if (courseError || !course) {
+    throw new Error(`Erro ao buscar curso: ${courseError?.message ?? 'nao encontrado'}`)
+  }
+
+  // 2. Create the new course (copy)
+  const { data: newCourse, error: newCourseError } = await supabase
+    .from('video_courses')
+    .insert({
+      name: `${course.name} (Cópia)`,
+      description: course.description,
+      thumbnail_url: course.thumbnail_url,
+      created_by_user_id: adminUserId,
+      is_active: false, // start as draft
+    })
+    .select()
+    .single()
+
+  if (newCourseError || !newCourse) {
+    throw new Error(`Erro ao criar copia: ${newCourseError?.message ?? 'sem dados'}`)
+  }
+
+  // 3. Copy modules and lessons
+  const modules = course.video_modules || []
+  for (const mod of modules) {
+    const { data: newModule, error: modError } = await supabase
+      .from('video_modules')
+      .insert({
+        course_id: newCourse.id,
+        name: mod.name,
+        description: mod.description,
+        order_index: mod.order_index,
+        is_active: mod.is_active,
+      })
+      .select('id')
+      .single()
+
+    if (modError || !newModule) {
+      logger.error(`Erro ao copiar modulo "${mod.name}":`, modError)
+      continue
+    }
+
+    const lessons = (mod as any).video_lessons || []
+    for (const lesson of lessons) {
+      const { data: newLesson, error: lessonError } = await supabase
+        .from('video_lessons')
+        .insert({
+          module_id: newModule.id,
+          title: lesson.title,
+          description: lesson.description,
+          order_index: lesson.order_index,
+          video_source_type: lesson.video_source_type,
+          video_source_id: lesson.video_source_id,
+          duration_seconds: lesson.duration_seconds,
+          is_active: lesson.is_active,
+          is_preview: lesson.is_preview,
+        })
+        .select('id')
+        .single()
+
+      if (lessonError || !newLesson) {
+        logger.error(`Erro ao copiar aula "${lesson.title}":`, lessonError)
+        continue
+      }
+
+      // Copy attachments
+      const attachments = (lesson as any).lesson_attachments || []
+      if (attachments.length > 0) {
+        await supabase.from('lesson_attachments').insert(
+          attachments.map((a: any) => ({
+            lesson_id: newLesson.id,
+            file_url: a.file_url,
+            file_name: a.file_name,
+            file_type: a.file_type,
+          }))
+        )
+      }
+    }
+  }
+
+  return newCourse
+}
+
+/**
  * Buscar curso completo com módulos e aulas
  */
 export const getCourseWithContent = async (courseId: string) => {

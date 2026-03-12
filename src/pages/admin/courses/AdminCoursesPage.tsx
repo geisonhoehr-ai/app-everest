@@ -27,11 +27,14 @@ import {
   BookOpen,
   Users,
   Play,
-  Award
+  Award,
+  Copy,
+  Loader2,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { getAllCourses, deleteCourse, type AdminCourse } from '@/services/adminCourseService'
+import { getAllCourses, deleteCourse, duplicateCourse, type AdminCourse } from '@/services/adminCourseService'
+import { useAuth } from '@/contexts/auth-provider'
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { SectionLoader } from '@/components/SectionLoader'
@@ -39,8 +42,10 @@ import { SectionLoader } from '@/components/SectionLoader'
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<AdminCourse[]>([])
   const [loading, setLoading] = useState(true)
+  const [duplicating, setDuplicating] = useState<string | null>(null)
   const [totalStudents, setTotalStudents] = useState(0)
   const { toast } = useToast()
+  const { profile } = useAuth()
 
   const loadCourses = async () => {
     try {
@@ -86,6 +91,28 @@ export default function AdminCoursesPage() {
         description: 'Não foi possível deletar o curso. Tente novamente.',
         variant: 'destructive',
       })
+    }
+  }
+
+  const handleDuplicate = async (courseId: string, courseName: string) => {
+    if (!profile) return
+    setDuplicating(courseId)
+    try {
+      const newCourse = await duplicateCourse(courseId, profile.id)
+      toast({
+        title: 'Curso duplicado!',
+        description: `"${courseName}" foi copiado como "${newCourse.name}".`,
+      })
+      loadCourses()
+    } catch (error) {
+      logger.error('Error duplicating course:', error)
+      toast({
+        title: 'Erro ao duplicar',
+        description: 'Não foi possível duplicar o curso.',
+        variant: 'destructive',
+      })
+    } finally {
+      setDuplicating(null)
     }
   }
 
@@ -256,6 +283,17 @@ export default function AdminCoursesPage() {
                                     <Users className="mr-2 h-4 w-4" />
                                     Gerenciar Turmas
                                   </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDuplicate(course.id, course.name)}
+                                  disabled={duplicating === course.id}
+                                >
+                                  {duplicating === course.id ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Copy className="mr-2 h-4 w-4" />
+                                  )}
+                                  Duplicar Curso
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
