@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -24,6 +23,10 @@ import {
   ArrowRight,
   MailCheck,
   KeyRound,
+  Mountain,
+  BookOpen,
+  Trophy,
+  Zap,
 } from 'lucide-react'
 
 const loginSchema = z.object({
@@ -77,36 +80,35 @@ export default function LoginPage() {
     setIsLoading(false)
   }
 
-  // Success state after magic link sent
+  // ── Magic link sent state ──
   if (magicLinkSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-background to-orange-50/30 dark:from-orange-950/20 dark:via-background dark:to-orange-950/10">
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="p-4 rounded-3xl bg-primary/10">
-                <MailCheck className="h-12 w-12 text-primary" />
+      <div className="min-h-screen flex">
+        <HeroPanel />
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-background">
+          <div className="w-full max-w-sm space-y-8">
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                <MailCheck className="h-8 w-8 text-emerald-500" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">Verifique seu Email</h2>
+                <p className="text-muted-foreground mt-2 text-sm">
+                  Enviamos um link de acesso para{' '}
+                  <span className="font-semibold text-foreground">{sentEmail}</span>
+                </p>
               </div>
             </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-semibold">Verifique seu Email</h2>
-              <p className="text-muted-foreground">
-                Enviamos um link de acesso para{' '}
-                <span className="font-medium text-foreground">{sentEmail}</span>
-              </p>
-            </div>
-          </div>
 
-          <Card className="border-border shadow-sm">
-            <CardContent className="pt-6 space-y-4">
-              <div className="text-center text-sm text-muted-foreground space-y-2">
-                <p>Clique no link enviado para seu email para acessar a plataforma.</p>
-                <p>O link expira em 1 hora.</p>
+            <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+              <div className="text-center text-sm text-muted-foreground space-y-1">
+                <p>Clique no link enviado para acessar a plataforma.</p>
+                <p className="text-xs">O link expira em 1 hora.</p>
               </div>
 
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full h-11 rounded-xl"
                 onClick={() => {
                   setMagicLinkSent(false)
                   setSentEmail('')
@@ -128,41 +130,44 @@ export default function LoginPage() {
                 )}
                 Reenviar link
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     )
   }
 
+  // ── Main login ──
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-background to-orange-50/30 dark:from-orange-950/20 dark:via-background dark:to-orange-950/10">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo and Brand */}
-        <div className="text-center space-y-6">
-          <div className="flex justify-center items-center gap-3">
-            <img src="/logo.png" alt="Everest Preparatórios" className="h-16 w-16 rounded-2xl object-contain" />
-            <div>
-              <h1 className="text-4xl font-bold">Everest</h1>
-              <p className="text-sm text-muted-foreground">Preparatórios</p>
-            </div>
+    <div className="min-h-screen flex">
+      <HeroPanel />
+
+      {/* Right side — Form */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-background relative">
+        {/* Subtle top-right glow */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+        <div className="w-full max-w-sm space-y-8 relative z-10">
+          {/* Mobile logo (hidden on lg+) */}
+          <div className="flex flex-col items-center gap-3 lg:hidden">
+            <img src="/logo.png" alt="Everest" className="h-14 w-14 rounded-xl object-contain" />
+            <h1 className="text-2xl font-bold">Everest</h1>
           </div>
 
+          {/* Heading */}
           <div className="space-y-2">
-            <h2 className="text-2xl font-semibold">Acesse sua Conta</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl font-bold tracking-tight">Bem-vindo de volta</h2>
+            <p className="text-muted-foreground text-sm">
               {usePasswordMode
                 ? 'Entre com seu email e senha.'
                 : 'Informe seu email para receber o link de acesso.'}
             </p>
           </div>
-        </div>
 
-        {/* Login Form */}
-        <Card className="border-border shadow-sm">
-          <CardContent className="pt-6">
+          {/* Form card */}
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 <FormField
                   control={form.control}
                   name="email"
@@ -176,7 +181,7 @@ export default function LoginPage() {
                             type="email"
                             placeholder="seu@email.com"
                             autoComplete="email"
-                            className="pl-10 h-12 rounded-xl"
+                            className="pl-10 h-12 rounded-xl border-border/60 focus:border-primary"
                             {...field}
                           />
                         </div>
@@ -200,7 +205,7 @@ export default function LoginPage() {
                               type={showPassword ? 'text' : 'password'}
                               placeholder="••••••••"
                               autoComplete="current-password"
-                              className="pl-10 pr-10 h-12 rounded-xl"
+                              className="pl-10 pr-10 h-12 rounded-xl border-border/60 focus:border-primary"
                               {...field}
                             />
                             <button
@@ -220,7 +225,7 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 rounded-xl font-semibold"
+                  className="w-full h-12 rounded-xl font-semibold text-sm shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -241,20 +246,20 @@ export default function LoginPage() {
                   )}
                 </Button>
 
-                {/* Toggle between modes */}
+                {/* Divider */}
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-border/50" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">ou</span>
+                    <span className="bg-card px-3 text-muted-foreground">ou</span>
                   </div>
                 </div>
 
                 <Button
                   type="button"
                   variant="ghost"
-                  className="w-full text-muted-foreground"
+                  className="w-full text-muted-foreground hover:text-foreground"
                   onClick={() => setUsePasswordMode(!usePasswordMode)}
                 >
                   <KeyRound className="mr-2 h-4 w-4" />
@@ -262,16 +267,99 @@ export default function LoginPage() {
                 </Button>
               </form>
             </Form>
-          </CardContent>
-        </Card>
+          </div>
 
-        <p className="text-center text-xs text-muted-foreground">
-          Ao acessar, você concorda com nossos{' '}
-          <a href="/termos" className="underline hover:text-foreground">Termos de Uso</a>
-          {' '}e{' '}
-          <a href="/privacidade" className="underline hover:text-foreground">Política de Privacidade</a>.
-        </p>
+          <p className="text-center text-xs text-muted-foreground">
+            Ao acessar, você concorda com nossos{' '}
+            <a href="/termos" className="underline hover:text-foreground transition-colors">Termos de Uso</a>
+            {' '}e{' '}
+            <a href="/privacidade" className="underline hover:text-foreground transition-colors">Política de Privacidade</a>.
+          </p>
+        </div>
       </div>
+    </div>
+  )
+}
+
+// ─── Hero Panel (left side, hidden on mobile) ────────────────────────────────
+
+function HeroPanel() {
+  return (
+    <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500">
+      {/* Animated background shapes */}
+      <div className="absolute inset-0">
+        {/* Large floating circles */}
+        <div className="absolute top-[10%] left-[15%] w-64 h-64 rounded-full bg-white/[0.07] animate-[float_20s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[15%] right-[10%] w-80 h-80 rounded-full bg-white/[0.05] animate-[float_25s_ease-in-out_infinite_reverse]" />
+        <div className="absolute top-[50%] left-[60%] w-40 h-40 rounded-full bg-white/[0.06] animate-[float_15s_ease-in-out_infinite]" />
+
+        {/* Diagonal lines */}
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 40px, white 40px, white 41px)',
+          }}
+        />
+
+        {/* Mountain silhouette at bottom */}
+        <svg className="absolute bottom-0 left-0 w-full text-black/[0.08]" viewBox="0 0 1200 300" preserveAspectRatio="none">
+          <path d="M0,300 L0,200 L150,100 L300,180 L450,60 L600,140 L750,40 L900,120 L1050,80 L1200,160 L1200,300 Z" fill="currentColor" />
+        </svg>
+        <svg className="absolute bottom-0 left-0 w-full text-black/[0.05]" viewBox="0 0 1200 200" preserveAspectRatio="none">
+          <path d="M0,200 L0,150 L200,100 L400,130 L600,70 L800,110 L1000,80 L1200,120 L1200,200 Z" fill="currentColor" />
+        </svg>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 text-white w-full">
+        {/* Top — Logo */}
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="Everest" className="h-12 w-12 rounded-xl object-contain brightness-0 invert" />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Everest</h1>
+            <p className="text-white/60 text-xs font-medium tracking-wider uppercase">Preparatórios</p>
+          </div>
+        </div>
+
+        {/* Center — Hero text */}
+        <div className="space-y-6 max-w-md">
+          <h2 className="text-4xl xl:text-5xl font-extrabold leading-[1.1] tracking-tight">
+            Conquiste o
+            <br />
+            <span className="text-white/90">topo da sua</span>
+            <br />
+            preparação.
+          </h2>
+          <p className="text-white/70 text-lg leading-relaxed">
+            Videoaulas, flashcards, simulados e muito mais em uma plataforma completa para sua aprovação.
+          </p>
+        </div>
+
+        {/* Bottom — Feature pills */}
+        <div className="flex flex-wrap gap-3">
+          <FeaturePill icon={<BookOpen className="h-3.5 w-3.5" />} label="Videoaulas" />
+          <FeaturePill icon={<Zap className="h-3.5 w-3.5" />} label="Flashcards" />
+          <FeaturePill icon={<Mountain className="h-3.5 w-3.5" />} label="Simulados" />
+          <FeaturePill icon={<Trophy className="h-3.5 w-3.5" />} label="Ranking" />
+        </div>
+      </div>
+
+      {/* CSS for float animation */}
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          33% { transform: translateY(-20px) rotate(2deg); }
+          66% { transform: translateY(10px) rotate(-1deg); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function FeaturePill({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-sm font-medium text-white/90">
+      {icon}
+      {label}
     </div>
   )
 }
