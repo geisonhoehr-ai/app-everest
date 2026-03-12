@@ -448,24 +448,28 @@ export async function importMemberkitCourse(
 
       // Insert lesson_attachments
       if (lessonDetail.files && lessonDetail.files.length > 0) {
-        const attachments = lessonDetail.files.map((f) => ({
+        // Filter out files without a URL and ensure file_name is never null
+        const validFiles = lessonDetail.files.filter((f) => f.url)
+        const attachments = validFiles.map((f, idx) => ({
           lesson_id: lessonData.id,
           file_url: f.url,
-          file_name: f.name,
+          file_name: f.name || `anexo-${idx + 1}`,
           file_type: f.content_type ?? null,
         }))
 
-        const { error: attachError, data: attachData } = await supabase
-          .from('lesson_attachments')
-          .insert(attachments)
-          .select('id')
+        if (attachments.length > 0) {
+          const { error: attachError, data: attachData } = await supabase
+            .from('lesson_attachments')
+            .insert(attachments)
+            .select('id')
 
-        if (attachError) {
-          errors.push(
-            `Anexos da aula "${lessonStub.name}": ${attachError.message}`,
-          )
-        } else {
-          attachmentsCreated += attachData?.length ?? 0
+          if (attachError) {
+            errors.push(
+              `Anexos da aula "${lessonTitle}": ${attachError.message}`,
+            )
+          } else {
+            attachmentsCreated += attachData?.length ?? 0
+          }
         }
       }
     }
