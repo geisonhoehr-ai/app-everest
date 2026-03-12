@@ -284,49 +284,49 @@ export const UserManagement = () => {
       {/* Stats Cards */}
       {tastingCount > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="border-amber-200 bg-amber-50/50">
+          <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30">
             <CardHeader className="pb-3">
-              <CardDescription className="text-amber-700">Aguardando Aprovação</CardDescription>
-              <CardTitle className="text-3xl text-amber-900">
+              <CardDescription className="text-amber-700 dark:text-amber-400">Aguardando Aprovação</CardDescription>
+              <CardTitle className="text-3xl text-amber-900 dark:text-amber-300">
                 {tastingCount}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-amber-600 dark:text-amber-400">
                 🍰 Alunos na turma Degustação
               </p>
               <Button
                 variant="outline"
                 size="sm"
-                className="mt-3 w-full border-amber-300 hover:bg-amber-100"
+                className="mt-3 w-full border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-950/50"
                 onClick={() => setClassFilter('tasting')}
               >
                 Ver alunos em Degustação
               </Button>
             </CardContent>
           </Card>
-          <Card className="border-green-200 bg-green-50/50">
+          <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/30">
             <CardHeader className="pb-3">
-              <CardDescription className="text-green-700">Alunos Ativos</CardDescription>
-              <CardTitle className="text-3xl text-green-900">
+              <CardDescription className="text-green-700 dark:text-green-400">Alunos Ativos</CardDescription>
+              <CardTitle className="text-3xl text-green-900 dark:text-green-300">
                 {regularCount}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-green-600 dark:text-green-400">
                 ✅ Em turmas regulares
               </p>
             </CardContent>
           </Card>
-          <Card className="border-red-200 bg-red-50/50">
+          <Card className="border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/30">
             <CardHeader className="pb-3">
-              <CardDescription className="text-red-700">Necessita Atenção</CardDescription>
-              <CardTitle className="text-3xl text-red-900">
+              <CardDescription className="text-red-700 dark:text-red-400">Necessita Atenção</CardDescription>
+              <CardTitle className="text-3xl text-red-900 dark:text-red-300">
                 {noClassCount}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-red-600">
+              <p className="text-xs text-red-600 dark:text-red-400">
                 ⚠️ Alunos sem nenhuma turma
               </p>
             </CardContent>
@@ -470,15 +470,15 @@ export const UserManagement = () => {
                         {user.role === 'student' && (
                           <>
                             {user.isInTastingClass ? (
-                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-700">
                                 🍰 Degustação
                               </Badge>
                             ) : user.classes && user.classes.length > 0 ? (
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-700">
                                 {user.classes.length} turma(s)
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-700">
                                 ⚠️ Sem turma
                               </Badge>
                             )}
