@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast'
 import { testPandaConnection } from '@/services/pandaVideo'
 import { supabase } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
+import { Link } from 'react-router-dom'
 import {
   Video,
   Users,
@@ -24,6 +25,7 @@ import {
   Webhook,
   Copy,
   Link2,
+  Upload,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AIProviderConfigPanel } from '@/components/admin/integrations/AIProviderConfig'
@@ -430,6 +432,16 @@ export default function AdminIntegrationsPage() {
                       : <RefreshCw className="h-3 w-3" />}
                     Testar
                   </Button>
+                  {integration.id === 'memberkit' && (
+                    <Button
+                      variant="outline" size="sm" className="flex-1 gap-1.5 text-xs" asChild
+                    >
+                      <Link to="/admin/integrations/memberkit-import">
+                        <Upload className="h-3 w-3" />
+                        Importar
+                      </Link>
+                    </Button>
+                  )}
                   {integration.projectUrl && (
                     <Button
                       variant="outline" size="sm" className="flex-1 gap-1.5 text-xs"

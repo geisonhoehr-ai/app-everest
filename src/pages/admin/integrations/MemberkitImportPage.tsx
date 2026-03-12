@@ -4,6 +4,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
 import {
   Select,
   SelectContent,
@@ -12,6 +14,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
+  ArrowLeft,
+  ArrowRight,
   Download,
   CheckCircle,
   XCircle,
@@ -22,6 +26,8 @@ import {
   Users,
   BookOpen,
   ScrollText,
+  ChevronRight,
+  GraduationCap,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-provider'
 import { useToast } from '@/hooks/use-toast'
@@ -39,6 +45,7 @@ import {
   type ImportCourseResult,
   type ImportUsersResult,
 } from '@/services/memberkitImportService'
+import { cn } from '@/lib/utils'
 
 interface LogEntry {
   id: number
@@ -53,6 +60,9 @@ export default function MemberkitImportPage() {
   const { profile } = useAuth()
   const { toast } = useToast()
 
+  // Step state: 1=config, 2=select course, 3=course detail (turmas + import)
+  const [step, setStep] = useState(1)
+
   // Config state
   const [memberkitApiKey, setMemberkitApiKey] = useState('')
   const [pandaApiKey, setPandaApiKey] = useState('')
@@ -66,8 +76,15 @@ export default function MemberkitImportPage() {
   const [everestClasses, setEverestClasses] = useState<{ id: string; name: string }[]>([])
   const [pandaVideoMap, setPandaVideoMap] = useState<Map<string, PandaVideoInfo> | null>(null)
 
-  // Form state
-  const [selectedCourseId, setSelectedCourseId] = useState('')
+  // Selected course
+  const [selectedCourse, setSelectedCourse] = useState<MKCourse | null>(null)
+
+  // Filtered turmas for selected course
+  const filteredClassrooms = classrooms.filter(
+    (c) => selectedCourse && c.course_id === selectedCourse.id
+  )
+
+  // Form state for user import
   const [selectedClassroomId, setSelectedClassroomId] = useState('')
   const [selectedEverestClassId, setSelectedEverestClassId] = useState('')
   const [defaultPassword, setDefaultPassword] = useState('Everest@2026')
@@ -165,6 +182,7 @@ export default function MemberkitImportPage() {
       }
 
       setConnected(true)
+      setStep(2)
       addLog('success', 'Conexao estabelecida com sucesso!')
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error)
@@ -179,18 +197,27 @@ export default function MemberkitImportPage() {
     }
   }
 
+  // Select a course and go to step 3
+  const handleSelectCourse = (course: MKCourse) => {
+    setSelectedCourse(course)
+    setSelectedClassroomId('')
+    setCourseResult(null)
+    setUsersResult(null)
+    setStep(3)
+  }
+
   // Import course
   const handleImportCourse = async () => {
-    if (!selectedCourseId || !pandaVideoMap || !profile) return
+    if (!selectedCourse || !pandaVideoMap || !profile) return
 
     setImportingCourse(true)
     setCourseResult(null)
 
     try {
-      addLog('info', `Iniciando importacao do curso ID ${selectedCourseId}...`)
+      addLog('info', `Iniciando importacao do curso "${selectedCourse.name}"...`)
       const result = await importMemberkitCourse(
         memberkitApiKey,
-        Number(selectedCourseId),
+        selectedCourse.id,
         pandaVideoMap,
         profile.id,
         handleProgress,
@@ -233,9 +260,10 @@ export default function MemberkitImportPage() {
     setUsersResult(null)
 
     try {
+      const classroom = filteredClassrooms.find((c) => String(c.id) === selectedClassroomId)
       addLog(
         'info',
-        `Iniciando importacao de alunos da turma MK ${selectedClassroomId}...`,
+        `Iniciando importacao de alunos da turma "${classroom?.name || selectedClassroomId}"...`,
       )
       const result = await importMemberkitUsers(
         memberkitApiKey,
@@ -275,148 +303,333 @@ export default function MemberkitImportPage() {
     }
   }
 
+  const handleDisconnect = () => {
+    setConnected(false)
+    setCourses([])
+    setClassrooms([])
+    setPandaVideoMap(null)
+    setCourseResult(null)
+    setUsersResult(null)
+    setSelectedCourse(null)
+    setStep(1)
+  }
+
   const isImporting = importingCourse || importingUsers || connecting
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
+        <Link
+          to="/admin/integrations"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar para Integracoes
+        </Link>
         <h1 className="text-2xl font-bold text-foreground">Importacao MemberKit</h1>
-        <p className="text-muted-foreground mt-1">Importe cursos e alunos da plataforma MemberKit</p>
+        <p className="text-muted-foreground mt-1">
+          Selecione um curso, escolha a turma e importe alunos
+        </p>
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Configuration Card */}
-        <Card className="border-border shadow-sm">
-          <CardContent className="p-5">
-            <div className="space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-muted/50">
-                  <Link2 className="h-5 w-5 text-primary" />
-                </div>
-                <h2 className="text-xl font-semibold text-foreground">Configuracao</h2>
-              </div>
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 text-sm">
+        <button
+          onClick={() => step > 1 && !isImporting && setStep(1)}
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors',
+            step === 1
+              ? 'bg-primary text-primary-foreground font-medium'
+              : step > 1
+                ? 'bg-green-500/10 text-green-600 hover:bg-green-500/20 cursor-pointer'
+                : 'bg-muted text-muted-foreground'
+          )}
+        >
+          {step > 1 ? <CheckCircle className="h-3.5 w-3.5" /> : <span className="font-bold">1</span>}
+          Conexao
+        </button>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        <button
+          onClick={() => step > 2 && !isImporting && setStep(2)}
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors',
+            step === 2
+              ? 'bg-primary text-primary-foreground font-medium'
+              : step > 2
+                ? 'bg-green-500/10 text-green-600 hover:bg-green-500/20 cursor-pointer'
+                : 'bg-muted text-muted-foreground'
+          )}
+        >
+          {step > 2 ? <CheckCircle className="h-3.5 w-3.5" /> : <span className="font-bold">2</span>}
+          Curso
+        </button>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        <div
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-full',
+            step === 3
+              ? 'bg-primary text-primary-foreground font-medium'
+              : 'bg-muted text-muted-foreground'
+          )}
+        >
+          <span className="font-bold">3</span>
+          Importar
+        </div>
+      </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="mk-key">MemberKit API Key</Label>
-                  <Input
-                    id="mk-key"
-                    type="password"
-                    placeholder="Sua chave da MemberKit"
-                    value={memberkitApiKey}
-                    onChange={(e) => setMemberkitApiKey(e.target.value)}
-                    disabled={connected || isImporting}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="panda-key">Panda Video API Key</Label>
-                  <Input
-                    id="panda-key"
-                    type="password"
-                    placeholder="Sua chave do Panda Video (opcional)"
-                    value={pandaApiKey}
-                    onChange={(e) => setPandaApiKey(e.target.value)}
-                    disabled={connected || isImporting}
-                  />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="service-key">
-                    Supabase Service Role Key{' '}
-                    <span className="text-xs text-muted-foreground">
-                      (necessaria para criar usuarios)
-                    </span>
-                  </Label>
-                  <Input
-                    id="service-key"
-                    type="password"
-                    placeholder="Chave service_role do Supabase"
-                    value={serviceRoleKey}
-                    onChange={(e) => setServiceRoleKey(e.target.value)}
-                    disabled={connected || isImporting}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {!connected ? (
-                  <Button
-                    onClick={handleConnect}
-                    disabled={connecting || !memberkitApiKey.trim()}
-                  >
-                    {connecting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Conectando...
-                      </>
-                    ) : (
-                      <>
-                        <Link2 className="mr-2 h-4 w-4" />
-                        Conectar
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <div className="flex items-center gap-2 text-green-500">
-                    <CheckCircle className="h-5 w-5" />
-                    <span className="font-medium">Conectado</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setConnected(false)
-                        setCourses([])
-                        setClassrooms([])
-                        setPandaVideoMap(null)
-                        setCourseResult(null)
-                        setUsersResult(null)
-                      }}
-                      disabled={isImporting}
-                    >
-                      Desconectar
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Import Course Card */}
-        {connected && (
+      <div className="max-w-4xl space-y-6">
+        {/* ── Step 1: Configuration ── */}
+        {step === 1 && (
           <Card className="border-border shadow-sm">
             <CardContent className="p-5">
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10">
-                    <BookOpen className="h-5 w-5 text-blue-500" />
+                  <div className="p-2 rounded-lg bg-muted/50">
+                    <Link2 className="h-5 w-5 text-primary" />
                   </div>
-                  <h2 className="text-xl font-semibold text-foreground">Importar Curso</h2>
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground">Configuracao</h2>
+                    <p className="text-xs text-muted-foreground">Informe as chaves de API para conectar</p>
+                  </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Curso MemberKit</Label>
-                    <Select
-                      value={selectedCourseId}
-                      onValueChange={setSelectedCourseId}
-                      disabled={importingCourse}
+                    <Label htmlFor="mk-key">MemberKit API Key *</Label>
+                    <Input
+                      id="mk-key"
+                      type="password"
+                      placeholder="Sua chave da MemberKit"
+                      value={memberkitApiKey}
+                      onChange={(e) => setMemberkitApiKey(e.target.value)}
+                      disabled={connected || isImporting}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="panda-key">Panda Video API Key</Label>
+                    <Input
+                      id="panda-key"
+                      type="password"
+                      placeholder="Para vincular videos (opcional)"
+                      value={pandaApiKey}
+                      onChange={(e) => setPandaApiKey(e.target.value)}
+                      disabled={connected || isImporting}
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="service-key">
+                      Supabase Service Role Key{' '}
+                      <span className="text-xs text-muted-foreground">
+                        (necessaria para criar usuarios)
+                      </span>
+                    </Label>
+                    <Input
+                      id="service-key"
+                      type="password"
+                      placeholder="Chave service_role do Supabase"
+                      value={serviceRoleKey}
+                      onChange={(e) => setServiceRoleKey(e.target.value)}
+                      disabled={connected || isImporting}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {!connected ? (
+                    <Button
+                      onClick={handleConnect}
+                      disabled={connecting || !memberkitApiKey.trim()}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um curso..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {courses.map((c) => (
-                          <SelectItem key={c.id} value={String(c.id)}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      {connecting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Conectando...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRight className="mr-2 h-4 w-4" />
+                          Conectar e Continuar
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-2 text-green-500">
+                      <CheckCircle className="h-5 w-5" />
+                      <span className="font-medium">Conectado</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleDisconnect}
+                        disabled={isImporting}
+                      >
+                        Desconectar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Step 2: Select Course ── */}
+        {step === 2 && (
+          <Card className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <BookOpen className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold text-foreground">Selecionar Curso</h2>
+                      <p className="text-xs text-muted-foreground">
+                        {courses.length} cursos encontrados no MemberKit
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">{courses.length} cursos</Badge>
+                </div>
+
+                {courses.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    <p className="text-sm">Nenhum curso encontrado no MemberKit</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {courses.map((course) => {
+                      const turmasCount = classrooms.filter(
+                        (c) => c.course_id === course.id
+                      ).length
+                      const totalUsers = classrooms
+                        .filter((c) => c.course_id === course.id)
+                        .reduce((sum, c) => sum + c.users_count, 0)
+
+                      return (
+                        <button
+                          key={course.id}
+                          onClick={() => handleSelectCourse(course)}
+                          className={cn(
+                            'flex items-start gap-3 p-4 rounded-xl border border-border',
+                            'text-left transition-all hover:border-primary/50 hover:shadow-md',
+                            'hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/20'
+                          )}
+                        >
+                          {course.image ? (
+                            <img
+                              src={course.image}
+                              alt=""
+                              className="w-12 h-12 rounded-lg object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                              <BookOpen className="h-6 w-6 text-blue-500" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-foreground text-sm leading-tight">
+                              {course.name}
+                            </h3>
+                            {course.description && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                {course.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-3 mt-2">
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <GraduationCap className="h-3 w-3" />
+                                {turmasCount} turma{turmasCount !== 1 ? 's' : ''}
+                              </span>
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {totalUsers} aluno{totalUsers !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Step 3: Course Detail + Import ── */}
+        {step === 3 && selectedCourse && (
+          <>
+            {/* Course header */}
+            <Card className="border-border shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-4">
+                  {selectedCourse.image ? (
+                    <img
+                      src={selectedCourse.image}
+                      alt=""
+                      className="w-16 h-16 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                      <BookOpen className="h-8 w-8 text-blue-500" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-foreground">
+                      {selectedCourse.name}
+                    </h2>
+                    {selectedCourse.description && (
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {selectedCourse.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 mt-2">
+                      <Badge variant="outline">
+                        <GraduationCap className="h-3 w-3 mr-1" />
+                        {filteredClassrooms.length} turma{filteredClassrooms.length !== 1 ? 's' : ''}
+                      </Badge>
+                      <Badge variant="outline">
+                        <Users className="h-3 w-3 mr-1" />
+                        {filteredClassrooms.reduce((sum, c) => sum + c.users_count, 0)} alunos
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setStep(2); setSelectedCourse(null) }}
+                    disabled={isImporting}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Trocar Curso
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Import Course Content */}
+            <Card className="border-border shadow-sm">
+              <CardContent className="p-5">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <Upload className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Importar Conteudo do Curso</h3>
+                      <p className="text-xs text-muted-foreground">
+                        Importa modulos, aulas e anexos para o Everest
+                      </p>
+                    </div>
                   </div>
 
                   <Button
                     onClick={handleImportCourse}
-                    disabled={!selectedCourseId || importingCourse || !pandaVideoMap}
+                    disabled={importingCourse || !pandaVideoMap}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     {importingCourse ? (
@@ -427,183 +640,216 @@ export default function MemberkitImportPage() {
                     ) : (
                       <>
                         <Upload className="mr-2 h-4 w-4" />
-                        Importar Curso
+                        Importar Conteudo
                       </>
                     )}
                   </Button>
-                </div>
 
-                {/* Course Result */}
-                {courseResult && (
-                  <div className="rounded-xl border border-border p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-green-500 font-medium">
-                      <CheckCircle className="h-5 w-5" />
-                      Curso &quot;{courseResult.courseName}&quot; importado
+                  {/* Course Result */}
+                  {courseResult && (
+                    <div className="rounded-xl border border-border p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-green-500 font-medium">
+                        <CheckCircle className="h-5 w-5" />
+                        Curso &quot;{courseResult.courseName}&quot; importado
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-sm">
+                        <div className="text-center p-3 rounded-lg bg-blue-500/10">
+                          <div className="text-lg font-bold text-blue-500">
+                            {courseResult.modulesCreated}
+                          </div>
+                          <div className="text-muted-foreground">Modulos</div>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-green-500/10">
+                          <div className="text-lg font-bold text-green-500">
+                            {courseResult.lessonsCreated}
+                          </div>
+                          <div className="text-muted-foreground">Aulas</div>
+                        </div>
+                        <div className="text-center p-3 rounded-lg bg-purple-500/10">
+                          <div className="text-lg font-bold text-purple-500">
+                            {courseResult.attachmentsCreated}
+                          </div>
+                          <div className="text-muted-foreground">Anexos</div>
+                        </div>
+                      </div>
+                      {courseResult.errors.length > 0 && (
+                        <div className="text-sm text-yellow-500">
+                          <AlertCircle className="h-4 w-4 inline mr-1" />
+                          {courseResult.errors.length} avisos durante a importacao
+                        </div>
+                      )}
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to="/admin/courses">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          Ver Cursos
+                        </Link>
+                      </Button>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-sm">
-                      <div className="text-center p-3 rounded-lg bg-blue-500/10">
-                        <div className="text-lg font-bold text-blue-500">
-                          {courseResult.modulesCreated}
-                        </div>
-                        <div className="text-muted-foreground">Modulos</div>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-green-500/10">
-                        <div className="text-lg font-bold text-green-500">
-                          {courseResult.lessonsCreated}
-                        </div>
-                        <div className="text-muted-foreground">Aulas</div>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-purple-500/10">
-                        <div className="text-lg font-bold text-purple-500">
-                          {courseResult.attachmentsCreated}
-                        </div>
-                        <div className="text-muted-foreground">Anexos</div>
-                      </div>
-                    </div>
-                    {courseResult.errors.length > 0 && (
-                      <div className="text-sm text-yellow-500">
-                        <AlertCircle className="h-4 w-4 inline mr-1" />
-                        {courseResult.errors.length} avisos durante a importacao
-                      </div>
-                    )}
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to="/admin/courses">
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        Ver Cursos
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Import Users Card */}
-        {connected && (
-          <Card className="border-border shadow-sm">
-            <CardContent className="p-5">
-              <div className="space-y-5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-green-500/10">
-                    <Users className="h-5 w-5 text-green-500" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-foreground">Importar Alunos</h2>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Turma MemberKit</Label>
-                    <Select
-                      value={selectedClassroomId}
-                      onValueChange={setSelectedClassroomId}
-                      disabled={importingUsers}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma turma MK..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {classrooms.map((c) => (
-                          <SelectItem key={c.id} value={String(c.id)}>
-                            {c.name} ({c.users_count} membros)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Turma Everest</Label>
-                    <Select
-                      value={selectedEverestClassId}
-                      onValueChange={setSelectedEverestClassId}
-                      disabled={importingUsers}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma turma Everest..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {everestClasses.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="default-password">Senha padrao para novos alunos</Label>
-                    <Input
-                      id="default-password"
-                      type="text"
-                      value={defaultPassword}
-                      onChange={(e) => setDefaultPassword(e.target.value)}
-                      disabled={importingUsers}
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleImportUsers}
-                  disabled={
-                    !selectedClassroomId ||
-                    !selectedEverestClassId ||
-                    importingUsers
-                  }
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {importingUsers ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Importando Alunos...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Importar Alunos
-                    </>
                   )}
-                </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-                {/* Users Result */}
-                {usersResult && (
-                  <div className="rounded-xl border border-border p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-green-500 font-medium">
-                      <CheckCircle className="h-5 w-5" />
-                      Importacao de alunos concluida
+            {/* Import Users from Turma */}
+            <Card className="border-border shadow-sm">
+              <CardContent className="p-5">
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-500/10">
+                      <Users className="h-5 w-5 text-green-500" />
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-sm">
-                      <div className="text-center p-3 rounded-lg bg-green-500/10">
-                        <div className="text-lg font-bold text-green-500">
-                          {usersResult.usersCreated}
-                        </div>
-                        <div className="text-muted-foreground">Criados</div>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-yellow-500/10">
-                        <div className="text-lg font-bold text-yellow-500">
-                          {usersResult.usersAlreadyExisted}
-                        </div>
-                        <div className="text-muted-foreground">Ja existiam</div>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-blue-500/10">
-                        <div className="text-lg font-bold text-blue-500">
-                          {usersResult.enrollmentsCreated}
-                        </div>
-                        <div className="text-muted-foreground">Matriculados</div>
-                      </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Importar Alunos da Turma</h3>
+                      <p className="text-xs text-muted-foreground">
+                        Selecione uma turma deste curso e importe os alunos para o Everest
+                      </p>
                     </div>
-                    {usersResult.errors.length > 0 && (
-                      <div className="text-sm text-yellow-500">
-                        <AlertCircle className="h-4 w-4 inline mr-1" />
-                        {usersResult.errors.length} erros durante a importacao
-                      </div>
-                    )}
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+
+                  {filteredClassrooms.length === 0 ? (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <GraduationCap className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                      <p className="text-sm">Este curso nao possui turmas no MemberKit</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Turma list */}
+                      <div className="space-y-2">
+                        <Label>Turma MemberKit</Label>
+                        <div className="grid gap-2">
+                          {filteredClassrooms.map((classroom) => (
+                            <button
+                              key={classroom.id}
+                              onClick={() => setSelectedClassroomId(String(classroom.id))}
+                              disabled={importingUsers}
+                              className={cn(
+                                'flex items-center justify-between p-3 rounded-lg border text-left transition-all',
+                                selectedClassroomId === String(classroom.id)
+                                  ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                  : 'border-border hover:border-primary/30 hover:bg-muted/50'
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <GraduationCap className={cn(
+                                  'h-4 w-4',
+                                  selectedClassroomId === String(classroom.id)
+                                    ? 'text-primary'
+                                    : 'text-muted-foreground'
+                                )} />
+                                <span className="font-medium text-sm text-foreground">
+                                  {classroom.name}
+                                </span>
+                              </div>
+                              <Badge variant="secondary" className="text-xs">
+                                {classroom.users_count} membro{classroom.users_count !== 1 ? 's' : ''}
+                              </Badge>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {selectedClassroomId && (
+                        <>
+                          <Separator />
+
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label>Turma Everest (destino)</Label>
+                              <Select
+                                value={selectedEverestClassId}
+                                onValueChange={setSelectedEverestClassId}
+                                disabled={importingUsers}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione uma turma Everest..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {everestClasses.map((c) => (
+                                    <SelectItem key={c.id} value={c.id}>
+                                      {c.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="default-password">Senha padrao</Label>
+                              <Input
+                                id="default-password"
+                                type="text"
+                                value={defaultPassword}
+                                onChange={(e) => setDefaultPassword(e.target.value)}
+                                disabled={importingUsers}
+                              />
+                            </div>
+                          </div>
+
+                          <Button
+                            onClick={handleImportUsers}
+                            disabled={
+                              !selectedClassroomId ||
+                              !selectedEverestClassId ||
+                              importingUsers
+                            }
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            {importingUsers ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Importando Alunos...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="mr-2 h-4 w-4" />
+                                Importar Alunos
+                              </>
+                            )}
+                          </Button>
+                        </>
+                      )}
+
+                      {/* Users Result */}
+                      {usersResult && (
+                        <div className="rounded-xl border border-border p-4 space-y-3">
+                          <div className="flex items-center gap-2 text-green-500 font-medium">
+                            <CheckCircle className="h-5 w-5" />
+                            Importacao de alunos concluida
+                          </div>
+                          <div className="grid grid-cols-3 gap-3 text-sm">
+                            <div className="text-center p-3 rounded-lg bg-green-500/10">
+                              <div className="text-lg font-bold text-green-500">
+                                {usersResult.usersCreated}
+                              </div>
+                              <div className="text-muted-foreground">Criados</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-yellow-500/10">
+                              <div className="text-lg font-bold text-yellow-500">
+                                {usersResult.usersAlreadyExisted}
+                              </div>
+                              <div className="text-muted-foreground">Ja existiam</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-blue-500/10">
+                              <div className="text-lg font-bold text-blue-500">
+                                {usersResult.enrollmentsCreated}
+                              </div>
+                              <div className="text-muted-foreground">Matriculados</div>
+                            </div>
+                          </div>
+                          {usersResult.errors.length > 0 && (
+                            <div className="text-sm text-yellow-500">
+                              <AlertCircle className="h-4 w-4 inline mr-1" />
+                              {usersResult.errors.length} erros durante a importacao
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </>
         )}
 
         {/* Progress Log Card */}
