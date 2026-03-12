@@ -183,6 +183,9 @@ const AdminEssayComparisonPage = lazy(
 const AdminReportsPage = lazy(
   () => import('@/pages/admin/reports/AdminReportsPage'),
 )
+const VideoAnalyticsPage = lazy(
+  () => import('@/pages/admin/reports/VideoAnalyticsPage'),
+)
 const AdminSettingsPage = lazy(
   () => import('@/pages/admin/settings/AdminSettingsPage'),
 )
@@ -425,6 +428,7 @@ const App = () => (
                   />
                   <Route path="acervo" element={<AdminAcervoPage />} />
                   <Route path="reports" element={<AdminReportsPage />} />
+                  <Route path="reports/videos" element={<VideoAnalyticsPage />} />
                   <Route path="settings" element={<AdminSettingsPage />} />
                 </Route>
               </Route>

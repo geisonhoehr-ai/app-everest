@@ -200,6 +200,7 @@ const adminMenuGroups: MenuGroup[] = [
     collapsible: true,
     items: [
       { label: 'Relatórios', href: '/admin/reports', icon: BarChart3 },
+      { label: 'Analytics de Vídeos', href: '/admin/reports/videos', icon: TrendingUp },
       { label: 'Gamificação', href: '/admin/gamification', icon: Trophy, adminOnly: true },
     ],
   },
