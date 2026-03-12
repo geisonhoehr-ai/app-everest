@@ -1,37 +1,52 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Separator } from '@/components/ui/separator'
 import {
   ArrowLeft,
   FileDown,
   FileText,
-  Target,
-  Star,
+  PenLine,
+  BookOpen,
+  Lightbulb,
   CheckCircle,
   AlertCircle,
+  AlertTriangle,
+  BarChart3,
 } from 'lucide-react'
 import {
   getStudentEssayDetails,
   type StudentEssayDetails,
 } from '@/services/essayService'
+import { ciaarCorrectionService } from '@/services/ciaarCorrectionService'
 import { SectionLoader } from '@/components/SectionLoader'
-import { FeedbackReport } from '@/components/essays/FeedbackReport'
 import { cn } from '@/lib/utils'
+import type { CorrectionResult } from '@/types/essay-correction'
 
 export default function EssayDetailsPage() {
   const { essayId } = useParams<{ essayId: string }>()
   const [essay, setEssay] = useState<StudentEssayDetails | null>(null)
+  const [correction, setCorrection] = useState<CorrectionResult | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (essayId) {
-      getStudentEssayDetails(essayId)
-        .then(setEssay)
-        .finally(() => setIsLoading(false))
+    if (!essayId) return
+    const load = async () => {
+      try {
+        const [essayData, correctionData] = await Promise.all([
+          getStudentEssayDetails(essayId),
+          ciaarCorrectionService.loadCorrection(essayId),
+        ])
+        setEssay(essayData)
+        setCorrection(correctionData)
+      } finally {
+        setIsLoading(false)
+      }
     }
+    load()
   }, [essayId])
 
   if (isLoading) return <SectionLoader />
@@ -39,53 +54,35 @@ export default function EssayDetailsPage() {
   if (!essay) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Redação não encontrada</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            A redação solicitada não existe ou foi removida.
-          </p>
-        </div>
+        <h1 className="text-2xl font-bold text-foreground">Redação não encontrada</h1>
         <Button asChild>
-          <Link to="/redacoes">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
-          </Link>
+          <Link to="/redacoes"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Link>
         </Button>
       </div>
     )
   }
 
-  const grade = (essay as any).final_grade || 0
   const isCorrected = (essay as any).status === 'corrected'
   const submissionDate = (essay as any).submission_date || (essay as any).created_at
-  const formattedDate = submissionDate
-    ? new Date(submissionDate).toLocaleDateString('pt-BR')
-    : '—'
+  const formattedDate = submissionDate ? new Date(submissionDate).toLocaleDateString('pt-BR') : '—'
   const submissionText = (essay as any).submission_text || ''
   const wordCount = submissionText.trim() ? submissionText.trim().split(/\s+/).length : 0
   const promptTitle = (essay as any).essay_prompts?.title || 'Redação'
+  const teacherFeedback = (essay as any).teacher_feedback_text || ''
 
-  const getGradeLevel = (g: number) => {
-    if (g >= 900) return { level: 'Excelente', color: 'green' }
-    if (g >= 800) return { level: 'Bom', color: 'blue' }
-    if (g >= 700) return { level: 'Regular', color: 'yellow' }
-    return { level: 'Precisa melhorar', color: 'red' }
+  // CIAAR grade data
+  const finalGrade = correction?.finalGrade ?? (essay as any).final_grade_ciaar ?? 0
+  const maxGrade = 10
+  const expressionDebit = correction?.totalExpressionDebit ?? 0
+  const structureDebit = correction?.totalStructureDebit ?? 0
+  const contentDebit = correction?.totalContentDebit ?? 0
+  const hasFugaTotal = correction?.contentAnalysis.some(c => c.debit_level === 'Fuga TOTAL') ?? false
+
+  const getGradeColor = (g: number) => {
+    if (g >= 7) return 'text-green-600'
+    if (g >= 5) return 'text-amber-600'
+    return 'text-red-600'
   }
-
-  const gradeLevel = getGradeLevel(grade)
-  const gradePercent = Math.min(100, (grade / 1000) * 100)
-
-  // Extract competency scores from evaluation_criteria or ai_analysis
-  const criteria = (essay as any).essay_prompts?.evaluation_criteria as any
-  const aiAnalysis = (essay as any).ai_analysis as any
-  const competencies = criteria?.competencies
-    ? Object.entries(criteria.competencies).map(([key, val]: [string, any]) => ({
-        key,
-        name: val.name || key,
-        maxScore: val.value || 200,
-        score: aiAnalysis?.scores?.[key] || 0,
-      }))
-    : []
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -107,38 +104,30 @@ export default function EssayDetailsPage() {
         <Button
           variant="outline"
           asChild
-          className="gap-2 transition-all duration-200 hover:shadow-md hover:border-primary/30"
+          className="gap-2"
         >
           <Link to={`/redacoes/${essayId}/report`} target="_blank">
             <FileDown className="h-4 w-4" />
-            Relatório
+            Relatório PDF
           </Link>
         </Button>
       </div>
 
-      {/* Score Card */}
+      {/* Grade Card */}
       <Card className="border-border shadow-sm">
         <CardContent className="p-6">
           <div className="flex items-center gap-6">
-            {/* Grade circle */}
+            {/* Grade */}
             <div className="text-center shrink-0">
-              <div
-                className={cn(
-                  'text-5xl font-bold',
-                  gradeLevel.color === 'green' && 'text-green-600',
-                  gradeLevel.color === 'blue' && 'text-blue-600',
-                  gradeLevel.color === 'yellow' && 'text-yellow-600',
-                  gradeLevel.color === 'red' && 'text-red-600',
-                )}
-              >
-                {grade}
+              <div className={cn('text-5xl font-bold', getGradeColor(finalGrade))}>
+                {finalGrade.toFixed(3)}
               </div>
-              <div className="text-sm text-muted-foreground">de 1000</div>
+              <div className="text-sm text-muted-foreground">de {maxGrade}</div>
             </div>
 
-            {/* Info */}
+            {/* Status + Debits breakdown */}
             <div className="flex-1 space-y-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
                   className={cn(
@@ -148,81 +137,258 @@ export default function EssayDetailsPage() {
                       : 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30',
                   )}
                 >
-                  {isCorrected ? (
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                  ) : (
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                  )}
+                  {isCorrected ? <CheckCircle className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
                   {isCorrected ? 'Corrigida' : 'Em Correção'}
                 </Badge>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'text-xs',
-                    gradeLevel.color === 'green' && 'bg-green-500/10 text-green-600 border-green-500/30',
-                    gradeLevel.color === 'blue' && 'bg-blue-500/10 text-blue-600 border-blue-500/30',
-                    gradeLevel.color === 'yellow' && 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30',
-                    gradeLevel.color === 'red' && 'bg-red-500/10 text-red-600 border-red-500/30',
-                  )}
-                >
-                  <Star className="h-3 w-3 mr-1" />
-                  {gradeLevel.level}
-                </Badge>
+                {hasFugaTotal && (
+                  <Badge variant="destructive" className="text-xs">
+                    <AlertTriangle className="h-3 w-3 mr-1" /> Fuga Total
+                  </Badge>
+                )}
               </div>
-              <Progress
-                value={gradePercent}
-                className="h-2 bg-muted [&>div]:bg-blue-500"
-              />
+
+              {/* Debit bars */}
+              {correction && (
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-lg border p-2.5">
+                    <div className="text-[10px] text-muted-foreground">Expressão</div>
+                    <div className="text-sm font-bold text-red-600">-{expressionDebit.toFixed(3)}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {correction.expressionErrors.length} erros
+                    </div>
+                  </div>
+                  <div className="rounded-lg border p-2.5">
+                    <div className="text-[10px] text-muted-foreground">Estrutura</div>
+                    <div className="text-sm font-bold text-red-600">-{structureDebit.toFixed(3)}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {correction.structureAnalysis.length} parágrafos
+                    </div>
+                  </div>
+                  <div className="rounded-lg border p-2.5">
+                    <div className="text-[10px] text-muted-foreground">Conteúdo</div>
+                    <div className="text-sm font-bold text-red-600">-{contentDebit.toFixed(3)}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {correction.contentAnalysis.length} critérios
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Competencies */}
-      {competencies.length > 0 && (
-        <Card className="border-border shadow-sm">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Target className="h-5 w-5 text-primary" />
-              </div>
-              <h2 className="text-lg font-bold text-foreground">Competências</h2>
-            </div>
-            <div className="space-y-3">
-              {competencies.map((c) => {
-                const pct = c.maxScore > 0 ? Math.round((c.score / c.maxScore) * 100) : 0
-                return (
-                  <div
-                    key={c.key}
-                    className="p-3 rounded-lg border border-border bg-muted/30 transition-all duration-200 hover:shadow-md hover:border-primary/30"
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-medium text-foreground">{c.name}</span>
-                      <span className="text-sm font-bold text-primary">
-                        {c.score}/{c.maxScore}
-                      </span>
-                    </div>
-                    <Progress value={pct} className="h-1.5 bg-muted [&>div]:bg-blue-500" />
+      {/* Correction Details Tabs */}
+      {correction && (
+        <Tabs defaultValue="expression" className="space-y-4">
+          <TabsList className="grid grid-cols-4 w-full">
+            <TabsTrigger value="expression" className="text-xs gap-1.5">
+              <PenLine className="h-3.5 w-3.5" />
+              Expressão
+              {correction.expressionErrors.length > 0 && (
+                <Badge variant="destructive" className="text-[9px] px-1 py-0">{correction.expressionErrors.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="structure" className="text-xs gap-1.5">
+              <BookOpen className="h-3.5 w-3.5" />
+              Estrutura
+            </TabsTrigger>
+            <TabsTrigger value="content" className="text-xs gap-1.5">
+              <BarChart3 className="h-3.5 w-3.5" />
+              Conteúdo
+            </TabsTrigger>
+            <TabsTrigger value="suggestions" className="text-xs gap-1.5">
+              <Lightbulb className="h-3.5 w-3.5" />
+              Sugestões
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Expression Errors */}
+          <TabsContent value="expression">
+            <Card>
+              <CardHeader className="py-4 px-5">
+                <CardTitle className="text-base">Erros de Expressão</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  {correction.expressionErrors.length} erros encontrados · Débito: -{expressionDebit.toFixed(3)}
+                </p>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 space-y-3">
+                {correction.expressionErrors.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                    <p className="text-sm font-medium">Nenhum erro de expressão!</p>
                   </div>
-                )
-              })}
+                ) : (
+                  correction.expressionErrors.map((error, index) => (
+                    <div key={index} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-[10px]">
+                          P{error.paragraph_number}, Per. {error.sentence_number}
+                        </Badge>
+                        <Badge variant="destructive" className="text-[10px]">
+                          -{error.debit_value.toFixed(3)}
+                        </Badge>
+                      </div>
+                      <div className="bg-red-50 dark:bg-red-950/20 rounded-md px-3 py-2">
+                        <span className="text-xs text-red-700 dark:text-red-400 line-through">{error.error_text}</span>
+                      </div>
+                      <div className="bg-green-50 dark:bg-green-950/20 rounded-md px-3 py-2">
+                        <span className="text-xs text-green-700 dark:text-green-400">{error.suggested_correction}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{error.error_explanation}</p>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Structure Analysis */}
+          <TabsContent value="structure">
+            <Card>
+              <CardHeader className="py-4 px-5">
+                <CardTitle className="text-base">Análise de Estrutura</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  {correction.structureAnalysis.length} parágrafos analisados · Débito: -{structureDebit.toFixed(3)}
+                </p>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 space-y-3">
+                {correction.structureAnalysis.map((analysis, index) => (
+                  <div key={index} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px]">
+                          Parágrafo {analysis.paragraph_number}
+                        </Badge>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {analysis.paragraph_type === 'introduction' ? 'Introdução' :
+                            analysis.paragraph_type === 'conclusion' ? 'Conclusão' :
+                              'Desenvolvimento'}
+                        </Badge>
+                      </div>
+                      <Badge
+                        variant={analysis.debit_value > 0 ? 'destructive' : 'outline'}
+                        className={cn('text-[10px]', analysis.debit_value === 0 && 'text-green-600 border-green-500/30')}
+                      >
+                        {analysis.debit_value > 0 ? `-${analysis.debit_value.toFixed(3)}` : 'OK'}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{analysis.analysis_text}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Content Analysis */}
+          <TabsContent value="content">
+            <Card>
+              <CardHeader className="py-4 px-5">
+                <CardTitle className="text-base">Análise de Conteúdo</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  {correction.contentAnalysis.length} critérios · Débito: -{contentDebit.toFixed(3)}
+                </p>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 space-y-3">
+                {correction.contentAnalysis.map((analysis, index) => (
+                  <div key={index} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{analysis.criterion_name}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={analysis.debit_level === 'Fuga TOTAL' ? 'destructive' : 'outline'}
+                          className="text-[10px]"
+                        >
+                          {analysis.debit_level}
+                        </Badge>
+                        <Badge
+                          variant={analysis.debit_value > 0 ? 'destructive' : 'outline'}
+                          className={cn('text-[10px]', analysis.debit_value === 0 && 'text-green-600 border-green-500/30')}
+                        >
+                          {analysis.debit_value > 0 ? `-${analysis.debit_value.toFixed(3)}` : 'Sem débito'}
+                        </Badge>
+                      </div>
+                    </div>
+                    {analysis.debit_level === 'Fuga TOTAL' && (
+                      <div className="flex items-center gap-2 text-red-600 bg-red-50 dark:bg-red-950/20 rounded-md px-3 py-1.5">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span className="text-xs font-medium">Fuga total: nota final zerada</span>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{analysis.analysis_text}</p>
+                  </div>
+                ))}
+
+                {/* Teacher feedback */}
+                {teacherFeedback && (
+                  <>
+                    <Separator className="my-3" />
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Comentários do Professor</h4>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-3">
+                        {teacherFeedback}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Improvement Suggestions */}
+          <TabsContent value="suggestions">
+            <Card>
+              <CardHeader className="py-4 px-5">
+                <CardTitle className="text-base">Sugestões de Melhoria</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  {correction.improvementSuggestions.length} sugestões para melhorar sua redação
+                </p>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 space-y-3">
+                {correction.improvementSuggestions.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">Nenhuma sugestão disponível</p>
+                  </div>
+                ) : (
+                  correction.improvementSuggestions.map((suggestion, index) => (
+                    <div key={index} className="border rounded-lg p-3 space-y-2">
+                      <Badge variant="secondary" className="text-[10px]">
+                        {suggestion.category === 'expression' ? 'Expressão' :
+                          suggestion.category === 'structure' ? 'Estrutura' : 'Conteúdo'}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{suggestion.suggestion_text}</p>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* If no correction data yet, show essay text */}
+      {!correction && (
+        <Card className="border-border shadow-sm">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Sua Redação
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-5">
+            <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap">
+              {submissionText || <span className="text-muted-foreground italic">Texto não disponível</span>}
             </div>
+            {!isCorrected && (
+              <div className="mt-4 flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-950/20 rounded-md px-4 py-3">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span className="text-sm">Sua redação está em processo de correção. Você será notificado quando estiver pronta.</span>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
-
-      {/* Feedback */}
-      <Card className="border-border shadow-sm">
-        <CardContent className="p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
-            <h2 className="text-lg font-bold text-foreground">Feedback</h2>
-          </div>
-          <FeedbackReport essay={essay} />
-        </CardContent>
-      </Card>
     </div>
   )
 }
