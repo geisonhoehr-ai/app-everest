@@ -26,6 +26,7 @@ export type ProgressCallback = (progress: ImportProgress) => void
 
 export interface PandaVideoInfo {
   id: string
+  video_external_id: string | null
   video_player: string
   video_hls: string | null
   thumbnail: string | null
@@ -200,17 +201,21 @@ export async function buildPandaVideoMap(
     detail: `${totalPages} paginas encontradas`,
   })
 
-  // Process first page
+  // Process first page — index by both video_external_id AND internal id
   for (const v of firstPage.videos) {
-    if (v.video_external_id) {
-      map.set(v.video_external_id, {
-        id: v.id,
-        video_player: v.video_player || '',
-        video_hls: v.video_hls || null,
-        thumbnail: v.thumbnail || null,
-        duration: v.length ?? null,
-      })
+    const info: PandaVideoInfo = {
+      id: v.id,
+      video_external_id: v.video_external_id || null,
+      video_player: v.video_player || '',
+      video_hls: v.video_hls || null,
+      thumbnail: v.thumbnail || null,
+      duration: v.length ?? null,
     }
+    if (v.video_external_id) {
+      map.set(v.video_external_id, info)
+    }
+    // Also index by Panda internal ID so MemberKit UIDs that match it will resolve
+    map.set(v.id, info)
   }
 
   onProgress?.({
@@ -228,15 +233,18 @@ export async function buildPandaVideoMap(
     )
 
     for (const v of pageData.videos) {
-      if (v.video_external_id) {
-        map.set(v.video_external_id, {
-          id: v.id,
-          video_player: v.video_player || '',
-          video_hls: v.video_hls || null,
-          thumbnail: v.thumbnail || null,
-          duration: v.length ?? null,
-        })
+      const info: PandaVideoInfo = {
+        id: v.id,
+        video_external_id: v.video_external_id || null,
+        video_player: v.video_player || '',
+        video_hls: v.video_hls || null,
+        thumbnail: v.thumbnail || null,
+        duration: v.length ?? null,
       }
+      if (v.video_external_id) {
+        map.set(v.video_external_id, info)
+      }
+      map.set(v.id, info)
     }
 
     onProgress?.({
@@ -388,17 +396,21 @@ export async function importMemberkitCourse(
       if (videoUid) {
         const pandaInfo = pandaVideoMap.get(videoUid)
         if (pandaInfo) {
-          videoSourceId = pandaInfo.id
+          // Use video_external_id for embed URLs (that's what Panda player expects)
+          // Fall back to extracting from video_player URL, then to internal id
+          videoSourceId = pandaInfo.video_external_id
+            || (pandaInfo.video_player.includes('v=') ? pandaInfo.video_player.split('v=')[1] : null)
+            || pandaInfo.id
           durationSeconds =
             pandaInfo.duration != null
               ? Math.round(pandaInfo.duration)
               : lessonDetail.video?.duration ?? null
         } else {
-          // Video UID exists in MemberKit but not found in Panda
-          videoSourceId = videoUid
+          // Video UID exists in MemberKit but not found in Panda — do NOT use raw UID as embed ID
+          videoSourceId = null
           durationSeconds = lessonDetail.video?.duration ?? null
           errors.push(
-            `Aula "${lessonTitle}": video UID ${videoUid} nao encontrado no Panda`,
+            `Aula "${lessonTitle}": video UID ${videoUid} nao encontrado no Panda (video nao sera vinculado)`,
           )
         }
       }
