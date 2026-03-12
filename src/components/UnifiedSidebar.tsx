@@ -232,7 +232,7 @@ const darkNavySidebarStyle = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function UnifiedSidebar() {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, viewingAsStudent } = useAuth()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const location = useLocation()
   const navigate = useNavigate()
@@ -241,10 +241,11 @@ export function UnifiedSidebar() {
 
   if (!profile) return null
 
-  const isAdministrator = profile.role === 'administrator'
-  const isTeacher = profile.role === 'teacher'
+  const effectiveRole = viewingAsStudent && profile.role !== 'student' ? 'student' : profile.role
+  const isAdministrator = effectiveRole === 'administrator'
+  const isTeacher = effectiveRole === 'teacher'
   const isAdmin = isAdministrator || isTeacher
-  const isStudent = profile.role === 'student'
+  const isStudent = effectiveRole === 'student'
 
   const handleLogout = async () => {
     await signOut()
@@ -427,8 +428,9 @@ export function UnifiedSidebar() {
                   {profile.first_name} {profile.last_name}
                 </p>
                 <p className="text-[10px] text-sidebar-foreground/40">
-                  {profile.role === 'administrator' ? 'Administrador' :
-                    profile.role === 'teacher' ? 'Professor' : 'Estudante'}
+                  {effectiveRole === 'administrator' ? 'Administrador' :
+                    effectiveRole === 'teacher' ? 'Professor' : 'Estudante'}
+                  {viewingAsStudent ? ' (preview)' : ''}
                 </p>
               </div>
               <button
