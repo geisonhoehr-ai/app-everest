@@ -55,13 +55,15 @@ export interface ImportUsersResult {
 interface MKSection {
   id: number
   name: string
+  title?: string
   position: number
   lessons: MKLessonStub[]
 }
 
 interface MKLessonStub {
   id: number
-  name: string
+  name?: string
+  title?: string
   position: number
 }
 
@@ -81,7 +83,8 @@ interface MKLessonFile {
 
 interface MKLessonDetail {
   id: number
-  name: string
+  name?: string
+  title?: string
   description: string | null
   content: string | null
   video: {
@@ -341,11 +344,13 @@ export async function importMemberkitCourse(
 
   // --- Process each section -> module ---
   for (const section of mkCourse.sections) {
+    const sectionName = section.name || section.title || `Modulo ${section.id}`
+
     const { data: moduleData, error: moduleError } = await supabase
       .from('video_modules')
       .insert({
         course_id: everestCourseId,
-        name: section.name,
+        name: sectionName,
         description: null,
         order_index: section.position,
         is_active: true,
@@ -355,7 +360,7 @@ export async function importMemberkitCourse(
 
     if (moduleError || !moduleData) {
       errors.push(
-        `Modulo "${section.name}": ${moduleError?.message ?? 'sem dados'}`,
+        `Modulo "${sectionName}": ${moduleError?.message ?? 'sem dados'}`,
       )
       continue
     }
@@ -367,11 +372,13 @@ export async function importMemberkitCourse(
     for (const lessonStub of section.lessons) {
       lessonIndex++
 
+      const stubName = lessonStub.name || lessonStub.title || `Aula ${lessonStub.id}`
+
       onProgress?.({
         step: 'Importando aulas',
         current: lessonIndex,
         total: totalLessons,
-        detail: `${section.name} > ${lessonStub.name}`,
+        detail: `${section.name || section.title || 'Modulo'} > ${stubName}`,
       })
 
       // Fetch full lesson detail from MemberKit
@@ -385,10 +392,13 @@ export async function importMemberkitCourse(
         )
       } catch (err) {
         errors.push(
-          `Aula "${lessonStub.name}" (${lessonStub.id}): falha ao buscar detalhe - ${err}`,
+          `Aula "${stubName}" (${lessonStub.id}): falha ao buscar detalhe - ${err}`,
         )
         continue
       }
+
+      // Resolve lesson title: detail.name > detail.title > stub name > fallback
+      const lessonTitle = lessonDetail.name || lessonDetail.title || stubName
 
       // Resolve video from Panda map
       const videoUid = lessonDetail.video?.uid ?? null
@@ -408,7 +418,7 @@ export async function importMemberkitCourse(
           videoSourceId = videoUid
           durationSeconds = lessonDetail.video?.duration ?? null
           errors.push(
-            `Aula "${lessonStub.name}": video UID ${videoUid} nao encontrado no Panda`,
+            `Aula "${lessonTitle}": video UID ${videoUid} nao encontrado no Panda`,
           )
         }
       }
@@ -423,7 +433,7 @@ export async function importMemberkitCourse(
         .from('video_lessons')
         .insert({
           module_id: moduleId,
-          title: lessonDetail.name,
+          title: lessonTitle,
           description: plainDescription,
           order_index: lessonStub.position,
           video_source_type: videoSourceId ? 'panda_video' : null,
@@ -437,7 +447,7 @@ export async function importMemberkitCourse(
 
       if (lessonError || !lessonData) {
         errors.push(
-          `Aula "${lessonStub.name}": ${lessonError?.message ?? 'sem dados'}`,
+          `Aula "${lessonTitle}": ${lessonError?.message ?? 'sem dados'}`,
         )
         continue
       }
