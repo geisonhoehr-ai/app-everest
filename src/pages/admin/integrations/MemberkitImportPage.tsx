@@ -79,9 +79,9 @@ export default function MemberkitImportPage() {
   // Selected course
   const [selectedCourse, setSelectedCourse] = useState<MKCourse | null>(null)
 
-  // Filtered turmas for selected course
+  // Filtered turmas for selected course (MemberKit links via course_name, not course_id)
   const filteredClassrooms = classrooms.filter(
-    (c) => selectedCourse && c.course_id === selectedCourse.id
+    (c) => selectedCourse && c.course_name === selectedCourse.name
   )
 
   // Form state for user import
@@ -502,10 +502,10 @@ export default function MemberkitImportPage() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     {courses.map((course) => {
                       const turmasCount = classrooms.filter(
-                        (c) => c.course_id === course.id
+                        (c) => c.course_name === course.name
                       ).length
                       const totalUsers = classrooms
-                        .filter((c) => c.course_id === course.id)
+                        .filter((c) => c.course_name === course.name)
                         .reduce((sum, c) => sum + c.users_count, 0)
 
                       return (

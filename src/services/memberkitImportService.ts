@@ -759,7 +759,7 @@ export async function importMemberkitUsers(
 export interface MKClassroom {
   id: number
   name: string
-  course_id: number
+  course_name: string
   users_count: number
 }
 
