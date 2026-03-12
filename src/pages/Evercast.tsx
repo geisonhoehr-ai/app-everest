@@ -112,7 +112,7 @@ export default function EvercastPage() {
                 className="group cursor-pointer"
                 onClick={() => navigate(`/evercast/curso/${course.id}`)}
               >
-                <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-3 shadow-sm hover:shadow-md transition-shadow">
+                <div className="relative aspect-video rounded-md overflow-hidden bg-muted mb-3 shadow-sm hover:shadow-md transition-shadow">
                   {course.thumbnail_url ? (
                     <img
                       src={course.thumbnail_url}
