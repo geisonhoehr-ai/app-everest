@@ -325,22 +325,38 @@ export default function AdminGamificationPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Completar Quiz</span>
-                        <Badge>+50 XP</Badge>
+                        <span className="text-sm font-medium">Assistir aula completa</span>
+                        <Badge>+10 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Estudar Flashcards</span>
-                        <Badge>+30 XP</Badge>
+                        <span className="text-sm font-medium">Comentar na aula</span>
+                        <Badge>+5 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Enviar Redação</span>
-                        <Badge>+100 XP</Badge>
+                        <span className="text-sm font-medium">Avaliar aula</span>
+                        <Badge>+3 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Completar Simulado</span>
-                        <Badge>+200 XP</Badge>
+                        <span className="text-sm font-medium">Postar na comunidade</span>
+                        <Badge>+5 XP</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                        <span className="text-sm font-medium">Responder na comunidade</span>
+                        <Badge>+3 XP</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                        <span className="text-sm font-medium">Curtir post/comentário</span>
+                        <Badge>+1 XP</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                        <span className="text-sm font-medium">Melhor resposta</span>
+                        <Badge>+15 XP</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                        <span className="text-sm font-medium">Login diário</span>
+                        <Badge>+5 XP</Badge>
                       </div>
                     </div>
                   </div>

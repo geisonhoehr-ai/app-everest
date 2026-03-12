@@ -750,6 +750,9 @@ export const communityService = {
             .eq('id', targetId)
         }
 
+        // Award XP for reacting (only when adding, not removing)
+        await addXP(userId, 1, 'community_reaction', targetId).catch(() => {})
+
         return { reacted: true }
       }
     } catch (error) {
