@@ -34,6 +34,7 @@ import {
   formatFlashcardsForExport,
   parseFlashcardsFromFile,
   downloadTxtFile,
+  FLASHCARD_TEMPLATE,
   type ImportError,
 } from '@/lib/importExport'
 import { ImportErrorsDialog } from '@/components/admin/ImportErrorsDialog'
@@ -265,7 +266,7 @@ export default function AdminFlashcardsManagementPage() {
     <>
       <ImportErrorsDialog
         isOpen={isErrorDialogOpen}
-        onOpenChange={setIsErrorDialogOpen}
+        onClose={() => setIsErrorDialogOpen(false)}
         errors={importErrors}
       />
 
@@ -296,6 +297,14 @@ export default function AdminFlashcardsManagementPage() {
               onChange={handleFileChange}
               className="hidden"
             />
+            <Button
+              variant="outline"
+              onClick={() => downloadTxtFile(FLASHCARD_TEMPLATE, 'modelo-flashcards.txt')}
+              className="shadow-sm"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Modelo
+            </Button>
             <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="shadow-sm">
               <Upload className="mr-2 h-4 w-4" />
               Importar

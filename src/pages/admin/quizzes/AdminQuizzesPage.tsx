@@ -31,14 +31,17 @@ import {
   Trash2,
   ListChecks,
   BarChart2,
+  Upload,
 } from 'lucide-react'
 import { getAdminQuizzes, deleteQuiz, type AdminQuiz } from '@/services/adminQuizService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/components/ui/use-toast'
+import { ImportQuestionsToQuizDialog } from '@/components/admin/ImportQuestionsToQuizDialog'
 
 export default function AdminQuizzesPage() {
   const [quizzes, setQuizzes] = useState<AdminQuiz[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [importTarget, setImportTarget] = useState<{ id: string; title: string } | null>(null)
   const { toast } = useToast()
 
   const loadQuizzes = () => {
@@ -79,6 +82,17 @@ export default function AdminQuizzesPage() {
   }
 
   return (
+    <>
+    {importTarget && (
+      <ImportQuestionsToQuizDialog
+        isOpen={!!importTarget}
+        onOpenChange={(open) => { if (!open) setImportTarget(null) }}
+        onImportComplete={loadQuizzes}
+        quizId={importTarget.id}
+        quizTitle={importTarget.title}
+        entityLabel="quiz"
+      />
+    )}
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
@@ -132,6 +146,12 @@ export default function AdminQuizzesPage() {
                           Gerenciar Questões
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setImportTarget({ id: quiz.id, title: quiz.title })}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Importar Questões
+                      </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to={`/admin/quizzes/${quiz.id}/edit`}>
                           <Pencil className="mr-2 h-4 w-4" />
@@ -161,5 +181,6 @@ export default function AdminQuizzesPage() {
         </Table>
       </CardContent>
     </Card>
+    </>
   )
 }

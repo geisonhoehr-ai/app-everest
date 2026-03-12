@@ -354,6 +354,56 @@ export const parseQuestionBankFromFile = (
   return { data: questions, errors: null }
 }
 
+// ─── Templates ─────────────────────────────────────────────────────────────
+
+export const QUESTION_BANK_TEMPLATE = `QUESTION: Qual é a capital do Brasil?
+TYPE: multiple_choice
+OPTIONS:
+A) São Paulo
+B) Rio de Janeiro
+C) Brasília
+D) Salvador
+ANSWER: C
+EXPLANATION: Brasília é a capital federal do Brasil desde 1960.
+POINTS: 1
+
+---
+
+QUESTION: Em que ano o Brasil foi descoberto?
+TYPE: multiple_choice
+OPTIONS:
+A) 1492
+B) 1500
+C) 1532
+D) 1549
+ANSWER: B
+EXPLANATION: Pedro Álvares Cabral chegou ao Brasil em 22 de abril de 1500.
+POINTS: 1
+
+---
+
+QUESTION: Quem escreveu "Dom Casmurro"?
+TYPE: multiple_choice
+OPTIONS:
+A) José de Alencar
+B) Machado de Assis
+C) Clarice Lispector
+D) Guimarães Rosa
+ANSWER: B
+EXPLANATION: Machado de Assis publicou Dom Casmurro em 1899.
+POINTS: 1
+`
+
+export const FLASHCARD_TEMPLATE = `Q: Qual é a fórmula da água?
+A: H2O - duas moléculas de hidrogênio e uma de oxigênio.
+
+Q: O que é fotossíntese?
+A: Processo pelo qual as plantas convertem luz solar em energia química, produzindo oxigênio e glicose.
+
+Q: Qual a velocidade da luz no vácuo?
+A: Aproximadamente 300.000 km/s (299.792.458 m/s).
+`
+
 export const downloadTxtFile = (content: string, filename: string) => {
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)

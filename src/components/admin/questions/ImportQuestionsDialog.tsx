@@ -26,9 +26,10 @@ import {
   type AdminQuiz,
   type AdminTopic,
 } from '@/services/adminQuizService'
-import { parseQuestionBankFromFile, type ImportError } from '@/lib/importExport'
+import { parseQuestionBankFromFile, downloadTxtFile, QUESTION_BANK_TEMPLATE, type ImportError } from '@/lib/importExport'
 import { ImportErrorsDialog } from '@/components/admin/ImportErrorsDialog'
 import { useAuth } from '@/hooks/use-auth'
+import { Download } from 'lucide-react'
 
 interface ImportQuestionsDialogProps {
   isOpen: boolean
@@ -213,6 +214,15 @@ export const ImportQuestionsDialog = ({
                 onChange={handleFileChange}
               />
             </div>
+            <Button
+              type="button"
+              variant="link"
+              className="text-xs px-0 h-auto text-muted-foreground"
+              onClick={() => downloadTxtFile(QUESTION_BANK_TEMPLATE, 'modelo-questoes.txt')}
+            >
+              <Download className="mr-1 h-3 w-3" />
+              Baixar modelo de arquivo (.txt)
+            </Button>
           </div>
           <DialogFooter>
             <Button

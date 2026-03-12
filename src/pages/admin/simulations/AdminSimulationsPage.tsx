@@ -24,15 +24,17 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, BarChart2 } from 'lucide-react'
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, BarChart2, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { getAllSimulations, deleteSimulation, type AdminSimulation } from '@/services/adminSimulationService'
 import { useToast } from '@/components/ui/use-toast'
 import { SectionLoader } from '@/components/SectionLoader'
+import { ImportQuestionsToQuizDialog } from '@/components/admin/ImportQuestionsToQuizDialog'
 
 export default function AdminSimulationsPage() {
   const [simulations, setSimulations] = useState<AdminSimulation[]>([])
   const [loading, setLoading] = useState(true)
+  const [importTarget, setImportTarget] = useState<{ id: string; title: string } | null>(null)
   const { toast } = useToast()
 
   const loadSimulations = async () => {
@@ -100,6 +102,17 @@ export default function AdminSimulationsPage() {
   }
 
   return (
+    <>
+    {importTarget && (
+      <ImportQuestionsToQuizDialog
+        isOpen={!!importTarget}
+        onOpenChange={(open) => { if (!open) setImportTarget(null) }}
+        onImportComplete={loadSimulations}
+        quizId={importTarget.id}
+        quizTitle={importTarget.title}
+        entityLabel="simulado"
+      />
+    )}
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
@@ -165,6 +178,12 @@ export default function AdminSimulationsPage() {
                               Editar
                             </Link>
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setImportTarget({ id: sim.id, title: sim.title })}
+                          >
+                            <Upload className="mr-2 h-4 w-4" />
+                            Importar Questões
+                          </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link to={`/admin/simulations/${sim.id}/reports`}>
                               <BarChart2 className="mr-2 h-4 w-4" />
@@ -190,5 +209,6 @@ export default function AdminSimulationsPage() {
         </Table>
       </CardContent>
     </Card>
+    </>
   )
 }
