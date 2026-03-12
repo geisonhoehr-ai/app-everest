@@ -11,8 +11,6 @@
 import { supabase } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
 
-const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -113,7 +111,6 @@ interface MKMembership {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const MEMBERKIT_BASE = 'https://memberkit.com.br/api/v1'
 const PANDA_BASE = 'https://api-v2.pandavideo.com.br'
 
 const RATE_LIMIT_DELAY_MS = 550 // ~109 req/min, safely under 120
@@ -123,24 +120,7 @@ function delay(ms: number): Promise<void> {
 }
 
 async function mkFetch<T>(path: string, apiKey: string): Promise<T> {
-  if (isLocalhost) {
-    // Direct call in localhost (no CORS issue)
-    const separator = path.includes('?') ? '&' : '?'
-    const url = `${MEMBERKIT_BASE}${path}${separator}api_key=${apiKey}`
-
-    const res = await fetch(url, {
-      headers: { Accept: 'application/json' },
-    })
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      throw new Error(`MemberKit API error ${res.status} on ${path}: ${body}`)
-    }
-
-    return res.json() as Promise<T>
-  }
-
-  // Production: route through Supabase Edge Function to avoid CORS
+  // Always route through Supabase Edge Function to avoid CORS
   const { data, error } = await supabase.functions.invoke('memberkit-proxy', {
     body: { endpoint: path, method: 'GET', apiKey },
   })
