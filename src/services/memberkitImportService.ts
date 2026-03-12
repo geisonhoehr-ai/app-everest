@@ -656,15 +656,15 @@ export async function importMemberkitUsers(
               )
               if (authUser) {
                 userId = authUser.id
-                // Create the public.users record
-                await supabase.from('users').insert({
+                // Create/update the public.users record (trigger may have created it)
+                await supabase.from('users').upsert({
                   id: userId,
                   email: user.email,
                   first_name: firstName,
                   last_name: lastName,
                   role: 'student',
                   is_active: true,
-                })
+                }, { onConflict: 'id' })
                 usersCreated++
               } else {
                 errors.push(
@@ -688,15 +688,15 @@ export async function importMemberkitUsers(
           const authData = await authRes.json()
           userId = authData.id
 
-          // Create the public.users record
-          const { error: userError } = await supabase.from('users').insert({
+          // Create/update the public.users record (trigger may have created it)
+          const { error: userError } = await supabase.from('users').upsert({
             id: userId,
             email: user.email,
             first_name: firstName,
             last_name: lastName,
             role: 'student',
             is_active: true,
-          })
+          }, { onConflict: 'id' })
 
           if (userError) {
             errors.push(
