@@ -21,12 +21,12 @@ import {
   Mail,
   Database,
   Globe,
-  Bot,
   Webhook,
   Copy,
   Link2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { AIProviderConfigPanel } from '@/components/admin/integrations/AIProviderConfig'
 
 // ─── Integration definitions ─────────────────────────────────────────────────
 
@@ -130,19 +130,6 @@ const INTEGRATIONS_CONFIG: Omit<Integration, 'status' | 'statusMessage'>[] = [
       'Domínio': 'app.everestpreparatorios.com.br',
     },
   },
-  {
-    id: 'dify',
-    name: 'Dify AI',
-    description: 'IA para correção de redações e assistente inteligente',
-    icon: Bot,
-    brandColor: 'text-orange-600',
-    bgGradient: 'from-orange-500/10 to-orange-600/5',
-    features: ['Correção de redações ENEM', 'Assistente de dúvidas', 'Geração de questões', 'Análise de performance'],
-    docsUrl: 'https://docs.dify.ai',
-    extra: {
-      'Configuração': 'Via Supabase Edge Function (dify-proxy)',
-    },
-  },
 ]
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -196,10 +183,9 @@ export default function AdminIntegrationsPage() {
       updateStatus('memberkit', 'disconnected', 'Não verificado')
     }
 
-    // Resend, Vercel, Dify - indirect checks
+    // Resend, Vercel - indirect checks
     updateStatus('resend', 'connected', 'Configurado via Supabase SMTP')
     updateStatus('vercel', 'connected', 'Deploy ativo')
-    updateStatus('dify', 'disconnected', 'Configurar via Edge Function')
   }
 
   const updateStatus = (id: string, status: Integration['status'], message?: string) => {
@@ -310,6 +296,9 @@ export default function AdminIntegrationsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Provider Configuration */}
+      <AIProviderConfigPanel />
 
       {/* Integration Cards */}
       <div className="grid gap-5 md:grid-cols-2">

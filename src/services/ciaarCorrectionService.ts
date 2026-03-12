@@ -19,9 +19,6 @@ export const ciaarCorrectionService = {
   // Templates
   // ---------------------------------------------------------------------------
 
-  /**
-   * Obtém o template de correção padrão.
-   */
   async getDefaultTemplate(): Promise<CorrectionTemplate | null> {
     try {
       const { data, error } = await supabase
@@ -42,9 +39,6 @@ export const ciaarCorrectionService = {
     }
   },
 
-  /**
-   * Obtém todos os templates de correção.
-   */
   async getAllTemplates(): Promise<CorrectionTemplate[]> {
     try {
       const { data, error } = await supabase
@@ -61,20 +55,26 @@ export const ciaarCorrectionService = {
     }
   },
 
-  /**
-   * Salva (cria ou atualiza) um template de correção.
-   */
-  async saveTemplate(template: CorrectionTemplate): Promise<CorrectionTemplate | null> {
+  async saveTemplate(template: Partial<CorrectionTemplate> & { name: string }): Promise<CorrectionTemplate | null> {
     try {
+      const payload: Record<string, unknown> = {
+        name: template.name,
+        description: template.description ?? null,
+        expression_debit_value: template.expression_debit_value ?? 0.200,
+        max_grade: template.max_grade ?? 10.000,
+        structure_criteria: template.structure_criteria ?? {},
+        content_criteria: template.content_criteria ?? {},
+        is_default: template.is_default ?? false,
+        updated_at: new Date().toISOString(),
+      }
+
+      if (template.id) {
+        payload.id = template.id
+      }
+
       const { data, error } = await supabase
         .from('correction_templates')
-        .upsert(
-          {
-            ...template,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'id' }
-        )
+        .upsert(payload, { onConflict: 'id' })
         .select()
         .single()
 
@@ -87,9 +87,6 @@ export const ciaarCorrectionService = {
     }
   },
 
-  /**
-   * Remove um template de correção.
-   */
   async deleteTemplate(id: string): Promise<void> {
     try {
       const { error } = await supabase
@@ -116,80 +113,79 @@ export const ciaarCorrectionService = {
     essayId: string,
     result: CorrectionResult,
     templateId: string,
-    teacherId: string
+    teacherId: string,
+    rawAiResponse?: Record<string, unknown>
   ): Promise<void> {
     try {
-      // 1. Deletar dados CIAAR existentes para esta redação (4 tabelas filhas)
+      // 1. Deletar dados CIAAR existentes para esta redação
       await Promise.all([
         supabase.from('essay_expression_errors').delete().eq('essay_id', essayId),
-        supabase.from('essay_structure_analyses').delete().eq('essay_id', essayId),
-        supabase.from('essay_content_analyses').delete().eq('essay_id', essayId),
+        supabase.from('essay_structure_analysis').delete().eq('essay_id', essayId),
+        supabase.from('essay_content_analysis').delete().eq('essay_id', essayId),
         supabase.from('essay_improvement_suggestions').delete().eq('essay_id', essayId),
       ])
 
       // 2. Inserir novos dados em paralelo
       const insertions = []
 
-      if (result.expression_errors.length > 0) {
+      if (result.expressionErrors.length > 0) {
         insertions.push(
           supabase.from('essay_expression_errors').insert(
-            result.expression_errors.map((e) => ({
+            result.expressionErrors.map((e) => ({
               essay_id: essayId,
-              error_type: e.error_type,
-              original_text: e.original_text,
-              corrected_text: e.corrected_text,
-              explanation: e.explanation,
-              paragraph_index: e.paragraph_index,
-              position_start: e.position_start ?? null,
-              position_end: e.position_end ?? null,
+              paragraph_number: e.paragraph_number,
+              sentence_number: e.sentence_number,
+              error_text: e.error_text,
+              error_explanation: e.error_explanation,
+              suggested_correction: e.suggested_correction,
+              debit_value: e.debit_value,
+              source: 'ai',
+              created_by: teacherId,
             }))
           )
         )
       }
 
-      if (result.structure_analyses.length > 0) {
+      if (result.structureAnalysis.length > 0) {
         insertions.push(
-          supabase.from('essay_structure_analyses').insert(
-            result.structure_analyses.map((s) => ({
+          supabase.from('essay_structure_analysis').insert(
+            result.structureAnalysis.map((s) => ({
               essay_id: essayId,
+              paragraph_number: s.paragraph_number,
               paragraph_type: s.paragraph_type,
-              paragraph_index: s.paragraph_index,
-              period_count: s.period_count,
-              has_required_connectives: s.has_required_connectives,
-              connectives_found: s.connectives_found,
-              connectives_missing: s.connectives_missing,
-              debit: s.debit,
-              observations: s.observations,
+              analysis_text: s.analysis_text,
+              debit_value: s.debit_value,
+              source: 'ai',
+              created_by: teacherId,
             }))
           )
         )
       }
 
-      if (result.content_analyses.length > 0) {
+      if (result.contentAnalysis.length > 0) {
         insertions.push(
-          supabase.from('essay_content_analyses').insert(
-            result.content_analyses.map((c) => ({
+          supabase.from('essay_content_analysis').insert(
+            result.contentAnalysis.map((c) => ({
               essay_id: essayId,
               criterion_type: c.criterion_type,
+              criterion_name: c.criterion_name,
+              analysis_text: c.analysis_text,
               debit_level: c.debit_level,
-              debit_percentage: c.debit_percentage,
-              justification: c.justification,
+              debit_value: c.debit_value,
+              source: 'ai',
+              created_by: teacherId,
             }))
           )
         )
       }
 
-      if (result.improvement_suggestions.length > 0) {
+      if (result.improvementSuggestions.length > 0) {
         insertions.push(
           supabase.from('essay_improvement_suggestions').insert(
-            result.improvement_suggestions.map((s) => ({
+            result.improvementSuggestions.map((s) => ({
               essay_id: essayId,
               category: s.category,
-              title: s.title,
-              description: s.description,
-              example_before: s.example_before ?? null,
-              example_after: s.example_after ?? null,
-              priority: s.priority,
+              suggestion_text: s.suggestion_text,
             }))
           )
         )
@@ -207,11 +203,12 @@ export const ciaarCorrectionService = {
       const { error: updateError } = await supabase
         .from('essays')
         .update({
-          expression_debit_total: result.expression_debit_total,
-          structure_debit_total: result.structure_debit_total,
-          content_debit_total: result.content_debit_total,
-          final_grade_ciaar: result.final_grade,
+          expression_debit_total: result.totalExpressionDebit,
+          structure_debit_total: result.totalStructureDebit,
+          content_debit_total: result.totalContentDebit,
+          final_grade_ciaar: result.finalGrade,
           correction_template_id: templateId,
+          ai_correction_raw: rawAiResponse ?? null,
           status: 'corrected',
           teacher_id: teacherId,
           correction_date: new Date().toISOString(),
@@ -223,7 +220,7 @@ export const ciaarCorrectionService = {
         throw updateError
       }
 
-      logger.info(`Correção CIAAR salva para essay ${essayId}. Nota: ${result.final_grade}`)
+      logger.info(`Correção CIAAR salva para essay ${essayId}. Nota: ${result.finalGrade}`)
     } catch (err) {
       logger.error('Erro ao salvar correção CIAAR:', err)
       throw err
@@ -232,84 +229,60 @@ export const ciaarCorrectionService = {
 
   /**
    * Carrega os dados completos de correção CIAAR de uma redação.
-   * Retorna null se a redação não tiver sido corrigida pelo sistema CIAAR.
    */
   async loadCorrection(essayId: string): Promise<CorrectionResult | null> {
     try {
-      // Carregar todas as 4 tabelas em paralelo
-      const [expressionRes, structureRes, contentRes, suggestionsRes] = await Promise.all([
+      const [expressionRes, structureRes, contentRes, suggestionsRes, essayRes] = await Promise.all([
         supabase
           .from('essay_expression_errors')
           .select('*')
           .eq('essay_id', essayId)
-          .order('paragraph_index', { ascending: true }),
+          .order('paragraph_number', { ascending: true }),
         supabase
-          .from('essay_structure_analyses')
+          .from('essay_structure_analysis')
           .select('*')
           .eq('essay_id', essayId)
-          .order('paragraph_index', { ascending: true }),
+          .order('paragraph_number', { ascending: true }),
         supabase
-          .from('essay_content_analyses')
+          .from('essay_content_analysis')
           .select('*')
           .eq('essay_id', essayId),
         supabase
           .from('essay_improvement_suggestions')
           .select('*')
-          .eq('essay_id', essayId)
-          .order('priority', { ascending: true }),
+          .eq('essay_id', essayId),
+        supabase
+          .from('essays')
+          .select('final_grade_ciaar, expression_debit_total, structure_debit_total, content_debit_total')
+          .eq('id', essayId)
+          .single(),
       ])
 
       const expressionErrors = (expressionRes.data ?? []) as ExpressionError[]
-      const structureAnalyses = (structureRes.data ?? []) as StructureAnalysis[]
-      const contentAnalyses = (contentRes.data ?? []) as ContentAnalysis[]
+      const structureAnalysis = (structureRes.data ?? []) as StructureAnalysis[]
+      const contentAnalysis = (contentRes.data ?? []) as ContentAnalysis[]
       const improvementSuggestions = (suggestionsRes.data ?? []) as ImprovementSuggestion[]
 
       // Se não há dados de correção, retornar null
       if (
         expressionErrors.length === 0 &&
-        structureAnalyses.length === 0 &&
-        contentAnalyses.length === 0
+        structureAnalysis.length === 0 &&
+        contentAnalysis.length === 0
       ) {
         return null
       }
 
-      // Calcular totais
-      const expressionDebitTotal = expressionErrors.length // cada erro = 1 débito (ajustar com template)
-      const structureDebitTotal = structureAnalyses.reduce((sum, s) => sum + s.debit, 0)
-
-      // Para conteúdo, buscar o template padrão para obter max_grade
-      const { data: essay } = await supabase
-        .from('essays')
-        .select('final_grade_ciaar, expression_debit_total, structure_debit_total, content_debit_total, correction_template_id')
-        .eq('id', essayId)
-        .single()
-
-      const maxGrade = 100 // fallback
-      const contentDebitTotal = contentAnalyses.reduce(
-        (sum, c) => sum + (maxGrade * c.debit_percentage) / 100,
-        0
-      )
-
-      const finalGrade = calculateFinalGrade(
-        essay?.final_grade_ciaar ?? maxGrade,
-        essay?.expression_debit_total ?? expressionDebitTotal,
-        essay?.structure_debit_total ?? structureDebitTotal,
-        essay?.content_debit_total ?? contentDebitTotal,
-        contentAnalyses
-      )
+      const essay = essayRes.data
 
       return {
-        expression_errors: expressionErrors,
-        structure_analyses: structureAnalyses,
-        content_analyses: contentAnalyses,
-        improvement_suggestions: improvementSuggestions,
-        expression_debit_total: essay?.expression_debit_total ?? expressionDebitTotal,
-        structure_debit_total: essay?.structure_debit_total ?? structureDebitTotal,
-        content_debit_total: essay?.content_debit_total ?? contentDebitTotal,
-        final_grade: essay?.final_grade_ciaar ?? finalGrade,
-        max_grade: maxGrade,
-        correction_source: 'ai',
-        corrected_at: new Date().toISOString(),
+        expressionErrors,
+        structureAnalysis,
+        contentAnalysis,
+        improvementSuggestions,
+        totalExpressionDebit: essay?.expression_debit_total ?? 0,
+        totalStructureDebit: essay?.structure_debit_total ?? 0,
+        totalContentDebit: essay?.content_debit_total ?? 0,
+        finalGrade: essay?.final_grade_ciaar ?? 0,
       }
     } catch (err) {
       logger.error('Erro ao carregar correção CIAAR:', err)

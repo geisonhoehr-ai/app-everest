@@ -13,21 +13,18 @@ import type {
  */
 export const aiCorrectionService = {
   /**
-   * Obtém o provider de IA ativo (sem retornar a api_key por segurança).
+   * Obtém o provider de IA ativo (sem retornar a api_key por segurança via RLS).
    */
   async getActiveProvider(): Promise<AIProviderConfig | null> {
     try {
       const { data, error } = await supabase
         .from('ai_provider_configs')
-        .select('id, provider, model, is_active, max_tokens, temperature, created_at, updated_at')
+        .select('id, provider, display_name, model_name, base_url, is_active, config, created_at, updated_at')
         .eq('is_active', true)
         .single()
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // No rows found
-          return null
-        }
+        if (error.code === 'PGRST116') return null
         throw error
       }
 
@@ -116,7 +113,7 @@ export const aiCorrectionService = {
    * Se is_active for true, desativa todos os outros primeiro.
    */
   async saveProvider(
-    config: Omit<AIProviderConfig, 'created_at' | 'updated_at'>
+    config: Partial<AIProviderConfig> & { provider: string; display_name: string }
   ): Promise<AIProviderConfig | null> {
     try {
       // Se este provider será o ativo, desativar todos os outros primeiro
@@ -132,15 +129,28 @@ export const aiCorrectionService = {
         }
       }
 
+      const payload: Record<string, unknown> = {
+        provider: config.provider,
+        display_name: config.display_name,
+        model_name: config.model_name ?? null,
+        base_url: config.base_url ?? null,
+        is_active: config.is_active ?? false,
+        config: config.config ?? null,
+        updated_at: new Date().toISOString(),
+      }
+
+      // Only include api_key if it's being set (don't overwrite with empty)
+      if (config.api_key) {
+        payload.api_key = config.api_key
+      }
+
+      if (config.id) {
+        payload.id = config.id
+      }
+
       const { data, error } = await supabase
         .from('ai_provider_configs')
-        .upsert(
-          {
-            ...config,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'id' }
-        )
+        .upsert(payload, { onConflict: 'id' })
         .select()
         .single()
 

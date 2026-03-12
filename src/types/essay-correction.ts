@@ -1,181 +1,129 @@
 // =============================================================================
 // CIAAR Essay Correction Types
+// Aligned with DB schema (20260312000001_ciaar_correction_system.sql)
 // =============================================================================
 
-// --- Enums / Literal Types ---
+// --- Provider types (matches Edge Function) ---
 
-export type AIProvider = 'openai' | 'anthropic' | 'google' | 'groq'
+export type AIProviderType = 'claude' | 'openai' | 'antigravity' | 'dify'
 
 export type CorrectionSource = 'ai' | 'manual' | 'ai_reviewed'
 
-export type ParagraphType =
-  | 'introduction'
-  | 'development_1'
-  | 'development_2'
-  | 'conclusion'
-
-export type ContentCriterionType =
-  | 'pertinence'
-  | 'argumentation'
-  | 'informativity'
-
 export type SuggestionCategory = 'expression' | 'structure' | 'content'
 
-export type DebitLevel =
-  | 'Fuga TOTAL'
-  | 'Fuga PARCIAL'
-  | 'Tangenciamento'
-  | 'Sem Débito'
+export type ContentCriterionType = 'pertinence' | 'argumentation' | 'informativity'
 
-// --- Template Sub-types ---
+// --- AI Provider Config (matches ai_provider_configs table) ---
 
-export interface StructureCriteria {
-  min_periods_per_paragraph: number
-  max_periods_per_paragraph: number
-  required_connectives: boolean
-  connective_sets: ConnectiveSet[]
-  paragraph_structures: ParagraphStructure[]
+export interface AIProviderConfig {
+  id?: string
+  provider: AIProviderType
+  display_name: string
+  api_key?: string
+  model_name?: string
+  base_url?: string
+  is_active: boolean
+  config?: Record<string, unknown>
+  created_by?: string
+  created_at?: string
+  updated_at?: string
 }
 
-export interface ConnectiveSet {
-  paragraph_type: ParagraphType
-  connectives: string[]
-}
-
-export interface ParagraphStructure {
-  paragraph_type: ParagraphType
-  label: string
-  description: string
-  expected_periods: number
-}
-
-export interface ContentLevel {
-  level: DebitLevel
-  debit_percentage: number
-  description: string
-}
-
-export interface ContentCriterion {
-  type: ContentCriterionType
-  label: string
-  description: string
-  levels: ContentLevel[]
-}
-
-export interface ContentCriteria {
-  criteria: ContentCriterion[]
-}
-
-// --- Correction Template ---
+// --- Correction Template (matches correction_templates table) ---
+// structure_criteria and content_criteria are stored as JSONB
 
 export interface CorrectionTemplate {
   id?: string
   name: string
   description?: string
-  max_grade: number
-  expression_debit_per_error: number
-  structure_criteria: StructureCriteria
-  content_criteria: ContentCriteria
+  expression_debit_value: number  // e.g. 0.200
+  max_grade: number               // e.g. 10.000
+  structure_criteria: Record<string, unknown>  // JSONB with paragraph structures
+  content_criteria: Record<string, unknown>    // JSONB with pertinence/argumentation/informativity
   is_default: boolean
+  created_by?: string
   created_at?: string
   updated_at?: string
 }
 
-// --- Expression Error ---
+// --- Expression Error (matches essay_expression_errors table) ---
 
 export interface ExpressionError {
   id?: string
   essay_id?: string
-  error_type: string
-  original_text: string
-  corrected_text: string
-  explanation: string
-  paragraph_index: number
-  position_start?: number
-  position_end?: number
+  paragraph_number: number
+  sentence_number: number
+  error_text: string
+  error_explanation: string
+  suggested_correction: string
+  debit_value: number
+  source: CorrectionSource | string
+  created_by?: string
   created_at?: string
 }
 
-// --- Structure Analysis ---
+// --- Structure Analysis (matches essay_structure_analysis table) ---
 
 export interface StructureAnalysis {
   id?: string
   essay_id?: string
-  paragraph_type: ParagraphType
-  paragraph_index: number
-  period_count: number
-  has_required_connectives: boolean
-  connectives_found: string[]
-  connectives_missing: string[]
-  debit: number
-  observations: string
+  paragraph_number: number
+  paragraph_type: string
+  expected_structure?: Record<string, unknown>
+  analysis_text: string
+  debit_value: number
+  source: CorrectionSource | string
+  created_by?: string
   created_at?: string
 }
 
-// --- Content Analysis ---
+// --- Content Analysis (matches essay_content_analysis table) ---
 
 export interface ContentAnalysis {
   id?: string
   essay_id?: string
-  criterion_type: ContentCriterionType
-  debit_level: DebitLevel
-  debit_percentage: number
-  justification: string
+  criterion_type: ContentCriterionType | string
+  criterion_name: string
+  criterion_description?: string
+  analysis_text: string
+  debit_level: string
+  debit_value: number
+  source: CorrectionSource | string
+  created_by?: string
   created_at?: string
 }
 
-// --- Improvement Suggestion ---
+// --- Improvement Suggestion (matches essay_improvement_suggestions table) ---
 
 export interface ImprovementSuggestion {
   id?: string
   essay_id?: string
-  category: SuggestionCategory
-  title: string
-  description: string
-  example_before?: string
-  example_after?: string
-  priority: number
+  category: SuggestionCategory | string
+  suggestion_text: string
   created_at?: string
 }
 
-// --- Correction Request / Result ---
+// --- Correction Request (sent to Edge Function) ---
 
 export interface CorrectionRequest {
-  essay_text: string
+  essayText: string
   theme: string
-  template_id: string
-  student_name?: string
-  student_id?: string
-  essay_id?: string
+  correctionTemplate: Record<string, unknown>
+  studentName?: string
+  imageUrls?: string[]
 }
+
+// --- Correction Result (from Edge Function / AI response) ---
 
 export interface CorrectionResult {
-  expression_errors: ExpressionError[]
-  structure_analyses: StructureAnalysis[]
-  content_analyses: ContentAnalysis[]
-  improvement_suggestions: ImprovementSuggestion[]
-  expression_debit_total: number
-  structure_debit_total: number
-  content_debit_total: number
-  final_grade: number
-  max_grade: number
-  correction_source: CorrectionSource
-  corrected_at: string
-  summary?: string
-}
-
-// --- AI Provider Config ---
-
-export interface AIProviderConfig {
-  id?: string
-  provider: AIProvider
-  model: string
-  api_key?: string
-  is_active: boolean
-  max_tokens?: number
-  temperature?: number
-  created_at?: string
-  updated_at?: string
+  expressionErrors: ExpressionError[]
+  structureAnalysis: StructureAnalysis[]
+  contentAnalysis: ContentAnalysis[]
+  improvementSuggestions: ImprovementSuggestion[]
+  totalExpressionDebit: number
+  totalStructureDebit: number
+  totalContentDebit: number
+  finalGrade: number
 }
 
 // --- Utility Function ---
@@ -201,5 +149,5 @@ export function calculateFinalGrade(
   }
 
   const totalDebit = expressionDebit + structureDebit + contentDebit
-  return Math.max(0, maxGrade - totalDebit)
+  return Math.max(0, Number((maxGrade - totalDebit).toFixed(3)))
 }
