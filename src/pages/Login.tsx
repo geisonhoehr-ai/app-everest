@@ -85,7 +85,7 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen flex">
         <HeroPanel />
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-background">
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-sidebar text-sidebar-foreground">
           <div className="w-full max-w-sm space-y-8">
             <div className="text-center space-y-4">
               <div className="mx-auto w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
@@ -100,7 +100,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+            <div className="rounded-2xl border border-sidebar-border bg-sidebar-accent p-6 space-y-4">
               <div className="text-center text-sm text-muted-foreground space-y-1">
                 <p>Clique no link enviado para acessar a plataforma.</p>
                 <p className="text-xs">O link expira em 1 hora.</p>
@@ -143,7 +143,7 @@ export default function LoginPage() {
       <HeroPanel />
 
       {/* Right side — Form */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-background relative">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-sidebar text-sidebar-foreground relative">
         {/* Subtle top-right glow */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
@@ -165,7 +165,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form card */}
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <div className="rounded-2xl border border-sidebar-border bg-sidebar-accent p-6 shadow-sm">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 <FormField
@@ -252,7 +252,7 @@ export default function LoginPage() {
                     <div className="w-full border-t border-border/50" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-3 text-muted-foreground">ou</span>
+                    <span className="bg-sidebar-accent px-3 text-muted-foreground">ou</span>
                   </div>
                 </div>
 
