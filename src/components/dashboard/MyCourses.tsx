@@ -65,11 +65,13 @@ export const MyCourses = () => {
               key={course.id}
               className="rounded-2xl border transition-shadow duration-200 hover:shadow-md cursor-pointer overflow-hidden flex flex-col"
             >
-              <img
-                src={course.image}
-                alt={course.title}
-                className="w-full h-32 object-cover"
-              />
+              <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                <img
+                  src={course.image || '/placeholder.svg'}
+                  alt={course.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
               <div className="p-6 flex flex-col flex-grow">
                 <h3 className="font-semibold text-md flex-grow">
                   {course.title}
