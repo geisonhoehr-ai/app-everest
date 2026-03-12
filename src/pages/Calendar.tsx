@@ -10,13 +10,11 @@ import {
   type CalendarEvent,
 } from '@/services/calendarService'
 import { SectionLoader } from '@/components/SectionLoader'
-import { useAuth } from '@/hooks/use-auth'
-import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
-import { FEATURE_KEYS } from '@/services/classPermissionsService'
+
 import {
   Calendar as CalendarIcon,
   Clock,
-  Lock,
+
   ChevronRight,
   Filter,
   Video,
@@ -64,8 +62,6 @@ const eventConfig = {
 type EventType = keyof typeof eventConfig
 
 export default function CalendarPage() {
-  const { isStudent } = useAuth()
-  const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -113,30 +109,8 @@ export default function CalendarPage() {
     return counts
   }, [events])
 
-  if (permissionsLoading || isLoading) {
+  if (isLoading) {
     return <SectionLoader />
-  }
-
-  if (isStudent && !hasFeature(FEATURE_KEYS.CALENDAR)) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Calendário</h1>
-          <p className="text-sm text-muted-foreground mt-1">Recurso bloqueado</p>
-        </div>
-        <Card className="border-border shadow-sm">
-          <CardContent className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Lock className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="text-xl font-bold text-foreground mb-2">Recurso Bloqueado</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Este recurso não está disponível para sua turma. Entre em contato com seu professor ou administrador.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    )
   }
 
   const getEventConfig = (type: string) => eventConfig[type as EventType] || eventConfig.GENERAL

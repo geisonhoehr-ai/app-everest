@@ -27,7 +27,7 @@ import {
   Volume2,
   VolumeX,
   Zap,
-  Lock,
+
   Search,
   Filter,
   Bell,
@@ -54,8 +54,6 @@ import {
 import { SectionLoader } from '@/components/SectionLoader'
 import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/use-auth'
-import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
-import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import * as studyPlannerService from '@/services/studyPlannerService'
 import { PomodoroWidget } from '@/components/study-planner/PomodoroWidget'
 
@@ -81,8 +79,7 @@ type PomodoroSession = {
 }
 
 export default function StudyPlannerPage() {
-  const { user, isStudent } = useAuth()
-  const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
+  const { user } = useAuth()
   const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState<'planner' | 'timer' | 'history'>('planner')
@@ -540,35 +537,8 @@ export default function StudyPlannerPage() {
     outros: filteredTopics.filter(t => t.category === 'outros')
   }), [filteredTopics])
 
-  if (permissionsLoading || isLoading) {
+  if (isLoading) {
     return <SectionLoader />
-  }
-
-  // Se for aluno e não tiver permissão, mostra página bloqueada
-  if (isStudent && !hasFeature(FEATURE_KEYS.CALENDAR)) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Planejamento</h1>
-          <p className="text-muted-foreground">Recurso bloqueado</p>
-        </div>
-        <Card className="border-border shadow-sm">
-          <CardContent className="text-center py-24">
-            <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-primary/10 flex items-center justify-center">
-                <Lock className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Recurso Bloqueado
-              </h3>
-              <p className="text-muted-foreground mb-8">
-                Este recurso não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
   }
 
   return (

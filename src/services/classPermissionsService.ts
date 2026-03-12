@@ -24,9 +24,7 @@ export const FEATURE_KEYS = {
   QUIZ: 'quiz',
   EVERCAST: 'evercast',
   ESSAYS: 'essays',
-  RANKING: 'ranking',
   VIDEO_LESSONS: 'video_lessons',
-  CALENDAR: 'calendar',
   LIVE_EVENTS: 'live_events',
 } as const
 

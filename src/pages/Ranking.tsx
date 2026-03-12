@@ -21,7 +21,7 @@ import {
   ChevronUp,
   ChevronDown,
   Minus,
-  Lock,
+
   GraduationCap,
 } from 'lucide-react'
 import {
@@ -35,13 +35,10 @@ import { getRankingByClass, getStudentClassIds, type RankingEntry } from '@/serv
 import { SectionLoader } from '@/components/SectionLoader'
 import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/use-auth'
-import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
-import { FEATURE_KEYS } from '@/services/classPermissionsService'
 
 export default function RankingPage() {
-  const { user, isStudent } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
-  const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [activeTab, setActiveTab] = useState('turma')
   const [isLoading, setIsLoading] = useState(true)
 
@@ -107,32 +104,8 @@ export default function RankingPage() {
     fetchRankingData()
   }, [user?.id])
 
-  if (permissionsLoading || isLoading) {
+  if (isLoading) {
     return <SectionLoader />
-  }
-
-  // Se for aluno e não tiver permissão, mostra página bloqueada
-  if (isStudent && !hasFeature(FEATURE_KEYS.RANKING)) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">Ranking</h1>
-        <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
-          <CardContent className="text-center py-16">
-            <div className="max-w-md mx-auto">
-              <div className="w-16 h-16 mx-auto mb-8 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Lock className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Recurso Bloqueado
-              </h3>
-              <p className="text-muted-foreground mb-8">
-                Este recurso não está disponível para sua turma. Entre em contato com seu professor ou administrador para mais informações.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
   }
 
   const getRankIcon = (position: number) => {
