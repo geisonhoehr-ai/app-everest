@@ -296,7 +296,7 @@ export const rankingService = {
         level: 1,
         title: 'Iniciante',
         min_xp: 0,
-        max_xp: 100,
+        max_xp: 1000,
         color: 'from-gray-400 to-gray-600',
         icon: '🥉',
         description: 'Começando sua jornada de aprendizado'
@@ -304,8 +304,8 @@ export const rankingService = {
       {
         level: 2,
         title: 'Estudante',
-        min_xp: 101,
-        max_xp: 300,
+        min_xp: 1001,
+        max_xp: 2500,
         color: 'from-blue-400 to-blue-600',
         icon: '🥈',
         description: 'Desenvolvendo suas habilidades'
@@ -313,8 +313,8 @@ export const rankingService = {
       {
         level: 3,
         title: 'Aprendiz',
-        min_xp: 301,
-        max_xp: 600,
+        min_xp: 2501,
+        max_xp: 5000,
         color: 'from-green-400 to-green-600',
         icon: '🥇',
         description: 'Demonstrando dedicação'
@@ -322,8 +322,8 @@ export const rankingService = {
       {
         level: 4,
         title: 'Especialista',
-        min_xp: 601,
-        max_xp: 1000,
+        min_xp: 5001,
+        max_xp: 10000,
         color: 'from-purple-400 to-purple-600',
         icon: '💎',
         description: 'Dominando o conhecimento'
@@ -331,8 +331,8 @@ export const rankingService = {
       {
         level: 5,
         title: 'Mestre',
-        min_xp: 1001,
-        max_xp: 2000,
+        min_xp: 10001,
+        max_xp: 20000,
         color: 'from-orange-400 to-orange-600',
         icon: '👑',
         description: 'Líder em aprendizado'
@@ -340,7 +340,7 @@ export const rankingService = {
       {
         level: 6,
         title: 'Lenda',
-        min_xp: 2001,
+        min_xp: 20001,
         max_xp: 999999,
         color: 'from-yellow-400 to-yellow-600',
         icon: '🌟',

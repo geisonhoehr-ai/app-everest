@@ -362,27 +362,27 @@ export default function AdminGamificationPage() {
                     <div className="space-y-3">
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
                         <span className="text-sm font-medium">🥉 Nv 1 Iniciante</span>
-                        <Badge>0–100 XP</Badge>
+                        <Badge>0–1.000 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
                         <span className="text-sm font-medium">🥈 Nv 2 Estudante</span>
-                        <Badge>101–300 XP</Badge>
+                        <Badge>1.001–2.500 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
                         <span className="text-sm font-medium">🥇 Nv 3 Aprendiz</span>
-                        <Badge>301–600 XP</Badge>
+                        <Badge>2.501–5.000 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
                         <span className="text-sm font-medium">💎 Nv 4 Especialista</span>
-                        <Badge>601–1000 XP</Badge>
+                        <Badge>5.001–10.000 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
                         <span className="text-sm font-medium">👑 Nv 5 Mestre</span>
-                        <Badge>1001–2000 XP</Badge>
+                        <Badge>10.001–20.000 XP</Badge>
                       </div>
                       <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
                         <span className="text-sm font-medium">🌟 Nv 6 Lenda</span>
-                        <Badge>2001+ XP</Badge>
+                        <Badge>20.001+ XP</Badge>
                       </div>
                     </div>
                   </div>

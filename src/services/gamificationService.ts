@@ -228,16 +228,15 @@ export async function updateUserProgress(
 
 /**
  * Calcula nível baseado no XP total.
- * Faixas alinhadas com rankingService.calculateLevelInfo():
- *   Nv 1: 0–100 | Nv 2: 101–300 | Nv 3: 301–600
- *   Nv 4: 601–1000 | Nv 5: 1001–2000 | Nv 6: 2001+
+ *   Nv 1: 0–1000 | Nv 2: 1001–2500 | Nv 3: 2501–5000
+ *   Nv 4: 5001–10000 | Nv 5: 10001–20000 | Nv 6: 20001+
  */
 function calculateLevel(totalXP: number): number {
-  if (totalXP <= 100) return 1
-  if (totalXP <= 300) return 2
-  if (totalXP <= 600) return 3
-  if (totalXP <= 1000) return 4
-  if (totalXP <= 2000) return 5
+  if (totalXP <= 1000) return 1
+  if (totalXP <= 2500) return 2
+  if (totalXP <= 5000) return 3
+  if (totalXP <= 10000) return 4
+  if (totalXP <= 20000) return 5
   return 6
 }
 
