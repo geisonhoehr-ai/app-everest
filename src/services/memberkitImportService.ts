@@ -303,7 +303,7 @@ export async function importMemberkitCourse(
     .insert({
       name: mkCourse.name,
       description: mkCourse.description,
-      thumbnail_url: mkCourse.image,
+      thumbnail_url: mkCourse.image_url || mkCourse.image,
       created_by_user_id: adminUserId,
       is_active: true,
     })
@@ -762,6 +762,7 @@ export interface MKCourse {
   name: string
   description: string | null
   image: string | null
+  image_url: string | null
 }
 
 /**

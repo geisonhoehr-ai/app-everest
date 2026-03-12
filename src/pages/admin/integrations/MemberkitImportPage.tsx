@@ -525,9 +525,9 @@ export default function MemberkitImportPage() {
                             'hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/20'
                           )}
                         >
-                          {course.image ? (
+                          {(course.image_url || course.image) ? (
                             <img
-                              src={course.image}
+                              src={(course.image_url || course.image)}
                               alt=""
                               className="w-12 h-12 rounded-lg object-cover shrink-0"
                             />
@@ -574,9 +574,9 @@ export default function MemberkitImportPage() {
             <Card className="border-border shadow-sm">
               <CardContent className="p-5">
                 <div className="flex items-center gap-4">
-                  {selectedCourse.image ? (
+                  {(selectedCourse.image_url || selectedCourse.image) ? (
                     <img
-                      src={selectedCourse.image}
+                      src={(selectedCourse.image_url || selectedCourse.image)}
                       alt=""
                       className="w-16 h-16 rounded-xl object-cover"
                     />
