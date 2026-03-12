@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
-import { difyService } from '@/services/difyService'
 import { pandaVideoService } from '@/services/pandaVideoService'
 import { memberkitService } from '@/services/memberkitService'
 import { logger } from '@/lib/logger'
@@ -95,15 +94,6 @@ export function useIntegrations() {
       let result: { success: boolean; message: string }
       
       switch (integrationId) {
-        case 'dify':
-          difyService.configure({
-            apiKey: integrations.find(i => i.id === 'dify')?.apiKey || '',
-            baseUrl: 'https://api.dify.ai',
-            workflowId: 'essay-correction'
-          })
-          result = await difyService.testConnection()
-          break
-          
         case 'panda-video':
           pandaVideoService.configure({
             apiKey: integrations.find(i => i.id === 'panda-video')?.apiKey || '',
@@ -166,7 +156,6 @@ export function useIntegrations() {
   // Obter nome da integração
   const getIntegrationName = (id: string): string => {
     const names: Record<string, string> = {
-      'dify': 'Dify AI',
       'panda-video': 'Panda Video',
       'memberkit': 'Memberkit'
     }
@@ -179,14 +168,6 @@ export function useIntegrations() {
     if (!config || !config.enabled) return null
 
     switch (integrationId) {
-      case 'dify':
-        difyService.configure({
-          apiKey: config.apiKey,
-          baseUrl: 'https://api.dify.ai',
-          workflowId: 'essay-correction'
-        })
-        return difyService
-        
       case 'panda-video':
         pandaVideoService.configure({
           apiKey: config.apiKey,
