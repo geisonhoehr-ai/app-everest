@@ -102,20 +102,52 @@ export default function AchievementsPage() {
   const getAchievementIcon = (name: string) => {
     const lowerName = name.toLowerCase()
     const iconMap: Record<string, string> = {
+      // Marco / XP
       'primeiro login': '🎉',
       'estudante dedicado': '📚',
-      'top 10': '🏆',
-      'maratonista': '🏃',
       'especialista': '💎',
-      'mestre': '👑',
+      'mestre do conhecimento': '👑',
       'lenda': '🌟',
+      // Ranking
+      'top 10': '🏆',
+      'top 3': '🥇',
+      'número 1': '👑',
+      // Streak / atividade
+      'maratonista': '🏃',
+      'imparável': '🔥',
+      'centurião': '💯',
+      // Aulas
+      'primeira aula': '▶️',
+      'assistiu 10 aulas': '📺',
+      'assistiu 50 aulas': '🎬',
+      'assistiu 100 aulas': '🏅',
+      // Comentários
+      'comentarista': '💬',
+      'participativo': '🗣️',
+      'debatedor': '🎤',
+      // Avaliações
+      'avaliador': '⭐',
+      'crítico': '🔍',
+      // Flashcards
+      'flashcard iniciante': '🃏',
       'flashcard master': '🎯',
+      'memória de elefante': '🐘',
+      // Quizzes
+      'primeiro quiz': '❓',
       'quiz champion': '⚡',
-      'streak master': '🔥',
-      'perfeccionista': '✨',
+      'mestre dos quizzes': '🧠',
+      // Comunidade
+      'primeiro post': '✍️',
+      'comunicador': '📢',
+      'influencer': '🌐',
       'colaborador': '🤝',
-      'explorador': '🗺️',
-      'inovador': '💡'
+      'popular': '❤️',
+      // Simulados
+      'simulado completo': '📋',
+      'simulador nato': '🎯',
+      // Redação
+      'escritor': '✏️',
+      'autor dedicado': '📝',
     }
     return iconMap[lowerName] || '🏆'
   }
@@ -127,14 +159,39 @@ export default function AchievementsPage() {
     const colorMap: Record<string, string> = {
       'primeiro login': 'bg-blue-500',
       'estudante dedicado': 'bg-green-500',
-      'top 10': 'bg-yellow-500',
-      'maratonista': 'bg-orange-500',
       'especialista': 'bg-purple-500',
-      'mestre': 'bg-red-500',
-      'lenda': 'bg-pink-500',
+      'mestre do conhecimento': 'bg-red-500',
+      'lenda': 'bg-yellow-500',
+      'top 10': 'bg-yellow-500',
+      'top 3': 'bg-amber-500',
+      'número 1': 'bg-orange-500',
+      'maratonista': 'bg-orange-500',
+      'imparável': 'bg-rose-500',
+      'centurião': 'bg-red-600',
+      'primeira aula': 'bg-sky-500',
+      'assistiu 10 aulas': 'bg-blue-500',
+      'assistiu 50 aulas': 'bg-indigo-500',
+      'assistiu 100 aulas': 'bg-violet-500',
+      'comentarista': 'bg-teal-500',
+      'participativo': 'bg-cyan-500',
+      'debatedor': 'bg-emerald-600',
+      'avaliador': 'bg-amber-500',
+      'crítico': 'bg-orange-600',
+      'flashcard iniciante': 'bg-lime-500',
       'flashcard master': 'bg-emerald-500',
-      'quiz champion': 'bg-cyan-500',
-      'streak master': 'bg-rose-500'
+      'memória de elefante': 'bg-green-600',
+      'primeiro quiz': 'bg-cyan-500',
+      'quiz champion': 'bg-blue-600',
+      'mestre dos quizzes': 'bg-indigo-600',
+      'primeiro post': 'bg-pink-500',
+      'comunicador': 'bg-rose-500',
+      'influencer': 'bg-fuchsia-500',
+      'colaborador': 'bg-violet-500',
+      'popular': 'bg-red-500',
+      'simulado completo': 'bg-slate-500',
+      'simulador nato': 'bg-slate-600',
+      'escritor': 'bg-amber-600',
+      'autor dedicado': 'bg-yellow-600',
     }
     return colorMap[lowerName] || 'bg-primary'
   }

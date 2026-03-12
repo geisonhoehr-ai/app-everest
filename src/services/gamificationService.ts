@@ -133,6 +133,95 @@ export async function unlockAchievement(userId: string, achievementId: string): 
   if (error) throw error
 }
 
+// Ranking by Class (turma)
+export async function getRankingByClass(classId: string, limit: number = 50): Promise<RankingEntry[]> {
+  try {
+    // Get student IDs in this class
+    const { data: classStudents, error: classError } = await supabase
+      .from('student_classes')
+      .select('user_id')
+      .eq('class_id', classId)
+
+    if (classError || !classStudents || classStudents.length === 0) return []
+
+    const studentIds = classStudents.map(s => s.user_id)
+
+    // Try view first
+    try {
+      const { data, error } = await supabase
+        .from('user_ranking')
+        .select('*')
+        .in('user_id', studentIds)
+        .limit(limit)
+
+      if (!error && data && data.length > 0) {
+        return data.map((entry, index) => ({ ...entry, position: index + 1 }))
+      }
+    } catch {
+      // View not available
+    }
+
+    // Fallback: Build from user_progress
+    const { data: progressData, error: progressError } = await supabase
+      .from('user_progress')
+      .select('user_id, total_xp, level')
+      .in('user_id', studentIds)
+      .order('total_xp', { ascending: false })
+      .limit(limit)
+
+    if (progressError || !progressData || progressData.length === 0) return []
+
+    const ranking: RankingEntry[] = await Promise.all(
+      progressData.map(async (progress, index) => {
+        const { data: user } = await supabase
+          .from('users')
+          .select('email, first_name, last_name')
+          .eq('id', progress.user_id)
+          .single()
+
+        const { count } = await supabase
+          .from('user_achievements')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', progress.user_id)
+
+        return {
+          user_id: progress.user_id,
+          email: user?.email || '',
+          first_name: user?.first_name || '',
+          last_name: user?.last_name || '',
+          total_xp: progress.total_xp || 0,
+          level: progress.level || 1,
+          achievements_count: count || 0,
+          position: index + 1
+        }
+      })
+    )
+
+    return ranking
+  } catch {
+    return []
+  }
+}
+
+// Get student's class IDs
+export async function getStudentClassIds(userId: string): Promise<{ class_id: string; class_name: string }[]> {
+  try {
+    const { data, error } = await supabase
+      .from('student_classes')
+      .select('class_id, classes(name)')
+      .eq('user_id', userId)
+
+    if (error || !data) return []
+
+    return data.map((sc: any) => ({
+      class_id: sc.class_id,
+      class_name: sc.classes?.name || 'Turma'
+    }))
+  } catch {
+    return []
+  }
+}
+
 // Ranking
 export async function getRanking(limit: number = 50): Promise<RankingEntry[]> {
   try {

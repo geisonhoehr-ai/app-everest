@@ -224,44 +224,117 @@ export const rankingService = {
 
       // Buscar estatísticas do usuário para verificar conquistas
       const userPosition = await this.getUserPosition(userId)
-      const scoreHistory = await this.getUserScoreHistory(userId, 100)
+      const scoreHistory = await this.getUserScoreHistory(userId, 1000)
 
       const newAchievements: UserAchievement[] = []
 
+      // Contadores por tipo de atividade
+      const activityCounts: Record<string, number> = {}
+      for (const score of scoreHistory) {
+        activityCounts[score.activity_type] = (activityCounts[score.activity_type] || 0) + 1
+      }
+
+      const totalXP = userPosition?.total_xp || 0
+      const rankPos = userPosition?.rank_position || 999
+
       for (const achievement of availableAchievements) {
         let shouldGrant = false
+        const name = achievement.name.toLowerCase()
 
-        // Lógica para diferentes tipos de conquistas
-        switch (achievement.name.toLowerCase()) {
-          case 'primeiro login':
-            if (scoreHistory.length > 0) {
-              shouldGrant = true
-            }
-            break
-          case 'estudante dedicado':
-            if (userPosition && userPosition.total_xp >= 100) {
-              shouldGrant = true
-            }
-            break
-          case 'top 10':
-            if (userPosition && userPosition.rank_position <= 10) {
-              shouldGrant = true
-            }
-            break
-          case 'maratonista':
-            if (scoreHistory.length >= 7) {
-              shouldGrant = true
-            }
-            break
-          case 'especialista':
-            if (userPosition && userPosition.total_xp >= 500) {
-              shouldGrant = true
-            }
-            break
+        // ── Conquistas de marco (login/XP/nível) ──
+        if (name === 'primeiro login') {
+          shouldGrant = scoreHistory.length > 0
+        } else if (name === 'estudante dedicado') {
+          shouldGrant = totalXP >= 500
+        } else if (name === 'especialista') {
+          shouldGrant = totalXP >= 2500
+        } else if (name === 'mestre do conhecimento') {
+          shouldGrant = totalXP >= 10000
+        } else if (name === 'lenda') {
+          shouldGrant = totalXP >= 20000
+
+        // ── Conquistas de ranking ──
+        } else if (name === 'top 10') {
+          shouldGrant = rankPos <= 10
+        } else if (name === 'top 3') {
+          shouldGrant = rankPos <= 3
+        } else if (name === 'número 1') {
+          shouldGrant = rankPos === 1
+
+        // ── Conquistas de streak/atividade ──
+        } else if (name === 'maratonista') {
+          shouldGrant = scoreHistory.length >= 7
+        } else if (name === 'imparável') {
+          shouldGrant = scoreHistory.length >= 30
+        } else if (name === 'centurião') {
+          shouldGrant = scoreHistory.length >= 100
+
+        // ── Conquistas de aulas ──
+        } else if (name === 'primeira aula') {
+          shouldGrant = (activityCounts['lesson_complete'] || 0) >= 1
+        } else if (name === 'assistiu 10 aulas') {
+          shouldGrant = (activityCounts['lesson_complete'] || 0) >= 10
+        } else if (name === 'assistiu 50 aulas') {
+          shouldGrant = (activityCounts['lesson_complete'] || 0) >= 50
+        } else if (name === 'assistiu 100 aulas') {
+          shouldGrant = (activityCounts['lesson_complete'] || 0) >= 100
+
+        // ── Conquistas de comentários ──
+        } else if (name === 'comentarista') {
+          shouldGrant = (activityCounts['lesson_comment'] || 0) >= 5
+        } else if (name === 'participativo') {
+          shouldGrant = (activityCounts['lesson_comment'] || 0) >= 20
+        } else if (name === 'debatedor') {
+          shouldGrant = (activityCounts['lesson_comment'] || 0) >= 50
+
+        // ── Conquistas de avaliações ──
+        } else if (name === 'avaliador') {
+          shouldGrant = (activityCounts['lesson_rating'] || 0) >= 10
+        } else if (name === 'crítico') {
+          shouldGrant = (activityCounts['lesson_rating'] || 0) >= 30
+
+        // ── Conquistas de flashcards ──
+        } else if (name === 'flashcard iniciante') {
+          shouldGrant = (activityCounts['flashcard'] || 0) >= 1
+        } else if (name === 'flashcard master') {
+          shouldGrant = (activityCounts['flashcard'] || 0) >= 20
+        } else if (name === 'memória de elefante') {
+          shouldGrant = (activityCounts['flashcard'] || 0) >= 50
+
+        // ── Conquistas de quizzes ──
+        } else if (name === 'primeiro quiz') {
+          shouldGrant = (activityCounts['quiz'] || 0) >= 1
+        } else if (name === 'quiz champion') {
+          shouldGrant = (activityCounts['quiz'] || 0) >= 10
+        } else if (name === 'mestre dos quizzes') {
+          shouldGrant = (activityCounts['quiz'] || 0) >= 30
+
+        // ── Conquistas de comunidade ──
+        } else if (name === 'primeiro post') {
+          shouldGrant = (activityCounts['community_post'] || 0) >= 1
+        } else if (name === 'comunicador') {
+          shouldGrant = (activityCounts['community_post'] || 0) >= 5
+        } else if (name === 'influencer') {
+          shouldGrant = (activityCounts['community_post'] || 0) >= 20
+        } else if (name === 'colaborador') {
+          shouldGrant = (activityCounts['community_reply'] || 0) >= 10
+        } else if (name === 'popular') {
+          shouldGrant = (activityCounts['community_reaction'] || 0) >= 50
+
+        // ── Conquistas de simulados ──
+        } else if (name === 'simulado completo') {
+          shouldGrant = (activityCounts['simulation'] || 0) >= 1
+        } else if (name === 'simulador nato') {
+          shouldGrant = (activityCounts['simulation'] || 0) >= 10
+
+        // ── Conquistas de redação ──
+        } else if (name === 'escritor') {
+          shouldGrant = (activityCounts['essay'] || 0) >= 1
+        } else if (name === 'autor dedicado') {
+          shouldGrant = (activityCounts['essay'] || 0) >= 5
         }
 
         if (shouldGrant) {
-          // Conceder conquista
           const { data, error } = await supabase
             .from('user_achievements')
             .insert({
@@ -276,7 +349,6 @@ export const rankingService = {
 
           if (!error && data) {
             newAchievements.push(data)
-            // Adicionar XP da conquista
             await this.addUserScore(userId, 'achievement', achievement.xp_reward, achievement.id)
           }
         }

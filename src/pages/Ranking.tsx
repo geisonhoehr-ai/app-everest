@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import {
   Trophy,
@@ -21,6 +22,7 @@ import {
   ChevronDown,
   Minus,
   Lock,
+  GraduationCap,
 } from 'lucide-react'
 import {
   rankingService,
@@ -29,6 +31,7 @@ import {
   type XPStatistics,
   type UserAchievement
 } from '@/services/rankingService'
+import { getRankingByClass, getStudentClassIds, type RankingEntry } from '@/services/gamificationService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/use-auth'
@@ -39,7 +42,7 @@ export default function RankingPage() {
   const { user, isStudent } = useAuth()
   const navigate = useNavigate()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
-  const [activeTab, setActiveTab] = useState('global')
+  const [activeTab, setActiveTab] = useState('turma')
   const [isLoading, setIsLoading] = useState(true)
 
   // Estados para dados
@@ -49,6 +52,9 @@ export default function RankingPage() {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
   const [flashcardRanking, setFlashcardRanking] = useState<UserRanking[]>([])
   const [quizRanking, setQuizRanking] = useState<UserRanking[]>([])
+  const [classRanking, setClassRanking] = useState<RankingEntry[]>([])
+  const [studentClasses, setStudentClasses] = useState<{ class_id: string; class_name: string }[]>([])
+  const [selectedClassId, setSelectedClassId] = useState<string>('')
 
   useEffect(() => {
     const fetchRankingData = async () => {
@@ -63,14 +69,16 @@ export default function RankingPage() {
           statsData,
           achievementsData,
           flashcardData,
-          quizData
+          quizData,
+          classesData
         ] = await Promise.all([
           rankingService.getUserRanking(50),
           rankingService.getUserPosition(user.id),
           rankingService.getXPStatistics(),
           rankingService.getUserAchievements(user.id),
           rankingService.getRankingByActivity('flashcard', 20),
-          rankingService.getRankingByActivity('quiz', 20)
+          rankingService.getRankingByActivity('quiz', 20),
+          getStudentClassIds(user.id)
         ])
 
         setGlobalRanking(globalData)
@@ -79,6 +87,16 @@ export default function RankingPage() {
         setUserAchievements(achievementsData)
         setFlashcardRanking(flashcardData)
         setQuizRanking(quizData)
+        setStudentClasses(classesData)
+
+        // Load ranking for first class
+        if (classesData.length > 0) {
+          setSelectedClassId(classesData[0].class_id)
+          const classRankData = await getRankingByClass(classesData[0].class_id, 50)
+          setClassRanking(classRankData)
+        } else {
+          setActiveTab('global')
+        }
       } catch (error) {
         logger.error('Erro ao carregar dados do ranking:', error)
       } finally {
@@ -242,6 +260,82 @@ export default function RankingPage() {
     )
   }
 
+  // Class ranking card (adapts RankingEntry to similar display)
+  const ClassRankingCard = ({ entry, position }: { entry: RankingEntry; position: number }) => {
+    const levelInfo = getLevelInfo(entry.total_xp)
+    const progressInfo = getProgressInfo(entry.total_xp)
+    const isCurrentUser = entry.user_id === user?.id
+
+    return (
+      <Card
+        className={cn(
+          "border-border shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30",
+          position <= 3 && "ring-2 ring-primary/20",
+          isCurrentUser && "ring-2 ring-blue-500/40 bg-blue-50/50 dark:bg-blue-950/20"
+        )}
+      >
+        <div className="flex items-center gap-4 p-4">
+          <div className="flex-shrink-0">{getRankIcon(position)}</div>
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${entry.email}`} />
+            <AvatarFallback className="bg-primary/10">
+              {entry.first_name[0]}{entry.last_name[0]}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-foreground truncate">
+                {entry.first_name} {entry.last_name}
+                {isCurrentUser && <span className="text-xs text-blue-500 ml-1">(você)</span>}
+              </h3>
+              {position <= 3 && (
+                <Badge className={cn("text-xs", `${getRankColor(position)} text-white`)}>
+                  {levelInfo.title}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Star className="h-4 w-4 text-yellow-500" />
+                <span className="font-medium">{entry.total_xp} XP</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Award className="h-3.5 w-3.5 text-purple-500" />
+                <span className="text-xs">{entry.achievements_count} conquistas</span>
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                <span>Nível {levelInfo.level}</span>
+                <span>{progressInfo.xpToNext} XP para próximo</span>
+              </div>
+              <Progress value={progressInfo.progress} className="h-2" />
+            </div>
+          </div>
+          <div className="flex-shrink-0">
+            <div className={cn(
+              "w-12 h-12 rounded-full flex items-center justify-center text-2xl",
+              getRankColor(position)
+            )}>
+              {levelInfo.icon}
+            </div>
+          </div>
+        </div>
+      </Card>
+    )
+  }
+
+  const handleClassChange = useCallback(async (classId: string) => {
+    setSelectedClassId(classId)
+    try {
+      const data = await getRankingByClass(classId, 50)
+      setClassRanking(data)
+    } catch (error) {
+      logger.error('Erro ao buscar ranking da turma:', error)
+      setClassRanking([])
+    }
+  }, [])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -293,7 +387,16 @@ export default function RankingPage() {
 
       {/* Tabs de ranking */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-xl">
+        <TabsList className={cn(
+          "grid w-full bg-muted/50 p-1 rounded-xl",
+          studentClasses.length > 0 ? "grid-cols-4" : "grid-cols-3"
+        )}>
+          {studentClasses.length > 0 && (
+            <TabsTrigger value="turma" className="rounded-lg">
+              <GraduationCap className="h-4 w-4 mr-2" />
+              Minha Turma
+            </TabsTrigger>
+          )}
           <TabsTrigger value="global" className="rounded-lg">
             <Trophy className="h-4 w-4 mr-2" />
             Global
@@ -307,6 +410,49 @@ export default function RankingPage() {
             Quizzes
           </TabsTrigger>
         </TabsList>
+
+        {/* Ranking por Turma */}
+        {studentClasses.length > 0 && (
+          <TabsContent value="turma" className="space-y-4">
+            <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Ranking da Turma</h2>
+                  {studentClasses.length > 1 && (
+                    <Select value={selectedClassId} onValueChange={handleClassChange}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Selecione a turma" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {studentClasses.map((sc) => (
+                          <SelectItem key={sc.class_id} value={sc.class_id}>
+                            {sc.class_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                {classRanking.length > 0 ? (
+                  <div className="space-y-3">
+                    {classRanking.map((entry, index) => (
+                      <ClassRankingCard
+                        key={entry.user_id}
+                        entry={entry}
+                        position={index + 1}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <GraduationCap className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    <p>Nenhum dado de ranking disponível para esta turma ainda.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         {/* Ranking Global */}
         <TabsContent value="global" className="space-y-4">
