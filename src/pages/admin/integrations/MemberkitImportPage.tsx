@@ -113,6 +113,11 @@ export default function MemberkitImportPage() {
     ])
   }, [])
 
+  // Convert all spinning 'progress' logs to static 'info' when import finishes
+  const finalizeProgressLogs = useCallback(() => {
+    setLogs((prev) => prev.map((log) => log.type === 'progress' ? { ...log, type: 'info' as const } : log))
+  }, [])
+
   const handleProgress = useCallback(
     (progress: ImportProgress) => {
       const detail = progress.detail ? ` - ${progress.detail}` : ''
@@ -249,6 +254,7 @@ export default function MemberkitImportPage() {
       })
     } finally {
       setImportingCourse(false)
+      finalizeProgressLogs()
     }
   }
 
@@ -300,6 +306,7 @@ export default function MemberkitImportPage() {
       })
     } finally {
       setImportingUsers(false)
+      finalizeProgressLogs()
     }
   }
 
