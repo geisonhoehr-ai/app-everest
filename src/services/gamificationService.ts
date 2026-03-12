@@ -143,51 +143,51 @@ export async function getRanking(limit: number = 50): Promise<RankingEntry[]> {
       .limit(limit)
 
     if (!error && data) return data
-  } catch (e) {
-    // View not available, using fallback query
+  } catch {
+    // View not available
   }
 
-  // Fallback: Build ranking from user_progress directly
-  const { data: progressData, error: progressError } = await supabase
-    .from('user_progress')
-    .select(`
-      user_id,
-      total_xp,
-      level
-    `)
-    .order('total_xp', { ascending: false })
-    .limit(limit)
+  try {
+    // Fallback: Build ranking from user_progress directly
+    const { data: progressData, error: progressError } = await supabase
+      .from('user_progress')
+      .select('user_id, total_xp, level')
+      .order('total_xp', { ascending: false })
+      .limit(limit)
 
-  if (progressError) throw progressError
+    if (progressError || !progressData || progressData.length === 0) return []
 
-  // Get user details and achievements count
-  const ranking: RankingEntry[] = await Promise.all(
-    (progressData || []).map(async (progress, index) => {
-      const { data: user } = await supabase
-        .from('users')
-        .select('email, first_name, last_name')
-        .eq('id', progress.user_id)
-        .single()
+    // Get user details and achievements count
+    const ranking: RankingEntry[] = await Promise.all(
+      progressData.map(async (progress, index) => {
+        const { data: user } = await supabase
+          .from('users')
+          .select('email, first_name, last_name')
+          .eq('id', progress.user_id)
+          .single()
 
-      const { count } = await supabase
-        .from('user_achievements')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', progress.user_id)
+        const { count } = await supabase
+          .from('user_achievements')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', progress.user_id)
 
-      return {
-        user_id: progress.user_id,
-        email: user?.email || '',
-        first_name: user?.first_name || '',
-        last_name: user?.last_name || '',
-        total_xp: progress.total_xp || 0,
-        level: progress.level || 1,
-        achievements_count: count || 0,
-        position: index + 1
-      }
-    })
-  )
+        return {
+          user_id: progress.user_id,
+          email: user?.email || '',
+          first_name: user?.first_name || '',
+          last_name: user?.last_name || '',
+          total_xp: progress.total_xp || 0,
+          level: progress.level || 1,
+          achievements_count: count || 0,
+          position: index + 1
+        }
+      })
+    )
 
-  return ranking
+    return ranking
+  } catch {
+    return []
+  }
 }
 
 // User Progress
@@ -259,19 +259,23 @@ export async function addXP(
 
 // Global Stats
 export async function getGamificationStats() {
-  const [achievementsResult, rankingResult, progressResult] = await Promise.all([
-    supabase.from('achievements').select('*', { count: 'exact', head: true }),
-    supabase.from('user_achievements').select('*', { count: 'exact', head: true }),
-    supabase.from('user_progress').select('total_xp')
-  ])
+  try {
+    const [achievementsResult, rankingResult, progressResult] = await Promise.all([
+      supabase.from('achievements').select('*', { count: 'exact', head: true }),
+      supabase.from('user_achievements').select('*', { count: 'exact', head: true }),
+      supabase.from('user_progress').select('total_xp'),
+    ])
 
-  const totalXP = (progressResult.data || []).reduce((sum, p) => sum + (p.total_xp || 0), 0)
+    const totalXP = (progressResult.data || []).reduce((sum, p) => sum + (p.total_xp || 0), 0)
 
-  return {
-    totalAchievements: achievementsResult.count || 0,
-    totalUnlocked: rankingResult.count || 0,
-    totalXP,
-    activeUsers: progressResult.data?.length || 0
+    return {
+      totalAchievements: achievementsResult.count || 0,
+      totalUnlocked: rankingResult.count || 0,
+      totalXP,
+      activeUsers: progressResult.data?.length || 0,
+    }
+  } catch {
+    return { totalAchievements: 0, totalUnlocked: 0, totalXP: 0, activeUsers: 0 }
   }
 }
 

@@ -84,22 +84,17 @@ export default function AdminGamificationPage() {
 
   const loadData = async () => {
     try {
-      const [achievementsData, rankingData, statsData] = await Promise.all([
+      const [achievementsData, rankingData, statsData] = await Promise.allSettled([
         getAchievements(),
         getRanking(50),
         getGamificationStats()
       ])
 
-      setAchievements(achievementsData)
-      setRanking(rankingData)
-      setStats(statsData)
+      if (achievementsData.status === 'fulfilled') setAchievements(achievementsData.value)
+      if (rankingData.status === 'fulfilled') setRanking(rankingData.value)
+      if (statsData.status === 'fulfilled') setStats(statsData.value)
     } catch (error) {
       logger.error('Erro ao carregar dados:', error)
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar os dados de gamificação',
-        variant: 'destructive'
-      })
     } finally {
       setLoading(false)
     }
