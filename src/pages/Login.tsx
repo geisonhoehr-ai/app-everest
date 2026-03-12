@@ -26,17 +26,15 @@ import {
   KeyRound,
 } from 'lucide-react'
 
-const magicLinkSchema = z.object({
+const loginSchema = z.object({
   email: z.string().email('Por favor, insira um email válido.'),
-})
+  password: z.string().optional(),
+}).refine(
+  (data) => !data.password || data.password.length >= 6,
+  { message: 'A senha deve ter pelo menos 6 caracteres.', path: ['password'] }
+)
 
-const passwordSchema = z.object({
-  email: z.string().email('Por favor, insira um email válido.'),
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
-})
-
-type MagicLinkValues = z.infer<typeof magicLinkSchema>
-type PasswordValues = z.infer<typeof passwordSchema>
+type LoginValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const { signIn, signInWithMagicLink } = useAuth()
@@ -47,41 +45,34 @@ export default function LoginPage() {
   const [magicLinkSent, setMagicLinkSent] = useState(false)
   const [sentEmail, setSentEmail] = useState('')
 
-  const magicLinkForm = useForm<MagicLinkValues>({
-    resolver: zodResolver(magicLinkSchema),
-    defaultValues: { email: '' },
-  })
-
-  const passwordForm = useForm<PasswordValues>({
-    resolver: zodResolver(passwordSchema),
+  const form = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   })
 
-  const onMagicLinkSubmit = async (data: MagicLinkValues) => {
+  const onSubmit = async (data: LoginValues) => {
     setIsLoading(true)
-    const { error } = await signInWithMagicLink(data.email)
-    if (error) {
-      toast({
-        title: 'Erro ao enviar link',
-        description: 'Não foi possível enviar o link de acesso. Verifique seu email e tente novamente.',
-        variant: 'destructive',
-      })
+    if (usePasswordMode) {
+      const { error } = await signIn(data.email, data.password || '')
+      if (error) {
+        toast({
+          title: 'Erro de Autenticação',
+          description: 'Email ou senha inválidos. Por favor, tente novamente.',
+          variant: 'destructive',
+        })
+      }
     } else {
-      setSentEmail(data.email)
-      setMagicLinkSent(true)
-    }
-    setIsLoading(false)
-  }
-
-  const onPasswordSubmit = async (data: PasswordValues) => {
-    setIsLoading(true)
-    const { error } = await signIn(data.email, data.password)
-    if (error) {
-      toast({
-        title: 'Erro de Autenticação',
-        description: 'Email ou senha inválidos. Por favor, tente novamente.',
-        variant: 'destructive',
-      })
+      const { error } = await signInWithMagicLink(data.email)
+      if (error) {
+        toast({
+          title: 'Erro ao enviar link',
+          description: 'Não foi possível enviar o link de acesso. Verifique seu email e tente novamente.',
+          variant: 'destructive',
+        })
+      } else {
+        setSentEmail(data.email)
+        setMagicLinkSent(true)
+      }
     }
     setIsLoading(false)
   }
@@ -127,7 +118,7 @@ export default function LoginPage() {
               <Button
                 variant="ghost"
                 className="w-full text-muted-foreground"
-                onClick={() => onMagicLinkSubmit({ email: sentEmail })}
+                onClick={() => onSubmit({ email: sentEmail })}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -170,157 +161,107 @@ export default function LoginPage() {
         {/* Login Form */}
         <Card className="border-border shadow-sm">
           <CardContent className="pt-6">
-            <div className="space-y-6">
-              {usePasswordMode ? (
-                /* Password login mode */
-                <Form {...passwordForm}>
-                  <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
-                    <FormField
-                      control={passwordForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-semibold">Email</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                type="email"
-                                placeholder="seu@email.com"
-                                autoComplete="email"
-                                className="pl-10 h-12 rounded-xl"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-semibold">Email</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type="email"
+                            placeholder="seu@email.com"
+                            autoComplete="email"
+                            className="pl-10 h-12 rounded-xl"
+                            {...field}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                    <FormField
-                      control={passwordForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-semibold">Senha</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                type={showPassword ? 'text' : 'password'}
-                                placeholder="••••••••"
-                                autoComplete="current-password"
-                                className="pl-10 pr-10 h-12 rounded-xl"
-                                {...field}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                              >
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                {usePasswordMode && (
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-semibold">Senha</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type={showPassword ? 'text' : 'password'}
+                              placeholder="••••••••"
+                              autoComplete="current-password"
+                              className="pl-10 pr-10 h-12 rounded-xl"
+                              {...field}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
-                    <Button
-                      type="submit"
-                      className="w-full h-12 rounded-xl font-semibold"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Entrando...
-                        </>
-                      ) : (
-                        <>
-                          Entrar
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              ) : (
-                /* Magic link mode (default) */
-                <Form {...magicLinkForm}>
-                  <form onSubmit={magicLinkForm.handleSubmit(onMagicLinkSubmit)} className="space-y-6">
-                    <FormField
-                      control={magicLinkForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-semibold">Email</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                type="email"
-                                placeholder="seu@email.com"
-                                autoComplete="email"
-                                className="pl-10 h-12 rounded-xl"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <Button
+                  type="submit"
+                  className="w-full h-12 rounded-xl font-semibold"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {usePasswordMode ? 'Entrando...' : 'Enviando...'}
+                    </>
+                  ) : usePasswordMode ? (
+                    <>
+                      Entrar
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Enviar Link de Acesso
+                    </>
+                  )}
+                </Button>
 
-                    <Button
-                      type="submit"
-                      className="w-full h-12 rounded-xl font-semibold"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="mr-2 h-4 w-4" />
-                          Enviar Link de Acesso
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              )}
-
-              {/* Toggle between modes */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border/50" />
+                {/* Toggle between modes */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border/50" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">ou</span>
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">ou</span>
-                </div>
-              </div>
 
-              <Button
-                variant="ghost"
-                className="w-full text-muted-foreground"
-                onClick={() => {
-                  if (usePasswordMode) {
-                    magicLinkForm.setValue('email', passwordForm.getValues('email'))
-                  } else {
-                    passwordForm.setValue('email', magicLinkForm.getValues('email'))
-                  }
-                  setUsePasswordMode(!usePasswordMode)
-                }}
-              >
-                <KeyRound className="mr-2 h-4 w-4" />
-                {usePasswordMode ? 'Entrar com link mágico' : 'Entrar com senha'}
-              </Button>
-            </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={() => setUsePasswordMode(!usePasswordMode)}
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  {usePasswordMode ? 'Entrar com link mágico' : 'Entrar com senha'}
+                </Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
 
