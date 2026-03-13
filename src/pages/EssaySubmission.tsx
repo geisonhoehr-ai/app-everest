@@ -126,7 +126,7 @@ export default function EssaySubmissionPage() {
                 </div>
               </div>
               <Button asChild variant="outline" size="sm" className="gap-2 shrink-0">
-                <a href="/modelo-redacao.pdf" download="Folha_Redacao_Everest.pdf" target="_blank" rel="noopener noreferrer">
+                <a href="/folha-redacao.pdf" download="Folha_Redacao_Everest.pdf" target="_blank" rel="noopener noreferrer">
                   <Download className="h-4 w-4" />
                   Baixar
                 </a>
