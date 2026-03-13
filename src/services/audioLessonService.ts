@@ -57,6 +57,7 @@ export const audioLessonService = {
             )
         `)
         .order('created_at', { ascending: false })
+        .limit(100)
 
       if (error) {
         logger.error('❌ Error fetching audio lessons:', error)

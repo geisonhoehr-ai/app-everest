@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback } from 'react'
-import { Upload, X, FileText, Film, Music, ImageIcon } from 'lucide-react'
+import { Upload, X, FileText, Film, Music, ImageIcon, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { compressFiles } from '@/lib/fileCompression'
 
 interface AttachmentUploaderProps {
   attachments: File[]
@@ -47,10 +48,11 @@ function getFileIcon(file: File) {
 
 export function AttachmentUploader({ attachments, onAttachmentsChange, maxFiles = 5 }: AttachmentUploaderProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const [isCompressing, setIsCompressing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
-  const validateAndAdd = useCallback((files: FileList | File[]) => {
+  const validateAndAdd = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files)
     const remaining = maxFiles - attachments.length
     if (remaining <= 0) {
@@ -73,7 +75,13 @@ export function AttachmentUploader({ attachments, onAttachmentsChange, maxFiles 
     }
 
     if (valid.length > 0) {
-      onAttachmentsChange([...attachments, ...valid])
+      setIsCompressing(true)
+      try {
+        const compressed = await compressFiles(valid)
+        onAttachmentsChange([...attachments, ...compressed])
+      } finally {
+        setIsCompressing(false)
+      }
     }
   }, [attachments, maxFiles, onAttachmentsChange, toast])
 
@@ -122,13 +130,22 @@ export function AttachmentUploader({ attachments, onAttachmentsChange, maxFiles 
         )}
         onClick={() => fileInputRef.current?.click()}
       >
-        <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">
-          Arraste arquivos aqui ou <span className="text-primary font-medium">clique para selecionar</span>
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Imagens, documentos, videos e audio ({attachments.length}/{maxFiles})
-        </p>
+        {isCompressing ? (
+          <>
+            <Loader2 className="h-6 w-6 mx-auto mb-2 text-primary animate-spin" />
+            <p className="text-sm text-primary font-medium">Comprimindo imagens...</p>
+          </>
+        ) : (
+          <>
+            <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Arraste arquivos aqui ou <span className="text-primary font-medium">clique para selecionar</span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Imagens, documentos, videos e audio ({attachments.length}/{maxFiles})
+            </p>
+          </>
+        )}
       </div>
 
       <input

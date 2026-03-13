@@ -163,49 +163,23 @@ export function useNotifications() {
   // Contar notificações não lidas
   const unreadCount = notifications.filter(n => !n.is_read).length
 
-  // Configurar subscription para atualizações em tempo real
+  // Polling para atualizações de notificações (30s interval)
+  // Substituiu Realtime WebSocket para reduzir conexões simultâneas em escala
   useEffect(() => {
     if (!user?.id) return
 
-    logger.debug('🔔 Configurando subscription de notificações em tempo real')
+    const POLL_INTERVAL = 30_000 // 30 segundos
 
-    const channel = supabase
-      .channel('notifications_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          logger.debug('🔔 Notificação recebida em tempo real:', payload)
+    const poll = () => {
+      loadNotifications()
+    }
 
-          if (payload.eventType === 'INSERT') {
-            setNotifications(prev => [payload.new as Notification, ...prev])
-          } else if (payload.eventType === 'UPDATE') {
-            setNotifications(prev =>
-              prev.map(notification =>
-                notification.id === payload.new.id
-                  ? (payload.new as Notification)
-                  : notification
-              )
-            )
-          } else if (payload.eventType === 'DELETE') {
-            setNotifications(prev =>
-              prev.filter(notification => notification.id !== payload.old.id)
-            )
-          }
-        }
-      )
-      .subscribe()
+    const intervalId = setInterval(poll, POLL_INTERVAL)
 
     return () => {
-      logger.debug('🔕 Removendo subscription de notificações')
-      supabase.removeChannel(channel)
+      clearInterval(intervalId)
     }
-  }, [user?.id])
+  }, [user?.id, loadNotifications])
 
   // Carregar notificações na inicialização
   useEffect(() => {

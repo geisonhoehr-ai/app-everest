@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
+import { getCached, setCache, CACHE_TTL } from '@/lib/queryCache'
 
 export interface DashboardStats {
   courses: number
@@ -29,6 +30,9 @@ export interface Event {
 export const dashboardService = {
   // Buscar estatísticas do dashboard
   async getDashboardStats(): Promise<DashboardStats> {
+    const cached = getCached<DashboardStats>('dashboard_stats')
+    if (cached) return cached
+
     try {
       const [
         coursesResult,
@@ -50,7 +54,7 @@ export const dashboardService = {
         supabase.from('audio_lessons').select('id', { count: 'exact' })
       ])
 
-      return {
+      const stats: DashboardStats = {
         courses: coursesResult.count || 0,
         flashcards: flashcardsResult.count || 0,
         quizzes: quizzesResult.count || 0,
@@ -60,6 +64,8 @@ export const dashboardService = {
         evercasts: evercastsResult.count || 0,
         students: studentsResult.count || 0
       }
+      setCache('dashboard_stats', stats, CACHE_TTL.DASHBOARD_STATS)
+      return stats
     } catch (error) {
       logger.error('Erro ao buscar estatísticas do dashboard:', error)
       // Retorna valores padrão em caso de erro

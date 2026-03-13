@@ -203,17 +203,26 @@ export const getUserEssaysList = async (userId: string): Promise<EssayListItem[]
 
 export const getUserEssayStats = async (userId: string): Promise<EssayStatsData> => {
   try {
-    const essays = await getUserEssaysList(userId)
-    const correctedEssays = essays.filter(e => e.status === 'Corrigida' && e.grade !== null)
-    const averageGrade = correctedEssays.length > 0
-      ? Math.round(correctedEssays.reduce((sum, e) => sum + (e.grade || 0), 0) / correctedEssays.length)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.id !== userId) return { totalEssays: 0, averageGrade: 0, averageDays: 0, pending: 0 }
+
+    // Single query with count instead of fetching full list (N+1 fix)
+    const [totalResult, correctedResult, pendingResult] = await Promise.all([
+      supabase.from('essays').select('id', { count: 'exact', head: true }).eq('student_id', userId),
+      supabase.from('essays').select('final_grade').eq('student_id', userId).eq('status', 'corrected' as any).not('final_grade', 'is', null),
+      supabase.from('essays').select('id', { count: 'exact', head: true }).eq('student_id', userId).in('status', ['submitted', 'correcting'] as any),
+    ])
+
+    const correctedGrades = correctedResult.data || []
+    const averageGrade = correctedGrades.length > 0
+      ? Math.round(correctedGrades.reduce((sum, e) => sum + (e.final_grade || 0), 0) / correctedGrades.length)
       : 0
 
     return {
-      totalEssays: essays.length,
+      totalEssays: totalResult.count || 0,
       averageGrade,
       averageDays: 3,
-      pending: essays.filter(e => e.status === 'Enviada' || e.status === 'Corrigindo').length
+      pending: pendingResult.count || 0
     }
   } catch (error) {
     logger.error('Erro ao buscar estatísticas de redações:', error)

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,11 +18,14 @@ import {
   ArrowLeft,
   LayoutGrid,
   List,
+  Loader2,
+  Shield,
 } from 'lucide-react'
 import { SectionLoader } from '@/components/SectionLoader'
 import { cn } from '@/lib/utils'
 import { acervoService, type AcervoItem, type ProvaGroup } from '@/services/acervoService'
 import { logger } from '@/lib/logger'
+import { useToast } from '@/hooks/use-toast'
 
 const CONCURSO_COLORS: Record<string, { bg: string; text: string; badge: string; border: string }> = {
   livros: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20' },
@@ -57,6 +60,53 @@ export default function AcervoDigitalPage() {
   const [viewingFile, setViewingFile] = useState<AcervoItem | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<SelectedCategory | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [viewerBlobUrl, setViewerBlobUrl] = useState<string | null>(null)
+  const [viewerLoading, setViewerLoading] = useState(false)
+  const { toast } = useToast()
+
+  const handleDownloadWithWatermark = useCallback(async (item: AcervoItem) => {
+    if (item.file_type !== 'pdf') {
+      // Non-PDF: download direto
+      window.open(acervoService.getPublicUrl(item.file_path), '_blank')
+      return
+    }
+    setDownloadingId(item.id)
+    try {
+      await acervoService.downloadWithWatermark(item.file_path, `${item.title}.pdf`)
+    } catch {
+      toast({ title: 'Erro ao baixar', description: 'Tente novamente.', variant: 'destructive' })
+    } finally {
+      setDownloadingId(null)
+    }
+  }, [toast])
+
+  const handleViewWithWatermark = useCallback(async (item: AcervoItem) => {
+    if (item.file_type !== 'pdf') {
+      window.open(acervoService.getPublicUrl(item.file_path), '_blank')
+      return
+    }
+    setViewingFile(item)
+    setViewerLoading(true)
+    setViewerBlobUrl(null)
+    try {
+      const blobUrl = await acervoService.viewWithWatermark(item.file_path)
+      setViewerBlobUrl(blobUrl)
+    } catch {
+      toast({ title: 'Erro ao carregar PDF', description: 'Tente novamente.', variant: 'destructive' })
+      setViewingFile(null)
+    } finally {
+      setViewerLoading(false)
+    }
+  }, [toast])
+
+  const handleCloseViewer = useCallback(() => {
+    setViewingFile(null)
+    if (viewerBlobUrl) {
+      URL.revokeObjectURL(viewerBlobUrl)
+      setViewerBlobUrl(null)
+    }
+  }, [viewerBlobUrl])
 
   useEffect(() => {
     async function load() {
@@ -224,15 +274,19 @@ export default function AcervoDigitalPage() {
                       <Button
                         size="sm"
                         className="flex-1 h-8 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md"
-                        onClick={() => setViewingFile(item)}
+                        onClick={() => handleViewWithWatermark(item)}
                       >
                         <Eye className="h-3.5 w-3.5" />
                         Ler
                       </Button>
-                      <Button size="sm" variant="outline" className="h-8 hover:bg-green-600 hover:text-white hover:border-green-600" asChild>
-                        <a href={getFileUrl(item)} download target="_blank" rel="noopener noreferrer">
-                          <Download className="h-3.5 w-3.5" />
-                        </a>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 hover:bg-green-600 hover:text-white hover:border-green-600"
+                        onClick={() => handleDownloadWithWatermark(item)}
+                        disabled={downloadingId === item.id}
+                      >
+                        {downloadingId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                       </Button>
                     </div>
                   </div>
@@ -300,7 +354,7 @@ export default function AcervoDigitalPage() {
                                       size="sm"
                                       variant="outline"
                                       className="h-8 px-3 text-xs gap-1.5 opacity-70 group-hover/item:opacity-100 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
-                                      onClick={() => setViewingFile(item)}
+                                      onClick={() => handleViewWithWatermark(item)}
                                     >
                                       <Eye className="h-3.5 w-3.5" />
                                       Ler
@@ -309,11 +363,10 @@ export default function AcervoDigitalPage() {
                                       size="sm"
                                       variant="outline"
                                       className="h-8 px-2 opacity-70 group-hover/item:opacity-100 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
-                                      asChild
+                                      onClick={() => handleDownloadWithWatermark(item)}
+                                      disabled={downloadingId === item.id}
                                     >
-                                      <a href={getFileUrl(item)} download target="_blank" rel="noopener noreferrer">
-                                        <Download className="h-3.5 w-3.5" />
-                                      </a>
+                                      {downloadingId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                                     </Button>
                                   </div>
                                 </div>
@@ -379,7 +432,7 @@ export default function AcervoDigitalPage() {
         })()}
 
         {/* PDF Viewer Dialog */}
-        <Dialog open={!!viewingFile} onOpenChange={open => !open && setViewingFile(null)}>
+        <Dialog open={!!viewingFile} onOpenChange={open => !open && handleCloseViewer()}>
           <DialogContent className="max-w-[95vw] w-[95vw] h-[92vh] max-h-[92vh] p-0 gap-0 overflow-hidden">
             {viewingFile && (
               <>
@@ -387,25 +440,42 @@ export default function AcervoDigitalPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <FileText className="h-4 w-4 text-primary shrink-0" />
                     <span className="font-medium text-sm truncate">{viewingFile.title}</span>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                      <Shield className="h-2.5 w-2.5" />
+                      Protegido
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" asChild>
-                      <a href={getFileUrl(viewingFile)} download target="_blank" rel="noopener noreferrer">
-                        <Download className="h-3.5 w-3.5" />
-                        Baixar
-                      </a>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={() => handleDownloadWithWatermark(viewingFile)}
+                      disabled={downloadingId === viewingFile.id}
+                    >
+                      {downloadingId === viewingFile.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                      Baixar
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-8" onClick={() => setViewingFile(null)}>
+                    <Button size="sm" variant="ghost" className="h-8" onClick={handleCloseViewer}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-                <iframe
-                  src={getFileUrl(viewingFile)}
-                  className="w-full flex-1"
-                  style={{ height: 'calc(92vh - 52px)' }}
-                  title={viewingFile.title}
-                />
+                {viewerLoading ? (
+                  <div className="flex-1 flex items-center justify-center" style={{ height: 'calc(92vh - 52px)' }}>
+                    <div className="text-center space-y-3">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                      <p className="text-sm text-muted-foreground">Aplicando proteção ao documento...</p>
+                    </div>
+                  </div>
+                ) : viewerBlobUrl ? (
+                  <iframe
+                    src={viewerBlobUrl}
+                    className="w-full flex-1"
+                    style={{ height: 'calc(92vh - 52px)' }}
+                    title={viewingFile.title}
+                  />
+                ) : null}
               </>
             )}
           </DialogContent>

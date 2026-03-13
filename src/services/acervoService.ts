@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 
 export interface AcervoItem {
   id: string
@@ -122,6 +123,71 @@ export const acervoService = {
       .from('acervo-digital')
       .getPublicUrl(filePath)
     return data.publicUrl
+  },
+
+  /**
+   * Baixa PDF com watermark (nome, email, IP, CPF) via Edge Function.
+   * Watermark visível (diagonal) + invisível (metadados).
+   */
+  async downloadWithWatermark(filePath: string, fileName?: string): Promise<void> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Não autenticado')
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL || 'https://hnhzindsfuqnaxosujay.supabase.co'}/functions/v1/pdf-watermark`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ bucket: 'acervo-digital', filePath }),
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${await response.text()}`)
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName || filePath.split('/').pop() || 'documento.pdf'
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      logger.error('Erro ao baixar PDF com watermark:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Abre PDF com watermark em nova aba para visualização.
+   */
+  async viewWithWatermark(filePath: string): Promise<string> {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Não autenticado')
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL || 'https://hnhzindsfuqnaxosujay.supabase.co'}/functions/v1/pdf-watermark`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bucket: 'acervo-digital', filePath }),
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Erro ${response.status}`)
+    }
+
+    const blob = await response.blob()
+    return URL.createObjectURL(blob)
   },
 
   groupProvasByConcurso(provas: AcervoItem[]): ProvaGroup[] {

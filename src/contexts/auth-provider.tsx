@@ -339,6 +339,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (event === 'SIGNED_IN') {
+          // Limitar sessões simultâneas (max 2 dispositivos)
+          if (newSession?.access_token) {
+            fetch(
+              `${import.meta.env.VITE_SUPABASE_URL || 'https://hnhzindsfuqnaxosujay.supabase.co'}/functions/v1/session-guard`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${newSession.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ maxSessions: 2 }),
+              }
+            ).catch(() => {
+              // Não bloqueia login se session-guard falhar
+            })
+          }
+
           // Set up token refresh if not already running
           if (!refreshInterval) {
             refreshInterval = setInterval(async () => {

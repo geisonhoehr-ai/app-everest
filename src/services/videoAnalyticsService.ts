@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
+import { getCached, setCache, CACHE_TTL } from '@/lib/queryCache'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,9 @@ export interface WatchTrendPoint {
 // ─── Overview KPIs ───────────────────────────────────────────────────────────
 
 export async function getVideoAnalyticsOverview(): Promise<VideoAnalyticsOverview> {
+  const cached = getCached<VideoAnalyticsOverview>('analytics_overview')
+  if (cached) return cached
+
   try {
     const [lessonsResult, progressResult] = await Promise.all([
       supabase.from('video_lessons').select('id', { count: 'exact', head: true }).eq('is_active', true),
@@ -66,12 +70,14 @@ export async function getVideoAnalyticsOverview(): Promise<VideoAnalyticsOvervie
     const completionRate = progress.length > 0 ? Math.round((completedCount / progress.length) * 100) : 0
     const totalWatchSeconds = progress.reduce((sum, p) => sum + (p.current_time_seconds || 0), 0)
 
-    return {
+    const result = {
       totalLessons: lessonsResult.count || 0,
       totalStudentsWatching: uniqueStudents,
       avgCompletionRate: completionRate,
       totalWatchTimeHours: Math.round(totalWatchSeconds / 3600),
     }
+    setCache('analytics_overview', result, CACHE_TTL.ANALYTICS)
+    return result
   } catch (error) {
     logger.error('Error fetching video analytics overview:', error)
     return { totalLessons: 0, totalStudentsWatching: 0, avgCompletionRate: 0, totalWatchTimeHours: 0 }
@@ -81,6 +87,9 @@ export async function getVideoAnalyticsOverview(): Promise<VideoAnalyticsOvervie
 // ─── Per-lesson analytics ────────────────────────────────────────────────────
 
 export async function getLessonAnalytics(): Promise<LessonAnalytics[]> {
+  const cached = getCached<LessonAnalytics[]>('analytics_lessons')
+  if (cached) return cached
+
   try {
     // Get all lessons with module and course info
     const { data: lessons } = await supabase
@@ -109,7 +118,7 @@ export async function getLessonAnalytics(): Promise<LessonAnalytics[]> {
       progressByLesson.set(p.lesson_id, arr)
     }
 
-    return lessons.map((lesson: any) => {
+    const result = lessons.map((lesson: any) => {
       const lessonProgress = progressByLesson.get(lesson.id) || []
       const completedCount = lessonProgress.filter(p => p.is_completed).length
       const totalViews = new Set(lessonProgress.map(p => p.user_id)).size
@@ -133,6 +142,8 @@ export async function getLessonAnalytics(): Promise<LessonAnalytics[]> {
         avgWatchTimeSeconds: avgWatch,
       }
     })
+    setCache('analytics_lessons', result, CACHE_TTL.ANALYTICS)
+    return result
   } catch (error) {
     logger.error('Error fetching lesson analytics:', error)
     return []
@@ -142,6 +153,9 @@ export async function getLessonAnalytics(): Promise<LessonAnalytics[]> {
 // ─── Per-course analytics ────────────────────────────────────────────────────
 
 export async function getCourseAnalytics(): Promise<CourseAnalytics[]> {
+  const cached = getCached<CourseAnalytics[]>('analytics_courses')
+  if (cached) return cached
+
   try {
     const { data: courses } = await supabase
       .from('video_courses')
@@ -169,7 +183,7 @@ export async function getCourseAnalytics(): Promise<CourseAnalytics[]> {
     }
 
     // Aggregate by course
-    return courses.map(course => {
+    const result = courses.map(course => {
       const courseLessonIds = [...lessonToCourse.entries()]
         .filter(([, cId]) => cId === course.id)
         .map(([lId]) => lId)
@@ -189,6 +203,8 @@ export async function getCourseAnalytics(): Promise<CourseAnalytics[]> {
         totalWatchTimeHours: Math.round((totalWatch / 3600) * 10) / 10,
       }
     })
+    setCache('analytics_courses', result, CACHE_TTL.ANALYTICS)
+    return result
   } catch (error) {
     logger.error('Error fetching course analytics:', error)
     return []

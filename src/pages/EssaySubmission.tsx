@@ -9,6 +9,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Upload, Send, Loader2, Download, FileText } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { submitEssay } from '@/services/essayService'
+import { compressFile } from '@/lib/fileCompression'
 
 export default function EssaySubmissionPage() {
   const { toast } = useToast()
@@ -37,7 +38,8 @@ export default function EssaySubmissionPage() {
 
     try {
       setLoading(true)
-      await submitEssay(user.id, theme, text, file || undefined)
+      const compressedFile = file ? await compressFile(file) : undefined
+      await submitEssay(user.id, theme, text, compressedFile)
       toast({ title: 'Redação enviada!', description: 'Você será notificado quando a correção estiver pronta.' })
       navigate('/redacoes')
     } catch {
