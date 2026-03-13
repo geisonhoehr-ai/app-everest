@@ -614,6 +614,7 @@ export default function AdminEssayCorrectionPage() {
             <Button
               variant="outline"
               size="icon"
+              className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300"
               onClick={() => navigate(`/admin/essays/${essay.prompt_id}/submissions`)}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -658,42 +659,42 @@ export default function AdminEssayCorrectionPage() {
         {/* Action buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           {fileUrl && (
-            <Button size="sm" variant="outline" onClick={handleDownloadEssay}>
+            <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={handleDownloadEssay}>
               <Download className="h-4 w-4 mr-1" /> Baixar Redação
             </Button>
           )}
 
-          <Button size="sm" variant="outline" onClick={() => document.getElementById('corrected-upload')?.click()} disabled={isUploading}>
+          <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={() => document.getElementById('corrected-upload')?.click()} disabled={isUploading}>
             {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
             {correctedFileUrl ? 'Reenviar Correção' : 'Enviar Correção'}
           </Button>
           <input id="corrected-upload" type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleUploadCorrected} />
 
           {fileUrl && !transcribedText && (
-            <Button size="sm" variant="outline" onClick={handleTranscribe} disabled={isTranscribing}>
+            <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={handleTranscribe} disabled={isTranscribing}>
               {isTranscribing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ImageIcon className="h-4 w-4 mr-1" />}
               Transcrever
             </Button>
           )}
 
-          <Button size="sm" variant="outline" onClick={handleAICorrection} disabled={isAILoading || !essayText}>
+          <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={handleAICorrection} disabled={isAILoading || !essayText}>
             {isAILoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
             {isAILoading ? 'Analisando...' : 'Correção IA'}
           </Button>
 
-          <Button size="sm" variant="outline" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
+          <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
             {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
             Gerar PDF
           </Button>
 
           <div className="flex-1" />
 
-          <Button size="sm" variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
+          <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={handleSaveDraft} disabled={isSaving}>
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
             Salvar Rascunho
           </Button>
 
-          <Button size="sm" variant="default" onClick={() => setShowFinalizeDialog(true)} disabled={isSaving}>
+          <Button size="sm" variant="outline" className="bg-white hover:bg-green-600 hover:text-white hover:border-green-600" onClick={() => setShowFinalizeDialog(true)} disabled={isSaving}>
             <Send className="h-4 w-4 mr-1" /> Finalizar Correção
           </Button>
         </div>
