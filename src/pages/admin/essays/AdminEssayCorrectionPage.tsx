@@ -598,6 +598,7 @@ export default function AdminEssayCorrectionPage() {
   }
 
   const studentName = `${essay.users?.first_name || ''} ${essay.users?.last_name || ''}`.trim()
+  const classId = essay.users?.student_classes?.[0]?.class_id
   const className = essay.users?.student_classes?.[0]?.classes?.name
   const essayText = transcribedText || essay.submission_text || ''
   const isImage = fileUrl && /\.(jpg|jpeg|png)$/i.test((essay as any).file_url || '')
@@ -615,7 +616,7 @@ export default function AdminEssayCorrectionPage() {
               variant="outline"
               size="icon"
               className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300"
-              onClick={() => navigate(`/admin/essays/${essay.prompt_id}/submissions`)}
+              onClick={() => navigate(classId ? `/admin/essays/turma/${classId}` : '/admin/essays')}
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>

@@ -13,6 +13,7 @@ export type EssayForCorrection = Essay & {
     first_name: string
     last_name: string
     student_classes: {
+      class_id: string
       classes: {
         name: string
       }
@@ -43,6 +44,7 @@ export const getEssayForCorrection = async (
         first_name,
         last_name,
         student_classes (
+          class_id,
           classes (
             name
           )
