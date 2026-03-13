@@ -348,22 +348,26 @@ export default function AdminEssayCorrectionPage() {
           </div>
 
           {fileUrl && !transcribedText && (
-            <Button variant="outline" size="sm" onClick={handleTranscribe} disabled={isTranscribing}>
+            <Button size="sm" onClick={handleTranscribe} disabled={isTranscribing}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white">
               {isTranscribing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ImageIcon className="h-4 w-4 mr-1" />}
               Transcrever
             </Button>
           )}
 
-          <Button variant="outline" size="sm" onClick={handleAICorrection} disabled={isAILoading || !essayText}>
+          <Button size="sm" onClick={handleAICorrection} disabled={isAILoading || !essayText}
+            className="bg-violet-600 hover:bg-violet-700 text-white">
             {isAILoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
             {isAILoading ? 'Analisando...' : 'Correção IA'}
           </Button>
 
-          <Button variant="outline" size="sm" onClick={handleSaveCorrection} disabled={isSaving}>
+          <Button size="sm" variant="outline" onClick={handleSaveCorrection} disabled={isSaving}
+            className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/30">
             <Save className="h-4 w-4 mr-1" /> Salvar
           </Button>
 
-          <Button size="sm" onClick={handleFinalizeCorrection} disabled={isSaving || expressionErrors.length === 0 && contentAnalysis.length === 0}>
+          <Button size="sm" onClick={handleFinalizeCorrection} disabled={isSaving || expressionErrors.length === 0 && contentAnalysis.length === 0}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white">
             <Send className="h-4 w-4 mr-1" /> Finalizar
           </Button>
         </div>
@@ -379,21 +383,59 @@ export default function AdminEssayCorrectionPage() {
                 <FileText className="h-4 w-4" />
                 Redação
                 {transcribedText && <Badge variant="secondary" className="text-[10px]">Transcrita</Badge>}
+                {essay.submission_text && fileUrl && (
+                  <Badge className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Texto + Arquivo</Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <ScrollArea className="flex-1">
-              <CardContent className="px-4 pb-4">
-                {fileUrl && !transcribedText ? (
-                  <div className="space-y-3">
+              <CardContent className="px-4 pb-4 space-y-4">
+                {/* Student-typed text (submission_text) */}
+                {essay.submission_text && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <PenLine className="h-3.5 w-3.5 text-blue-500" />
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Texto digitado pelo aluno</span>
+                    </div>
+                    <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-3 border border-blue-200/50 dark:border-blue-800/30">
+                      {essay.submission_text}
+                    </div>
+                  </div>
+                )}
+
+                {/* Transcribed text (from AI OCR) */}
+                {transcribedText && transcribedText !== essay.submission_text && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+                      <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wide">Texto transcrito (IA)</span>
+                    </div>
+                    <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap bg-violet-50/50 dark:bg-violet-950/20 rounded-lg p-3 border border-violet-200/50 dark:border-violet-800/30">
+                      {transcribedText}
+                    </div>
+                  </div>
+                )}
+
+                {/* File (PDF or image) */}
+                {fileUrl && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <ImageIcon className="h-3.5 w-3.5 text-amber-500" />
+                      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Arquivo enviado</span>
+                    </div>
                     {isImage ? (
-                      <img src={fileUrl} alt="Redação" className="max-w-full h-auto rounded-lg" />
+                      <img src={fileUrl} alt="Redação" className="max-w-full h-auto rounded-lg border" />
                     ) : (
-                      <iframe src={fileUrl} className="w-full h-[600px] rounded-lg" title="Redação PDF" />
+                      <iframe src={fileUrl} className="w-full h-[500px] rounded-lg border" title="Redação PDF" />
                     )}
                   </div>
-                ) : (
-                  <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap">
-                    {essayText || <span className="text-muted-foreground italic">Nenhum texto disponível</span>}
+                )}
+
+                {/* Fallback: no content */}
+                {!essay.submission_text && !transcribedText && !fileUrl && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm italic">Nenhum texto disponível</p>
                   </div>
                 )}
               </CardContent>
@@ -404,23 +446,23 @@ export default function AdminEssayCorrectionPage() {
         {/* Right: CIAAR Correction Panel with tabs */}
         <div className="lg:col-span-3 h-full overflow-hidden">
           <Tabs defaultValue="expression" className="h-full flex flex-col">
-            <TabsList className="w-full shrink-0 grid grid-cols-4">
-              <TabsTrigger value="expression" className="text-xs gap-1">
+            <TabsList className="w-full shrink-0 grid grid-cols-4 bg-muted/60 p-1 rounded-xl">
+              <TabsTrigger value="expression" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-red-50 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-950/40 dark:data-[state=active]:text-red-400">
                 <PenLine className="h-3.5 w-3.5" />
                 Expressão
                 {expressionErrors.length > 0 && (
                   <Badge variant="destructive" className="text-[9px] px-1 py-0 ml-1">{expressionErrors.length}</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="structure" className="text-xs gap-1">
+              <TabsTrigger value="structure" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-950/40 dark:data-[state=active]:text-blue-400">
                 <BookOpen className="h-3.5 w-3.5" />
                 Estrutura
               </TabsTrigger>
-              <TabsTrigger value="content" className="text-xs gap-1">
+              <TabsTrigger value="content" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-950/40 dark:data-[state=active]:text-amber-400">
                 <FileText className="h-3.5 w-3.5" />
                 Conteúdo
               </TabsTrigger>
-              <TabsTrigger value="suggestions" className="text-xs gap-1">
+              <TabsTrigger value="suggestions" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-950/40 dark:data-[state=active]:text-emerald-400">
                 <Lightbulb className="h-3.5 w-3.5" />
                 Sugestões
               </TabsTrigger>
@@ -436,7 +478,8 @@ export default function AdminEssayCorrectionPage() {
                       {expressionErrors.length} erros | Débito total: -{expressionDebitTotal.toFixed(3)}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={addExpressionError}>
+                  <Button size="sm" onClick={addExpressionError}
+                    className="bg-red-600 hover:bg-red-700 text-white">
                     <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
                   </Button>
                 </CardHeader>
@@ -695,17 +738,33 @@ export default function AdminEssayCorrectionPage() {
       </div>
 
       {/* Bottom: Grade summary */}
-      <div className="shrink-0 border-t pt-3">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-6">
-            <span>Expressão: <strong className="text-foreground">-{expressionDebitTotal.toFixed(3)}</strong> ({expressionErrors.length} erros)</span>
-            <span>Estrutura: <strong className="text-foreground">-{structureDebitTotal.toFixed(3)}</strong></span>
-            <span>Conteúdo: <strong className="text-foreground">-{contentDebitTotal.toFixed(3)}</strong></span>
+      <div className="shrink-0 border-t pt-3 bg-muted/30 -mx-4 px-4 -mb-4 pb-4 rounded-b-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-950/30 px-3 py-1.5 rounded-lg border border-red-200/50 dark:border-red-800/30">
+              <PenLine className="h-3.5 w-3.5 text-red-500" />
+              <span className="text-xs text-red-700 dark:text-red-400 font-medium">-{expressionDebitTotal.toFixed(3)}</span>
+              <span className="text-[10px] text-red-500/70">({expressionErrors.length})</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5 rounded-lg border border-blue-200/50 dark:border-blue-800/30">
+              <BookOpen className="h-3.5 w-3.5 text-blue-500" />
+              <span className="text-xs text-blue-700 dark:text-blue-400 font-medium">-{structureDebitTotal.toFixed(3)}</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-lg border border-amber-200/50 dark:border-amber-800/30">
+              <FileText className="h-3.5 w-3.5 text-amber-500" />
+              <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">-{contentDebitTotal.toFixed(3)}</span>
+            </div>
           </div>
-          <div className="text-sm">
-            Nota Final: <strong className={`text-lg ${finalGrade >= 7 ? 'text-green-600' : finalGrade >= 5 ? 'text-amber-600' : 'text-red-600'}`}>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Nota Final</span>
+            <div className={`text-2xl font-bold px-4 py-1 rounded-lg ${
+              finalGrade >= 7 ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400' :
+              finalGrade >= 5 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400' :
+              'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400'
+            }`}>
               {finalGrade.toFixed(3)}
-            </strong> / {template?.max_grade ?? 10}
+            </div>
+            <span className="text-xs text-muted-foreground">/ {template?.max_grade ?? 10}</span>
           </div>
         </div>
       </div>
