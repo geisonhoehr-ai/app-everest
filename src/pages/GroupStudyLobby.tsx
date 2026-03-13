@@ -1,87 +1,43 @@
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Copy, Users, Play } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
-
-const mockParticipants = [
-  {
-    name: 'João Pedro',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=10',
-  },
-  {
-    name: 'Ana Clara',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=5',
-  },
-]
+import { Card, CardContent } from '@/components/ui/card'
+import { ArrowLeft, Users, Construction } from 'lucide-react'
 
 export default function GroupStudyLobbyPage() {
   const { setId } = useParams()
-  const { toast } = useToast()
-  const invitationLink = `${window.location.origin}/estudo-em-grupo/session123`
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(invitationLink)
-    toast({ title: 'Link copiado para a área de transferência!' })
-  }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl">Lobby de Estudo em Grupo</CardTitle>
-          <CardDescription>
-            Convide seus amigos e comece a estudar em equipe!
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="font-semibold">Convide com este link:</p>
-          <div className="flex gap-2">
-            <Input value={invitationLink} readOnly />
-            <Button size="icon" onClick={copyLink}>
-              <Copy className="h-4 w-4" />
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" asChild>
+          <Link to="/meus-conjuntos"><ArrowLeft className="h-4 w-4" /></Link>
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Estudo em Grupo</h1>
+          <p className="text-sm text-muted-foreground mt-1">Estude com seus colegas em tempo real</p>
+        </div>
+      </div>
+
+      <Card className="border-border shadow-sm">
+        <CardContent className="text-center py-16">
+          <div className="max-w-md mx-auto">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Construction className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">Em Breve</h3>
+            <p className="text-muted-foreground mb-6">
+              O modo de estudo em grupo esta sendo desenvolvido.
+              Em breve voce podera convidar amigos para sessoes de estudo colaborativas em tempo real.
+            </p>
+            <Button asChild variant="outline" className="gap-2">
+              <Link to="/flashcards">
+                <Users className="h-4 w-4" />
+                Ir para Flashcards
+              </Link>
             </Button>
           </div>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" /> Participantes (
-            {mockParticipants.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-3">
-            {mockParticipants.map((p) => (
-              <li key={p.name} className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarImage src={p.avatar} />
-                  <AvatarFallback>{p.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <span className="font-medium">{p.name}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-center">
-        <Button size="lg" asChild>
-          <Link to="/estudo-em-grupo/session123">
-            <Play className="mr-2 h-5 w-5" /> Iniciar Sessão para Todos
-          </Link>
-        </Button>
-      </div>
     </div>
   )
 }

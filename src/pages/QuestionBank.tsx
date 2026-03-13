@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/dialog'
 import { supabase } from '@/lib/supabase/client'
 import { SectionLoader } from '@/components/SectionLoader'
-import { cn } from '@/lib/utils'
+import { cn, getCategoryColor } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 
 interface Question {
@@ -293,11 +293,12 @@ export default function QuestionBankPage() {
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-3">Matérias disponíveis</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {subjects.map((subjectName) => {
+                  {subjects.map((subjectName, index) => {
                     const subjectQuestions = allQuestions.filter(q => q.topics?.subjects?.name === subjectName)
                     const subjectTopicNames = Array.from(new Set(subjectQuestions.map(q => q.topics?.name).filter(Boolean))) as string[]
                     const isSelected = selectedSubject === subjectName
                     const previewTopics = subjectTopicNames.slice(0, 4)
+                    const colors = getCategoryColor(index)
 
                     return (
                       <button
@@ -309,14 +310,14 @@ export default function QuestionBankPage() {
                         className={cn(
                           'group relative flex flex-col rounded-xl border bg-card p-5 transition-all duration-200 shadow-sm text-left',
                           isSelected
-                            ? 'border-primary shadow-md ring-1 ring-primary/20'
-                            : 'border-border hover:border-primary/30 hover:shadow-lg'
+                            ? `${colors.border} shadow-md ring-1 ring-primary/20`
+                            : `border-border ${colors.hoverBorder} hover:shadow-lg`
                         )}
                       >
                         <div
                           className={cn(
-                            'absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold',
-                            isSelected ? 'bg-green-500 text-white' : 'bg-primary text-primary-foreground'
+                            'absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold text-white',
+                            isSelected ? 'bg-green-500' : colors.badge
                           )}
                         >
                           {subjectQuestions.length} questões
@@ -333,7 +334,7 @@ export default function QuestionBankPage() {
                         <ul className="mt-3 flex-1 space-y-1.5">
                           {previewTopics.map(topic => (
                             <li key={topic} className="flex items-center gap-2 min-w-0">
-                              <Brain className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/40" />
+                              <Brain className={cn('h-3.5 w-3.5 flex-shrink-0', colors.text)} />
                               <span className="truncate text-xs text-foreground">{topic}</span>
                             </li>
                           ))}
