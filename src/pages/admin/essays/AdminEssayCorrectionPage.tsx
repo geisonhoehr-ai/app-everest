@@ -636,20 +636,20 @@ export default function AdminEssayCorrectionPage() {
         {/* Info card */}
         <Card>
           <CardContent className="py-3 px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
+            <div className="flex items-start gap-6 flex-wrap">
+              <div className="min-w-[120px]">
                 <Label className="text-xs text-muted-foreground">Aluno</Label>
                 <p className="text-sm font-medium">{studentName || '—'}</p>
               </div>
-              <div>
+              <div className="min-w-[100px]">
                 <Label className="text-xs text-muted-foreground">Turma</Label>
                 <p className="text-sm font-medium">{className || '—'}</p>
               </div>
-              <div>
+              <div className="flex-1 min-w-[200px]">
                 <Label className="text-xs text-muted-foreground">Tema</Label>
                 <p className="text-sm font-medium">{essay.essay_prompts?.title || 'Tema Livre'}</p>
               </div>
-              <div>
+              <div className="min-w-[140px] text-right">
                 <Label className="text-xs text-muted-foreground">Data de Envio</Label>
                 <p className="text-sm font-medium">{submittedAt}</p>
               </div>
