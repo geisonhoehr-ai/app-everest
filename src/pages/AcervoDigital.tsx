@@ -29,14 +29,14 @@ import { useToast } from '@/hooks/use-toast'
 import { cachedFetch } from '@/lib/offlineCache'
 import { OfflineBanner } from '@/components/OfflineBanner'
 
-const CONCURSO_COLORS: Record<string, { bg: string; text: string; badge: string; border: string }> = {
-  livros: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20' },
-  EAOF: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', badge: 'bg-blue-500', border: 'border-blue-500/20' },
-  EAOP: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20' },
-  CAMAR: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', badge: 'bg-purple-500', border: 'border-purple-500/20' },
-  CADAR: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', badge: 'bg-orange-500', border: 'border-orange-500/20' },
-  CAFAR: { bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', badge: 'bg-rose-500', border: 'border-rose-500/20' },
-  CFOE: { bg: 'bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400', badge: 'bg-cyan-500', border: 'border-cyan-500/20' },
+const CONCURSO_COLORS: Record<string, { bg: string; text: string; badge: string; border: string; btn: string; hoverBorder: string }> = {
+  livros: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20', btn: 'bg-emerald-600 hover:bg-green-600', hoverBorder: 'hover:border-emerald-500/40' },
+  EAOF: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', badge: 'bg-blue-500', border: 'border-blue-500/20', btn: 'bg-blue-600 hover:bg-green-600', hoverBorder: 'hover:border-blue-500/40' },
+  EAOP: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20', btn: 'bg-emerald-600 hover:bg-green-600', hoverBorder: 'hover:border-emerald-500/40' },
+  CAMAR: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', badge: 'bg-purple-500', border: 'border-purple-500/20', btn: 'bg-purple-600 hover:bg-green-600', hoverBorder: 'hover:border-purple-500/40' },
+  CADAR: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', badge: 'bg-orange-500', border: 'border-orange-500/20', btn: 'bg-orange-600 hover:bg-green-600', hoverBorder: 'hover:border-orange-500/40' },
+  CAFAR: { bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', badge: 'bg-rose-500', border: 'border-rose-500/20', btn: 'bg-rose-600 hover:bg-green-600', hoverBorder: 'hover:border-rose-500/40' },
+  CFOE: { bg: 'bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400', badge: 'bg-cyan-500', border: 'border-cyan-500/20', btn: 'bg-cyan-600 hover:bg-green-600', hoverBorder: 'hover:border-cyan-500/40' },
 }
 
 function formatFileSize(bytes: number): string {
@@ -262,7 +262,7 @@ export default function AcervoDigitalPage() {
                 {flatItems.map((item) => (
                   <div
                     key={item.id}
-                    className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-all duration-200 shadow-sm hover:border-primary/30 hover:shadow-lg"
+                    className={cn('group relative flex flex-col rounded-xl border bg-card p-4 transition-all duration-200 shadow-sm hover:shadow-lg', colors.border, colors.hoverBorder)}
                   >
                     <div className="flex items-start gap-3 flex-1">
                       <div className={cn('p-2 rounded-lg shrink-0', colors.bg)}>
@@ -281,7 +281,7 @@ export default function AcervoDigitalPage() {
                     <div className="flex gap-2 mt-3">
                       <Button
                         size="sm"
-                        className="flex-1 h-8 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md"
+                        className={cn('flex-1 h-8 text-xs gap-1.5 text-white hover:bg-green-600 hover:shadow-md', colors.btn.split(' ')[0])}
                         onClick={() => handleViewWithWatermark(item)}
                       >
                         <Eye className="h-3.5 w-3.5" />
@@ -556,8 +556,8 @@ export default function AcervoDigitalPage() {
           return (
             <div
               className={cn(
-                'group relative flex flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 shadow-sm',
-                'hover:border-primary/30 hover:shadow-lg'
+                'group relative flex flex-col rounded-xl border bg-card p-5 transition-all duration-200 shadow-sm',
+                colors.border, colors.hoverBorder, 'hover:shadow-lg'
               )}
             >
               {/* Category badge */}
@@ -602,8 +602,8 @@ export default function AcervoDigitalPage() {
                   })
                 }}
                 className={cn(
-                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
-                  'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'
+                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 text-white hover:shadow-md',
+                  colors.btn
                 )}
               >
                 Ver arquivos
@@ -624,8 +624,8 @@ export default function AcervoDigitalPage() {
             <div
               key={group.concurso}
               className={cn(
-                'group relative flex flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 shadow-sm',
-                'hover:border-primary/30 hover:shadow-lg'
+                'group relative flex flex-col rounded-xl border bg-card p-5 transition-all duration-200 shadow-sm',
+                colors.border, colors.hoverBorder, 'hover:shadow-lg'
               )}
             >
               {/* Category badge */}
@@ -690,8 +690,8 @@ export default function AcervoDigitalPage() {
                   })
                 }}
                 className={cn(
-                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
-                  'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'
+                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 text-white hover:shadow-md',
+                  colors.btn
                 )}
               >
                 Ver arquivos

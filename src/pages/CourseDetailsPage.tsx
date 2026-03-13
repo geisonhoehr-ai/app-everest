@@ -23,7 +23,7 @@ import {
   Calendar,
   Award
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getCategoryColor } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 
 interface CourseModule {
@@ -226,18 +226,19 @@ export default function CourseDetailsPage() {
                     ).length
                     const totalInModule = module.lessons.length
                     const moduleProgress = totalInModule > 0 ? (completedInModule / totalInModule) * 100 : 0
+                    const moduleColors = getCategoryColor(index)
 
                     return (
                       <AccordionItem
                         value={module.id}
                         key={module.id}
-                        className="border border-border rounded-xl overflow-hidden"
+                        className={cn('border rounded-xl overflow-hidden', moduleColors.border)}
                       >
                         <AccordionTrigger className="font-semibold px-6 py-4 hover:bg-muted/30 transition-colors">
                           <div className="flex items-center justify-between w-full pr-4">
                             <div className="flex items-center gap-4">
-                              <div className="p-2 rounded-lg bg-primary/10">
-                                <span className="text-sm font-bold text-primary">
+                              <div className={cn('p-2 rounded-lg', moduleColors.bg)}>
+                                <span className={cn('text-sm font-bold', moduleColors.text)}>
                                   {String(index + 1).padStart(2, '0')}
                                 </span>
                               </div>

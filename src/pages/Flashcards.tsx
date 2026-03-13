@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { FlashcardsTutorial } from '@/components/flashcards/FlashcardsTutorial'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
+import { cn, getCategoryColor } from '@/lib/utils'
 import {
   Play,
   ChevronRight,
@@ -174,23 +174,22 @@ export default function FlashcardsPage() {
             const progress = subject.progress || 0
             const allDone = progress === 100
             const previewTopics = subjectTopics.slice(0, 4)
+            const colors = getCategoryColor(idx)
 
             return (
               <Link
                 to={`/flashcards/${subject.id}`}
                 key={subject.id}
                 className={cn(
-                  'group relative flex flex-col rounded-xl border border-border bg-card p-5 transition-all duration-200 shadow-sm',
-                  'hover:border-primary/30 hover:shadow-lg'
+                  'group relative flex flex-col rounded-xl border bg-card p-5 transition-all duration-200 shadow-sm hover:shadow-lg',
+                  colors.border, colors.hoverBorder
                 )}
               >
                 {/* Badge flutuante */}
                 <div
                   className={cn(
-                    'absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold',
-                    allDone
-                      ? 'bg-green-500 text-white'
-                      : 'bg-primary text-primary-foreground'
+                    'absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold text-white',
+                    allDone ? 'bg-green-500' : colors.badge
                   )}
                 >
                   Matéria {idx + 1}
@@ -216,7 +215,7 @@ export default function FlashcardsPage() {
                 <ul className="mt-4 flex-1 space-y-1.5">
                   {previewTopics.map((topic) => (
                     <li key={topic.id} className="flex items-center gap-2 min-w-0">
-                      <Layers className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/40" />
+                      <Layers className={cn('h-3.5 w-3.5 flex-shrink-0', colors.text)} />
                       <span className="truncate text-xs text-foreground">
                         {topic.name}
                       </span>
@@ -235,8 +234,8 @@ export default function FlashcardsPage() {
                 {/* Botão */}
                 <div
                   className={cn(
-                    'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
-                    'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'
+                    'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 text-white hover:shadow-md',
+                    colors.btn
                   )}
                 >
                   Estudar Cards
