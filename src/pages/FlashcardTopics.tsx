@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import { cn, getCategoryColor } from '@/lib/utils'
 import { ArrowLeft, Brain, ChevronRight, Play } from 'lucide-react'
 import { StudyModeDialog } from '@/components/flashcards/StudyModeDialog'
@@ -10,12 +11,14 @@ import {
   type Subject,
   type TopicWithCardCount,
 } from '@/services/flashcardService'
+import { useAuth } from '@/hooks/use-auth'
 import { SectionLoader } from '@/components/SectionLoader'
 import { logger } from '@/lib/logger'
 
 export default function FlashcardTopicsPage() {
   const { subjectId } = useParams<{ subjectId: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null)
   const [subject, setSubject] = useState<Subject | null>(null)
@@ -33,7 +36,7 @@ export default function FlashcardTopicsPage() {
         setIsLoading(true)
         const [subjectData, topicsData] = await Promise.all([
           getSubjectById(subjectId),
-          getTopicsBySubjectId(subjectId),
+          getTopicsBySubjectId(subjectId, user?.id),
         ])
         setSubject(subjectData)
         setTopics(topicsData)
@@ -45,7 +48,7 @@ export default function FlashcardTopicsPage() {
     }
 
     fetchData()
-  }, [subjectId])
+  }, [subjectId, user?.id])
 
   if (isLoading) {
     return <SectionLoader />
@@ -101,6 +104,8 @@ export default function FlashcardTopicsPage() {
         {topics.map((topic, idx) => {
           const cardCount = topic.flashcards?.[0]?.count || topic.flashcardCount || 0
           const colors = getCategoryColor(idx)
+          const progress = topic.progress || 0
+          const allDone = progress === 100
 
           return (
             <div
@@ -111,7 +116,7 @@ export default function FlashcardTopicsPage() {
               )}
             >
               {/* Badge flutuante */}
-              <div className={cn('absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold text-white', colors.badge)}>
+              <div className={cn('absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold text-white', allDone ? 'bg-green-500' : colors.badge)}>
                 Tópico {idx + 1}
               </div>
 
@@ -120,10 +125,18 @@ export default function FlashcardTopicsPage() {
                 {topic.name}
               </h3>
 
-              {/* Info */}
-              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                <Brain className={cn('h-3.5 w-3.5', colors.text)} />
-                <span>{cardCount} cards disponíveis</span>
+              {/* Progress */}
+              <div className="mt-3 space-y-1.5">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Brain className={cn('h-3.5 w-3.5', colors.text)} />
+                    {cardCount} cards
+                  </span>
+                  <span className={cn('font-semibold', allDone ? 'text-green-500' : 'text-foreground')}>
+                    {Math.round(progress)}%
+                  </span>
+                </div>
+                <Progress value={progress} className="h-1.5 bg-muted [&>div]:bg-blue-500" />
               </div>
 
               {/* Descrição */}

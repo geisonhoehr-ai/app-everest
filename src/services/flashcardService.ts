@@ -51,6 +51,7 @@ export interface TopicWithCardCount {
   description: string
   flashcardCount?: number
   flashcards?: { count: number }[]
+  progress?: number
 }
 
 export interface TopicWithSubjectAndCards {
@@ -93,7 +94,7 @@ export const getSubjectById = async (subjectId: string): Promise<Subject | null>
   }
 }
 
-export const getTopicsBySubjectId = async (subjectId: string): Promise<TopicWithCardCount[]> => {
+export const getTopicsBySubjectId = async (subjectId: string, userId?: string | null): Promise<TopicWithCardCount[]> => {
   try {
     const { data: topics, error } = await supabase
       .from('topics')
@@ -108,13 +109,42 @@ export const getTopicsBySubjectId = async (subjectId: string): Promise<TopicWith
 
     if (error) throw error
 
-    return topics?.map(topic => ({
+    const baseTops = topics?.map(topic => ({
       id: topic.id,
       name: topic.name,
       description: topic.description,
       flashcardCount: topic.flashcards?.length || 0,
-      flashcards: [{ count: topic.flashcards?.length || 0 }]
+      flashcards: [{ count: topic.flashcards?.length || 0 }],
+      progress: 0,
     })) || []
+
+    if (!userId) return baseTops
+
+    // Collect all flashcard IDs per topic
+    const topicCardIds = new Map<string, string[]>()
+    topics?.forEach(t => {
+      topicCardIds.set(t.id, t.flashcards?.map((f: any) => f.id) || [])
+    })
+
+    const allCardIds = Array.from(topicCardIds.values()).flat()
+    if (allCardIds.length === 0) return baseTops
+
+    const { data: userProgress } = await supabase
+      .from('flashcard_progress')
+      .select('flashcard_id, repetitions')
+      .eq('user_id', userId)
+      .in('flashcard_id', allCardIds)
+
+    const learnedSet = new Set<string>()
+    userProgress?.forEach(p => {
+      if (p.repetitions > 0) learnedSet.add(p.flashcard_id)
+    })
+
+    return baseTops.map(t => {
+      const cardIds = topicCardIds.get(t.id) || []
+      const learned = cardIds.filter(id => learnedSet.has(id)).length
+      return { ...t, progress: cardIds.length > 0 ? Math.round((learned / cardIds.length) * 100) : 0 }
+    })
   } catch (error) {
     logger.error('Erro ao buscar tópicos:', error)
     return []
