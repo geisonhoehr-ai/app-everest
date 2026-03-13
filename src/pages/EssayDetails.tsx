@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   BarChart3,
 } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
 import {
   getStudentEssayDetails,
   type StudentEssayDetails,
@@ -30,6 +31,7 @@ export default function EssayDetailsPage() {
   const { essayId } = useParams<{ essayId: string }>()
   const [essay, setEssay] = useState<StudentEssayDetails | null>(null)
   const [correction, setCorrection] = useState<CorrectionResult | null>(null)
+  const [correctedFileUrl, setCorrectedFileUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -42,6 +44,14 @@ export default function EssayDetailsPage() {
         ])
         setEssay(essayData)
         setCorrection(correctionData)
+
+        // Load teacher's corrected file if available
+        if ((essayData as any)?.corrected_file_url) {
+          const { data } = await supabase.storage
+            .from('essays')
+            .createSignedUrl((essayData as any).corrected_file_url, 3600)
+          if (data?.signedUrl) setCorrectedFileUrl(data.signedUrl)
+        }
       } finally {
         setIsLoading(false)
       }
@@ -177,6 +187,26 @@ export default function EssayDetailsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Teacher's corrected file (scanned) */}
+      {correctedFileUrl && (
+        <Card className="border-emerald-200 dark:border-emerald-800/30 shadow-sm">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-emerald-500" />
+              Correção do Professor
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Redação corrigida à mão pelo professor</p>
+          </CardHeader>
+          <CardContent className="px-5 pb-5">
+            {/\.(jpg|jpeg|png)$/i.test(correctedFileUrl) ? (
+              <img src={correctedFileUrl} alt="Correção do professor" className="max-w-full h-auto rounded-lg border" />
+            ) : (
+              <iframe src={correctedFileUrl} className="w-full h-[600px] rounded-lg border" title="Correção PDF" />
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Correction Details Tabs */}
       {correction && (

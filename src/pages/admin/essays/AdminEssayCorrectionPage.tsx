@@ -23,6 +23,9 @@ import {
   Trash2,
   Plus,
   ImageIcon,
+  Download,
+  Upload,
+  FileDown,
 } from 'lucide-react'
 import {
   getEssayForCorrection,
@@ -65,6 +68,9 @@ export default function AdminEssayCorrectionPage() {
   const [suggestions, setSuggestions] = useState<ImprovementSuggestion[]>([])
   const [transcribedText, setTranscribedText] = useState('')
   const [teacherFeedback, setTeacherFeedback] = useState('')
+  const [correctedFileUrl, setCorrectedFileUrl] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
 
   useEffect(() => {
     if (!submissionId) return
@@ -99,6 +105,14 @@ export default function AdminEssayCorrectionPage() {
             .from('essays')
             .createSignedUrl((essayData as any).file_url, 3600)
           if (data?.signedUrl) setFileUrl(data.signedUrl)
+        }
+
+        // Load corrected file URL if teacher already uploaded
+        if ((essayData as any)?.corrected_file_url) {
+          const { data } = await supabase.storage
+            .from('essays')
+            .createSignedUrl((essayData as any).corrected_file_url, 3600)
+          if (data?.signedUrl) setCorrectedFileUrl(data.signedUrl)
         }
       } catch {
         toast({ title: 'Erro ao carregar redação', variant: 'destructive' })
@@ -193,6 +207,178 @@ export default function AdminEssayCorrectionPage() {
       })
     } finally {
       setIsTranscribing(false)
+    }
+  }
+
+  const handleDownloadEssay = () => {
+    if (!fileUrl) return
+    const a = document.createElement('a')
+    a.href = fileUrl
+    a.download = `redacao-${studentName || 'aluno'}-${essay?.essay_prompts?.title || 'tema'}.pdf`.replace(/\s+/g, '-')
+    a.target = '_blank'
+    a.click()
+  }
+
+  const handleUploadCorrected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !submissionId || !user) return
+
+    setIsUploading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `corrections/${user.id}/${submissionId}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('essays')
+        .upload(path, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      // Save path to DB
+      await supabase
+        .from('essays')
+        .update({ corrected_file_url: path })
+        .eq('id', submissionId)
+
+      // Get signed URL
+      const { data } = await supabase.storage
+        .from('essays')
+        .createSignedUrl(path, 3600)
+
+      if (data?.signedUrl) setCorrectedFileUrl(data.signedUrl)
+
+      toast({ title: 'Correção enviada com sucesso!' })
+    } catch (err: any) {
+      toast({ title: 'Erro ao enviar arquivo', description: err.message, variant: 'destructive' })
+    } finally {
+      setIsUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleGeneratePdf = async () => {
+    if (!essay || !template) return
+    setIsGeneratingPdf(true)
+    try {
+      const { jsPDF } = await import('jspdf')
+      const doc = new jsPDF({ format: 'a4', unit: 'mm' })
+      const margin = 15
+      const pageWidth = doc.internal.pageSize.getWidth() - margin * 2
+      let y = margin
+
+      const addText = (text: string, size: number, style: 'normal' | 'bold' = 'normal', color: [number, number, number] = [0, 0, 0]) => {
+        doc.setFontSize(size)
+        doc.setFont('helvetica', style)
+        doc.setTextColor(...color)
+        const lines = doc.splitTextToSize(text, pageWidth)
+        for (const line of lines) {
+          if (y > 275) { doc.addPage(); y = margin }
+          doc.text(line, margin, y)
+          y += size * 0.45
+        }
+      }
+
+      const addLine = () => {
+        if (y > 275) { doc.addPage(); y = margin }
+        doc.setDrawColor(200, 200, 200)
+        doc.line(margin, y, margin + pageWidth, y)
+        y += 4
+      }
+
+      // Header
+      addText('RELATÓRIO DE CORREÇÃO CIAAR', 16, 'bold', [30, 64, 175])
+      y += 2
+      addLine()
+      addText(`Aluno: ${studentName || '—'}`, 10, 'normal')
+      addText(`Turma: ${className || '—'}`, 10, 'normal')
+      addText(`Tema: ${essay.essay_prompts?.title || 'Tema Livre'}`, 10, 'normal')
+      addText(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 10, 'normal')
+      y += 3
+
+      // Grade summary
+      addText(`NOTA FINAL: ${finalGrade.toFixed(3)} / ${template.max_grade}`, 14, 'bold',
+        finalGrade >= 7 ? [22, 163, 74] : finalGrade >= 5 ? [217, 119, 6] : [220, 38, 38])
+      y += 2
+      addText(`Expressão: -${expressionDebitTotal.toFixed(3)} (${expressionErrors.length} erros)`, 9, 'normal', [220, 38, 38])
+      addText(`Estrutura: -${structureDebitTotal.toFixed(3)}`, 9, 'normal', [37, 99, 235])
+      addText(`Conteúdo: -${contentDebitTotal.toFixed(3)}`, 9, 'normal', [217, 119, 6])
+      y += 4
+      addLine()
+
+      // Expression Errors
+      if (expressionErrors.length > 0) {
+        y += 2
+        addText('ERROS DE EXPRESSÃO', 12, 'bold', [220, 38, 38])
+        y += 2
+        expressionErrors.forEach((err, i) => {
+          addText(`${i + 1}. P${err.paragraph_number}, Per. ${err.sentence_number} — Débito: -${err.debit_value.toFixed(3)}`, 9, 'bold')
+          if (err.error_text) addText(`   Erro: "${err.error_text}"`, 9, 'normal', [180, 0, 0])
+          if (err.suggested_correction) addText(`   Correção: "${err.suggested_correction}"`, 9, 'normal', [0, 128, 0])
+          if (err.error_explanation) addText(`   ${err.error_explanation}`, 8, 'normal', [100, 100, 100])
+          y += 2
+        })
+        addLine()
+      }
+
+      // Structure Analysis
+      if (structureAnalysis.length > 0) {
+        y += 2
+        addText('ANÁLISE DE ESTRUTURA', 12, 'bold', [37, 99, 235])
+        y += 2
+        structureAnalysis.forEach(s => {
+          const type = s.paragraph_type === 'introduction' ? 'Introdução' : s.paragraph_type === 'conclusion' ? 'Conclusão' : 'Desenvolvimento'
+          addText(`Parágrafo ${s.paragraph_number} (${type}) — ${s.debit_value > 0 ? `-${s.debit_value.toFixed(3)}` : 'OK'}`, 9, 'bold')
+          if (s.analysis_text) addText(`   ${s.analysis_text}`, 8, 'normal', [80, 80, 80])
+          y += 2
+        })
+        addLine()
+      }
+
+      // Content Analysis
+      if (contentAnalysis.length > 0) {
+        y += 2
+        addText('ANÁLISE DE CONTEÚDO', 12, 'bold', [217, 119, 6])
+        y += 2
+        contentAnalysis.forEach(c => {
+          addText(`${c.criterion_name} — ${c.debit_level} (${c.debit_value > 0 ? `-${c.debit_value.toFixed(3)}` : 'Sem débito'})`, 9, 'bold')
+          if (c.analysis_text) addText(`   ${c.analysis_text}`, 8, 'normal', [80, 80, 80])
+          y += 2
+        })
+        addLine()
+      }
+
+      // Suggestions
+      if (suggestions.length > 0) {
+        y += 2
+        addText('SUGESTÕES DE MELHORIA', 12, 'bold', [5, 150, 105])
+        y += 2
+        suggestions.forEach(s => {
+          const cat = s.category === 'expression' ? 'Expressão' : s.category === 'structure' ? 'Estrutura' : 'Conteúdo'
+          addText(`[${cat}]`, 9, 'bold', [5, 150, 105])
+          addText(`   ${s.suggestion_text}`, 8, 'normal', [80, 80, 80])
+          y += 2
+        })
+        addLine()
+      }
+
+      // Teacher feedback
+      if (teacherFeedback) {
+        y += 2
+        addText('COMENTÁRIOS DO PROFESSOR', 12, 'bold')
+        y += 2
+        addText(teacherFeedback, 9, 'normal', [60, 60, 60])
+      }
+
+      // Footer
+      y += 8
+      addText('Everest Preparatórios — Correção gerada automaticamente', 7, 'normal', [160, 160, 160])
+
+      doc.save(`correcao-${studentName || 'aluno'}-${essay.essay_prompts?.title || 'tema'}.pdf`.replace(/\s+/g, '-'))
+      toast({ title: 'PDF gerado com sucesso!' })
+    } catch (err: any) {
+      toast({ title: 'Erro ao gerar PDF', description: err.message, variant: 'destructive' })
+    } finally {
+      setIsGeneratingPdf(false)
     }
   }
 
@@ -337,9 +523,9 @@ export default function AdminEssayCorrectionPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {/* Grade display */}
-          <div className="text-right mr-4">
+          <div className="text-right mr-3">
             <div className="text-xs text-muted-foreground">Nota</div>
             <div className={`text-2xl font-bold ${finalGrade >= 7 ? 'text-green-600' : finalGrade >= 5 ? 'text-amber-600' : 'text-red-600'}`}>
               {finalGrade.toFixed(3)}
@@ -347,6 +533,24 @@ export default function AdminEssayCorrectionPage() {
             <div className="text-[10px] text-muted-foreground">/ {template?.max_grade ?? 10}</div>
           </div>
 
+          {/* Download essay file */}
+          {fileUrl && (
+            <Button size="sm" variant="outline" onClick={handleDownloadEssay}
+              className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30">
+              <Download className="h-4 w-4 mr-1" /> Baixar Redação
+            </Button>
+          )}
+
+          {/* Upload corrected scan */}
+          <Button size="sm" variant="outline" onClick={() => document.getElementById('corrected-upload')?.click()}
+            disabled={isUploading}
+            className="border-cyan-300 text-cyan-700 hover:bg-cyan-50 dark:border-cyan-700 dark:text-cyan-400 dark:hover:bg-cyan-950/30">
+            {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+            {correctedFileUrl ? 'Reenviar Correção' : 'Enviar Correção'}
+          </Button>
+          <input id="corrected-upload" type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleUploadCorrected} />
+
+          {/* Transcribe via AI */}
           {fileUrl && !transcribedText && (
             <Button size="sm" onClick={handleTranscribe} disabled={isTranscribing}
               className="bg-indigo-600 hover:bg-indigo-700 text-white">
@@ -355,17 +559,27 @@ export default function AdminEssayCorrectionPage() {
             </Button>
           )}
 
+          {/* AI Correction */}
           <Button size="sm" onClick={handleAICorrection} disabled={isAILoading || !essayText}
             className="bg-violet-600 hover:bg-violet-700 text-white">
             {isAILoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
             {isAILoading ? 'Analisando...' : 'Correção IA'}
           </Button>
 
+          {/* Generate PDF Report */}
+          <Button size="sm" variant="outline" onClick={handleGeneratePdf} disabled={isGeneratingPdf}
+            className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-950/30">
+            {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
+            Gerar PDF
+          </Button>
+
+          {/* Save */}
           <Button size="sm" variant="outline" onClick={handleSaveCorrection} disabled={isSaving}
             className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/30">
             <Save className="h-4 w-4 mr-1" /> Salvar
           </Button>
 
+          {/* Finalize */}
           <Button size="sm" onClick={handleFinalizeCorrection} disabled={isSaving || expressionErrors.length === 0 && contentAnalysis.length === 0}
             className="bg-emerald-600 hover:bg-emerald-700 text-white">
             <Send className="h-4 w-4 mr-1" /> Finalizar
@@ -427,6 +641,21 @@ export default function AdminEssayCorrectionPage() {
                       <img src={fileUrl} alt="Redação" className="max-w-full h-auto rounded-lg border" />
                     ) : (
                       <iframe src={fileUrl} className="w-full h-[500px] rounded-lg border" title="Redação PDF" />
+                    )}
+                  </div>
+                )}
+
+                {/* Teacher's corrected file */}
+                {correctedFileUrl && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Correção do professor (escaneada)</span>
+                    </div>
+                    {/\.(jpg|jpeg|png)$/i.test(correctedFileUrl) ? (
+                      <img src={correctedFileUrl} alt="Correção escaneada" className="max-w-full h-auto rounded-lg border border-emerald-200 dark:border-emerald-800/30" />
+                    ) : (
+                      <iframe src={correctedFileUrl} className="w-full h-[500px] rounded-lg border border-emerald-200 dark:border-emerald-800/30" title="Correção PDF" />
                     )}
                   </div>
                 )}
