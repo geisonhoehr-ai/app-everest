@@ -92,7 +92,7 @@ export default function MyCoursesPage() {
           {courses.map((course) => (
             <Card key={course.id} className="border-border shadow-sm overflow-hidden flex flex-col">
               {/* Thumbnail */}
-              <div className="relative aspect-video w-full overflow-hidden bg-muted">
+              <div className="relative aspect-[16/8] w-full overflow-hidden bg-muted">
                 <img
                   src={course.image || '/placeholder.svg'}
                   alt={course.title}
@@ -105,8 +105,8 @@ export default function MyCoursesPage() {
                 )}
               </div>
 
-              <CardContent className="flex-1 p-5 flex flex-col">
-                <h3 className="font-bold text-lg leading-tight line-clamp-2 min-h-[3.5rem]">
+              <CardContent className="flex-1 p-4 flex flex-col">
+                <h3 className="font-bold text-base leading-tight line-clamp-2 min-h-[2.5rem]">
                   {course.title}
                 </h3>
 
@@ -121,7 +121,7 @@ export default function MyCoursesPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-3 border-t border-border mt-auto">
+                <div className="space-y-1.5 pt-2 border-t border-border mt-auto">
                   <div className="flex justify-between text-xs font-medium">
                     <span className="text-muted-foreground">Progresso</span>
                     <span className={cn(
