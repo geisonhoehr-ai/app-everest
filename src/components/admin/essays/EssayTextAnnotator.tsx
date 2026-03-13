@@ -91,15 +91,23 @@ function ToolbarButton({ icon, label, isActive, onClick }: ToolbarButtonProps) {
 }
 
 const HIGHLIGHT_COLORS = [
-  { color: '#fef08a', label: 'Destaque amarelo' },
-  { color: '#fca5a5', label: 'Destaque vermelho' },
-  { color: '#86efac', label: 'Destaque verde' },
-  { color: '#93c5fd', label: 'Destaque azul' },
+  { color: '#fef08a', label: 'Amarelo' },
+  { color: '#fdff32', label: 'Amarelo fluorescente' },
+  { color: '#fca5a5', label: 'Vermelho' },
+  { color: '#fb923c', label: 'Laranja' },
+  { color: '#86efac', label: 'Verde' },
+  { color: '#a3ff3c', label: 'Verde limão' },
+  { color: '#93c5fd', label: 'Azul' },
+  { color: '#c4b5fd', label: 'Roxo' },
+  { color: '#f9a8d4', label: 'Rosa' },
 ] as const
 
 const TEXT_COLORS = [
-  { color: '#ef4444', label: 'Texto vermelho (erro)' },
-  { color: '#22c55e', label: 'Texto verde (correto)' },
+  { color: '#ef4444', label: 'Vermelho (erro)' },
+  { color: '#22c55e', label: 'Verde (correto)' },
+  { color: '#f97316', label: 'Laranja (atenção)' },
+  { color: '#3b82f6', label: 'Azul (observação)' },
+  { color: '#a855f7', label: 'Roxo (sugestão)' },
 ] as const
 
 export function EssayTextAnnotator({
