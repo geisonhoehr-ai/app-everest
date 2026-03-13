@@ -29,7 +29,8 @@ import {
   type UserRanking,
   type UserPosition,
   type XPStatistics,
-  type UserAchievement
+  type UserAchievement,
+  type SubjectRanking
 } from '@/services/rankingService'
 import { getRankingByClass, getStudentClassIds, type RankingEntry } from '@/services/gamificationService'
 import { SectionLoader } from '@/components/SectionLoader'
@@ -47,8 +48,8 @@ export default function RankingPage() {
   const [userPosition, setUserPosition] = useState<UserPosition | null>(null)
   const [xpStats, setXpStats] = useState<XPStatistics | null>(null)
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
-  const [flashcardRanking, setFlashcardRanking] = useState<UserRanking[]>([])
-  const [quizRanking, setQuizRanking] = useState<UserRanking[]>([])
+  const [flashcardRanking, setFlashcardRanking] = useState<SubjectRanking[]>([])
+  const [quizRanking, setQuizRanking] = useState<SubjectRanking[]>([])
   const [classRanking, setClassRanking] = useState<RankingEntry[]>([])
   const [studentClasses, setStudentClasses] = useState<{ class_id: string; class_name: string }[]>([])
   const [selectedClassId, setSelectedClassId] = useState<string>('')
@@ -143,12 +144,13 @@ export default function RankingPage() {
   }
 
   const RankingCard = ({ user, position, showChange = false }: {
-    user: UserRanking,
+    user: UserRanking | SubjectRanking,
     position: number,
     showChange?: boolean
   }) => {
-    const levelInfo = getLevelInfo(user.total_xp)
-    const progressInfo = getProgressInfo(user.total_xp)
+    const xp = 'total_xp' in user ? user.total_xp : (user.total_xp_general || user.total_xp_activity)
+    const levelInfo = getLevelInfo(xp)
+    const progressInfo = getProgressInfo(xp)
     const positionChange = showChange ? getPositionChange(position, user.rank_position) : null
 
     return (
@@ -168,7 +170,7 @@ export default function RankingPage() {
           <Avatar className="h-12 w-12">
             <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} />
             <AvatarFallback className="bg-primary/10">
-              {user.first_name[0]}{user.last_name[0]}
+              {user.first_name?.[0]}{user.last_name?.[0]}
             </AvatarFallback>
           </Avatar>
 
@@ -188,7 +190,7 @@ export default function RankingPage() {
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 text-yellow-500" />
-                <span className="font-medium">{user.total_xp} XP</span>
+                <span className="font-medium">{xp} XP</span>
               </div>
 
               {positionChange && (
@@ -252,7 +254,7 @@ export default function RankingPage() {
           <Avatar className="h-12 w-12">
             <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${entry.email}`} />
             <AvatarFallback className="bg-primary/10">
-              {entry.first_name[0]}{entry.last_name[0]}
+              {entry.first_name?.[0]}{entry.last_name?.[0]}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
