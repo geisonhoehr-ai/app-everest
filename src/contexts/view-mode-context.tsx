@@ -6,6 +6,8 @@ interface ViewModeContextType {
   exitStudentView: () => void
 }
 
+const STORAGE_KEY = 'everest-view-as-student'
+
 const ViewModeContext = createContext<ViewModeContextType>({
   viewingAsStudent: false,
   toggleViewAsStudent: () => {},
@@ -13,14 +15,25 @@ const ViewModeContext = createContext<ViewModeContextType>({
 })
 
 export function ViewModeProvider({ children }: { children: ReactNode }) {
-  const [viewingAsStudent, setViewingAsStudent] = useState(false)
+  const [viewingAsStudent, setViewingAsStudent] = useState(() => {
+    try {
+      return sessionStorage.getItem(STORAGE_KEY) === 'true'
+    } catch {
+      return false
+    }
+  })
 
   const toggleViewAsStudent = useCallback(() => {
-    setViewingAsStudent(prev => !prev)
+    setViewingAsStudent(prev => {
+      const next = !prev
+      try { sessionStorage.setItem(STORAGE_KEY, String(next)) } catch {}
+      return next
+    })
   }, [])
 
   const exitStudentView = useCallback(() => {
     setViewingAsStudent(false)
+    try { sessionStorage.removeItem(STORAGE_KEY) } catch {}
   }, [])
 
   return (

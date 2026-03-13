@@ -17,7 +17,7 @@ interface ProtectedRouteProps {
  * Handles all edge cases properly and provides clear feedback.
  */
 export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps) => {
-  const { profile, loading, session, profileFetchAttempted, getRedirectPath } = useAuth()
+  const { profile, loading, session, profileFetchAttempted, getRedirectPath, viewingAsStudent } = useAuth()
   const location = useLocation()
   const { expired, expirationLoading } = useAccessExpiration()
 
@@ -79,7 +79,6 @@ export const ProtectedRoute = ({ allowedRoles, redirectTo }: ProtectedRouteProps
   }
 
   // Check if user has required role (use effective role which respects "view as student" mode)
-  const { viewingAsStudent } = useAuth()
   const effectiveRole = viewingAsStudent && profile.role !== 'student' ? 'student' : profile.role
 
   if (allowedRoles.includes(effectiveRole)) {

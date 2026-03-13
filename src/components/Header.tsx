@@ -80,7 +80,7 @@ export const Header = () => {
           <Button
             variant={viewingAsStudent ? 'default' : 'ghost'}
             size="sm"
-            className="hidden md:flex gap-1.5 text-xs"
+            className="flex gap-1.5 text-xs"
             onClick={toggleViewAsStudent}
           >
             <Eye className="h-3.5 w-3.5" />
