@@ -94,7 +94,7 @@ export default function EvercastAlbumPage() {
           <div className="absolute inset-0 flex items-center justify-center">
             <Disc3 className="w-12 h-12 text-white" />
           </div>
-          {course.thumbnail_url && !course.thumbnail_url.includes('example.com') && (
+          {course.thumbnail_url && (
             <img
               src={course.thumbnail_url}
               alt={course.name}

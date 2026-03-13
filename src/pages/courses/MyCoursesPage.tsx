@@ -92,7 +92,7 @@ export default function MyCoursesPage() {
           {courses.map((course) => (
             <Card key={course.id} className="border-border shadow-sm overflow-hidden flex flex-col">
               {/* Thumbnail */}
-              <div className="relative aspect-[16/8] w-full overflow-hidden bg-muted">
+              <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
                 <img
                   src={course.image || '/placeholder.svg'}
                   alt={course.title}

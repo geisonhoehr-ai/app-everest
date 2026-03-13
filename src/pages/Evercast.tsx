@@ -118,7 +118,7 @@ export default function EvercastPage() {
                     <Disc3 className="w-16 h-16 text-white/80" />
                   </div>
                   {/* Image on top - hides on error to reveal fallback */}
-                  {course.thumbnail_url && !course.thumbnail_url.includes('example.com') && (
+                  {course.thumbnail_url && (
                     <img
                       src={course.thumbnail_url}
                       alt={course.name}
