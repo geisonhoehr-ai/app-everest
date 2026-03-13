@@ -67,6 +67,7 @@ import type {
 import { calculateFinalGrade } from '@/types/essay-correction'
 import { EssayTextAnnotator } from '@/components/admin/essays/EssayTextAnnotator'
 import { PdfAnnotationCanvas } from '@/components/admin/essays/PdfAnnotationCanvas'
+import { AudioFeedbackRecorder } from '@/components/admin/essays/AudioFeedbackRecorder'
 
 export default function AdminEssayCorrectionPage() {
   const { submissionId } = useParams<{ submissionId: string }>()
@@ -95,6 +96,7 @@ export default function AdminEssayCorrectionPage() {
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false)
   const [annotatedTextHtml, setAnnotatedTextHtml] = useState<string | null>(null)
   const [annotationImageUrl, setAnnotationImageUrl] = useState<string | null>(null)
+  const [feedbackAudioUrl, setFeedbackAudioUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (!submissionId) return
@@ -145,6 +147,12 @@ export default function AdminEssayCorrectionPage() {
         }
         if ((essayData as any)?.annotation_image_url) {
           setAnnotationImageUrl((essayData as any).annotation_image_url)
+        }
+        if ((essayData as any)?.teacher_feedback_audio_url) {
+          const { data } = await supabase.storage
+            .from('essays')
+            .createSignedUrl((essayData as any).teacher_feedback_audio_url, 3600)
+          if (data?.signedUrl) setFeedbackAudioUrl(data.signedUrl)
         }
       } catch {
         toast({ title: 'Erro ao carregar redação', variant: 'destructive' })
@@ -445,6 +453,7 @@ export default function AdminEssayCorrectionPage() {
           teacher_feedback_text: teacherFeedback || null,
           annotated_text_html: annotatedTextHtml || null,
           annotation_image_url: annotationImageUrl || null,
+          teacher_feedback_audio_url: (feedbackAudioUrl && !feedbackAudioUrl.startsWith('http')) ? feedbackAudioUrl : undefined,
         } as any)
         .eq('id', submissionId)
 
@@ -487,6 +496,7 @@ export default function AdminEssayCorrectionPage() {
           teacher_feedback_text: teacherFeedback || null,
           annotated_text_html: annotatedTextHtml || null,
           annotation_image_url: annotationImageUrl || null,
+          teacher_feedback_audio_url: (feedbackAudioUrl && !feedbackAudioUrl.startsWith('http')) ? feedbackAudioUrl : undefined,
         } as any)
         .eq('id', submissionId)
 
@@ -794,6 +804,30 @@ export default function AdminEssayCorrectionPage() {
                     <p className="text-sm italic">Nenhum texto disponível</p>
                   </div>
                 )}
+
+                {/* Audio feedback recorder */}
+                <AudioFeedbackRecorder
+                  audioUrl={feedbackAudioUrl}
+                  onSave={(url) => setFeedbackAudioUrl(url)}
+                  onUpload={async (blob) => {
+                    const fileName = `audio-feedback/${submissionId}-${Date.now()}.webm`
+                    const { error } = await supabase.storage
+                      .from('essays')
+                      .upload(fileName, blob, { upsert: true })
+                    if (error) throw error
+                    // Save the path (not signed URL) to the database
+                    await supabase
+                      .from('essays')
+                      .update({ teacher_feedback_audio_url: fileName } as any)
+                      .eq('id', submissionId)
+                    // Return signed URL for playback
+                    const { data } = await supabase.storage
+                      .from('essays')
+                      .createSignedUrl(fileName, 3600)
+                    return data?.signedUrl || fileName
+                  }}
+                  disabled={isSaving}
+                />
               </CardContent>
             </ScrollArea>
           </Card>

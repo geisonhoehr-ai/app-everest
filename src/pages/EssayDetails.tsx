@@ -17,6 +17,7 @@ import {
   AlertCircle,
   AlertTriangle,
   BarChart3,
+  Mic,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import {
@@ -33,6 +34,7 @@ export default function EssayDetailsPage() {
   const [essay, setEssay] = useState<StudentEssayDetails | null>(null)
   const [correction, setCorrection] = useState<CorrectionResult | null>(null)
   const [correctedFileUrl, setCorrectedFileUrl] = useState<string | null>(null)
+  const [feedbackAudioUrl, setFeedbackAudioUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -52,6 +54,12 @@ export default function EssayDetailsPage() {
             .from('essays')
             .createSignedUrl((essayData as any).corrected_file_url, 3600)
           if (data?.signedUrl) setCorrectedFileUrl(data.signedUrl)
+        }
+        if ((essayData as any)?.teacher_feedback_audio_url) {
+          const { data } = await supabase.storage
+            .from('essays')
+            .createSignedUrl((essayData as any).teacher_feedback_audio_url, 3600)
+          if (data?.signedUrl) setFeedbackAudioUrl(data.signedUrl)
         }
       } finally {
         setIsLoading(false)
@@ -361,6 +369,20 @@ export default function EssayDetailsPage() {
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-3">
                         {teacherFeedback}
                       </p>
+                    </div>
+                  </>
+                )}
+
+                {/* Teacher audio feedback */}
+                {feedbackAudioUrl && (
+                  <>
+                    <Separator className="my-3" />
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <Mic className="h-4 w-4" />
+                        Feedback em Áudio do Professor
+                      </h4>
+                      <audio controls src={feedbackAudioUrl} className="w-full" />
                     </div>
                   </>
                 )}
