@@ -267,13 +267,16 @@ export default function CalendarPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {upcomingEvents.map((event) => {
+              {upcomingEvents.map((event, index) => {
                 const config = getEventConfig(event.event_type)
                 const eventDate = new Date(event.start_time)
                 return (
                   <div
                     key={event.id}
-                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    className={cn(
+                      "flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer",
+                      index % 2 === 1 && "bg-muted/30"
+                    )}
                     onClick={() => {
                       setDate(eventDate)
                       setCurrentMonth(eventDate)

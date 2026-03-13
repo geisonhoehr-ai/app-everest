@@ -181,8 +181,8 @@ export default function EssaysPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {essays.map((essay) => (
-                    <TableRow key={essay.id} className="transition-colors hover:bg-muted/50">
+                  {essays.map((essay, index) => (
+                    <TableRow key={essay.id} className={cn("transition-colors hover:bg-muted/50", index % 2 === 1 && "bg-muted/30")}>
                       <TableCell className="font-medium">{essay.theme}</TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">
                         {essay.date}

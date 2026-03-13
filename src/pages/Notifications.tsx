@@ -226,7 +226,7 @@ export default function NotificationsPage() {
               </CardContent>
             </Card>
           ) : (
-            filteredNotifications.map((notification) => {
+            filteredNotifications.map((notification, index) => {
               const IconComponent = getNotificationIcon(notification.type)
               const color = getNotificationColor(notification.type)
 
@@ -235,7 +235,8 @@ export default function NotificationsPage() {
                   key={notification.id}
                   className={cn(
                     "border-border shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30",
-                    !notification.is_read && "ring-2 ring-primary/20 bg-primary/5"
+                    !notification.is_read && "ring-2 ring-primary/20 bg-primary/5",
+                    notification.is_read && index % 2 === 1 && "bg-muted/30"
                   )}
                 >
                   <CardContent className="p-6">

@@ -202,11 +202,14 @@ export default function MyNotesPage() {
 
             {/* Note cards */}
             <div className="space-y-2">
-              {group.notes.map((note) => (
+              {group.notes.map((note, noteIndex) => (
                 <Link
                   key={note.id}
                   to={`/courses/${note.course_id}/lessons/${note.lesson_id}`}
-                  className="block p-4 bg-card border border-border rounded-xl hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all group"
+                  className={cn(
+                    "block p-4 bg-card border border-border rounded-xl hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all group",
+                    noteIndex % 2 === 1 && "bg-muted/30"
+                  )}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">

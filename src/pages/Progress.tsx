@@ -185,7 +185,10 @@ export default function ProgressPage() {
               {data.recentActivity.map((activity, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:border-primary/20 transition-all duration-200"
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:border-primary/20 transition-all duration-200",
+                    index % 2 === 1 && "bg-muted/30"
+                  )}
                 >
                   {activity.completed ? (
                     <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />

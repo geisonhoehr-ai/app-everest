@@ -576,7 +576,7 @@ function ModuleListView({
 
             <AccordionContent className="px-3 pb-3">
               <div className="space-y-0.5">
-                {module.lessons.map((lesson) => {
+                {module.lessons.map((lesson, lessonIndex) => {
                   const isFirstIncomplete = lesson.id === firstIncompleteLessonId
                   const duration = formatDuration(lesson.duration_seconds)
 
@@ -587,7 +587,7 @@ function ModuleListView({
                       className={cn(
                         'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
                         'hover:bg-muted/50',
-                        isFirstIncomplete && 'bg-primary/5 border border-primary/20 shadow-sm'
+                        isFirstIncomplete ? 'bg-primary/5 border border-primary/20 shadow-sm' : lessonIndex % 2 === 1 && 'bg-muted/30'
                       )}
                     >
                       {/* Status icon */}

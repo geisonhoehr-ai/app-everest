@@ -125,13 +125,13 @@ export default function FlashcardSessionHistoryPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {history.map((session) => {
+              {history.map((session, index) => {
                 const percentage = Math.round((session.correct / session.totalCards) * 100)
                 const modeDetails = getModeDetails(session.mode)
                 const ModeIcon = modeDetails.icon
 
                 return (
-                  <div key={session.id} className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                  <div key={session.id} className={cn("border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors", index % 2 === 1 && "bg-muted/30")}>
                     <div className="flex items-center justify-between">
                       <div className="flex-1 space-y-2">
                         <div className="flex items-start justify-between">

@@ -295,7 +295,7 @@ export default function SimulationsPage() {
                       : '—'
 
                     return (
-                      <TableRow key={sim.id} className="hover:bg-muted/50 transition-colors">
+                      <TableRow key={sim.id} className={cn("hover:bg-muted/50 transition-colors", index % 2 === 1 && "bg-muted/30")}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
