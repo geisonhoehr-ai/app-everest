@@ -65,8 +65,8 @@ import type {
   ImprovementSuggestion,
 } from '@/types/essay-correction'
 import { calculateFinalGrade } from '@/types/essay-correction'
-import EssayTextAnnotator from '@/components/admin/essays/EssayTextAnnotator'
-import PdfAnnotationCanvas from '@/components/admin/essays/PdfAnnotationCanvas'
+import { EssayTextAnnotator } from '@/components/admin/essays/EssayTextAnnotator'
+import { PdfAnnotationCanvas } from '@/components/admin/essays/PdfAnnotationCanvas'
 
 export default function AdminEssayCorrectionPage() {
   const { submissionId } = useParams<{ submissionId: string }>()
