@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { courseService } from '@/services/courseService'
 import { getUserProgress, getUserAchievements } from '@/services/gamificationService'
+import { rankingService } from '@/services/rankingService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { logger } from '@/lib/logger'
 import {
@@ -62,6 +63,9 @@ export default function ProgressPage() {
       }
 
       try {
+        // Check and grant achievements first
+        await rankingService.checkAndGrantAchievements(userId).catch(() => {})
+
         const [courses, userProgress, achievements] = await Promise.all([
           courseService.getUserCoursesWithDetails(userId),
           getUserProgress(userId).catch(() => null),

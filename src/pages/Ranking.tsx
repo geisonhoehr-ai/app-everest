@@ -61,6 +61,9 @@ export default function RankingPage() {
       try {
         setIsLoading(true)
 
+        // Check and grant achievements first
+        await rankingService.checkAndGrantAchievements(user.id).catch(() => {})
+
         const [
           globalData,
           positionData,
@@ -70,13 +73,13 @@ export default function RankingPage() {
           quizData,
           classesData
         ] = await Promise.all([
-          rankingService.getUserRanking(50),
-          rankingService.getUserPosition(user.id),
-          rankingService.getXPStatistics(),
-          rankingService.getUserAchievements(user.id),
-          rankingService.getRankingByActivity('flashcard', 20),
-          rankingService.getRankingByActivity('quiz', 20),
-          getStudentClassIds(user.id)
+          rankingService.getUserRanking(50).catch(() => []),
+          rankingService.getUserPosition(user.id).catch(() => null),
+          rankingService.getXPStatistics().catch(() => null),
+          rankingService.getUserAchievements(user.id).catch(() => []),
+          rankingService.getRankingByActivity('flashcard', 20).catch(() => []),
+          rankingService.getRankingByActivity('quiz', 20).catch(() => []),
+          getStudentClassIds(user.id).catch(() => [])
         ])
 
         setGlobalRanking(globalData)
@@ -434,16 +437,24 @@ export default function RankingPage() {
           <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
             <CardContent className="p-5">
               <h2 className="text-lg font-semibold mb-4">Ranking Global</h2>
-              <div className="space-y-3">
-                {globalRanking.map((user, index) => (
-                  <RankingCard
-                    key={user.user_id}
-                    user={user}
-                    position={index + 1}
-                    showChange={true}
-                  />
-                ))}
-              </div>
+              {globalRanking.length > 0 ? (
+                <div className="space-y-3">
+                  {globalRanking.map((user, index) => (
+                    <RankingCard
+                      key={user.user_id}
+                      user={user}
+                      position={index + 1}
+                      showChange={true}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Trophy className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p>Nenhum dado de ranking disponível ainda.</p>
+                  <p className="text-xs mt-1">Complete atividades para aparecer no ranking!</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -453,15 +464,23 @@ export default function RankingPage() {
           <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
             <CardContent className="p-5">
               <h2 className="text-lg font-semibold mb-4">Ranking de Flashcards</h2>
-              <div className="space-y-3">
-                {flashcardRanking.map((user, index) => (
-                  <RankingCard
-                    key={user.user_id}
-                    user={user}
-                    position={index + 1}
-                  />
-                ))}
-              </div>
+              {flashcardRanking.length > 0 ? (
+                <div className="space-y-3">
+                  {flashcardRanking.map((user, index) => (
+                    <RankingCard
+                      key={user.user_id}
+                      user={user}
+                      position={index + 1}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Target className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p>Nenhum dado de ranking de flashcards disponível ainda.</p>
+                  <p className="text-xs mt-1">Estude flashcards para aparecer no ranking!</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -471,15 +490,23 @@ export default function RankingPage() {
           <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
             <CardContent className="p-5">
               <h2 className="text-lg font-semibold mb-4">Ranking de Quizzes</h2>
-              <div className="space-y-3">
-                {quizRanking.map((user, index) => (
-                  <RankingCard
-                    key={user.user_id}
-                    user={user}
-                    position={index + 1}
-                  />
-                ))}
-              </div>
+              {quizRanking.length > 0 ? (
+                <div className="space-y-3">
+                  {quizRanking.map((user, index) => (
+                    <RankingCard
+                      key={user.user_id}
+                      user={user}
+                      position={index + 1}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Zap className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p>Nenhum dado de ranking de quizzes disponível ainda.</p>
+                  <p className="text-xs mt-1">Complete quizzes para aparecer no ranking!</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

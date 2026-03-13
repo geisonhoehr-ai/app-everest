@@ -68,6 +68,9 @@ export default function AchievementsPage() {
       try {
         setIsLoading(true)
 
+        // First check and grant any new achievements the user has earned
+        await rankingService.checkAndGrantAchievements(user.id).catch(() => {})
+
         const [
           achievementsData,
           userAchievementsData,
@@ -290,7 +293,7 @@ export default function AchievementsPage() {
     )
   }
 
-  const totalXP = userAchievements.reduce((sum, ua) => sum + ua.achievement.xp_reward, 0)
+  const totalXP = userAchievements.reduce((sum, ua) => sum + (ua.achievement?.xp_reward || 0), 0)
   const completionPercentage = (unlockedAchievements.length / allAchievements.length) * 100
 
   return (
@@ -373,14 +376,17 @@ export default function AchievementsPage() {
           <TabsContent value="unlocked" className="space-y-4">
             {unlockedAchievements.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {unlockedAchievements.map((userAchievement) => (
-                  <AchievementCard
-                    key={userAchievement.achievement.id}
-                    achievement={userAchievement.achievement}
-                    isUnlocked={true}
-                    userAchievement={userAchievement}
-                  />
-                ))}
+                {unlockedAchievements.map((achievement) => {
+                  const ua = userAchievements.find(u => u.achievement_id === achievement.id)
+                  return (
+                    <AchievementCard
+                      key={achievement.id}
+                      achievement={achievement}
+                      isUnlocked={true}
+                      userAchievement={ua}
+                    />
+                  )
+                })}
               </div>
             ) : (
               <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">

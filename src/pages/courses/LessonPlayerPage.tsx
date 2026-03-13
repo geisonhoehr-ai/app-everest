@@ -336,8 +336,9 @@ export default function LessonPlayerPage() {
       })
       if (error) throw error
 
-      // Award XP
+      // Award XP and check achievements
       await rankingService.addUserScore(user.id, 'video_lesson', 10, lessonId)
+      rankingService.checkAndGrantAchievements(user.id).catch(() => {})
       setShowXpAnimation(true)
       setTimeout(() => setShowXpAnimation(false), 2000)
 
@@ -367,8 +368,9 @@ export default function LessonPlayerPage() {
     try {
       const newComment = await lessonInteractionService.addComment(lessonId, user.id, text.trim(), parentId)
       if (newComment) {
-        // Award XP for commenting
+        // Award XP for commenting and check achievements
         await rankingService.addUserScore(user.id, 'lesson_comment', 5, lessonId)
+        rankingService.checkAndGrantAchievements(user.id).catch(() => {})
         // Refresh comments
         const updated = await lessonInteractionService.getComments(lessonId)
         setComments(updated)
@@ -401,6 +403,7 @@ export default function LessonPlayerPage() {
       // Award XP for first rating only
       if (!ratingStats.userRating) {
         await rankingService.addUserScore(user.id, 'lesson_rating', 3, lessonId)
+        rankingService.checkAndGrantAchievements(user.id).catch(() => {})
         toast({ title: `Avaliacao registrada! +3 XP` })
       } else {
         toast({ title: 'Avaliacao atualizada!' })

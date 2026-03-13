@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
 import { addXP } from '@/services/gamificationService'
+import { rankingService } from '@/services/rankingService'
 
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -421,6 +422,9 @@ export const communityService = {
         })
       }
 
+      // Check achievements after community activity
+      rankingService.checkAndGrantAchievements(data.user_id).catch(() => {})
+
       return post as CommunityPost
     } catch (error) {
       logger.error('createPost failed', error)
@@ -635,6 +639,9 @@ export const communityService = {
           logger.error('Failed to award daily bonus XP', err)
         })
       }
+
+      // Check achievements after community activity
+      rankingService.checkAndGrantAchievements(data.user_id).catch(() => {})
 
       return comment as CommunityComment
     } catch (error) {

@@ -245,13 +245,13 @@ export const rankingService = {
         if (name === 'primeiro login') {
           shouldGrant = scoreHistory.length > 0
         } else if (name === 'estudante dedicado') {
-          shouldGrant = totalXP >= 500
+          shouldGrant = totalXP >= 100
         } else if (name === 'especialista') {
-          shouldGrant = totalXP >= 2500
-        } else if (name === 'mestre do conhecimento') {
-          shouldGrant = totalXP >= 10000
+          shouldGrant = totalXP >= 500
+        } else if (name === 'mestre' || name === 'mestre do conhecimento') {
+          shouldGrant = totalXP >= 1000
         } else if (name === 'lenda') {
-          shouldGrant = totalXP >= 20000
+          shouldGrant = totalXP >= 2000
 
         // ── Conquistas de ranking ──
         } else if (name === 'top 10') {
@@ -271,21 +271,21 @@ export const rankingService = {
 
         // ── Conquistas de aulas ──
         } else if (name === 'primeira aula') {
-          shouldGrant = (activityCounts['lesson_complete'] || 0) >= 1
+          shouldGrant = (activityCounts['video_lesson'] || activityCounts['lesson_complete'] || 0) >= 1
         } else if (name === 'assistiu 10 aulas') {
-          shouldGrant = (activityCounts['lesson_complete'] || 0) >= 10
+          shouldGrant = (activityCounts['video_lesson'] || activityCounts['lesson_complete'] || 0) >= 10
         } else if (name === 'assistiu 50 aulas') {
-          shouldGrant = (activityCounts['lesson_complete'] || 0) >= 50
+          shouldGrant = (activityCounts['video_lesson'] || activityCounts['lesson_complete'] || 0) >= 50
         } else if (name === 'assistiu 100 aulas') {
-          shouldGrant = (activityCounts['lesson_complete'] || 0) >= 100
+          shouldGrant = (activityCounts['video_lesson'] || activityCounts['lesson_complete'] || 0) >= 100
 
         // ── Conquistas de comentários ──
         } else if (name === 'comentarista') {
-          shouldGrant = (activityCounts['lesson_comment'] || 0) >= 5
+          shouldGrant = ((activityCounts['lesson_comment'] || 0) + (activityCounts['community_comment'] || 0)) >= 5
         } else if (name === 'participativo') {
-          shouldGrant = (activityCounts['lesson_comment'] || 0) >= 20
+          shouldGrant = ((activityCounts['lesson_comment'] || 0) + (activityCounts['community_comment'] || 0)) >= 20
         } else if (name === 'debatedor') {
-          shouldGrant = (activityCounts['lesson_comment'] || 0) >= 50
+          shouldGrant = ((activityCounts['lesson_comment'] || 0) + (activityCounts['community_comment'] || 0)) >= 50
 
         // ── Conquistas de avaliações ──
         } else if (name === 'avaliador') {
@@ -317,7 +317,7 @@ export const rankingService = {
         } else if (name === 'influencer') {
           shouldGrant = (activityCounts['community_post'] || 0) >= 20
         } else if (name === 'colaborador') {
-          shouldGrant = (activityCounts['community_reply'] || 0) >= 10
+          shouldGrant = ((activityCounts['community_reply'] || 0) + (activityCounts['community_comment'] || 0)) >= 10
         } else if (name === 'popular') {
           shouldGrant = (activityCounts['community_reaction'] || 0) >= 50
 
