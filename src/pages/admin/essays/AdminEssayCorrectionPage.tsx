@@ -484,7 +484,7 @@ export default function AdminEssayCorrectionPage() {
       })
 
       toast({ title: 'Correção finalizada e aluno notificado!' })
-      navigate(`/admin/essays/${essay.prompt_id}/submissions`)
+      navigate(classId ? `/admin/essays/turma/${classId}` : '/admin/essays')
     } catch {
       toast({ title: 'Erro ao finalizar correção', variant: 'destructive' })
     } finally {

@@ -180,6 +180,9 @@ const AdminEssaySettingsPage = lazy(
 const AdminEssayComparisonPage = lazy(
   () => import('@/pages/admin/essays/AdminEssayComparisonPage'),
 )
+const AdminEssayPromptsPage = lazy(
+  () => import('@/pages/admin/essays/AdminEssayPromptsPage'),
+)
 const AdminReportsPage = lazy(
   () => import('@/pages/admin/reports/AdminReportsPage'),
 )
@@ -527,6 +530,7 @@ const App = () => (
                     element={<AdminEvercastFormPage />}
                   />
                   <Route path="essays" element={<AdminEssaysPage />} />
+                  <Route path="essays/prompts" element={<AdminEssayPromptsPage />} />
                   <Route path="essays/new" element={<AdminEssayFormPage />} />
                   <Route
                     path="essays/:promptId/edit"
