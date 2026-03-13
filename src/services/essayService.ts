@@ -39,8 +39,8 @@ export const getEssayForCorrection = async (
     .select(`
       *,
       essay_prompts ( title, evaluation_criteria ),
-      users ( 
-        first_name, 
+      users!student_id (
+        first_name,
         last_name,
         student_classes (
           classes (
@@ -72,7 +72,7 @@ export const getEssaysForComparison = async (
     .select(`
       *,
       essay_prompts ( title, evaluation_criteria ),
-      users ( first_name, last_name )
+      users!student_id ( first_name, last_name )
     `)
     .in('id', submissionIds)
 
@@ -218,10 +218,29 @@ export const getUserEssayStats = async (userId: string): Promise<EssayStatsData>
       ? Math.round(correctedGrades.reduce((sum, e) => sum + (e.final_grade || 0), 0) / correctedGrades.length)
       : 0
 
+    // Calcular tempo médio de correção (dias entre submission_date e correction_date)
+    let averageDays = 0
+    const { data: correctedEssays } = await supabase
+      .from('essays')
+      .select('submission_date, correction_date')
+      .eq('student_id', userId)
+      .eq('status', 'corrected' as any)
+      .not('correction_date', 'is', null)
+      .not('submission_date', 'is', null)
+
+    if (correctedEssays && correctedEssays.length > 0) {
+      const totalDays = correctedEssays.reduce((sum, e) => {
+        const sub = new Date(e.submission_date!).getTime()
+        const cor = new Date(e.correction_date!).getTime()
+        return sum + (cor - sub) / (1000 * 60 * 60 * 24)
+      }, 0)
+      averageDays = Math.round(totalDays / correctedEssays.length)
+    }
+
     return {
       totalEssays: totalResult.count || 0,
       averageGrade,
-      averageDays: 3,
+      averageDays,
       pending: pendingResult.count || 0
     }
   } catch (error) {

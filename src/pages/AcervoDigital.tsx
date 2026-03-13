@@ -26,6 +26,8 @@ import { cn } from '@/lib/utils'
 import { acervoService, type AcervoItem, type ProvaGroup } from '@/services/acervoService'
 import { logger } from '@/lib/logger'
 import { useToast } from '@/hooks/use-toast'
+import { cachedFetch } from '@/lib/offlineCache'
+import { OfflineBanner } from '@/components/OfflineBanner'
 
 const CONCURSO_COLORS: Record<string, { bg: string; text: string; badge: string; border: string }> = {
   livros: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20' },
@@ -108,16 +110,22 @@ export default function AcervoDigitalPage() {
     }
   }, [viewerBlobUrl])
 
+  const [fromCache, setFromCache] = useState(false)
+
   useEffect(() => {
     async function load() {
       try {
         setIsLoading(true)
-        const [l, p] = await Promise.all([
-          acervoService.getLivros(),
-          acervoService.getProvas(),
-        ])
+        const result = await cachedFetch('acervo-digital', () =>
+          Promise.all([
+            acervoService.getLivros(),
+            acervoService.getProvas(),
+          ])
+        )
+        const [l, p] = result.data
         setLivros(l)
         setProvas(p)
+        setFromCache(result.fromCache)
       } catch (err) {
         logger.error('Error loading acervo:', err)
       } finally {
@@ -494,6 +502,8 @@ export default function AcervoDigitalPage() {
           Livros, apostilas e provas anteriores para seu estudo
         </p>
       </div>
+
+      <OfflineBanner fromCache={fromCache} />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-3 gap-4">

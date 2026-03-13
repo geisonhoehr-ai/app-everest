@@ -122,7 +122,7 @@ export const getEssaySubmissions = async (promptId: string) => {
       final_grade,
       submission_date,
       created_at,
-      users (
+      users!student_id (
         id,
         first_name,
         last_name,

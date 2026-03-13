@@ -244,7 +244,7 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route element={<PublicRoute />}>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<Navigate to="/login" replace />} />
                 <Route path="/forgot-password" element={<Navigate to="/login" replace />} />

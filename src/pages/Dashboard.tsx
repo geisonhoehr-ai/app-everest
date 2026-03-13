@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { LiveBanner } from '@/components/LiveBanner'
 import { useAuth } from '@/hooks/use-auth'
+import { cachedFetch } from '@/lib/offlineCache'
 import {
   getUserSettings,
   saveDashboardLayout,
@@ -26,6 +27,7 @@ import {
 import { SectionLoader } from '@/components/SectionLoader'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { OfflineBanner } from '@/components/OfflineBanner'
 import { dashboardService, type Course, type Event } from '@/services/dashboardService'
 import {
   rankingService,
@@ -83,6 +85,7 @@ export default function DashboardPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [userPosition, setUserPosition] = useState<UserPosition | null>(null)
   const [topRanking, setTopRanking] = useState<UserRanking[]>([])
+  const [fromCache, setFromCache] = useState(false)
 
   // Streak
   useEffect(() => {
@@ -127,13 +130,17 @@ export default function DashboardPage() {
       }
 
       try {
-        const [trailsData, userCourses, upcomingEvents, positionData, rankingData] = await Promise.all([
-          courseService.getUserCoursesByTrail(userId),
-          dashboardService.getUserCourses(userId),
-          dashboardService.getUpcomingEvents(userId),
-          rankingService.getUserPosition(userId).catch(() => null),
-          rankingService.getUserRanking(5).catch(() => []),
-        ])
+        const result = await cachedFetch(`dashboard-${userId}`, () =>
+          Promise.all([
+            courseService.getUserCoursesByTrail(userId),
+            dashboardService.getUserCourses(userId),
+            dashboardService.getUpcomingEvents(userId),
+            rankingService.getUserPosition(userId).catch(() => null),
+            rankingService.getUserRanking(5).catch(() => []),
+          ])
+        )
+        setFromCache(result.fromCache)
+        const [trailsData, userCourses, upcomingEvents, positionData, rankingData] = result.data
 
         // Stats from trails
         const trails = Array.isArray(trailsData) ? trailsData : []
@@ -227,6 +234,8 @@ export default function DashboardPage() {
           Acompanhe seu progresso e continue aprendendo.
         </p>
       </div>
+
+      <OfflineBanner fromCache={fromCache} />
 
       {/* Live Banner */}
       <LiveBanner />

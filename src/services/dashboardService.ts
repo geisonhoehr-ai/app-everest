@@ -150,25 +150,48 @@ export const dashboardService = {
     activeStudents: number
   }> {
     try {
-      const [
-        essaysResult,
-        studentsResult
-      ] = await Promise.all([
-        supabase.from('essays').select('id', { count: 'exact' }).eq('teacher_id', teacherId).eq('status', 'draft'),
-        supabase.from('student_classes').select('user_id', { count: 'exact' })
+      // 1. Buscar turmas do professor
+      const { data: teacherClasses } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('teacher_id', teacherId)
+
+      const classIds = (teacherClasses || []).map(c => c.id)
+
+      const [essaysResult, forumResult, studentsResult] = await Promise.all([
+        // Redações com status 'submitted' (aguardando correção)
+        supabase
+          .from('essays')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['submitted', 'correcting'] as any),
+
+        // Tópicos do fórum sem resposta
+        supabase
+          .from('community_posts')
+          .select('id', { count: 'exact', head: true })
+          .eq('type', 'question')
+          .eq('comments_count', 0),
+
+        // Alunos nas turmas do professor
+        classIds.length > 0
+          ? supabase
+              .from('student_classes')
+              .select('user_id', { count: 'exact', head: true })
+              .in('class_id', classIds)
+          : Promise.resolve({ count: 0, error: null }),
       ])
 
       return {
         essaysToCorrect: essaysResult.count || 0,
-        forumQuestions: 8, // Mockado por enquanto
-        activeStudents: studentsResult.count || 0
+        forumQuestions: forumResult.count || 0,
+        activeStudents: studentsResult.count || 0,
       }
     } catch (error) {
       logger.error('Erro ao buscar estatísticas do professor:', error)
       return {
         essaysToCorrect: 0,
         forumQuestions: 0,
-        activeStudents: 0
+        activeStudents: 0,
       }
     }
   }

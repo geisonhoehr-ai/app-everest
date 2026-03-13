@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { BookOpen, Play, Lock, Layers } from 'lucide-react'
+import { cachedFetch } from '@/lib/offlineCache'
+import { OfflineBanner } from '@/components/OfflineBanner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -17,13 +19,17 @@ export default function MyCoursesPage() {
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [courses, setCourses] = useState<CourseWithProgress[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [fromCache, setFromCache] = useState(false)
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         if (!user?.id) return
-        const data = await courseService.getUserCoursesWithDetails(user.id)
-        setCourses(data)
+        const result = await cachedFetch(`my-courses-${user.id}`, () =>
+          courseService.getUserCoursesWithDetails(user.id)
+        )
+        setCourses(result.data)
+        setFromCache(result.fromCache)
       } catch (error) {
         logger.error('Error fetching courses:', error)
       } finally {
@@ -66,6 +72,8 @@ export default function MyCoursesPage() {
         <h1 className="text-2xl font-bold text-foreground">Meus Cursos</h1>
         <p className="text-sm text-muted-foreground mt-1">Acompanhe seu progresso</p>
       </div>
+
+      <OfflineBanner fromCache={fromCache} />
 
       {courses.length === 0 ? (
         <Card className="border-border shadow-sm">
