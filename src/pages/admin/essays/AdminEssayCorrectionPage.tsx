@@ -615,7 +615,7 @@ export default function AdminEssayCorrectionPage() {
             <Button
               variant="outline"
               size="icon"
-              className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+              className="bg-background hover:bg-green-50 hover:text-green-700 hover:border-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-300 dark:hover:border-green-700"
               onClick={() => navigate(classId ? `/admin/essays/turma/${classId}` : '/admin/essays')}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -660,42 +660,42 @@ export default function AdminEssayCorrectionPage() {
         {/* Action buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           {fileUrl && (
-            <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={handleDownloadEssay}>
+            <Button size="sm" variant="outline" className="bg-background hover:bg-green-50 hover:text-green-700 hover:border-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-300 dark:hover:border-green-700" onClick={handleDownloadEssay}>
               <Download className="h-4 w-4 mr-1" /> Baixar Redação
             </Button>
           )}
 
-          <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={() => document.getElementById('corrected-upload')?.click()} disabled={isUploading}>
+          <Button size="sm" variant="outline" className="bg-background hover:bg-green-50 hover:text-green-700 hover:border-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-300 dark:hover:border-green-700" onClick={() => document.getElementById('corrected-upload')?.click()} disabled={isUploading}>
             {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
             {correctedFileUrl ? 'Reenviar Correção' : 'Enviar Correção'}
           </Button>
           <input id="corrected-upload" type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleUploadCorrected} />
 
           {fileUrl && !transcribedText && (
-            <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={handleTranscribe} disabled={isTranscribing}>
+            <Button size="sm" variant="outline" className="bg-background hover:bg-green-50 hover:text-green-700 hover:border-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-300 dark:hover:border-green-700" onClick={handleTranscribe} disabled={isTranscribing}>
               {isTranscribing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ImageIcon className="h-4 w-4 mr-1" />}
               Transcrever
             </Button>
           )}
 
-          <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={handleAICorrection} disabled={isAILoading || !essayText}>
+          <Button size="sm" variant="outline" className="bg-background hover:bg-green-50 hover:text-green-700 hover:border-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-300 dark:hover:border-green-700" onClick={handleAICorrection} disabled={isAILoading || !essayText}>
             {isAILoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
             {isAILoading ? 'Analisando...' : 'Correção IA'}
           </Button>
 
-          <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
+          <Button size="sm" variant="outline" className="bg-background hover:bg-green-50 hover:text-green-700 hover:border-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-300 dark:hover:border-green-700" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
             {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
             Gerar PDF
           </Button>
 
           <div className="flex-1" />
 
-          <Button size="sm" variant="outline" className="bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-300" onClick={handleSaveDraft} disabled={isSaving}>
+          <Button size="sm" variant="outline" className="bg-background hover:bg-green-50 hover:text-green-700 hover:border-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-300 dark:hover:border-green-700" onClick={handleSaveDraft} disabled={isSaving}>
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
             Salvar Rascunho
           </Button>
 
-          <Button size="sm" variant="outline" className="bg-white hover:bg-green-600 hover:text-white hover:border-green-600" onClick={() => setShowFinalizeDialog(true)} disabled={isSaving}>
+          <Button size="sm" variant="outline" className="bg-background hover:bg-green-600 hover:text-white hover:border-green-600 dark:hover:bg-green-600" onClick={() => setShowFinalizeDialog(true)} disabled={isSaving}>
             <Send className="h-4 w-4 mr-1" /> Finalizar Correção
           </Button>
         </div>
@@ -790,22 +790,22 @@ export default function AdminEssayCorrectionPage() {
         <div className="lg:col-span-3 h-full overflow-hidden">
           <Tabs defaultValue="expression" className="h-full flex flex-col">
             <TabsList className="w-full shrink-0 grid grid-cols-4">
-              <TabsTrigger value="expression" className="text-xs gap-1.5">
+              <TabsTrigger value="expression" className="text-xs gap-1.5 data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/40 dark:data-[state=active]:text-red-300">
                 <PenLine className="h-3.5 w-3.5" />
                 Expressão
                 {expressionErrors.length > 0 && (
                   <Badge variant="destructive" className="text-[9px] px-1 py-0 ml-1">{expressionErrors.length}</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="structure" className="text-xs gap-1.5">
+              <TabsTrigger value="structure" className="text-xs gap-1.5 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/40 dark:data-[state=active]:text-blue-300">
                 <BookOpen className="h-3.5 w-3.5" />
                 Estrutura
               </TabsTrigger>
-              <TabsTrigger value="content" className="text-xs gap-1.5">
+              <TabsTrigger value="content" className="text-xs gap-1.5 data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 dark:data-[state=active]:bg-purple-900/40 dark:data-[state=active]:text-purple-300">
                 <FileText className="h-3.5 w-3.5" />
                 Conteúdo
               </TabsTrigger>
-              <TabsTrigger value="suggestions" className="text-xs gap-1.5">
+              <TabsTrigger value="suggestions" className="text-xs gap-1.5 data-[state=active]:bg-amber-100 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/40 dark:data-[state=active]:text-amber-300">
                 <Lightbulb className="h-3.5 w-3.5" />
                 Sugestões
               </TabsTrigger>
