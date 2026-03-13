@@ -1,13 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
 import { cn, getCategoryColor } from '@/lib/utils'
 import { ArrowLeft, Brain, ChevronRight, Play } from 'lucide-react'
 import { StudyModeDialog } from '@/components/flashcards/StudyModeDialog'
@@ -103,64 +96,57 @@ export default function FlashcardTopicsPage() {
         </p>
       </div>
 
-      {/* Topics Accordion */}
-      <Card className="border-border shadow-sm">
-        <CardContent className="pt-6">
-          <Accordion type="multiple" defaultValue={topics.length > 0 ? [topics[0].id] : []} className="space-y-4">
-            {topics.map((topic, idx) => {
-              const cardCount = topic.flashcards?.[0]?.count || topic.flashcardCount || 0
-              const colors = getCategoryColor(idx)
+      {/* Topics Grid */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {topics.map((topic, idx) => {
+          const cardCount = topic.flashcards?.[0]?.count || topic.flashcardCount || 0
+          const colors = getCategoryColor(idx)
 
-              return (
-                <AccordionItem
-                  value={topic.id}
-                  key={topic.id}
-                  className={cn('border rounded-xl overflow-hidden', colors.border)}
-                >
-                  <AccordionTrigger className="font-semibold px-6 py-4 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <div className="flex items-center gap-4">
-                        <div className={cn('p-2 rounded-lg', colors.bg)}>
-                          <span className={cn('text-sm font-bold', colors.text)}>
-                            {String(idx + 1).padStart(2, '0')}
-                          </span>
-                        </div>
-                        <div className="text-left">
-                          <span className="text-lg">{topic.name}</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Brain className={cn('h-3.5 w-3.5', colors.text)} />
-                            <span className="text-xs text-muted-foreground">
-                              {cardCount} cards
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 pb-4">
-                    <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        {topic.description || `Estude ${topic.name} com flashcards interativos e domine o conteúdo.`}
-                      </p>
-                      <button
-                        onClick={() => handleStudyClick(topic.id)}
-                        className={cn(
-                          'inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 text-white hover:shadow-md',
-                          colors.btn
-                        )}
-                      >
-                        <Play className="h-4 w-4" />
-                        Estudar Agora
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              )
-            })}
-          </Accordion>
-        </CardContent>
-      </Card>
+          return (
+            <div
+              key={topic.id}
+              className={cn(
+                'group relative flex flex-col rounded-xl border bg-card p-5 transition-all duration-200 shadow-sm hover:shadow-lg',
+                colors.border, colors.hoverBorder
+              )}
+            >
+              {/* Badge flutuante */}
+              <div className={cn('absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold text-white', colors.badge)}>
+                Tópico {idx + 1}
+              </div>
+
+              {/* Título */}
+              <h3 className="mt-2 font-semibold text-foreground leading-snug line-clamp-2">
+                {topic.name}
+              </h3>
+
+              {/* Info */}
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <Brain className={cn('h-3.5 w-3.5', colors.text)} />
+                <span>{cardCount} cards disponíveis</span>
+              </div>
+
+              {/* Descrição */}
+              <p className="mt-2 flex-1 text-sm text-muted-foreground line-clamp-2">
+                {topic.description || `Estude ${topic.name} com flashcards interativos`}
+              </p>
+
+              {/* Botão */}
+              <button
+                onClick={() => handleStudyClick(topic.id)}
+                className={cn(
+                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 text-white hover:shadow-md',
+                  colors.btn
+                )}
+              >
+                <Play className="h-4 w-4" />
+                Estudar Agora
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
