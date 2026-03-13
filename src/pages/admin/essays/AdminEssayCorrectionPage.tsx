@@ -65,6 +65,8 @@ import type {
   ImprovementSuggestion,
 } from '@/types/essay-correction'
 import { calculateFinalGrade } from '@/types/essay-correction'
+import EssayTextAnnotator from '@/components/admin/essays/EssayTextAnnotator'
+import PdfAnnotationCanvas from '@/components/admin/essays/PdfAnnotationCanvas'
 
 export default function AdminEssayCorrectionPage() {
   const { submissionId } = useParams<{ submissionId: string }>()
@@ -91,6 +93,8 @@ export default function AdminEssayCorrectionPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false)
+  const [annotatedTextHtml, setAnnotatedTextHtml] = useState<string | null>(null)
+  const [annotationImageUrl, setAnnotationImageUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (!submissionId) return
@@ -133,6 +137,14 @@ export default function AdminEssayCorrectionPage() {
             .from('essays')
             .createSignedUrl((essayData as any).corrected_file_url, 3600)
           if (data?.signedUrl) setCorrectedFileUrl(data.signedUrl)
+        }
+
+        // Load teacher annotations
+        if ((essayData as any)?.annotated_text_html) {
+          setAnnotatedTextHtml((essayData as any).annotated_text_html)
+        }
+        if ((essayData as any)?.annotation_image_url) {
+          setAnnotationImageUrl((essayData as any).annotation_image_url)
         }
       } catch {
         toast({ title: 'Erro ao carregar redação', variant: 'destructive' })
@@ -431,7 +443,9 @@ export default function AdminEssayCorrectionPage() {
         .update({
           status: 'correcting',
           teacher_feedback_text: teacherFeedback || null,
-        })
+          annotated_text_html: annotatedTextHtml || null,
+          annotation_image_url: annotationImageUrl || null,
+        } as any)
         .eq('id', submissionId)
 
       toast({ title: 'Rascunho salvo!' })
@@ -471,7 +485,9 @@ export default function AdminEssayCorrectionPage() {
         .update({
           status: 'corrected',
           teacher_feedback_text: teacherFeedback || null,
-        })
+          annotated_text_html: annotatedTextHtml || null,
+          annotation_image_url: annotationImageUrl || null,
+        } as any)
         .eq('id', submissionId)
 
       await createNotification({
@@ -718,16 +734,18 @@ export default function AdminEssayCorrectionPage() {
             </CardHeader>
             <ScrollArea className="flex-1">
               <CardContent className="px-4 pb-4 space-y-4">
-                {/* Student-typed text (submission_text) */}
+                {/* Student-typed text with rich text annotation */}
                 {essay.submission_text && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <PenLine className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Texto digitado pelo aluno</span>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Texto digitado pelo aluno — clique para anotar</span>
                     </div>
-                    <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap rounded-lg p-3 border">
-                      {essay.submission_text}
-                    </div>
+                    <EssayTextAnnotator
+                      originalText={essay.submission_text}
+                      annotatedHtml={annotatedTextHtml}
+                      onChange={setAnnotatedTextHtml}
+                    />
                   </div>
                 )}
 
@@ -744,19 +762,14 @@ export default function AdminEssayCorrectionPage() {
                   </div>
                 )}
 
-                {/* File (PDF or image) */}
+                {/* File (PDF or image) with annotation canvas */}
                 {fileUrl && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Arquivo enviado</span>
-                    </div>
-                    {isImage ? (
-                      <img src={fileUrl} alt="Redação" className="max-w-full h-auto rounded-lg border" />
-                    ) : (
-                      <iframe src={fileUrl} className="w-full h-[500px] rounded-lg border" title="Redação PDF" />
-                    )}
-                  </div>
+                  <PdfAnnotationCanvas
+                    fileUrl={fileUrl}
+                    isImage={!!isImage}
+                    annotationDataUrl={annotationImageUrl}
+                    onSave={setAnnotationImageUrl}
+                  />
                 )}
 
                 {/* Teacher's corrected file */}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -79,6 +80,8 @@ export default function EssayDetailsPage() {
   const wordCount = submissionText.trim() ? submissionText.trim().split(/\s+/).length : 0
   const promptTitle = (essay as any).essay_prompts?.title || 'Redação'
   const teacherFeedback = (essay as any).teacher_feedback_text || ''
+  const annotatedTextHtml = (essay as any).annotated_text_html || ''
+  const annotationImageUrl = (essay as any).annotation_image_url || ''
 
   // CIAAR grade data
   const finalGrade = correction?.finalGrade ?? (essay as any).final_grade_ciaar ?? 0
@@ -397,8 +400,41 @@ export default function EssayDetailsPage() {
         </Tabs>
       )}
 
+      {/* Annotated text from teacher (if available) */}
+      {annotatedTextHtml && (
+        <Card className="border-border shadow-sm border-l-4 border-l-blue-500">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <PenLine className="h-4 w-4 text-blue-500" />
+              Sua Redação — Anotações do Professor
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-5">
+            <div
+              className="prose dark:prose-invert max-w-none text-sm [&_mark]:rounded [&_mark]:px-0.5"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(annotatedTextHtml) }}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Teacher's annotation on the document image */}
+      {annotationImageUrl && (
+        <Card className="border-border shadow-sm border-l-4 border-l-purple-500">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-purple-500" />
+              Correção no Documento
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-5">
+            <img src={annotationImageUrl} alt="Documento com anotações do professor" className="max-w-full h-auto rounded-lg border" />
+          </CardContent>
+        </Card>
+      )}
+
       {/* If no correction data yet, show essay text */}
-      {!correction && (
+      {!correction && !annotatedTextHtml && (
         <Card className="border-border shadow-sm">
           <CardHeader className="py-4 px-5">
             <CardTitle className="text-base flex items-center gap-2">
