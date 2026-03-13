@@ -411,15 +411,26 @@ const App = () => (
                 }
               >
                 <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
                   <Route path="permissions" element={<AdminClassPermissionsPage />} />
+                  <Route path="integrations" element={<AdminIntegrationsPage />} />
+                  <Route path="integrations/memberkit-import" element={<MemberkitImportPage />} />
+                  <Route path="settings" element={<AdminSettingsPage />} />
+                </Route>
+              </Route>
+
+              {/* ROTAS PARA ADMINISTRATOR E TEACHER (Gestão de Conteúdo) */}
+              <Route
+                element={
+                  <ProtectedRoute allowedRoles={['administrator', 'teacher']} />
+                }
+              >
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
                   <Route path="management" element={<AdminManagementPage />} />
                   <Route path="classes" element={<AdminClassesPage />} />
                   <Route path="classes/new" element={<AdminClassFormPage />} />
                   <Route path="classes/:classId/edit" element={<AdminClassFormPage />} />
                   <Route path="classes/:classId/students" element={<AdminClassStudentsPage />} />
-                  <Route path="integrations" element={<AdminIntegrationsPage />} />
-                  <Route path="integrations/memberkit-import" element={<MemberkitImportPage />} />
                   <Route path="gamification" element={<AdminGamificationPage />} />
                   <Route
                     path="users/:userId/edit"
@@ -432,17 +443,6 @@ const App = () => (
                   <Route path="acervo" element={<AdminAcervoPage />} />
                   <Route path="reports" element={<AdminReportsPage />} />
                   <Route path="reports/videos" element={<VideoAnalyticsPage />} />
-                  <Route path="settings" element={<AdminSettingsPage />} />
-                </Route>
-              </Route>
-
-              {/* ROTAS PARA ADMINISTRATOR E TEACHER (Gestão de Conteúdo) */}
-              <Route
-                element={
-                  <ProtectedRoute allowedRoles={['administrator', 'teacher']} />
-                }
-              >
-                <Route path="/admin" element={<AdminLayout />}>
                   <Route path="courses" element={<AdminCoursesPage />} />
                   <Route path="courses/new" element={<AdminCourseEditorPage />} />
                   <Route

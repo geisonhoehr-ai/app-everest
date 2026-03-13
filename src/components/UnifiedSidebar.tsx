@@ -157,7 +157,7 @@ const adminMenuGroups: MenuGroup[] = [
     icon: Users,
     collapsible: true,
     items: [
-      { label: 'Usuários', href: '/admin/management', icon: Users, adminOnly: true },
+      { label: 'Usuários', href: '/admin/management', icon: Users },
       { label: 'Turmas', href: '/admin/classes', icon: GraduationCap },
       { label: 'Permissões', href: '/admin/permissions', icon: Lock, adminOnly: true },
     ],
@@ -174,7 +174,7 @@ const adminMenuGroups: MenuGroup[] = [
       { label: 'Redações', href: '/admin/essays', icon: FileText },
       { label: 'Simulados', href: '/admin/simulations', icon: ClipboardCheck },
       { label: 'Lives', href: '/admin/lives', icon: Radio },
-      { label: 'Acervo Digital', href: '/admin/acervo', icon: Archive, adminOnly: true },
+      { label: 'Acervo Digital', href: '/admin/acervo', icon: Archive },
     ],
   },
   {
@@ -183,7 +183,7 @@ const adminMenuGroups: MenuGroup[] = [
     collapsible: true,
     items: [
       { label: 'Feed', href: '/comunidade', icon: MessageSquare },
-      { label: 'Moderação', href: '/comunidade/moderacao', icon: Settings, adminOnly: true },
+      { label: 'Moderação', href: '/comunidade/moderacao', icon: Settings },
     ],
   },
   {
@@ -200,8 +200,8 @@ const adminMenuGroups: MenuGroup[] = [
     collapsible: true,
     items: [
       { label: 'Relatórios', href: '/admin/reports', icon: BarChart3 },
-      { label: 'Analytics de Vídeos', href: '/admin/reports/videos', icon: TrendingUp, adminOnly: true },
-      { label: 'Gamificação', href: '/admin/gamification', icon: Trophy, adminOnly: true },
+      { label: 'Analytics de Vídeos', href: '/admin/reports/videos', icon: TrendingUp },
+      { label: 'Gamificação', href: '/admin/gamification', icon: Trophy },
     ],
   },
   {

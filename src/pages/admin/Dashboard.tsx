@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
+import { useTeacherClasses } from '@/hooks/useTeacherClasses'
+import { supabase } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -56,6 +58,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 
 export default function AdminDashboard() {
   const { profile } = useAuth()
+  const { classIds, studentIds, isTeacher, loading: teacherLoading } = useTeacherClasses()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<SystemStats>({
     totalUsers: 0,
@@ -83,9 +86,167 @@ export default function AdminDashboard() {
   })
 
   useEffect(() => {
-    loadAllData()
-  }, [])
+    // Wait for teacher context to finish loading before fetching data
+    if (teacherLoading) return
+    if (isTeacher) {
+      loadTeacherData()
+    } else {
+      loadAllData()
+    }
+  }, [teacherLoading, isTeacher, classIds.length, studentIds.length])
 
+  // ----- Teacher-specific data loading -----
+  const loadTeacherData = async () => {
+    try {
+      const pendingEssaysCount = studentIds.length > 0
+        ? (await supabase
+            .from('essays')
+            .select('*', { count: 'exact', head: true })
+            .in('student_id', studentIds)
+            .eq('status', 'submitted')
+          ).count || 0
+        : 0
+
+      const totalEssaysCount = studentIds.length > 0
+        ? (await supabase
+            .from('essays')
+            .select('*', { count: 'exact', head: true })
+            .in('student_id', studentIds)
+          ).count || 0
+        : 0
+
+      // Completion rate for teacher's students
+      let completionRate = 0
+      if (studentIds.length > 0) {
+        const [completedR, totalR] = await Promise.all([
+          supabase.from('video_progress').select('id', { count: 'exact', head: true }).in('user_id', studentIds).eq('is_completed', true),
+          supabase.from('video_progress').select('id', { count: 'exact', head: true }).in('user_id', studentIds),
+        ])
+        const total = totalR.count || 0
+        const completed = completedR.count || 0
+        completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+      }
+
+      setStats({
+        totalUsers: studentIds.length,
+        totalStudents: studentIds.length,
+        totalTeachers: 0,
+        totalAdministrators: 0,
+        totalClasses: classIds.length,
+        totalCourses: 0,
+        totalFlashcards: 0,
+        totalQuizzes: 0,
+        totalEssays: totalEssaysCount,
+        totalAudioCourses: 0,
+        activeUsers: studentIds.length,
+        completionRate,
+      })
+
+      // Teacher KPI: students, pending essays, classes, completion rate
+      setKpiChanges({
+        users: { current: studentIds.length, previous: 0, change: '', trend: 'stable' },
+        activeUsers: { current: pendingEssaysCount, previous: 0, change: pendingEssaysCount > 0 ? `${pendingEssaysCount}` : '0', trend: pendingEssaysCount > 0 ? 'up' : 'stable' },
+        classes: { current: classIds.length, previous: 0, change: '', trend: 'stable' },
+        completionRate: { current: completionRate, previous: 0, change: '', trend: 'stable' },
+      })
+
+      // Recent activities filtered to teacher's students
+      const teacherActivities: RecentActivity[] = []
+
+      if (studentIds.length > 0) {
+        // Recent essays submitted by teacher's students
+        const { data: recentEssays } = await supabase
+          .from('essays')
+          .select('created_at, status, student_id')
+          .in('student_id', studentIds)
+          .order('created_at', { ascending: false })
+          .limit(3)
+
+        if (recentEssays) {
+          for (const essay of recentEssays) {
+            const statusLabel = essay.status === 'submitted' ? 'enviada' : essay.status === 'graded' ? 'corrigida' : essay.status
+            teacherActivities.push({
+              type: 'essay',
+              message: `Redacao ${statusLabel} por aluno`,
+              time: getRelativeTime(new Date(essay.created_at)),
+              icon: 'FileText',
+              timestamp: new Date(essay.created_at),
+            })
+          }
+        }
+
+        // Recent achievements by teacher's students
+        const { count: todayAchievements } = await supabase
+          .from('user_achievements')
+          .select('*', { count: 'exact', head: true })
+          .in('user_id', studentIds)
+          .gte('achieved_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+
+        if (todayAchievements && todayAchievements > 0) {
+          teacherActivities.push({
+            type: 'achievement',
+            message: `${todayAchievements} conquistas desbloqueadas hoje pelos seus alunos`,
+            time: 'Hoje',
+            icon: 'Award',
+            timestamp: new Date(),
+          })
+        }
+      }
+
+      setRecentActivities(
+        teacherActivities
+          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+          .slice(0, 5)
+      )
+
+      // Teacher alerts: pending essays older than 48h
+      const teacherAlerts: Alert[] = []
+      if (studentIds.length > 0) {
+        const twoDaysAgo = new Date()
+        twoDaysAgo.setHours(twoDaysAgo.getHours() - 48)
+        const { count: oldPending } = await supabase
+          .from('essays')
+          .select('*', { count: 'exact', head: true })
+          .in('student_id', studentIds)
+          .eq('status', 'submitted')
+          .lt('created_at', twoDaysAgo.toISOString())
+
+        if (oldPending && oldPending > 0) {
+          teacherAlerts.push({
+            type: 'warning',
+            message: `${oldPending} redacoes pendentes ha mais de 48h`,
+            action: 'Ver redacoes',
+            link: '/admin/essays',
+          })
+        }
+      }
+      setAlerts(teacherAlerts)
+
+      // Skip charts that don't apply to teacher scope
+      setUserGrowthData([])
+      setActivityData([])
+    } catch (error) {
+      logger.error('Error loading teacher dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Helper to format relative time (used in teacher data loading)
+  const getRelativeTime = (date: Date): string => {
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    if (diffMins < 1) return 'Agora'
+    if (diffMins < 60) return `${diffMins} min atras`
+    if (diffHours < 24) return `${diffHours} hora${diffHours > 1 ? 's' : ''} atras`
+    if (diffDays < 30) return `${diffDays} dia${diffDays > 1 ? 's' : ''} atras`
+    return date.toLocaleDateString('pt-BR')
+  }
+
+  // ----- Admin data loading (unchanged) -----
   const loadAllData = async () => {
     try {
       const [
@@ -125,44 +286,83 @@ export default function AdminDashboard() {
     { name: 'Audio', value: stats.totalAudioCourses },
   ]
 
-  const mainKPIs = [
-    {
-      label: 'Usuarios Totais',
-      value: stats.totalUsers,
-      change: kpiChanges.users.change,
-      trend: kpiChanges.users.trend,
-      icon: Users,
-      color: 'text-blue-600',
-      bg: 'bg-blue-500/10',
-    },
-    {
-      label: 'Usuarios Ativos',
-      value: stats.activeUsers,
-      change: kpiChanges.activeUsers.change,
-      trend: kpiChanges.activeUsers.trend,
-      icon: Activity,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-500/10',
-    },
-    {
-      label: 'Turmas Ativas',
-      value: stats.totalClasses,
-      change: kpiChanges.classes.change,
-      trend: kpiChanges.classes.trend,
-      icon: GraduationCap,
-      color: 'text-violet-600',
-      bg: 'bg-violet-500/10',
-    },
-    {
-      label: 'Taxa de Conclusao',
-      value: `${stats.completionRate}%`,
-      change: kpiChanges.completionRate.change,
-      trend: kpiChanges.completionRate.trend,
-      icon: CheckCircle,
-      color: 'text-amber-600',
-      bg: 'bg-amber-500/10',
-    },
-  ]
+  const mainKPIs = isTeacher
+    ? [
+        {
+          label: 'Meus Alunos',
+          value: stats.totalStudents,
+          change: kpiChanges.users.change,
+          trend: kpiChanges.users.trend,
+          icon: Users,
+          color: 'text-blue-600',
+          bg: 'bg-blue-500/10',
+        },
+        {
+          label: 'Redacoes Pendentes',
+          value: kpiChanges.activeUsers.current,
+          change: kpiChanges.activeUsers.change,
+          trend: kpiChanges.activeUsers.trend,
+          icon: FileText,
+          color: 'text-emerald-600',
+          bg: 'bg-emerald-500/10',
+        },
+        {
+          label: 'Minhas Turmas',
+          value: stats.totalClasses,
+          change: kpiChanges.classes.change,
+          trend: kpiChanges.classes.trend,
+          icon: GraduationCap,
+          color: 'text-violet-600',
+          bg: 'bg-violet-500/10',
+        },
+        {
+          label: 'Taxa de Conclusao',
+          value: `${stats.completionRate}%`,
+          change: kpiChanges.completionRate.change,
+          trend: kpiChanges.completionRate.trend,
+          icon: CheckCircle,
+          color: 'text-amber-600',
+          bg: 'bg-amber-500/10',
+        },
+      ]
+    : [
+        {
+          label: 'Usuarios Totais',
+          value: stats.totalUsers,
+          change: kpiChanges.users.change,
+          trend: kpiChanges.users.trend,
+          icon: Users,
+          color: 'text-blue-600',
+          bg: 'bg-blue-500/10',
+        },
+        {
+          label: 'Usuarios Ativos',
+          value: stats.activeUsers,
+          change: kpiChanges.activeUsers.change,
+          trend: kpiChanges.activeUsers.trend,
+          icon: Activity,
+          color: 'text-emerald-600',
+          bg: 'bg-emerald-500/10',
+        },
+        {
+          label: 'Turmas Ativas',
+          value: stats.totalClasses,
+          change: kpiChanges.classes.change,
+          trend: kpiChanges.classes.trend,
+          icon: GraduationCap,
+          color: 'text-violet-600',
+          bg: 'bg-violet-500/10',
+        },
+        {
+          label: 'Taxa de Conclusao',
+          value: `${stats.completionRate}%`,
+          change: kpiChanges.completionRate.change,
+          trend: kpiChanges.completionRate.trend,
+          icon: CheckCircle,
+          color: 'text-amber-600',
+          bg: 'bg-amber-500/10',
+        },
+      ]
 
   const contentStats = [
     { label: 'Cursos', value: stats.totalCourses, icon: BookOpen, color: 'text-blue-600' },
@@ -183,7 +383,7 @@ export default function AdminDashboard() {
     return iconMap[iconName] || Activity
   }
 
-  if (loading) {
+  if (loading || teacherLoading) {
     return <SectionLoader />
   }
 
@@ -196,7 +396,7 @@ export default function AdminDashboard() {
             Bem-vindo, {profile?.first_name}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Visao geral da plataforma
+            {isTeacher ? 'Visao geral das suas turmas' : 'Visao geral da plataforma'}
           </p>
         </div>
         <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/20 text-emerald-700 w-fit">
@@ -257,119 +457,146 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* User Growth */}
-        <Card className="border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-blue-600" />
-              <CardTitle className="text-base font-semibold text-foreground">Crescimento de Usuarios</CardTitle>
-            </div>
-            <p className="text-xs text-muted-foreground">Ultimos 6 meses</p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={userGrowthData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="month" fontSize={12} stroke="#9ca3af" />
-                  <YAxis fontSize={12} stroke="#9ca3af" />
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
-                  <Legend />
-                  <Line type="monotone" dataKey="usuarios" stroke="#3b82f6" strokeWidth={2} name="Total" dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="ativos" stroke="#10b981" strokeWidth={2} name="Ativos" dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Charts Grid - Admin only */}
+      {!isTeacher && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* User Growth */}
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+                <CardTitle className="text-base font-semibold text-foreground">Crescimento de Usuarios</CardTitle>
+              </div>
+              <p className="text-xs text-muted-foreground">Ultimos 6 meses</p>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={userGrowthData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="month" fontSize={12} stroke="#9ca3af" />
+                    <YAxis fontSize={12} stroke="#9ca3af" />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
+                    <Legend />
+                    <Line type="monotone" dataKey="usuarios" stroke="#3b82f6" strokeWidth={2} name="Total" dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="ativos" stroke="#10b981" strokeWidth={2} name="Ativos" dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Content Distribution */}
-        <Card className="border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-violet-600" />
-              <CardTitle className="text-base font-semibold text-foreground">Distribuicao de Conteudo</CardTitle>
-            </div>
-            <p className="text-xs text-muted-foreground">Por tipo de recurso</p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={contentDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
+          {/* Content Distribution */}
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-violet-600" />
+                <CardTitle className="text-base font-semibold text-foreground">Distribuicao de Conteudo</CardTitle>
+              </div>
+              <p className="text-xs text-muted-foreground">Por tipo de recurso</p>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={contentDistribution}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {contentDistribution.map((_entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Weekly Activity */}
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-emerald-600" />
+                <CardTitle className="text-base font-semibold text-foreground">Atividade Semanal</CardTitle>
+              </div>
+              <p className="text-xs text-muted-foreground">Interacoes dos usuarios</p>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={activityData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="day" fontSize={12} stroke="#9ca3af" />
+                    <YAxis fontSize={12} stroke="#9ca3af" />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                    <Bar dataKey="atividades" fill="#10b981" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Content Stats */}
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-amber-600" />
+                <CardTitle className="text-base font-semibold text-foreground">Conteudo da Plataforma</CardTitle>
+              </div>
+              <p className="text-xs text-muted-foreground">Recursos disponiveis</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {contentStats.map((stat, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                   >
-                    {contentDistribution.map((_entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+                    <div className="flex items-center gap-3">
+                      <stat.icon className={cn("h-4 w-4", stat.color)} />
+                      <span className="text-sm font-medium text-foreground/80">{stat.label}</span>
+                    </div>
+                    <span className="text-lg font-bold text-foreground">{stat.value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-        {/* Weekly Activity */}
+      {/* Teacher-specific: Essay summary card */}
+      {isTeacher && (
         <Card className="border-border shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-emerald-600" />
-              <CardTitle className="text-base font-semibold text-foreground">Atividade Semanal</CardTitle>
+              <FileText className="h-4 w-4 text-rose-600" />
+              <CardTitle className="text-base font-semibold text-foreground">Resumo de Redacoes</CardTitle>
             </div>
-            <p className="text-xs text-muted-foreground">Interacoes dos usuarios</p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={activityData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="day" fontSize={12} stroke="#9ca3af" />
-                  <YAxis fontSize={12} stroke="#9ca3af" />
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }} />
-                  <Bar dataKey="atividades" fill="#10b981" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Content Stats */}
-        <Card className="border-border shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-amber-600" />
-              <CardTitle className="text-base font-semibold text-foreground">Conteudo da Plataforma</CardTitle>
-            </div>
-            <p className="text-xs text-muted-foreground">Recursos disponiveis</p>
+            <p className="text-xs text-muted-foreground">Redacoes dos seus alunos</p>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {contentStats.map((stat, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <stat.icon className={cn("h-4 w-4", stat.color)} />
-                    <span className="text-sm font-medium text-foreground/80">{stat.label}</span>
-                  </div>
-                  <span className="text-lg font-bold text-foreground">{stat.value}</span>
-                </div>
-              ))}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <span className="text-sm font-medium text-foreground/80">Total de Redacoes</span>
+                <span className="text-lg font-bold text-foreground">{stats.totalEssays}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10">
+                <span className="text-sm font-medium text-amber-800">Aguardando Correcao</span>
+                <span className="text-lg font-bold text-amber-800">{kpiChanges.activeUsers.current}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
 
       {/* Recent Activities */}
       <Card className="border-border shadow-sm">

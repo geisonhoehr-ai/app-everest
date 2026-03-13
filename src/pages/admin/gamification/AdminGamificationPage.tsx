@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
@@ -45,6 +45,7 @@ import {
 import { cn } from '@/lib/utils'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/hooks/use-toast'
+import { useTeacherClasses } from '@/hooks/useTeacherClasses'
 import {
   getAchievements,
   createAchievement,
@@ -77,6 +78,13 @@ export default function AdminGamificationPage() {
     activeUsers: 0
   })
   const { toast } = useToast()
+  const { studentIds, isTeacher, isAdmin, loading: teacherLoading } = useTeacherClasses()
+
+  useEffect(() => {
+    if (isTeacher && activeTab === 'overview') {
+      setActiveTab('ranking')
+    }
+  }, [isTeacher])
 
   useEffect(() => {
     loadData()
@@ -215,19 +223,47 @@ export default function AdminGamificationPage() {
     }
   }
 
-  if (loading) {
+  // Filter ranking for teachers (only their students)
+  const studentIdSet = useMemo(() => new Set(studentIds), [studentIds])
+  const filteredRanking = useMemo(() => {
+    if (!isTeacher) return ranking
+    return ranking
+      .filter((entry) => studentIdSet.has(entry.user_id))
+      .map((entry, idx) => ({ ...entry, position: idx + 1 }))
+  }, [ranking, isTeacher, studentIdSet])
+
+  // Compute stats scoped to the teacher's students
+  const filteredStats = useMemo(() => {
+    if (!isTeacher) return stats
+    const totalXP = filteredRanking.reduce((sum, e) => sum + e.total_xp, 0)
+    const totalUnlocked = filteredRanking.reduce((sum, e) => sum + e.achievements_count, 0)
+    return {
+      ...stats,
+      totalUnlocked,
+      totalXP,
+      activeUsers: filteredRanking.length
+    }
+  }, [stats, filteredRanking, isTeacher])
+
+  if (loading || teacherLoading) {
     return <SectionLoader />
   }
 
-  const totalAchievements = stats.totalAchievements
-  const totalUnlocked = stats.totalUnlocked
-  const totalXP = stats.totalXP
+  const totalAchievements = filteredStats.totalAchievements
+  const totalUnlocked = filteredStats.totalUnlocked
+  const totalXP = filteredStats.totalXP
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Gamificação</h1>
-        <p className="text-muted-foreground mt-1">Gerencie conquistas, ranking, XP e sistema de recompensas</p>
+        <h1 className="text-2xl font-bold text-foreground">
+          {isTeacher ? 'Gamificação — Minhas Turmas' : 'Gamificação'}
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          {isTeacher
+            ? 'Ranking e conquistas dos alunos das suas turmas'
+            : 'Gerencie conquistas, ranking, XP e sistema de recompensas'}
+        </p>
       </div>
 
       <div className="max-w-7xl mx-auto space-y-6">
@@ -282,8 +318,8 @@ export default function AdminGamificationPage() {
                   <Users className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
                 </div>
                 <div>
-                  <div className="text-xl md:text-2xl font-bold text-foreground">{ranking.length}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Participantes</div>
+                  <div className="text-xl md:text-2xl font-bold text-foreground">{filteredRanking.length}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">{isTeacher ? 'Meus Alunos' : 'Participantes'}</div>
                 </div>
               </div>
             </CardContent>
@@ -292,12 +328,17 @@ export default function AdminGamificationPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-3 gap-1 md:gap-2 bg-muted/50 p-1.5 md:p-2 rounded-xl md:rounded-2xl border border-border">
-            <TabsTrigger value="overview" className="rounded-lg md:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white text-xs md:text-sm">
-              <BarChart3 className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden sm:inline">Visão Geral</span>
-              <span className="sm:hidden">Visão</span>
-            </TabsTrigger>
+          <TabsList className={cn(
+            "grid w-full gap-1 md:gap-2 bg-muted/50 p-1.5 md:p-2 rounded-xl md:rounded-2xl border border-border",
+            isTeacher ? "grid-cols-2" : "grid-cols-3"
+          )}>
+            {!isTeacher && (
+              <TabsTrigger value="overview" className="rounded-lg md:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white text-xs md:text-sm">
+                <BarChart3 className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+                <span className="hidden sm:inline">Visão Geral</span>
+                <span className="sm:hidden">Visão</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="achievements" className="rounded-lg md:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white text-xs md:text-sm">
               <Trophy className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
               <span className="hidden sm:inline">Conquistas</span>
@@ -310,8 +351,8 @@ export default function AdminGamificationPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview */}
-          <TabsContent value="overview" className="space-y-4 md:space-y-6">
+          {/* Overview (admin only) */}
+          {!isTeacher && <TabsContent value="overview" className="space-y-4 md:space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <Card className="border-border shadow-sm">
                 <CardContent className="p-5">
@@ -405,7 +446,7 @@ export default function AdminGamificationPage() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+          </TabsContent>}
 
           {/* Achievements */}
           <TabsContent value="achievements" className="space-y-6">
@@ -413,7 +454,7 @@ export default function AdminGamificationPage() {
               <CardContent className="p-5">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold text-foreground">Conquistas Disponíveis</h3>
-                  <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+                  {!isTeacher && <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
                     setIsCreateDialogOpen(open)
                     if (!open) {
                       setEditingAchievement(null)
@@ -482,7 +523,7 @@ export default function AdminGamificationPage() {
                         </Button>
                       </DialogFooter>
                     </DialogContent>
-                  </Dialog>
+                  </Dialog>}
                 </div>
 
                 <div className="overflow-x-auto">
@@ -493,7 +534,7 @@ export default function AdminGamificationPage() {
                         <TableHead className="hidden md:table-cell">Categoria</TableHead>
                         <TableHead>XP</TableHead>
                         <TableHead className="hidden sm:table-cell">Desbloqueios</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
+                        {!isTeacher && <TableHead className="text-right">Ações</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -526,16 +567,18 @@ export default function AdminGamificationPage() {
                               <span className="font-medium">{achievement.unlocked_count || 0}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditAchievement(achievement)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteAchievement(achievement)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                          {!isTeacher && (
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditAchievement(achievement)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteAchievement(achievement)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -550,9 +593,13 @@ export default function AdminGamificationPage() {
             <Card className="border-border shadow-sm">
               <CardContent className="p-5">
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Top 50 Estudantes</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    {isTeacher ? `Ranking dos Meus Alunos (${filteredRanking.length})` : 'Top 50 Estudantes'}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    Ranking global baseado em XP acumulado
+                    {isTeacher
+                      ? 'Ranking dos alunos matriculados nas suas turmas'
+                      : 'Ranking global baseado em XP acumulado'}
                   </p>
                 </div>
 
@@ -568,7 +615,7 @@ export default function AdminGamificationPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {ranking.map((entry) => (
+                      {filteredRanking.map((entry) => (
                         <TableRow
                           key={entry.user_id}
                           className={cn(

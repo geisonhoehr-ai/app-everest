@@ -32,6 +32,7 @@ import {
 import { cn } from '@/lib/utils'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/hooks/use-toast'
+import { useTeacherClasses } from '@/hooks/useTeacherClasses'
 import {
   getClasses,
   createClass,
@@ -45,15 +46,22 @@ export default function AdminClassesPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const { toast } = useToast()
+  const { classIds, isTeacher, isAdmin, loading: teacherLoading } = useTeacherClasses()
 
   useEffect(() => {
-    loadClasses()
-  }, [])
+    if (!teacherLoading) {
+      loadClasses()
+    }
+  }, [teacherLoading])
 
   const loadClasses = async () => {
     try {
       const data = await getClasses()
-      setClasses(data)
+      // Teachers only see their own classes
+      const filtered = isTeacher
+        ? data.filter(c => classIds.includes(c.id))
+        : data
+      setClasses(filtered)
     } catch (error) {
       logger.error('Erro ao carregar turmas:', error)
       toast({
@@ -119,7 +127,7 @@ export default function AdminClassesPage() {
     }
   }
 
-  if (loading) {
+  if (loading || teacherLoading) {
     return <SectionLoader />
   }
 
@@ -205,12 +213,14 @@ export default function AdminClassesPage() {
                   className="pl-10"
                 />
               </div>
-              <Button className="w-full md:w-auto" asChild>
-                <Link to="/admin/classes/new">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Nova Turma
-                </Link>
-              </Button>
+              {isAdmin && (
+                <Button className="w-full md:w-auto" asChild>
+                  <Link to="/admin/classes/new">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Nova Turma
+                  </Link>
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -286,34 +296,40 @@ export default function AdminClassesPage() {
                               <UserCheck className="h-4 w-4 group-hover/btn:text-primary transition-colors" />
                             </Link>
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 group/btn"
-                            asChild
-                          >
-                            <Link to={`/admin/permissions?classId=${classItem.id}`}>
-                              <Lock className="h-4 w-4 group-hover/btn:text-primary transition-colors" />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 group/btn"
-                            asChild
-                          >
-                            <Link to={`/admin/classes/${classItem.id}/edit`}>
-                              <Edit className="h-4 w-4 group-hover/btn:text-primary transition-colors" />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => handleDeleteClass(classItem)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 group/btn"
+                              asChild
+                            >
+                              <Link to={`/admin/permissions?classId=${classItem.id}`}>
+                                <Lock className="h-4 w-4 group-hover/btn:text-primary transition-colors" />
+                              </Link>
+                            </Button>
+                          )}
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 group/btn"
+                              asChild
+                            >
+                              <Link to={`/admin/classes/${classItem.id}/edit`}>
+                                <Edit className="h-4 w-4 group-hover/btn:text-primary transition-colors" />
+                              </Link>
+                            </Button>
+                          )}
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteClass(classItem)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

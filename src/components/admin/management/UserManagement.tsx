@@ -49,7 +49,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
 import { supabase } from '@/lib/supabase/client'
 
-export const UserManagement = () => {
+interface UserManagementProps {
+  /** When true, the viewer is a teacher — hide admin actions and filter to their students */
+  isTeacher?: boolean
+  /** Student IDs belonging to this teacher's classes (only used when isTeacher) */
+  teacherStudentIds?: string[]
+}
+
+export const UserManagement = ({ isTeacher = false, teacherStudentIds = [] }: UserManagementProps) => {
   const [users, setUsers] = useState<UserWithClasses[]>([])
   const [filteredUsers, setFilteredUsers] = useState<UserWithClasses[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -74,7 +81,7 @@ export const UserManagement = () => {
   useEffect(() => {
     loadUsers()
     loadClasses()
-  }, [])
+  }, [isTeacher, teacherStudentIds.length])
 
   useEffect(() => {
     filterUsers()
@@ -83,7 +90,15 @@ export const UserManagement = () => {
   const loadUsers = async () => {
     setIsLoading(true)
     try {
-      const data = await getUsersWithClasses()
+      let data = await getUsersWithClasses()
+      // For teachers, only show their students
+      if (isTeacher && teacherStudentIds.length > 0) {
+        const studentSet = new Set(teacherStudentIds)
+        data = data.filter(u => studentSet.has(u.id))
+      } else if (isTeacher) {
+        // Teacher with no students
+        data = []
+      }
       setUsers(data)
       setFilteredUsers(data)
     } catch (error) {
@@ -221,11 +236,15 @@ export const UserManagement = () => {
   const handleEditUser = async () => {
     if (!editingUser) return
     try {
-      await updateUser(editingUser.id, {
+      const updates: Record<string, any> = {
         first_name: editFirstName,
         last_name: editLastName,
-        role: editRole as 'student' | 'teacher' | 'administrator',
-      })
+      }
+      // Teachers cannot change roles
+      if (!isTeacher) {
+        updates.role = editRole as 'student' | 'teacher' | 'administrator'
+      }
+      await updateUser(editingUser.id, updates)
       toast({ title: 'Sucesso', description: 'Usuário atualizado com sucesso.' })
       setShowEditDialog(false)
       setEditingUser(null)
@@ -338,14 +357,18 @@ export const UserManagement = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Usuários ({filteredUsers.length} de {users.length})</CardTitle>
+              <CardTitle>
+                {isTeacher ? 'Meus Alunos' : 'Usuários'} ({filteredUsers.length} de {users.length})
+              </CardTitle>
               <CardDescription>
-                Gerencie todos os usuários da plataforma.
+                {isTeacher
+                  ? 'Alunos matriculados nas suas turmas.'
+                  : 'Gerencie todos os usuários da plataforma.'}
               </CardDescription>
             </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="icon"
               onClick={loadUsers}
               disabled={isLoading}
@@ -353,10 +376,12 @@ export const UserManagement = () => {
             >
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Adicionar Usuário
-            </Button>
+            {!isTeacher && (
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Usuário
+              </Button>
+            )}
           </div>
         </div>
         
@@ -371,17 +396,19 @@ export const UserManagement = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por função" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as funções</SelectItem>
-              <SelectItem value="student">Alunos</SelectItem>
-              <SelectItem value="teacher">Professores</SelectItem>
-              <SelectItem value="administrator">Administradores</SelectItem>
-            </SelectContent>
-          </Select>
+          {!isTeacher && (
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filtrar por função" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as funções</SelectItem>
+                <SelectItem value="student">Alunos</SelectItem>
+                <SelectItem value="teacher">Professores</SelectItem>
+                <SelectItem value="administrator">Administradores</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filtrar por status" />
@@ -392,17 +419,19 @@ export const UserManagement = () => {
               <SelectItem value="inactive">Inativos</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={classFilter} onValueChange={setClassFilter}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filtrar por turma" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as turmas</SelectItem>
-              <SelectItem value="tasting">🍰 Na Degustação</SelectItem>
-              <SelectItem value="not_tasting">✅ Em turma regular</SelectItem>
-              <SelectItem value="no_class">⚠️ Sem turma</SelectItem>
-            </SelectContent>
-          </Select>
+          {!isTeacher && (
+            <Select value={classFilter} onValueChange={setClassFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filtrar por turma" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as turmas</SelectItem>
+                <SelectItem value="tasting">🍰 Na Degustação</SelectItem>
+                <SelectItem value="not_tasting">✅ Em turma regular</SelectItem>
+                <SelectItem value="no_class">⚠️ Sem turma</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -515,32 +544,36 @@ export const UserManagement = () => {
                           <DropdownMenuItem onClick={() => openEditDialog(user)}>
                             <Edit className="mr-2 h-4 w-4" /> Editar
                           </DropdownMenuItem>
-                          {user.role === 'student' && (
+                          {!isTeacher && user.role === 'student' && (
                             <DropdownMenuItem asChild>
                               <Link to={`/admin/users/${user.id}/classes`}>
                                 <GraduationCap className="mr-2 h-4 w-4" /> Gerenciar Turmas
                               </Link>
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
-                            {user.is_active ? (
-                              <>
-                                <UserX className="mr-2 h-4 w-4" /> Desativar
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck className="mr-2 h-4 w-4" /> Ativar
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => handleDeleteUser(user)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Deletar
-                          </DropdownMenuItem>
+                          {!isTeacher && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
+                                {user.is_active ? (
+                                  <>
+                                    <UserX className="mr-2 h-4 w-4" /> Desativar
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserCheck className="mr-2 h-4 w-4" /> Ativar
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleDeleteUser(user)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" /> Deletar
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -644,19 +677,21 @@ export const UserManagement = () => {
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Perfil</Label>
-            <Select value={editRole} onValueChange={setEditRole}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="student">Aluno</SelectItem>
-                <SelectItem value="teacher">Professor</SelectItem>
-                <SelectItem value="administrator">Administrador</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {!isTeacher && (
+            <div className="space-y-2">
+              <Label>Perfil</Label>
+              <Select value={editRole} onValueChange={setEditRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Aluno</SelectItem>
+                  <SelectItem value="teacher">Professor</SelectItem>
+                  <SelectItem value="administrator">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setShowEditDialog(false)}>

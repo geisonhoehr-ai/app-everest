@@ -15,8 +15,11 @@ import {
 } from 'lucide-react'
 import { getUsers } from '@/services/adminUserService'
 import { supabase } from '@/lib/supabase/client'
+import { useTeacherClasses } from '@/hooks/useTeacherClasses'
 
 export default function AdminManagementPage() {
+  const { isTeacher, isAdmin, studentIds, loading: teacherLoading } = useTeacherClasses()
+
   const [stats, setStats] = useState({
     totalUsers: 0,
     students: 0,
@@ -27,11 +30,26 @@ export default function AdminManagementPage() {
   })
 
   useEffect(() => {
-    loadStats()
-  }, [])
+    if (!teacherLoading) {
+      loadStats()
+    }
+  }, [teacherLoading])
 
   const loadStats = async () => {
     try {
+      if (isTeacher) {
+        // Teachers only see their student count
+        setStats({
+          totalUsers: studentIds.length,
+          students: studentIds.length,
+          teachers: 0,
+          administrators: 0,
+          totalCourses: 0,
+          loading: false,
+        })
+        return
+      }
+
       // Get users
       const users = await getUsers()
 
@@ -62,8 +80,14 @@ export default function AdminManagementPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Gerenciamento Administrativo</h1>
-        <p className="text-muted-foreground">Administre usuarios, turmas e permissoes da plataforma</p>
+        <h1 className="text-2xl font-bold text-foreground">
+          {isTeacher ? 'Meus Alunos' : 'Gerenciamento Administrativo'}
+        </h1>
+        <p className="text-muted-foreground">
+          {isTeacher
+            ? 'Visualize e gerencie os alunos das suas turmas'
+            : 'Administre usuarios, turmas e permissoes da plataforma'}
+        </p>
       </div>
 
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
@@ -78,58 +102,74 @@ export default function AdminManagementPage() {
                   </div>
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                      Painel Administrativo
+                      {isTeacher ? 'Meus Alunos' : 'Painel Administrativo'}
                     </h1>
                     <p className="text-muted-foreground text-sm md:text-lg">
-                      Gerencie usuarios e turmas
+                      {isTeacher ? 'Alunos matriculados nas suas turmas' : 'Gerencie usuarios e turmas'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-muted/50 border border-border">
                   <Shield className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-                  <span className="text-xs md:text-sm font-medium text-foreground">Admin</span>
+                  <span className="text-xs md:text-sm font-medium text-foreground">
+                    {isTeacher ? 'Professor' : 'Admin'}
+                  </span>
                 </div>
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                <div className="text-center p-3 md:p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                  <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
-                  {stats.loading ? (
-                    <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
-                  ) : (
-                    <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
-                  )}
-                  <div className="text-xs md:text-sm text-muted-foreground">Usuarios</div>
+              {isTeacher ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                  <div className="text-center p-3 md:p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                    <GraduationCap className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
+                    {stats.loading ? (
+                      <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
+                    ) : (
+                      <div className="text-xl md:text-2xl font-bold text-green-600">{stats.students}</div>
+                    )}
+                    <div className="text-xs md:text-sm text-muted-foreground">Alunos</div>
+                  </div>
                 </div>
-                <div className="text-center p-3 md:p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-                  <GraduationCap className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
-                  {stats.loading ? (
-                    <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
-                  ) : (
-                    <div className="text-xl md:text-2xl font-bold text-green-600">{stats.students}</div>
-                  )}
-                  <div className="text-xs md:text-sm text-muted-foreground">Alunos</div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                  <div className="text-center p-3 md:p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                    <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
+                    {stats.loading ? (
+                      <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
+                    ) : (
+                      <div className="text-xl md:text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
+                    )}
+                    <div className="text-xs md:text-sm text-muted-foreground">Usuarios</div>
+                  </div>
+                  <div className="text-center p-3 md:p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                    <GraduationCap className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
+                    {stats.loading ? (
+                      <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
+                    ) : (
+                      <div className="text-xl md:text-2xl font-bold text-green-600">{stats.students}</div>
+                    )}
+                    <div className="text-xs md:text-sm text-muted-foreground">Alunos</div>
+                  </div>
+                  <div className="text-center p-3 md:p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                    <UserCheck className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
+                    {stats.loading ? (
+                      <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
+                    ) : (
+                      <div className="text-xl md:text-2xl font-bold text-purple-600">{stats.teachers}</div>
+                    )}
+                    <div className="text-xs md:text-sm text-muted-foreground">Professores</div>
+                  </div>
+                  <div className="text-center p-3 md:p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                    <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
+                    {stats.loading ? (
+                      <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
+                    ) : (
+                      <div className="text-xl md:text-2xl font-bold text-orange-600">{stats.totalCourses}</div>
+                    )}
+                    <div className="text-xs md:text-sm text-muted-foreground">Cursos</div>
+                  </div>
                 </div>
-                <div className="text-center p-3 md:p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                  <UserCheck className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
-                  {stats.loading ? (
-                    <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
-                  ) : (
-                    <div className="text-xl md:text-2xl font-bold text-purple-600">{stats.teachers}</div>
-                  )}
-                  <div className="text-xs md:text-sm text-muted-foreground">Professores</div>
-                </div>
-                <div className="text-center p-3 md:p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
-                  <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                  {stats.loading ? (
-                    <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto" />
-                  ) : (
-                    <div className="text-xl md:text-2xl font-bold text-orange-600">{stats.totalCourses}</div>
-                  )}
-                  <div className="text-xs md:text-sm text-muted-foreground">Cursos</div>
-                </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -137,39 +177,52 @@ export default function AdminManagementPage() {
         {/* Management Tabs */}
         <Card className="border-border shadow-sm">
           <CardContent className="p-5">
-            <Tabs defaultValue="users" className="w-full">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-foreground">Gerenciamento</h2>
+            {isTeacher ? (
+              /* Teachers see only the student list, no tabs */
+              <div>
+                <div className="mb-4 md:mb-6">
+                  <h2 className="text-xl md:text-2xl font-bold text-foreground">Meus Alunos</h2>
                   <p className="text-muted-foreground text-sm md:text-base">
-                    Administre usuarios e turmas
+                    Alunos matriculados nas suas turmas
                   </p>
                 </div>
-                <TabsList className="w-full md:w-auto">
-                  <TabsTrigger
-                    value="users"
-                    className="flex-1 md:flex-none"
-                  >
-                    <Users className="mr-2 h-3 w-3 md:h-4 md:w-4" />
-                    <span className="text-xs md:text-sm">Usuarios</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="classes"
-                    className="flex-1 md:flex-none"
-                  >
-                    <GraduationCap className="mr-2 h-3 w-3 md:h-4 md:w-4" />
-                    <span className="text-xs md:text-sm">Turmas</span>
-                  </TabsTrigger>
-                </TabsList>
+                <UserManagement isTeacher={true} teacherStudentIds={studentIds} />
               </div>
+            ) : (
+              <Tabs defaultValue="users" className="w-full">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-bold text-foreground">Gerenciamento</h2>
+                    <p className="text-muted-foreground text-sm md:text-base">
+                      Administre usuarios e turmas
+                    </p>
+                  </div>
+                  <TabsList className="w-full md:w-auto">
+                    <TabsTrigger
+                      value="users"
+                      className="flex-1 md:flex-none"
+                    >
+                      <Users className="mr-2 h-3 w-3 md:h-4 md:w-4" />
+                      <span className="text-xs md:text-sm">Usuarios</span>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="classes"
+                      className="flex-1 md:flex-none"
+                    >
+                      <GraduationCap className="mr-2 h-3 w-3 md:h-4 md:w-4" />
+                      <span className="text-xs md:text-sm">Turmas</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
-              <TabsContent value="users" className="mt-4 md:mt-6">
-                <UserManagement />
-              </TabsContent>
-              <TabsContent value="classes" className="mt-4 md:mt-6">
-                <ClassManagement />
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="users" className="mt-4 md:mt-6">
+                  <UserManagement />
+                </TabsContent>
+                <TabsContent value="classes" className="mt-4 md:mt-6">
+                  <ClassManagement />
+                </TabsContent>
+              </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>

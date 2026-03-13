@@ -35,6 +35,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { getAllCourses, deleteCourse, duplicateCourse, type AdminCourse } from '@/services/adminCourseService'
 import { useAuth } from '@/contexts/auth-provider'
+import { useTeacherClasses } from '@/hooks/useTeacherClasses'
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/use-toast'
 import { SectionLoader } from '@/components/SectionLoader'
@@ -46,6 +47,7 @@ export default function AdminCoursesPage() {
   const [totalStudents, setTotalStudents] = useState(0)
   const { toast } = useToast()
   const { profile } = useAuth()
+  const { classIds, isTeacher, loading: teacherLoading } = useTeacherClasses()
 
   const loadCourses = async () => {
     try {
@@ -54,7 +56,26 @@ export default function AdminCoursesPage() {
         getAllCourses(),
         supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'student')
       ])
-      setCourses(data)
+
+      if (isTeacher && classIds.length > 0) {
+        // Fetch course IDs linked to the teacher's classes
+        const { data: classCourses } = await supabase
+          .from('class_courses')
+          .select('course_id')
+          .in('class_id', classIds)
+
+        const allowedCourseIds = new Set(
+          (classCourses || []).map((cc: any) => cc.course_id as string)
+        )
+        setCourses(data.filter(c => allowedCourseIds.has(c.id)))
+      } else if (isTeacher && classIds.length === 0) {
+        // Teacher with no classes sees no courses
+        setCourses([])
+      } else {
+        // Admin sees everything
+        setCourses(data)
+      }
+
       setTotalStudents(studentsResult.count || 0)
     } catch (error) {
       logger.error('Erro ao carregar cursos:', error)
@@ -69,8 +90,10 @@ export default function AdminCoursesPage() {
   }
 
   useEffect(() => {
-    loadCourses()
-  }, [])
+    if (!teacherLoading) {
+      loadCourses()
+    }
+  }, [teacherLoading, classIds])
 
   const handleDelete = async (courseId: string, courseName: string) => {
     if (!confirm(`Tem certeza que deseja deletar o curso "${courseName}"? Esta ação não pode ser desfeita.`)) {
@@ -116,7 +139,7 @@ export default function AdminCoursesPage() {
     }
   }
 
-  if (loading) {
+  if (loading || teacherLoading) {
     return <SectionLoader />
   }
 
