@@ -1,8 +1,9 @@
--- Add missing foreign keys on essays table
--- Fixes: "Could not find a relationship between 'essays' and 'users' in the schema cache"
--- The essays table has student_id and teacher_id columns but no FK constraints to users
+-- Add missing foreign keys on essays and student_classes tables
+-- Fixes PGRST200 errors:
+--   "Could not find a relationship between 'essays' and 'users'"
+--   "Could not find a relationship between 'users' and 'student_classes'"
 
--- FK for student_id -> users(id)
+-- FK for essays.student_id -> users(id)
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -16,7 +17,7 @@ BEGIN
   END IF;
 END $$;
 
--- FK for teacher_id -> users(id)
+-- FK for essays.teacher_id -> users(id)
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -27,5 +28,19 @@ BEGIN
     ALTER TABLE public.essays
       ADD CONSTRAINT essays_teacher_id_fkey
       FOREIGN KEY (teacher_id) REFERENCES public.users(id);
+  END IF;
+END $$;
+
+-- FK for student_classes.user_id -> users(id)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'student_classes_user_id_fkey'
+    AND table_name = 'student_classes'
+  ) THEN
+    ALTER TABLE public.student_classes
+      ADD CONSTRAINT student_classes_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES public.users(id);
   END IF;
 END $$;
