@@ -100,7 +100,11 @@ export default function SimulationExamPage() {
   const handleAnswerChange = async (questionId: string, answer: any) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }))
     if (attemptId) {
-      try { await saveSimulationAnswer(attemptId, questionId, answer) } catch {}
+      try {
+        await saveSimulationAnswer(attemptId, questionId, answer)
+      } catch {
+        toast({ title: 'Erro ao salvar resposta', description: 'Verifique sua conexão.', variant: 'destructive' })
+      }
     }
   }
 

@@ -3,8 +3,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { logger } from '@/lib/logger'
 import { useNotifications } from '@/hooks/useNotifications'
+import { useToast } from '@/hooks/use-toast'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
@@ -31,6 +31,7 @@ export default function NotificationsPage() {
     deleteNotification
   } = useNotifications()
 
+  const { toast } = useToast()
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all')
 
   const filteredNotifications = useMemo(() => {
@@ -47,18 +48,29 @@ export default function NotificationsPage() {
   }, [notifications, filter])
 
   const handleMarkAsRead = async (id: string) => {
-    logger.debug('Marcando notificação como lida:', id)
-    await markAsRead(id)
+    try {
+      await markAsRead(id)
+    } catch {
+      toast({ title: 'Erro ao marcar como lida', variant: 'destructive' })
+    }
   }
 
   const handleMarkAllAsRead = async () => {
-    logger.debug('Marcando todas como lidas')
-    await markAllAsRead()
+    try {
+      await markAllAsRead()
+      toast({ title: 'Todas as notificações foram marcadas como lidas' })
+    } catch {
+      toast({ title: 'Erro ao marcar notificações', variant: 'destructive' })
+    }
   }
 
   const handleDeleteNotification = async (id: string) => {
-    logger.debug('Deletando notificação:', id)
-    await deleteNotification(id)
+    try {
+      await deleteNotification(id)
+      toast({ title: 'Notificação removida' })
+    } catch {
+      toast({ title: 'Erro ao remover notificação', variant: 'destructive' })
+    }
   }
 
   const handleFilterChange = (newFilter: 'all' | 'unread' | 'read') => {
