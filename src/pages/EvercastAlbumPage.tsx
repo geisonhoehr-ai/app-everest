@@ -90,13 +90,17 @@ export default function EvercastAlbumPage() {
 
       {/* Album Header */}
       <div className="flex flex-col items-center md:flex-row md:items-end gap-6 p-6">
-        <div className="w-32 h-32 shadow-sm rounded-md overflow-hidden shrink-0">
-          {course.thumbnail_url ? (
-            <img src={course.thumbnail_url} alt={course.name} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-emerald-600 flex items-center justify-center">
-              <Disc3 className="w-12 h-12 text-white" />
-            </div>
+        <div className="relative w-32 h-32 shadow-sm rounded-md overflow-hidden shrink-0 bg-emerald-600">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Disc3 className="w-12 h-12 text-white" />
+          </div>
+          {course.thumbnail_url && !course.thumbnail_url.includes('example.com') && (
+            <img
+              src={course.thumbnail_url}
+              alt={course.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={(e) => { e.currentTarget.style.display = 'none' }}
+            />
           )}
         </div>
         <div className="flex flex-col gap-2 text-center md:text-left">

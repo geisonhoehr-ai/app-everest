@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import {
@@ -180,10 +180,9 @@ export default function RankingPage() {
             {getRankIcon(position)}
           </div>
 
-          {/* Avatar */}
+          {/* Avatar iniciais */}
           <Avatar className="h-12 w-12">
-            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} />
-            <AvatarFallback className="bg-primary/10">
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
               {user.first_name?.[0]}{user.last_name?.[0]}
             </AvatarFallback>
           </Avatar>
@@ -238,10 +237,10 @@ export default function RankingPage() {
           {/* Badge de nível */}
           <div className="flex-shrink-0">
             <div className={cn(
-              "w-12 h-12 rounded-full flex items-center justify-center text-2xl",
+              "w-12 h-12 rounded-full flex items-center justify-center",
               getRankColor(position)
             )}>
-              {levelInfo.icon}
+              <Trophy className="h-5 w-5 text-white" />
             </div>
           </div>
         </div>
@@ -266,8 +265,7 @@ export default function RankingPage() {
         <div className="flex items-center gap-4 p-4">
           <div className="flex-shrink-0">{getRankIcon(position)}</div>
           <Avatar className="h-12 w-12">
-            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${entry.email}`} />
-            <AvatarFallback className="bg-primary/10">
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
               {entry.first_name?.[0]}{entry.last_name?.[0]}
             </AvatarFallback>
           </Avatar>
