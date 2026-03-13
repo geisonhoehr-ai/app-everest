@@ -19,6 +19,7 @@ import {
   MessageSquare,
   Bell,
   Settings,
+  Megaphone,
 } from 'lucide-react'
 
 type CommandItem = {
@@ -47,6 +48,7 @@ const commands: CommandItem[] = [
   { label: 'Moderação', href: '/comunidade/moderacao', icon: MessageSquare, group: 'Social', keywords: ['moderacao', 'denuncias', 'filtro'] },
   { label: 'Notificações', href: '/notificacoes', icon: Bell, group: 'Sistema', keywords: ['avisos', 'alertas'] },
   { label: 'Configurações', href: '/configuracoes', icon: Settings, group: 'Sistema', keywords: ['perfil', 'conta', 'tema'] },
+  { label: 'Enviar Aviso', href: '/admin/broadcast', icon: Megaphone, group: 'Admin', keywords: ['aviso', 'notificacao', 'broadcast', 'mensagem', 'push'] },
 ]
 
 export function CommandPalette() {
