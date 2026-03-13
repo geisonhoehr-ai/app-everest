@@ -112,19 +112,17 @@ export default function EvercastPage() {
                 className="group cursor-pointer"
                 onClick={() => navigate(`/evercast/curso/${course.id}`)}
               >
-                <div className="relative aspect-square rounded-md overflow-hidden bg-emerald-600 mb-3 shadow-sm hover:shadow-md transition-shadow">
-                  {/* Fallback icon (always rendered behind) */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Disc3 className="w-16 h-16 text-white/80" />
-                  </div>
-                  {/* Image on top - hides on error to reveal fallback */}
-                  {course.thumbnail_url && (
+                <div className="relative aspect-square rounded-md overflow-hidden bg-muted mb-3 shadow-sm hover:shadow-md transition-shadow">
+                  {course.thumbnail_url ? (
                     <img
                       src={course.thumbnail_url}
                       alt={course.name}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      onError={(e) => { e.currentTarget.style.display = 'none' }}
+                      className="w-full h-full object-cover"
                     />
+                  ) : (
+                    <div className="w-full h-full bg-emerald-600 flex items-center justify-center">
+                      <Disc3 className="w-16 h-16 text-white/80" />
+                    </div>
                   )}
                   <Button
                     size="icon"
