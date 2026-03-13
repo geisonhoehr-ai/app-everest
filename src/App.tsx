@@ -153,6 +153,9 @@ const AdminQuestionFormPage = lazy(
 const AdminCalendarPage = lazy(
   () => import('@/pages/admin/calendar/AdminCalendarPage'),
 )
+const AdminBroadcastPage = lazy(
+  () => import('@/pages/admin/AdminBroadcastPage'),
+)
 const AdminLiveEventsPage = lazy(
   () => import('@/pages/admin/lives/AdminLiveEventsPage'),
 )
@@ -520,6 +523,7 @@ const App = () => (
                     element={<AdminQuestionFormPage />}
                   />
                   <Route path="calendar" element={<AdminCalendarPage />} />
+                  <Route path="broadcast" element={<AdminBroadcastPage />} />
                   <Route path="evercast" element={<AdminEvercastPage />} />
                   <Route
                     path="evercast/new"
