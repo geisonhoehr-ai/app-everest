@@ -30,12 +30,19 @@ export type AdminCourse = VideoCourse & {
 // =====================================================
 
 /**
- * Buscar todos os cursos (para administração)
+ * Buscar todos os cursos (para administração).
+ * Optimized: 1 nested query instead of 3×N per course.
  */
 export const getAllCourses = async (): Promise<AdminCourse[]> => {
   const { data, error } = await supabase
     .from('video_courses')
-    .select('*')
+    .select(`
+      *,
+      video_modules (
+        id,
+        video_lessons ( id )
+      )
+    `)
     .order('name')
 
   if (error) {
@@ -43,41 +50,19 @@ export const getAllCourses = async (): Promise<AdminCourse[]> => {
     throw error
   }
 
-  // Buscar contagens separadamente para cada curso
-  const coursesWithCounts = await Promise.all(
-    (data || []).map(async (course: any) => {
-      // Contar módulos
-      const { count: modulesCount } = await supabase
-        .from('video_modules')
-        .select('*', { count: 'exact', head: true })
-        .eq('course_id', course.id)
+  return (data || []).map((course: any) => {
+    const modules = course.video_modules || []
+    const lessonsCount = modules.reduce(
+      (sum: number, m: any) => sum + (m.video_lessons?.length || 0), 0
+    )
 
-      // Contar aulas (buscar IDs dos módulos primeiro)
-      const { data: modules } = await supabase
-        .from('video_modules')
-        .select('id')
-        .eq('course_id', course.id)
-
-      const moduleIds = modules?.map(m => m.id) || []
-
-      let lessonsCount = 0
-      if (moduleIds.length > 0) {
-        const { count } = await supabase
-          .from('video_lessons')
-          .select('*', { count: 'exact', head: true })
-          .in('module_id', moduleIds)
-        lessonsCount = count || 0
-      }
-
-      return {
-        ...course,
-        modules_count: modulesCount || 0,
-        lessons_count: lessonsCount,
-      }
-    })
-  )
-
-  return coursesWithCounts as AdminCourse[]
+    const { video_modules: _, ...courseData } = course
+    return {
+      ...courseData,
+      modules_count: modules.length,
+      lessons_count: lessonsCount,
+    }
+  }) as AdminCourse[]
 }
 
 /**

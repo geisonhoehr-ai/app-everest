@@ -175,31 +175,24 @@ export const courseService = {
     }
   },
 
-  // Buscar progresso do usuário em um curso
+  // Buscar progresso do usuário em um curso (optimized: 2 queries instead of 3)
   async getUserCourseProgress(userId: string, courseId: string): Promise<Record<string, number>> {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user || user.id !== userId) return {}
 
-      // Primeiro pegamos todos os módulos do curso
+      // 1. Get modules + lesson IDs in one nested query
       const { data: modules } = await supabase
         .from('video_modules')
-        .select('id')
+        .select('id, video_lessons ( id )')
         .eq('course_id', courseId)
 
-      const moduleIds = modules?.map(m => m.id) || []
-      if (moduleIds.length === 0) return {}
-
-      // Depois pegamos todas as aulas desses módulos
-      const { data: lessons } = await supabase
-        .from('video_lessons')
-        .select('id')
-        .in('module_id', moduleIds)
-
-      const lessonIds = lessons?.map(l => l.id) || []
+      const lessonIds = (modules || []).flatMap((m: any) =>
+        (m.video_lessons || []).map((l: any) => l.id)
+      )
       if (lessonIds.length === 0) return {}
 
-      // Agora sim buscamos o progresso nessas aulas
+      // 2. Fetch progress in one query
       const { data: progress, error } = await supabase
         .from('video_progress')
         .select('lesson_id, progress_percentage')
@@ -245,129 +238,110 @@ export const courseService = {
   },
 
   /**
-   * Get all courses for a user with detailed progress and statistics
+   * Get all courses for a user with detailed progress and statistics.
+   * Optimized: 4 queries total instead of 4×N per course.
    */
   async getUserCoursesWithDetails(userId: string): Promise<CourseWithProgress[]> {
     try {
-      logger.debug('🔍 Getting user courses for user:', userId)
-
-      // Get user's classes
+      // 1. Get user's classes
       const { data: userClasses, error: classesError } = await supabase
         .from('student_classes')
         .select('class_id')
         .eq('user_id', userId)
 
       if (classesError) throw classesError
-
       const classIds = userClasses?.map(uc => uc.class_id) || []
-      logger.debug('📚 User class IDs:', classIds)
       if (classIds.length === 0) return []
 
-      // Get courses for user's classes
+      // 2. Get courses with nested modules+lessons in ONE query
       const { data: classCourses, error: coursesError } = await supabase
         .from('class_courses')
         .select(`
           course_id,
           video_courses (
-            id,
-            name,
-            description,
-            thumbnail_url
+            id, name, description, thumbnail_url,
+            video_modules (
+              id,
+              video_lessons ( id, duration_seconds )
+            )
           )
         `)
         .in('class_id', classIds)
 
       if (coursesError) throw coursesError
+      if (!classCourses || classCourses.length === 0) return []
 
-      logger.debug('🎓 Class courses found:', classCourses)
+      // 3. Collect ALL lesson IDs across all courses
+      const allLessonIds: string[] = []
+      const courseMap = new Map<string, { course: any; moduleIds: string[]; lessonIds: string[]; totalSeconds: number }>()
 
-      const courseIds = classCourses?.map(cc => cc.course_id) || []
-      logger.debug('📖 Course IDs:', courseIds)
-      if (courseIds.length === 0) return []
+      for (const cc of classCourses) {
+        const course = cc.video_courses as any
+        if (!course || courseMap.has(cc.course_id)) continue
 
-      // Get modules for each course
-      const coursesWithDetails = await Promise.all(
-        (classCourses || []).map(async (cc) => {
-          const courseId = cc.course_id
-          const course = cc.video_courses
+        const modules = course.video_modules || []
+        const moduleIds = modules.map((m: any) => m.id)
+        const lessonIds: string[] = []
+        let totalSeconds = 0
 
-          // Get modules count
-          const { data: modules, error: modulesError } = await supabase
-            .from('video_modules')
-            .select('id')
-            .eq('course_id', courseId)
-            .eq('is_active', true)
-
-          if (modulesError) {
-            logger.error('Error fetching modules:', modulesError)
+        for (const mod of modules) {
+          for (const lesson of mod.video_lessons || []) {
+            lessonIds.push(lesson.id)
+            totalSeconds += lesson.duration_seconds || 0
           }
+        }
 
-          const moduleIds = modules?.map(m => m.id) || []
-          const modulesCount = modules?.length || 0
+        allLessonIds.push(...lessonIds)
+        courseMap.set(cc.course_id, { course, moduleIds, lessonIds, totalSeconds })
+      }
 
-          // Get lessons count and total duration
-          let lessonsCount = 0
-          let totalSeconds = 0
+      // 4. Fetch ALL user progress in ONE query
+      const progressMap = new Map<string, { progress_percentage: number; is_completed: boolean }>()
 
-          if (moduleIds.length > 0) {
-            const { data: lessons, error: lessonsError } = await supabase
-              .from('video_lessons')
-              .select('id, duration_seconds')
-              .in('module_id', moduleIds)
-              .eq('is_active', true)
+      if (allLessonIds.length > 0) {
+        const { data: progressData } = await supabase
+          .from('video_progress')
+          .select('lesson_id, progress_percentage, is_completed')
+          .eq('user_id', userId)
+          .in('lesson_id', allLessonIds)
 
-            if (!lessonsError && lessons) {
-              lessonsCount = lessons.length
-              totalSeconds = lessons.reduce((sum, lesson) => sum + (lesson.duration_seconds || 0), 0)
-            }
+        for (const p of progressData || []) {
+          progressMap.set(p.lesson_id, p)
+        }
+      }
+
+      // 5. Build results from cached data (no more queries)
+      const results: CourseWithProgress[] = []
+
+      for (const [courseId, info] of courseMap) {
+        const { course, moduleIds, lessonIds, totalSeconds } = info
+        const lessonsCount = lessonIds.length
+
+        let courseProgress = 0
+        if (lessonsCount > 0) {
+          let totalProg = 0
+          for (const lid of lessonIds) {
+            totalProg += progressMap.get(lid)?.progress_percentage || 0
           }
+          courseProgress = Math.round(totalProg / lessonsCount)
+        }
 
-          // Get user progress for this course
-          let courseProgress = 0
-          let completedLessonsCount = 0
-
-          if (lessonsCount > 0 && moduleIds.length > 0) {
-            const { data: progressData, error: progressError } = await supabase
-              .from('video_progress')
-              .select('lesson_id, progress_percentage, is_completed')
-              .eq('user_id', userId)
-
-            if (!progressError && progressData) {
-              // Get lesson IDs for this course
-              const { data: courseLessons } = await supabase
-                .from('video_lessons')
-                .select('id')
-                .in('module_id', moduleIds)
-
-              const courseLessonIds = courseLessons?.map(l => l.id) || []
-              const courseProgressData = progressData.filter(p => courseLessonIds.includes(p.lesson_id))
-
-              if (courseProgressData.length > 0) {
-                const totalProgress = courseProgressData.reduce((sum, p) => sum + (p.progress_percentage || 0), 0)
-                courseProgress = Math.round(totalProgress / lessonsCount)
-                completedLessonsCount = courseProgressData.filter(p => p.is_completed).length
-              }
-            }
-          }
-
-          return {
-            id: courseId,
-            title: course?.name || 'Curso',
-            description: course?.description || '',
-            progress: courseProgress,
-            image: course?.thumbnail_url || 'https://images.unsplash.com/photo-1516397281156-ca07cf9746fc?w=400&h=200&fit=crop',
-            modules_count: modulesCount,
-            lessons_count: lessonsCount,
-            total_hours: Math.round(totalSeconds / 3600 * 10) / 10, // Round to 1 decimal
-            category: 'Geral' // Can be enhanced with actual categories later
-          }
+        results.push({
+          id: courseId,
+          title: course.name || 'Curso',
+          description: course.description || '',
+          progress: courseProgress,
+          image: course.thumbnail_url || '/placeholder.svg',
+          modules_count: moduleIds.length,
+          lessons_count: lessonsCount,
+          total_hours: Math.round(totalSeconds / 3600 * 10) / 10,
+          category: 'Geral',
         })
-      )
+      }
 
-      logger.debug('✅ Final courses with details:', coursesWithDetails)
-      return coursesWithDetails
+      return results
     } catch (error) {
-      logger.error('❌ Error fetching user courses with details:', error)
+      logger.error('Error fetching user courses with details:', error)
       return []
     }
   },
@@ -423,73 +397,74 @@ export const courseService = {
   },
 
   /**
-   * Get a specific course with all its modules and lessons with progress
+   * Get a specific course with all its modules and lessons with progress.
+   * Optimized: 3 queries total instead of 1 + N_modules + N_lessons.
    */
   async getCourseWithModulesAndProgress(courseId: string, userId: string) {
     try {
-      // Get course details
+      // 1. Get course + modules + lessons in ONE nested query
       const { data: course, error: courseError } = await supabase
         .from('video_courses')
-        .select('*')
+        .select(`
+          *,
+          video_modules (
+            *,
+            video_lessons (*)
+          )
+        `)
         .eq('id', courseId)
         .single()
 
       if (courseError) throw courseError
 
-      // Get modules
-      const { data: modules, error: modulesError } = await supabase
-        .from('video_modules')
-        .select('*')
-        .eq('course_id', courseId)
-        .eq('is_active', true)
-        .order('order_index')
+      // 2. Collect all lesson IDs
+      const allLessonIds: string[] = []
+      const activeModules = (course.video_modules || [])
+        .filter((m: any) => m.is_active)
+        .sort((a: any, b: any) => a.order_index - b.order_index)
 
-      if (modulesError) throw modulesError
+      for (const mod of activeModules) {
+        for (const lesson of (mod as any).video_lessons || []) {
+          if (lesson.is_active) allLessonIds.push(lesson.id)
+        }
+      }
 
-      // Get lessons for each module with progress
-      const modulesWithLessons = await Promise.all(
-        (modules || []).map(async (module) => {
-          const { data: lessons, error: lessonsError } = await supabase
-            .from('video_lessons')
-            .select('*')
-            .eq('module_id', module.id)
-            .eq('is_active', true)
-            .order('order_index')
+      // 3. Fetch ALL progress in ONE query
+      const progressMap = new Map<string, any>()
+      if (allLessonIds.length > 0) {
+        const { data: progressData } = await supabase
+          .from('video_progress')
+          .select('lesson_id, progress_percentage, is_completed, current_time_seconds')
+          .eq('user_id', userId)
+          .in('lesson_id', allLessonIds)
 
-          if (lessonsError) {
-            logger.error('Error fetching lessons:', lessonsError)
-            return { ...module, lessons: [] }
-          }
+        for (const p of progressData || []) {
+          progressMap.set(p.lesson_id, p)
+        }
+      }
 
-          // Get progress for each lesson
-          const lessonsWithProgress = await Promise.all(
-            (lessons || []).map(async (lesson) => {
-              const { data: progress } = await supabase
-                .from('video_progress')
-                .select('*')
-                .eq('user_id', userId)
-                .eq('lesson_id', lesson.id)
-                .maybeSingle()
+      // 4. Assemble result from cached data
+      const modulesWithLessons = activeModules.map((module: any) => {
+        const activeLessons = ((module as any).video_lessons || [])
+          .filter((l: any) => l.is_active)
+          .sort((a: any, b: any) => a.order_index - b.order_index)
+          .map((lesson: any) => {
+            const progress = progressMap.get(lesson.id)
+            return {
+              ...lesson,
+              progress: progress?.progress_percentage || 0,
+              completed: !!progress?.is_completed,
+              last_position: progress?.current_time_seconds || 0,
+            }
+          })
 
-              return {
-                ...lesson,
-                progress: progress?.progress_percentage || 0,
-                completed: !!progress?.is_completed,
-                last_position: progress?.current_time_seconds || 0
-              }
-            })
-          )
-
-          return {
-            ...module,
-            lessons: lessonsWithProgress
-          }
-        })
-      )
+        return { ...module, video_lessons: undefined, lessons: activeLessons }
+      })
 
       return {
         ...course,
-        modules: modulesWithLessons
+        video_modules: undefined,
+        modules: modulesWithLessons,
       }
     } catch (error) {
       logger.error('Error fetching course with modules:', error)

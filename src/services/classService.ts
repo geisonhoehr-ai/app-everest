@@ -55,46 +55,33 @@ export async function getClasses(): Promise<Class[]> {
     return []
   }
 
-  // Get student counts for each class (with error handling)
+  // Batch fetch counts instead of per-class queries (2 queries instead of 2×N)
   try {
-    const classesWithCounts = await Promise.all(
-      (classesData || []).map(async (classItem) => {
-        let studentCount = 0
-        let permissionsCount = 0
+    const classIds = (classesData || []).map(c => c.id)
 
-        try {
-          const { count } = await supabase
-            .from('student_classes')
-            .select('*', { count: 'exact', head: true })
-            .eq('class_id', classItem.id)
-          studentCount = count || 0
-        } catch (e) {
-          logger.warn('⚠️ Could not fetch student count for class:', classItem.id)
-        }
+    const [studentsResult, permissionsResult] = await Promise.all([
+      supabase.from('student_classes').select('class_id').in('class_id', classIds),
+      supabase.from('class_feature_permissions').select('class_id').in('class_id', classIds),
+    ])
 
-        try {
-          const { count } = await supabase
-            .from('class_feature_permissions')
-            .select('*', { count: 'exact', head: true })
-            .eq('class_id', classItem.id)
-          permissionsCount = count || 0
-        } catch (e) {
-          logger.warn('⚠️ Could not fetch permissions count for class:', classItem.id)
-        }
+    // Count in memory
+    const studentCounts = new Map<string, number>()
+    for (const sc of studentsResult.data || []) {
+      studentCounts.set(sc.class_id, (studentCounts.get(sc.class_id) || 0) + 1)
+    }
+    const permissionCounts = new Map<string, number>()
+    for (const p of permissionsResult.data || []) {
+      permissionCounts.set(p.class_id, (permissionCounts.get(p.class_id) || 0) + 1)
+    }
 
-        return {
-          ...classItem,
-          student_count: studentCount,
-          enabled_features_count: permissionsCount,
-          status: classItem.status || 'active' as any
-        }
-      })
-    )
-
-    return classesWithCounts
+    return (classesData || []).map(classItem => ({
+      ...classItem,
+      student_count: studentCounts.get(classItem.id) || 0,
+      enabled_features_count: permissionCounts.get(classItem.id) || 0,
+      status: classItem.status || 'active' as any,
+    }))
   } catch (e) {
-    logger.error('❌ Error enriching class data:', e)
-    // Return basic class data without counts
+    logger.error('Error enriching class data:', e)
     return classesData || []
   }
 }

@@ -36,23 +36,20 @@ export async function getSystemStats(): Promise<SystemStats> {
       supabase.from('audio_courses').select('*', { count: 'exact', head: true })
     ])
 
-    // Get users by role
-    const { data: usersData } = await supabase
-      .from('users')
-      .select('role')
+    // Get users by role with count queries instead of fetching all rows
+    const [studentsResult, teachersResult, adminsResult, completedResult, totalProgressResult] = await Promise.all([
+      supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+      supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
+      supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'administrator'),
+      supabase.from('video_progress').select('id', { count: 'exact', head: true }).eq('is_completed', true),
+      supabase.from('video_progress').select('id', { count: 'exact', head: true }),
+    ])
 
-    const students = (usersData || []).filter(u => u.role === 'student').length
-    const teachers = (usersData || []).filter(u => u.role === 'teacher').length
-    const administrators = (usersData || []).filter(u => u.role === 'administrator').length
-
-    // Calculate completion rate (simplified - based on video progress)
-    const { data: progressData } = await supabase
-      .from('video_progress')
-      .select('is_completed')
-
-    const completedCount = (progressData || []).filter(p => p.is_completed).length
-    const completionRate = progressData && progressData.length > 0
-      ? Math.round((completedCount / progressData.length) * 100)
+    const students = studentsResult.count || 0
+    const teachers = teachersResult.count || 0
+    const administrators = adminsResult.count || 0
+    const completionRate = (totalProgressResult.count || 0) > 0
+      ? Math.round(((completedResult.count || 0) / (totalProgressResult.count || 1)) * 100)
       : 0
 
     return {
@@ -85,38 +82,51 @@ export interface UserGrowthData {
 export async function getUserGrowthData(days: number = 180): Promise<UserGrowthData[]> {
   try {
     const monthCount = Math.max(1, Math.ceil(days / 30))
-    const result: UserGrowthData[] = []
-
     const now = new Date()
+    const rangeStart = new Date(now.getFullYear(), now.getMonth() - (monthCount - 1), 1)
+
+    // 2 queries total instead of 2×N per month
+    const [usersResult, sessionsResult] = await Promise.all([
+      supabase
+        .from('users')
+        .select('created_at')
+        .order('created_at'),
+      supabase
+        .from('user_sessions')
+        .select('login_at')
+        .gte('login_at', rangeStart.toISOString())
+        .limit(10000),
+    ])
+
+    const users = usersResult.data || []
+    const sessions = sessionsResult.data || []
+
+    const result: UserGrowthData[] = []
 
     for (let i = monthCount - 1; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
+      const nextDateISO = nextDate.toISOString()
+      const dateISO = date.toISOString()
 
-      // Get total users created until this month
-      const { count: totalUsers } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .lte('created_at', nextDate.toISOString())
+      // Count users created before end of this month
+      const totalUsers = users.filter(u => u.created_at <= nextDateISO).length
 
-      // Get active users in this month (users who logged in)
-      const { count: activeUsers } = await supabase
-        .from('user_sessions')
-        .select('user_id', { count: 'exact', head: true })
-        .gte('login_at', date.toISOString())
-        .lt('login_at', nextDate.toISOString())
+      // Count sessions in this month
+      const activeUsers = sessions.filter(s =>
+        s.login_at >= dateISO && s.login_at < nextDateISO
+      ).length
 
       result.push({
         month: date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
-        usuarios: totalUsers || 0,
-        ativos: activeUsers || 0
+        usuarios: totalUsers,
+        ativos: activeUsers,
       })
     }
 
     return result
   } catch (error) {
     logger.error('Error fetching user growth data:', error)
-    // Return fallback data
     return [
       { month: 'Jan', usuarios: 0, ativos: 0 },
       { month: 'Fev', usuarios: 0, ativos: 0 },
@@ -136,54 +146,47 @@ export interface ActivityDataPoint {
 export async function getWeeklyActivityData(rangeDays: number = 7): Promise<ActivityDataPoint[]> {
   try {
     const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab']
-    const result: ActivityDataPoint[] = []
 
-    // For ranges > 7 days, we aggregate by day-of-week over the full range
     const now = new Date()
     const rangeStart = new Date(now)
     rangeStart.setDate(now.getDate() - rangeDays)
     rangeStart.setHours(0, 0, 0, 0)
 
-    // Initialize accumulators for each day of week
+    const rangeStartISO = rangeStart.toISOString()
+
+    // 3 queries total for entire range instead of 3×N per day
+    const [sessions, quizAttempts, flashcardSessions] = await Promise.all([
+      supabase
+        .from('user_sessions')
+        .select('login_at')
+        .gte('login_at', rangeStartISO)
+        .limit(5000),
+      supabase
+        .from('quiz_attempts')
+        .select('created_at')
+        .gte('created_at', rangeStartISO)
+        .limit(5000),
+      supabase
+        .from('flashcard_session_history')
+        .select('started_at')
+        .gte('started_at', rangeStartISO)
+        .limit(5000),
+    ])
+
+    // Aggregate by day-of-week in memory
     const dayTotals = [0, 0, 0, 0, 0, 0, 0]
 
-    // We still query day-by-day but aggregate into weekday buckets
-    const actualDays = Math.min(rangeDays, 365)
-    for (let i = 0; i < actualDays; i++) {
-      const dayStart = new Date(rangeStart)
-      dayStart.setDate(rangeStart.getDate() + i)
-
-      const dayEnd = new Date(dayStart)
-      dayEnd.setDate(dayStart.getDate() + 1)
-
-      // Count activities (sessions, quiz attempts, flashcard sessions, etc.)
-      const [sessions, quizHistory, flashcardSessions] = await Promise.all([
-        supabase
-          .from('user_sessions')
-          .select('*', { count: 'exact', head: true })
-          .gte('login_at', dayStart.toISOString())
-          .lt('login_at', dayEnd.toISOString()),
-        supabase
-          .from('quiz_attempts')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', dayStart.toISOString())
-          .lt('created_at', dayEnd.toISOString()),
-        supabase
-          .from('flashcard_session_history')
-          .select('*', { count: 'exact', head: true })
-          .gte('started_at', dayStart.toISOString())
-          .lt('started_at', dayEnd.toISOString())
-      ])
-
-      const totalActivities = (sessions.count || 0) + (quizHistory.count || 0) + (flashcardSessions.count || 0)
-      dayTotals[dayStart.getDay()] += totalActivities
+    for (const s of sessions.data || []) {
+      dayTotals[new Date(s.login_at).getDay()]++
+    }
+    for (const q of quizAttempts.data || []) {
+      dayTotals[new Date(q.created_at).getDay()]++
+    }
+    for (const f of flashcardSessions.data || []) {
+      dayTotals[new Date(f.started_at).getDay()]++
     }
 
-    for (let d = 0; d < 7; d++) {
-      result.push({ day: dayNames[d], atividades: dayTotals[d] })
-    }
-
-    return result
+    return dayNames.map((day, i) => ({ day, atividades: dayTotals[i] }))
   } catch (error) {
     logger.error('Error fetching weekly activity data:', error)
     return [
@@ -391,44 +394,26 @@ export async function getKPIChanges(): Promise<{
     const now = new Date()
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const thisMonthISO = thisMonth.toISOString()
+    const lastMonthISO = lastMonth.toISOString()
 
-    // Total users
-    const { count: currentUsers } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
+    // All 6 queries in parallel instead of sequential
+    const [
+      currentUsersR, lastMonthUsersR,
+      currentActiveR, lastMonthActiveR,
+      currentClassesR, lastMonthClassesR,
+    ] = await Promise.all([
+      supabase.from('users').select('id', { count: 'exact', head: true }),
+      supabase.from('users').select('id', { count: 'exact', head: true }).lt('created_at', thisMonthISO),
+      supabase.from('user_sessions').select('user_id', { count: 'exact', head: true }).gte('login_at', thisMonthISO),
+      supabase.from('user_sessions').select('user_id', { count: 'exact', head: true }).gte('login_at', lastMonthISO).lt('login_at', thisMonthISO),
+      supabase.from('classes').select('id', { count: 'exact', head: true }),
+      supabase.from('classes').select('id', { count: 'exact', head: true }).lt('created_at', thisMonthISO),
+    ])
 
-    const { count: lastMonthUsers } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .lt('created_at', thisMonth.toISOString())
-
-    const usersChange = calculateChange(currentUsers || 0, lastMonthUsers || 0)
-
-    // Active users this month vs last month
-    const { count: currentActive } = await supabase
-      .from('user_sessions')
-      .select('user_id', { count: 'exact', head: true })
-      .gte('login_at', thisMonth.toISOString())
-
-    const { count: lastMonthActive } = await supabase
-      .from('user_sessions')
-      .select('user_id', { count: 'exact', head: true })
-      .gte('login_at', lastMonth.toISOString())
-      .lt('login_at', thisMonth.toISOString())
-
-    const activeChange = calculateChange(currentActive || 0, lastMonthActive || 0)
-
-    // Classes
-    const { count: currentClasses } = await supabase
-      .from('classes')
-      .select('*', { count: 'exact', head: true })
-
-    const { count: lastMonthClasses } = await supabase
-      .from('classes')
-      .select('*', { count: 'exact', head: true })
-      .lt('created_at', thisMonth.toISOString())
-
-    const classesChange = calculateChange(currentClasses || 0, lastMonthClasses || 0)
+    const usersChange = calculateChange(currentUsersR.count || 0, lastMonthUsersR.count || 0)
+    const activeChange = calculateChange(currentActiveR.count || 0, lastMonthActiveR.count || 0)
+    const classesChange = calculateChange(currentClassesR.count || 0, lastMonthClassesR.count || 0)
 
     // Completion rate - simplified
     const completionChange = {

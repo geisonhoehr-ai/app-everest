@@ -39,31 +39,30 @@ export interface UserProgress {
   last_activity_date: string
 }
 
-// Achievements
+// Achievements (optimized: 2 queries instead of 1+N)
 export async function getAchievements(): Promise<Achievement[]> {
-  const { data, error } = await supabase
-    .from('achievements')
-    .select('*')
-    .order('created_at', { ascending: false })
+  const [achievementsResult, countsResult] = await Promise.all([
+    supabase
+      .from('achievements')
+      .select('*')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('user_achievements')
+      .select('achievement_id'),
+  ])
 
-  if (error) throw error
+  if (achievementsResult.error) throw achievementsResult.error
 
-  // Get unlock counts for each achievement
-  const achievementsWithCounts = await Promise.all(
-    (data || []).map(async (achievement) => {
-      const { count } = await supabase
-        .from('user_achievements')
-        .select('*', { count: 'exact', head: true })
-        .eq('achievement_id', achievement.id)
+  // Count unlocks per achievement in memory
+  const unlockCounts = new Map<string, number>()
+  for (const ua of countsResult.data || []) {
+    unlockCounts.set(ua.achievement_id, (unlockCounts.get(ua.achievement_id) || 0) + 1)
+  }
 
-      return {
-        ...achievement,
-        unlocked_count: count || 0
-      }
-    })
-  )
-
-  return achievementsWithCounts
+  return (achievementsResult.data || []).map(achievement => ({
+    ...achievement,
+    unlocked_count: unlockCounts.get(achievement.id) || 0,
+  }))
 }
 
 export async function createAchievement(achievement: {
@@ -161,7 +160,7 @@ export async function getRankingByClass(classId: string, limit: number = 50): Pr
       // View not available
     }
 
-    // Fallback: Build from user_progress
+    // Fallback: Build from user_progress (optimized: 3 queries instead of 2×N)
     const { data: progressData, error: progressError } = await supabase
       .from('user_progress')
       .select('user_id, total_xp, level')
@@ -171,33 +170,33 @@ export async function getRankingByClass(classId: string, limit: number = 50): Pr
 
     if (progressError || !progressData || progressData.length === 0) return []
 
-    const ranking: RankingEntry[] = await Promise.all(
-      progressData.map(async (progress, index) => {
-        const { data: user } = await supabase
-          .from('users')
-          .select('email, first_name, last_name')
-          .eq('id', progress.user_id)
-          .single()
+    const userIds = progressData.map(p => p.user_id)
 
-        const { count } = await supabase
-          .from('user_achievements')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', progress.user_id)
+    // Batch fetch users and achievement counts
+    const [usersResult, achievementsResult] = await Promise.all([
+      supabase.from('users').select('id, email, first_name, last_name').in('id', userIds),
+      supabase.from('user_achievements').select('user_id').in('user_id', userIds),
+    ])
 
-        return {
-          user_id: progress.user_id,
-          email: user?.email || '',
-          first_name: user?.first_name || '',
-          last_name: user?.last_name || '',
-          total_xp: progress.total_xp || 0,
-          level: progress.level || 1,
-          achievements_count: count || 0,
-          position: index + 1
-        }
-      })
-    )
+    const usersMap = new Map((usersResult.data || []).map(u => [u.id, u]))
+    const achievementCounts = new Map<string, number>()
+    for (const ua of achievementsResult.data || []) {
+      achievementCounts.set(ua.user_id, (achievementCounts.get(ua.user_id) || 0) + 1)
+    }
 
-    return ranking
+    return progressData.map((progress, index) => {
+      const user = usersMap.get(progress.user_id)
+      return {
+        user_id: progress.user_id,
+        email: user?.email || '',
+        first_name: user?.first_name || '',
+        last_name: user?.last_name || '',
+        total_xp: progress.total_xp || 0,
+        level: progress.level || 1,
+        achievements_count: achievementCounts.get(progress.user_id) || 0,
+        position: index + 1,
+      }
+    })
   } catch {
     return []
   }
@@ -237,7 +236,7 @@ export async function getRanking(limit: number = 50): Promise<RankingEntry[]> {
   }
 
   try {
-    // Fallback: Build ranking from user_progress directly
+    // Fallback: Build ranking from user_progress (optimized: 3 queries instead of 2×N)
     const { data: progressData, error: progressError } = await supabase
       .from('user_progress')
       .select('user_id, total_xp, level')
@@ -246,34 +245,33 @@ export async function getRanking(limit: number = 50): Promise<RankingEntry[]> {
 
     if (progressError || !progressData || progressData.length === 0) return []
 
-    // Get user details and achievements count
-    const ranking: RankingEntry[] = await Promise.all(
-      progressData.map(async (progress, index) => {
-        const { data: user } = await supabase
-          .from('users')
-          .select('email, first_name, last_name')
-          .eq('id', progress.user_id)
-          .single()
+    const userIds = progressData.map(p => p.user_id)
 
-        const { count } = await supabase
-          .from('user_achievements')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', progress.user_id)
+    // Batch fetch users and achievement counts
+    const [usersResult, achievementsResult] = await Promise.all([
+      supabase.from('users').select('id, email, first_name, last_name').in('id', userIds),
+      supabase.from('user_achievements').select('user_id').in('user_id', userIds),
+    ])
 
-        return {
-          user_id: progress.user_id,
-          email: user?.email || '',
-          first_name: user?.first_name || '',
-          last_name: user?.last_name || '',
-          total_xp: progress.total_xp || 0,
-          level: progress.level || 1,
-          achievements_count: count || 0,
-          position: index + 1
-        }
-      })
-    )
+    const usersMap = new Map((usersResult.data || []).map(u => [u.id, u]))
+    const achievementCounts = new Map<string, number>()
+    for (const ua of achievementsResult.data || []) {
+      achievementCounts.set(ua.user_id, (achievementCounts.get(ua.user_id) || 0) + 1)
+    }
 
-    return ranking
+    return progressData.map((progress, index) => {
+      const user = usersMap.get(progress.user_id)
+      return {
+        user_id: progress.user_id,
+        email: user?.email || '',
+        first_name: user?.first_name || '',
+        last_name: user?.last_name || '',
+        total_xp: progress.total_xp || 0,
+        level: progress.level || 1,
+        achievements_count: achievementCounts.get(progress.user_id) || 0,
+        position: index + 1,
+      }
+    })
   } catch {
     return []
   }
