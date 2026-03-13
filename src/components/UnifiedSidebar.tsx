@@ -157,7 +157,7 @@ const adminMenuGroups: MenuGroup[] = [
     icon: Users,
     collapsible: true,
     items: [
-      { label: 'Usuários', href: '/admin/management', icon: Users },
+      { label: 'Usuários', href: '/admin/management', icon: Users, adminOnly: true },
       { label: 'Turmas', href: '/admin/classes', icon: GraduationCap },
       { label: 'Permissões', href: '/admin/permissions', icon: Lock, adminOnly: true },
     ],
@@ -183,7 +183,7 @@ const adminMenuGroups: MenuGroup[] = [
     collapsible: true,
     items: [
       { label: 'Feed', href: '/comunidade', icon: MessageSquare },
-      { label: 'Moderação', href: '/comunidade/moderacao', icon: Settings },
+      { label: 'Moderação', href: '/comunidade/moderacao', icon: Settings, adminOnly: true },
     ],
   },
   {
@@ -200,7 +200,7 @@ const adminMenuGroups: MenuGroup[] = [
     collapsible: true,
     items: [
       { label: 'Relatórios', href: '/admin/reports', icon: BarChart3 },
-      { label: 'Analytics de Vídeos', href: '/admin/reports/videos', icon: TrendingUp },
+      { label: 'Analytics de Vídeos', href: '/admin/reports/videos', icon: TrendingUp, adminOnly: true },
       { label: 'Gamificação', href: '/admin/gamification', icon: Trophy, adminOnly: true },
     ],
   },
@@ -210,7 +210,7 @@ const adminMenuGroups: MenuGroup[] = [
     collapsible: true,
     items: [
       { label: 'Integrações', href: '/admin/integrations', icon: Plug, adminOnly: true },
-      { label: 'Configurações', href: '/admin/settings', icon: Settings },
+      { label: 'Configurações', href: '/admin/settings', icon: Settings, adminOnly: true },
       { label: 'Notificações', href: '/notificacoes', icon: Bell },
     ],
   },
