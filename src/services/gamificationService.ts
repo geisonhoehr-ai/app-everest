@@ -39,6 +39,22 @@ export interface UserProgress {
   last_activity_date: string
 }
 
+// Build XP totals from scores table (the actual source of truth)
+async function getXPFromScores(userIds: string[]): Promise<Map<string, number>> {
+  const { data, error } = await supabase
+    .from('scores')
+    .select('user_id, score_value')
+    .in('user_id', userIds)
+
+  const xpMap = new Map<string, number>()
+  if (!error && data) {
+    for (const row of data) {
+      xpMap.set(row.user_id, (xpMap.get(row.user_id) || 0) + (row.score_value || 0))
+    }
+  }
+  return xpMap
+}
+
 // Achievements (optimized: 2 queries instead of 1+N)
 export async function getAchievements(): Promise<Achievement[]> {
   const [achievementsResult, countsResult] = await Promise.all([
@@ -132,7 +148,7 @@ export async function unlockAchievement(userId: string, achievementId: string): 
   if (error) throw error
 }
 
-// Ranking by Class (turma)
+// Ranking by Class (turma) - built from scores table
 export async function getRankingByClass(classId: string, limit: number = 50): Promise<RankingEntry[]> {
   try {
     // Get student IDs in this class
@@ -145,37 +161,11 @@ export async function getRankingByClass(classId: string, limit: number = 50): Pr
 
     const studentIds = classStudents.map(s => s.user_id)
 
-    // Try view first
-    try {
-      const { data, error } = await supabase
-        .from('user_ranking')
-        .select('*')
-        .in('user_id', studentIds)
-        .limit(limit)
-
-      if (!error && data && data.length > 0) {
-        return data.map((entry, index) => ({ ...entry, position: index + 1 }))
-      }
-    } catch {
-      // View not available
-    }
-
-    // Fallback: Build from user_progress (optimized: 3 queries instead of 2×N)
-    const { data: progressData, error: progressError } = await supabase
-      .from('user_progress')
-      .select('user_id, total_xp, level')
-      .in('user_id', studentIds)
-      .order('total_xp', { ascending: false })
-      .limit(limit)
-
-    if (progressError || !progressData || progressData.length === 0) return []
-
-    const userIds = progressData.map(p => p.user_id)
-
-    // Batch fetch users and achievement counts
-    const [usersResult, achievementsResult] = await Promise.all([
-      supabase.from('users').select('id, email, first_name, last_name').in('id', userIds),
-      supabase.from('user_achievements').select('user_id').in('user_id', userIds),
+    // Build XP from scores + fetch users and achievements in parallel
+    const [xpMap, usersResult, achievementsResult] = await Promise.all([
+      getXPFromScores(studentIds),
+      supabase.from('users').select('id, email, first_name, last_name').in('id', studentIds),
+      supabase.from('user_achievements').select('user_id').in('user_id', studentIds),
     ])
 
     const usersMap = new Map((usersResult.data || []).map(u => [u.id, u]))
@@ -184,19 +174,26 @@ export async function getRankingByClass(classId: string, limit: number = 50): Pr
       achievementCounts.set(ua.user_id, (achievementCounts.get(ua.user_id) || 0) + 1)
     }
 
-    return progressData.map((progress, index) => {
-      const user = usersMap.get(progress.user_id)
-      return {
-        user_id: progress.user_id,
-        email: user?.email || '',
-        first_name: user?.first_name || '',
-        last_name: user?.last_name || '',
-        total_xp: progress.total_xp || 0,
-        level: progress.level || 1,
-        achievements_count: achievementCounts.get(progress.user_id) || 0,
-        position: index + 1,
-      }
-    })
+    // Build ranking sorted by XP
+    const entries: RankingEntry[] = studentIds
+      .map(uid => {
+        const user = usersMap.get(uid)
+        const totalXp = xpMap.get(uid) || 0
+        return {
+          user_id: uid,
+          email: user?.email || '',
+          first_name: user?.first_name || '',
+          last_name: user?.last_name || '',
+          total_xp: totalXp,
+          level: calculateLevel(totalXp),
+          achievements_count: achievementCounts.get(uid) || 0,
+          position: 0,
+        }
+      })
+      .sort((a, b) => b.total_xp - a.total_xp)
+      .slice(0, limit)
+
+    return entries.map((entry, index) => ({ ...entry, position: index + 1 }))
   } catch {
     return []
   }
@@ -221,31 +218,28 @@ export async function getStudentClassIds(userId: string): Promise<{ class_id: st
   }
 }
 
-// Ranking
+// Ranking - built from scores table
 export async function getRanking(limit: number = 50): Promise<RankingEntry[]> {
   try {
-    // Try to use view first
-    const { data, error } = await supabase
-      .from('user_ranking')
-      .select('*')
-      .limit(limit)
+    // Get all scores grouped by user
+    const { data: scoresData, error: scoresError } = await supabase
+      .from('scores')
+      .select('user_id, score_value')
 
-    if (!error && data) return data
-  } catch {
-    // View not available
-  }
+    if (scoresError || !scoresData || scoresData.length === 0) return []
 
-  try {
-    // Fallback: Build ranking from user_progress (optimized: 3 queries instead of 2×N)
-    const { data: progressData, error: progressError } = await supabase
-      .from('user_progress')
-      .select('user_id, total_xp, level')
-      .order('total_xp', { ascending: false })
-      .limit(limit)
+    // Aggregate XP per user
+    const xpMap = new Map<string, number>()
+    for (const row of scoresData) {
+      xpMap.set(row.user_id, (xpMap.get(row.user_id) || 0) + (row.score_value || 0))
+    }
 
-    if (progressError || !progressData || progressData.length === 0) return []
+    // Sort by XP and take top N
+    const topUsers = Array.from(xpMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
 
-    const userIds = progressData.map(p => p.user_id)
+    const userIds = topUsers.map(([uid]) => uid)
 
     // Batch fetch users and achievement counts
     const [usersResult, achievementsResult] = await Promise.all([
@@ -259,16 +253,16 @@ export async function getRanking(limit: number = 50): Promise<RankingEntry[]> {
       achievementCounts.set(ua.user_id, (achievementCounts.get(ua.user_id) || 0) + 1)
     }
 
-    return progressData.map((progress, index) => {
-      const user = usersMap.get(progress.user_id)
+    return topUsers.map(([uid, totalXp], index) => {
+      const user = usersMap.get(uid)
       return {
-        user_id: progress.user_id,
+        user_id: uid,
         email: user?.email || '',
         first_name: user?.first_name || '',
         last_name: user?.last_name || '',
-        total_xp: progress.total_xp || 0,
-        level: progress.level || 1,
-        achievements_count: achievementCounts.get(progress.user_id) || 0,
+        total_xp: totalXp,
+        level: calculateLevel(totalXp),
+        achievements_count: achievementCounts.get(uid) || 0,
         position: index + 1,
       }
     })
@@ -277,40 +271,55 @@ export async function getRanking(limit: number = 50): Promise<RankingEntry[]> {
   }
 }
 
-// User Progress
+// User Progress - built from scores table
 export async function getUserProgress(userId: string): Promise<UserProgress | null> {
-  const { data, error } = await supabase
-    .from('user_progress')
-    .select('user_id, total_xp, level, current_streak_days, longest_streak_days, last_activity_date')
-    .eq('user_id', userId)
-    .single()
+  try {
+    const { data: scoresData, error } = await supabase
+      .from('scores')
+      .select('score_value, recorded_at')
+      .eq('user_id', userId)
+      .order('recorded_at', { ascending: false })
 
-  if (error) {
-    if (error.code === 'PGRST116') return null // Not found
-    throw error
-  }
-  
-  return data
-}
+    if (error || !scoresData || scoresData.length === 0) return null
 
-export async function updateUserProgress(
-  userId: string,
-  updates: {
-    total_xp?: number
-    level?: number
-    current_streak_days?: number
-    longest_streak_days?: number
-    last_activity_date?: string
-  }
-): Promise<void> {
-  const { error } = await supabase
-    .from('user_progress')
-    .upsert({
+    const totalXp = scoresData.reduce((sum, s) => sum + (s.score_value || 0), 0)
+    const lastActivity = scoresData[0]?.recorded_at || new Date().toISOString()
+
+    // Calculate streak from activity dates
+    const activityDates = [...new Set(
+      scoresData
+        .filter(s => s.recorded_at)
+        .map(s => new Date(s.recorded_at).toISOString().split('T')[0])
+    )].sort().reverse()
+
+    let currentStreak = 0
+    if (activityDates.length > 0) {
+      const today = new Date().toISOString().split('T')[0]
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+      if (activityDates[0] === today || activityDates[0] === yesterday) {
+        currentStreak = 1
+        for (let i = 1; i < activityDates.length; i++) {
+          const prev = new Date(activityDates[i - 1])
+          const curr = new Date(activityDates[i])
+          const diffDays = (prev.getTime() - curr.getTime()) / 86400000
+          if (diffDays <= 1) currentStreak++
+          else break
+        }
+      }
+    }
+
+    return {
       user_id: userId,
-      ...updates
-    })
-
-  if (error) throw error
+      total_xp: totalXp,
+      level: calculateLevel(totalXp),
+      current_streak_days: currentStreak,
+      longest_streak_days: currentStreak, // approximation
+      last_activity_date: lastActivity.split('T')[0],
+    }
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -333,20 +342,8 @@ export async function addXP(
   activityType: string,
   activityId?: string
 ): Promise<void> {
-  // Get current progress
-  const currentProgress = await getUserProgress(userId)
-  const newTotalXP = (currentProgress?.total_xp || 0) + xpAmount
-  const newLevel = calculateLevel(newTotalXP)
-
-  // Update progress
-  await updateUserProgress(userId, {
-    total_xp: newTotalXP,
-    level: newLevel,
-    last_activity_date: new Date().toISOString().split('T')[0]
-  })
-
-  // Record in scores table
-  await supabase
+  // Record in scores table (single source of truth for XP)
+  const { error } = await supabase
     .from('scores')
     .insert({
       user_id: userId,
@@ -354,24 +351,28 @@ export async function addXP(
       activity_type: activityType,
       activity_id: activityId
     })
+
+  if (error) throw error
 }
 
 // Global Stats
 export async function getGamificationStats() {
   try {
-    const [achievementsResult, rankingResult, progressResult] = await Promise.all([
+    const [achievementsResult, rankingResult, scoresResult] = await Promise.all([
       supabase.from('achievements').select('*', { count: 'exact', head: true }),
       supabase.from('user_achievements').select('*', { count: 'exact', head: true }),
-      supabase.from('user_progress').select('total_xp'),
+      supabase.from('scores').select('user_id, score_value'),
     ])
 
-    const totalXP = (progressResult.data || []).reduce((sum, p) => sum + (p.total_xp || 0), 0)
+    const scores = scoresResult.data || []
+    const totalXP = scores.reduce((sum, s) => sum + (s.score_value || 0), 0)
+    const activeUsers = new Set(scores.map(s => s.user_id)).size
 
     return {
       totalAchievements: achievementsResult.count || 0,
       totalUnlocked: rankingResult.count || 0,
       totalXP,
-      activeUsers: progressResult.data?.length || 0,
+      activeUsers,
     }
   } catch {
     return { totalAchievements: 0, totalUnlocked: 0, totalXP: 0, activeUsers: 0 }

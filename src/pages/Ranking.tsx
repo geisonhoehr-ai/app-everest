@@ -108,6 +108,17 @@ export default function RankingPage() {
     fetchRankingData()
   }, [user?.id])
 
+  const handleClassChange = useCallback(async (classId: string) => {
+    setSelectedClassId(classId)
+    try {
+      const data = await getRankingByClass(classId, 50)
+      setClassRanking(data)
+    } catch (error) {
+      logger.error('Erro ao buscar ranking da turma:', error)
+      setClassRanking([])
+    }
+  }, [])
+
   if (isLoading) {
     return <SectionLoader />
   }
@@ -302,17 +313,6 @@ export default function RankingPage() {
       </Card>
     )
   }
-
-  const handleClassChange = useCallback(async (classId: string) => {
-    setSelectedClassId(classId)
-    try {
-      const data = await getRankingByClass(classId, 50)
-      setClassRanking(data)
-    } catch (error) {
-      logger.error('Erro ao buscar ranking da turma:', error)
-      setClassRanking([])
-    }
-  }, [])
 
   return (
     <div className="space-y-6">
