@@ -59,15 +59,20 @@ import { ciaarCorrectionService } from '@/services/ciaarCorrectionService'
 import type {
   CorrectionTemplate,
   CorrectionResult,
+  CorrectionType,
   ExpressionError,
   StructureAnalysis,
   ContentAnalysis,
   ImprovementSuggestion,
+  CompetencyScore,
+  EnemCompetencyDef,
 } from '@/types/essay-correction'
-import { calculateFinalGrade } from '@/types/essay-correction'
+import { calculateFinalGrade, calculateEnemGrade, createEmptyCompetencyScores } from '@/types/essay-correction'
 import { EssayTextAnnotator } from '@/components/admin/essays/EssayTextAnnotator'
 import { PdfAnnotationCanvas } from '@/components/admin/essays/PdfAnnotationCanvas'
 import { AudioFeedbackRecorder } from '@/components/admin/essays/AudioFeedbackRecorder'
+import { cn } from '@/lib/utils'
+import { Progress } from '@/components/ui/progress'
 
 export default function AdminEssayCorrectionPage() {
   const { submissionId } = useParams<{ submissionId: string }>()
@@ -76,7 +81,9 @@ export default function AdminEssayCorrectionPage() {
   const { toast } = useToast()
 
   const [essay, setEssay] = useState<EssayForCorrection | null>(null)
+  const [allTemplates, setAllTemplates] = useState<CorrectionTemplate[]>([])
   const [template, setTemplate] = useState<CorrectionTemplate | null>(null)
+  const [correctionType, setCorrectionType] = useState<CorrectionType>('ciaar')
   const [isLoading, setIsLoading] = useState(true)
   const [isAILoading, setIsAILoading] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
@@ -88,6 +95,11 @@ export default function AdminEssayCorrectionPage() {
   const [structureAnalysis, setStructureAnalysis] = useState<StructureAnalysis[]>([])
   const [contentAnalysis, setContentAnalysis] = useState<ContentAnalysis[]>([])
   const [suggestions, setSuggestions] = useState<ImprovementSuggestion[]>([])
+
+  // ENEM correction data
+  const [competencyScores, setCompetencyScores] = useState<CompetencyScore[]>([])
+
+  // Shared
   const [transcribedText, setTranscribedText] = useState('')
   const [teacherFeedback, setTeacherFeedback] = useState('')
   const [correctedFileUrl, setCorrectedFileUrl] = useState<string | null>(null)
@@ -103,26 +115,48 @@ export default function AdminEssayCorrectionPage() {
     const fetchData = async () => {
       setIsLoading(true)
       try {
-        const [essayData, templateData, existingCorrection] = await Promise.all([
+        const [essayData, templates, existingCorrection] = await Promise.all([
           getEssayForCorrection(submissionId),
-          ciaarCorrectionService.getDefaultTemplate(),
+          ciaarCorrectionService.getAllTemplates(),
           ciaarCorrectionService.loadCorrection(submissionId),
         ])
 
         setEssay(essayData)
-        setTemplate(templateData)
+        setAllTemplates(templates)
 
-        // Load existing CIAAR correction data if available
+        // Determine correction type from existing correction or default template
         if (existingCorrection) {
-          setExpressionErrors(existingCorrection.expressionErrors)
-          setStructureAnalysis(existingCorrection.structureAnalysis)
-          setContentAnalysis(existingCorrection.contentAnalysis)
+          setCorrectionType(existingCorrection.correctionType || 'ciaar')
+          if (existingCorrection.correctionType === 'enem') {
+            setCompetencyScores(existingCorrection.competencyScores)
+          } else {
+            setExpressionErrors(existingCorrection.expressionErrors)
+            setStructureAnalysis(existingCorrection.structureAnalysis)
+            setContentAnalysis(existingCorrection.contentAnalysis)
+          }
           setSuggestions(existingCorrection.improvementSuggestions)
+
+          // Find the template that was used
+          const usedTemplateId = (essayData as any)?.correction_template_id
+          const usedTemplate = usedTemplateId
+            ? templates.find(t => t.id === usedTemplateId)
+            : templates.find(t => t.correction_type === existingCorrection.correctionType && t.is_default)
+          setTemplate(usedTemplate || templates.find(t => t.is_default) || templates[0] || null)
+        } else {
+          // No existing correction - use default template
+          const defaultTemplate = templates.find(t => t.is_default) || templates[0]
+          setTemplate(defaultTemplate || null)
+          setCorrectionType(defaultTemplate?.correction_type || 'ciaar')
         }
 
         // Load transcribed text
         if ((essayData as any)?.transcribed_text) {
           setTranscribedText((essayData as any).transcribed_text)
+        }
+
+        // Load teacher feedback
+        if ((essayData as any)?.teacher_feedback_text) {
+          setTeacherFeedback((essayData as any).teacher_feedback_text)
         }
 
         // Load file URL for image/PDF essays
@@ -133,7 +167,7 @@ export default function AdminEssayCorrectionPage() {
           if (data?.signedUrl) setFileUrl(data.signedUrl)
         }
 
-        // Load corrected file URL if teacher already uploaded
+        // Load corrected file URL
         if ((essayData as any)?.corrected_file_url) {
           const { data } = await supabase.storage
             .from('essays')
@@ -163,18 +197,55 @@ export default function AdminEssayCorrectionPage() {
     fetchData()
   }, [submissionId])
 
-  // Calculate totals and final grade
+  // --- Template change handler ---
+  const handleTemplateChange = (templateId: string) => {
+    const newTemplate = allTemplates.find(t => t.id === templateId)
+    if (!newTemplate) return
+    setTemplate(newTemplate)
+    const newType = newTemplate.correction_type || 'ciaar'
+    setCorrectionType(newType)
+
+    // Initialize ENEM competency scores from template
+    if (newType === 'enem' && competencyScores.length === 0) {
+      const competencies = (newTemplate.content_criteria as any)?.competencies as EnemCompetencyDef[] | undefined
+      if (competencies) {
+        setCompetencyScores(createEmptyCompetencyScores(competencies))
+      }
+    }
+  }
+
+  // --- Grade calculations ---
   const expressionDebitTotal = expressionErrors.reduce((sum, e) => sum + e.debit_value, 0)
   const structureDebitTotal = structureAnalysis.reduce((sum, s) => sum + s.debit_value, 0)
   const contentDebitTotal = contentAnalysis.reduce((sum, c) => sum + c.debit_value, 0)
-  const finalGrade = calculateFinalGrade(
-    template?.max_grade ?? 10,
-    expressionDebitTotal,
-    structureDebitTotal,
-    contentDebitTotal,
-    contentAnalysis
-  )
 
+  const finalGrade = correctionType === 'enem'
+    ? calculateEnemGrade(competencyScores)
+    : calculateFinalGrade(
+        template?.max_grade ?? 10,
+        expressionDebitTotal,
+        structureDebitTotal,
+        contentDebitTotal,
+        contentAnalysis
+      )
+
+  const maxGrade = template?.max_grade ?? (correctionType === 'enem' ? 1000 : 10)
+
+  // --- Progress tracking ---
+  const getCorrectionProgress = () => {
+    if (correctionType === 'enem') {
+      const filled = competencyScores.filter(c => c.score > 0 || c.justification).length
+      return { filled, total: competencyScores.length, percent: competencyScores.length > 0 ? (filled / competencyScores.length) * 100 : 0 }
+    }
+    const hasExpression = expressionErrors.length > 0
+    const hasStructure = structureAnalysis.length > 0
+    const hasContent = contentAnalysis.length > 0
+    const filled = [hasExpression, hasStructure, hasContent].filter(Boolean).length
+    return { filled, total: 3, percent: (filled / 3) * 100 }
+  }
+  const progress = getCorrectionProgress()
+
+  // --- AI Correction ---
   const handleAICorrection = async () => {
     if (!essay || !template) {
       toast({ title: 'Template de correção não encontrado', variant: 'destructive' })
@@ -196,6 +267,7 @@ export default function AdminEssayCorrectionPage() {
         theme: essay.essay_prompts?.title || 'Tema Livre',
         correctionTemplate: {
           name: template.name,
+          correction_type: correctionType,
           max_grade: template.max_grade,
           expression_debit_value: template.expression_debit_value,
           structure_criteria: template.structure_criteria,
@@ -205,9 +277,13 @@ export default function AdminEssayCorrectionPage() {
       })
 
       // Populate correction data from AI response
-      setExpressionErrors(result.expressionErrors || [])
-      setStructureAnalysis(result.structureAnalysis || [])
-      setContentAnalysis(result.contentAnalysis || [])
+      if (correctionType === 'enem' && result.competencyScores?.length > 0) {
+        setCompetencyScores(result.competencyScores)
+      } else {
+        setExpressionErrors(result.expressionErrors || [])
+        setStructureAnalysis(result.structureAnalysis || [])
+        setContentAnalysis(result.contentAnalysis || [])
+      }
       setSuggestions(result.improvementSuggestions || [])
 
       toast({ title: 'Correção IA concluída!', description: 'Revise os resultados antes de finalizar.' })
@@ -230,7 +306,6 @@ export default function AdminEssayCorrectionPage() {
       const text = await aiCorrectionService.transcribeEssay([fileUrl])
       setTranscribedText(text)
 
-      // Save transcription to DB
       if (submissionId) {
         await supabase
           .from('essays')
@@ -274,13 +349,11 @@ export default function AdminEssayCorrectionPage() {
 
       if (uploadError) throw uploadError
 
-      // Save path to DB
       await supabase
         .from('essays')
         .update({ corrected_file_url: path })
         .eq('id', submissionId)
 
-      // Get signed URL
       const { data } = await supabase.storage
         .from('essays')
         .createSignedUrl(path, 3600)
@@ -325,8 +398,8 @@ export default function AdminEssayCorrectionPage() {
         y += 4
       }
 
-      // Header
-      addText('RELATÓRIO DE CORREÇÃO CIAAR', 16, 'bold', [30, 64, 175])
+      const headerLabel = correctionType === 'enem' ? 'RELATÓRIO DE CORREÇÃO ENEM' : 'RELATÓRIO DE CORREÇÃO CIAAR'
+      addText(headerLabel, 16, 'bold', [30, 64, 175])
       y += 2
       addLine()
       addText(`Aluno: ${studentName || '—'}`, 10, 'normal')
@@ -335,59 +408,68 @@ export default function AdminEssayCorrectionPage() {
       addText(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 10, 'normal')
       y += 3
 
-      // Grade summary
-      addText(`NOTA FINAL: ${finalGrade.toFixed(3)} / ${template.max_grade}`, 14, 'bold',
-        finalGrade >= 7 ? [22, 163, 74] : finalGrade >= 5 ? [217, 119, 6] : [220, 38, 38])
-      y += 2
-      addText(`Expressão: -${expressionDebitTotal.toFixed(3)} (${expressionErrors.length} erros)`, 9, 'normal', [220, 38, 38])
-      addText(`Estrutura: -${structureDebitTotal.toFixed(3)}`, 9, 'normal', [37, 99, 235])
-      addText(`Conteúdo: -${contentDebitTotal.toFixed(3)}`, 9, 'normal', [217, 119, 6])
+      addText(`NOTA FINAL: ${correctionType === 'enem' ? finalGrade : finalGrade.toFixed(3)} / ${maxGrade}`, 14, 'bold',
+        finalGrade >= (maxGrade * 0.7) ? [22, 163, 74] : finalGrade >= (maxGrade * 0.5) ? [217, 119, 6] : [220, 38, 38])
       y += 4
-      addLine()
 
-      // Expression Errors
-      if (expressionErrors.length > 0) {
+      if (correctionType === 'enem') {
+        // ENEM: competency scores
+        addLine()
+        addText('COMPETÊNCIAS', 12, 'bold', [30, 64, 175])
         y += 2
-        addText('ERROS DE EXPRESSÃO', 12, 'bold', [220, 38, 38])
-        y += 2
-        expressionErrors.forEach((err, i) => {
-          addText(`${i + 1}. P${err.paragraph_number}, Per. ${err.sentence_number} — Débito: -${err.debit_value.toFixed(3)}`, 9, 'bold')
-          if (err.error_text) addText(`   Erro: "${err.error_text}"`, 9, 'normal', [180, 0, 0])
-          if (err.suggested_correction) addText(`   Correção: "${err.suggested_correction}"`, 9, 'normal', [0, 128, 0])
-          if (err.error_explanation) addText(`   ${err.error_explanation}`, 8, 'normal', [100, 100, 100])
+        competencyScores.forEach(c => {
+          addText(`C${c.competency_number} - ${c.competency_name}: ${c.score}/${c.max_score}`, 10, 'bold')
+          if (c.justification) addText(`   ${c.justification}`, 8, 'normal', [80, 80, 80])
           y += 2
         })
+      } else {
+        // CIAAR: debit breakdown
+        addText(`Expressão: -${expressionDebitTotal.toFixed(3)} (${expressionErrors.length} erros)`, 9, 'normal', [220, 38, 38])
+        addText(`Estrutura: -${structureDebitTotal.toFixed(3)}`, 9, 'normal', [37, 99, 235])
+        addText(`Conteúdo: -${contentDebitTotal.toFixed(3)}`, 9, 'normal', [217, 119, 6])
+        y += 4
         addLine()
-      }
 
-      // Structure Analysis
-      if (structureAnalysis.length > 0) {
-        y += 2
-        addText('ANÁLISE DE ESTRUTURA', 12, 'bold', [37, 99, 235])
-        y += 2
-        structureAnalysis.forEach(s => {
-          const type = s.paragraph_type === 'introduction' ? 'Introdução' : s.paragraph_type === 'conclusion' ? 'Conclusão' : 'Desenvolvimento'
-          addText(`Parágrafo ${s.paragraph_number} (${type}) — ${s.debit_value > 0 ? `-${s.debit_value.toFixed(3)}` : 'OK'}`, 9, 'bold')
-          if (s.analysis_text) addText(`   ${s.analysis_text}`, 8, 'normal', [80, 80, 80])
+        if (expressionErrors.length > 0) {
           y += 2
-        })
-        addLine()
-      }
-
-      // Content Analysis
-      if (contentAnalysis.length > 0) {
-        y += 2
-        addText('ANÁLISE DE CONTEÚDO', 12, 'bold', [217, 119, 6])
-        y += 2
-        contentAnalysis.forEach(c => {
-          addText(`${c.criterion_name} — ${c.debit_level} (${c.debit_value > 0 ? `-${c.debit_value.toFixed(3)}` : 'Sem débito'})`, 9, 'bold')
-          if (c.analysis_text) addText(`   ${c.analysis_text}`, 8, 'normal', [80, 80, 80])
+          addText('ERROS DE EXPRESSÃO', 12, 'bold', [220, 38, 38])
           y += 2
-        })
-        addLine()
+          expressionErrors.forEach((err, i) => {
+            addText(`${i + 1}. P${err.paragraph_number}, Per. ${err.sentence_number} — Débito: -${err.debit_value.toFixed(3)}`, 9, 'bold')
+            if (err.error_text) addText(`   Erro: "${err.error_text}"`, 9, 'normal', [180, 0, 0])
+            if (err.suggested_correction) addText(`   Correção: "${err.suggested_correction}"`, 9, 'normal', [0, 128, 0])
+            if (err.error_explanation) addText(`   ${err.error_explanation}`, 8, 'normal', [100, 100, 100])
+            y += 2
+          })
+          addLine()
+        }
+
+        if (structureAnalysis.length > 0) {
+          y += 2
+          addText('ANÁLISE DE ESTRUTURA', 12, 'bold', [37, 99, 235])
+          y += 2
+          structureAnalysis.forEach(s => {
+            const type = s.paragraph_type === 'introduction' ? 'Introdução' : s.paragraph_type === 'conclusion' ? 'Conclusão' : 'Desenvolvimento'
+            addText(`Parágrafo ${s.paragraph_number} (${type}) — ${s.debit_value > 0 ? `-${s.debit_value.toFixed(3)}` : 'OK'}`, 9, 'bold')
+            if (s.analysis_text) addText(`   ${s.analysis_text}`, 8, 'normal', [80, 80, 80])
+            y += 2
+          })
+          addLine()
+        }
+
+        if (contentAnalysis.length > 0) {
+          y += 2
+          addText('ANÁLISE DE CONTEÚDO', 12, 'bold', [217, 119, 6])
+          y += 2
+          contentAnalysis.forEach(c => {
+            addText(`${c.criterion_name} — ${c.debit_level} (${c.debit_value > 0 ? `-${c.debit_value.toFixed(3)}` : 'Sem débito'})`, 9, 'bold')
+            if (c.analysis_text) addText(`   ${c.analysis_text}`, 8, 'normal', [80, 80, 80])
+            y += 2
+          })
+          addLine()
+        }
       }
 
-      // Suggestions
       if (suggestions.length > 0) {
         y += 2
         addText('SUGESTÕES DE MELHORIA', 12, 'bold', [5, 150, 105])
@@ -401,7 +483,6 @@ export default function AdminEssayCorrectionPage() {
         addLine()
       }
 
-      // Teacher feedback
       if (teacherFeedback) {
         y += 2
         addText('COMENTÁRIOS DO PROFESSOR', 12, 'bold')
@@ -409,7 +490,6 @@ export default function AdminEssayCorrectionPage() {
         addText(teacherFeedback, 9, 'normal', [60, 60, 60])
       }
 
-      // Footer
       y += 8
       addText('Everest Preparatórios — Correção gerada automaticamente', 7, 'normal', [160, 160, 160])
 
@@ -422,25 +502,27 @@ export default function AdminEssayCorrectionPage() {
     }
   }
 
+  const buildCorrectionResult = (): CorrectionResult => ({
+    correctionType,
+    expressionErrors,
+    structureAnalysis,
+    contentAnalysis,
+    improvementSuggestions: suggestions,
+    competencyScores,
+    totalExpressionDebit: expressionDebitTotal,
+    totalStructureDebit: structureDebitTotal,
+    totalContentDebit: contentDebitTotal,
+    finalGrade,
+  })
+
   const handleSaveDraft = async () => {
     if (!submissionId || !user || !template?.id) return
 
     setIsSaving(true)
     try {
-      const result: CorrectionResult = {
-        expressionErrors,
-        structureAnalysis,
-        contentAnalysis,
-        improvementSuggestions: suggestions,
-        totalExpressionDebit: expressionDebitTotal,
-        totalStructureDebit: structureDebitTotal,
-        totalContentDebit: contentDebitTotal,
-        finalGrade,
-      }
-
       await ciaarCorrectionService.saveCorrection(
         submissionId,
-        result,
+        buildCorrectionResult(),
         template.id,
         user.id
       )
@@ -450,6 +532,7 @@ export default function AdminEssayCorrectionPage() {
         .from('essays')
         .update({
           status: 'correcting',
+          correction_type: correctionType,
           teacher_feedback_text: teacherFeedback || null,
           annotated_text_html: annotatedTextHtml || null,
           annotation_image_url: annotationImageUrl || null,
@@ -470,29 +553,18 @@ export default function AdminEssayCorrectionPage() {
 
     setIsSaving(true)
     try {
-      const result: CorrectionResult = {
-        expressionErrors,
-        structureAnalysis,
-        contentAnalysis,
-        improvementSuggestions: suggestions,
-        totalExpressionDebit: expressionDebitTotal,
-        totalStructureDebit: structureDebitTotal,
-        totalContentDebit: contentDebitTotal,
-        finalGrade,
-      }
-
       await ciaarCorrectionService.saveCorrection(
         submissionId,
-        result,
+        buildCorrectionResult(),
         template.id,
         user.id
       )
 
-      // Update essay status and notify student
       await supabase
         .from('essays')
         .update({
           status: 'corrected',
+          correction_type: correctionType,
           teacher_feedback_text: teacherFeedback || null,
           annotated_text_html: annotatedTextHtml || null,
           annotation_image_url: annotationImageUrl || null,
@@ -500,11 +572,12 @@ export default function AdminEssayCorrectionPage() {
         } as any)
         .eq('id', submissionId)
 
+      const gradeDisplay = correctionType === 'enem' ? `${finalGrade}` : finalGrade.toFixed(3)
       await createNotification({
         user_id: essay.student_id,
         type: 'essay_corrected',
         title: 'Sua redação foi corrigida!',
-        message: `A redação sobre "${essay.essay_prompts?.title}" recebeu nota ${finalGrade.toFixed(3)}.`,
+        message: `A redação sobre "${essay.essay_prompts?.title}" recebeu nota ${gradeDisplay}.`,
         related_entity_id: essay.id,
         related_entity_type: 'essay',
       })
@@ -519,7 +592,7 @@ export default function AdminEssayCorrectionPage() {
     }
   }
 
-  // --- Expression Error management ---
+  // --- CIAAR: Expression Error management ---
   const removeExpressionError = (index: number) => {
     setExpressionErrors(prev => prev.filter((_, i) => i !== index))
   }
@@ -540,7 +613,7 @@ export default function AdminEssayCorrectionPage() {
     setExpressionErrors(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e))
   }
 
-  // --- Structure Analysis management ---
+  // --- CIAAR: Structure Analysis management ---
   const addStructureAnalysis = () => {
     setStructureAnalysis(prev => [...prev, {
       paragraph_number: prev.length + 1,
@@ -559,7 +632,7 @@ export default function AdminEssayCorrectionPage() {
     setStructureAnalysis(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
   }
 
-  // --- Content Analysis management ---
+  // --- CIAAR: Content Analysis management ---
   const criterionNameMap: Record<string, string> = {
     pertinence: 'Pertinência ao Tema',
     argumentation: 'Argumentação',
@@ -585,7 +658,6 @@ export default function AdminEssayCorrectionPage() {
     setContentAnalysis(prev => prev.map((c, i) => {
       if (i !== index) return c
       const updated = { ...c, [field]: value }
-      // Auto-fill criterion_name when criterion_type changes
       if (field === 'criterion_type' && typeof value === 'string') {
         updated.criterion_name = criterionNameMap[value] || value
       }
@@ -608,6 +680,13 @@ export default function AdminEssayCorrectionPage() {
   const updateSuggestion = (index: number, field: keyof ImprovementSuggestion, value: string) => {
     setSuggestions(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
   }
+
+  // --- ENEM: Competency management ---
+  const updateCompetencyScore = (index: number, field: keyof CompetencyScore, value: string | number) => {
+    setCompetencyScores(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c))
+  }
+
+  const enemCompetencies = (template?.content_criteria as any)?.competencies as EnemCompetencyDef[] | undefined
 
   // --- Render ---
   if (isLoading) return <SectionLoader />
@@ -632,6 +711,13 @@ export default function AdminEssayCorrectionPage() {
     ? new Date((essay as any).created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : '—'
 
+  const getGradeColor = (g: number, max: number) => {
+    const pct = g / max
+    if (pct >= 0.7) return 'text-green-600'
+    if (pct >= 0.5) return 'text-amber-600'
+    return 'text-red-600'
+  }
+
   return (
     <div className="flex flex-col gap-4 h-[calc(100vh-8rem)]">
       {/* Header */}
@@ -649,17 +735,26 @@ export default function AdminEssayCorrectionPage() {
             <h1 className="text-xl font-bold text-foreground">Correção de Redação</h1>
           </div>
 
-          {/* Grade display */}
-          <div className="text-right">
-            <div className="text-xs text-muted-foreground">Nota</div>
-            <div className={`text-2xl font-bold ${finalGrade >= 7 ? 'text-green-600' : finalGrade >= 5 ? 'text-amber-600' : 'text-red-600'}`}>
-              {finalGrade.toFixed(3)}
+          {/* Grade + Progress */}
+          <div className="flex items-center gap-4">
+            {/* Progress indicator */}
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{progress.filled}/{progress.total}</span>
+              <Progress value={progress.percent} className="w-20 h-2" />
             </div>
-            <div className="text-[10px] text-muted-foreground">/ {template?.max_grade ?? 10}</div>
+
+            {/* Grade display */}
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground">Nota</div>
+              <div className={cn('text-2xl font-bold', getGradeColor(finalGrade, maxGrade))}>
+                {correctionType === 'enem' ? finalGrade : finalGrade.toFixed(3)}
+              </div>
+              <div className="text-[10px] text-muted-foreground">/ {maxGrade}</div>
+            </div>
           </div>
         </div>
 
-        {/* Info card */}
+        {/* Info card with template selector */}
         <Card>
           <CardContent className="py-3 px-4">
             <div className="flex items-start gap-6 flex-wrap">
@@ -674,6 +769,29 @@ export default function AdminEssayCorrectionPage() {
               <div className="flex-1 min-w-[200px]">
                 <Label className="text-xs text-muted-foreground">Tema</Label>
                 <p className="text-sm font-medium">{essay.essay_prompts?.title || 'Tema Livre'}</p>
+              </div>
+              <div className="min-w-[180px]">
+                <Label className="text-xs text-muted-foreground">Modelo de Correção</Label>
+                <Select value={template?.id || ''} onValueChange={handleTemplateChange}>
+                  <SelectTrigger className="h-8 text-xs mt-0.5">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allTemplates.map(t => (
+                      <SelectItem key={t.id} value={t.id!}>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={cn(
+                            'text-[9px] px-1',
+                            t.correction_type === 'enem' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          )}>
+                            {(t.correction_type || 'ciaar').toUpperCase()}
+                          </Badge>
+                          {t.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="min-w-[140px] text-right">
                 <Label className="text-xs text-muted-foreground">Data de Envio</Label>
@@ -716,12 +834,12 @@ export default function AdminEssayCorrectionPage() {
 
           <div className="flex-1" />
 
-          <Button size="sm" variant="outline" className="bg-white dark:bg-slate-800 hover:bg-green-50 hover:text-green-700 hover:border-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-300 dark:hover:border-green-700" onClick={handleSaveDraft} disabled={isSaving}>
+          <Button size="sm" variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
             Salvar Rascunho
           </Button>
 
-          <Button size="sm" variant="outline" className="bg-white dark:bg-slate-800 hover:bg-green-600 hover:text-white hover:border-green-600 dark:hover:bg-green-600" onClick={() => setShowFinalizeDialog(true)} disabled={isSaving}>
+          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setShowFinalizeDialog(true)} disabled={isSaving}>
             <Send className="h-4 w-4 mr-1" /> Finalizar Correção
           </Button>
         </div>
@@ -744,7 +862,6 @@ export default function AdminEssayCorrectionPage() {
             </CardHeader>
             <ScrollArea className="flex-1">
               <CardContent className="px-4 pb-4 space-y-4">
-                {/* Student-typed text with rich text annotation */}
                 {essay.submission_text && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -759,7 +876,6 @@ export default function AdminEssayCorrectionPage() {
                   </div>
                 )}
 
-                {/* Transcribed text (from AI OCR) */}
                 {transcribedText && transcribedText !== essay.submission_text && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -772,7 +888,6 @@ export default function AdminEssayCorrectionPage() {
                   </div>
                 )}
 
-                {/* File (PDF or image) with annotation canvas */}
                 {fileUrl && (
                   <PdfAnnotationCanvas
                     fileUrl={fileUrl}
@@ -782,7 +897,6 @@ export default function AdminEssayCorrectionPage() {
                   />
                 )}
 
-                {/* Teacher's corrected file */}
                 {correctedFileUrl && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -797,7 +911,6 @@ export default function AdminEssayCorrectionPage() {
                   </div>
                 )}
 
-                {/* Fallback: no content */}
                 {!essay.submission_text && !transcribedText && !fileUrl && (
                   <div className="text-center py-8 text-muted-foreground">
                     <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
@@ -805,7 +918,6 @@ export default function AdminEssayCorrectionPage() {
                   </div>
                 )}
 
-                {/* Audio feedback recorder */}
                 <AudioFeedbackRecorder
                   audioUrl={feedbackAudioUrl}
                   onSave={(url) => setFeedbackAudioUrl(url)}
@@ -815,12 +927,10 @@ export default function AdminEssayCorrectionPage() {
                       .from('essays')
                       .upload(fileName, blob, { upsert: true })
                     if (error) throw error
-                    // Save the path (not signed URL) to the database
                     await supabase
                       .from('essays')
                       .update({ teacher_feedback_audio_url: fileName } as any)
                       .eq('id', submissionId)
-                    // Return signed URL for playback
                     const { data } = await supabase.storage
                       .from('essays')
                       .createSignedUrl(fileName, 3600)
@@ -833,405 +943,548 @@ export default function AdminEssayCorrectionPage() {
           </Card>
         </div>
 
-        {/* Right: CIAAR Correction Panel with tabs */}
+        {/* Right: Correction Panel */}
         <div className="lg:col-span-3 h-full overflow-hidden">
-          <Tabs defaultValue="expression" className="h-full flex flex-col">
-            <TabsList className="w-full shrink-0 grid grid-cols-4">
-              <TabsTrigger value="expression" className="text-xs gap-1.5 bg-white dark:bg-slate-800 data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/40 dark:data-[state=active]:text-red-300">
-                <PenLine className="h-3.5 w-3.5" />
-                Expressão
-                {expressionErrors.length > 0 && (
-                  <Badge variant="destructive" className="text-[9px] px-1 py-0 ml-1">{expressionErrors.length}</Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="structure" className="text-xs gap-1.5 bg-white dark:bg-slate-800 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/40 dark:data-[state=active]:text-blue-300">
-                <BookOpen className="h-3.5 w-3.5" />
-                Estrutura
-              </TabsTrigger>
-              <TabsTrigger value="content" className="text-xs gap-1.5 bg-white dark:bg-slate-800 data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 dark:data-[state=active]:bg-purple-900/40 dark:data-[state=active]:text-purple-300">
-                <FileText className="h-3.5 w-3.5" />
-                Conteúdo
-              </TabsTrigger>
-              <TabsTrigger value="suggestions" className="text-xs gap-1.5 bg-white dark:bg-slate-800 data-[state=active]:bg-amber-100 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/40 dark:data-[state=active]:text-amber-300">
-                <Lightbulb className="h-3.5 w-3.5" />
-                Sugestões
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Expression Errors Tab */}
-            <TabsContent value="expression" className="flex-1 overflow-hidden mt-2">
-              <Card className="h-full flex flex-col">
-                <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
+          {correctionType === 'enem' ? (
+            // ==================== ENEM PANEL ====================
+            <Card className="h-full flex flex-col">
+              <CardHeader className="py-3 px-4 shrink-0">
+                <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-sm">Erros de Expressão</CardTitle>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Badge className="bg-blue-600 text-white text-[10px]">ENEM</Badge>
+                      Competências
+                    </CardTitle>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {expressionErrors.length} erros | Débito total: -{expressionDebitTotal.toFixed(3)}
+                      {competencyScores.filter(c => c.score > 0).length}/{competencyScores.length} avaliadas · Total: {finalGrade}/{maxGrade}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline" onClick={addExpressionError}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
-                  </Button>
-                </CardHeader>
-                <ScrollArea className="flex-1">
-                  <CardContent className="px-4 pb-4 space-y-3">
-                    {expressionErrors.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                        <p className="text-sm">Nenhum erro de expressão encontrado</p>
-                        <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
-                      </div>
-                    ) : (
-                      expressionErrors.map((error, index) => (
-                        <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <Label className="text-[10px]">P</Label>
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  value={error.paragraph_number}
-                                  onChange={(e) => updateExpressionError(index, 'paragraph_number', parseInt(e.target.value) || 1)}
-                                  className="h-6 w-14 text-xs px-1"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Label className="text-[10px]">Per.</Label>
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  value={error.sentence_number}
-                                  onChange={(e) => updateExpressionError(index, 'sentence_number', parseInt(e.target.value) || 1)}
-                                  className="h-6 w-14 text-xs px-1"
-                                />
-                              </div>
+                </div>
+              </CardHeader>
+              <ScrollArea className="flex-1">
+                <CardContent className="px-4 pb-4 space-y-4">
+                  {/* Competency Score Cards */}
+                  {competencyScores.map((comp, index) => {
+                    const def = enemCompetencies?.find(c => c.number === comp.competency_number)
+                    const levels = def?.levels || []
+                    const scorePercent = comp.max_score > 0 ? (comp.score / comp.max_score) * 100 : 0
+
+                    return (
+                      <div key={index} className="border rounded-lg p-4 space-y-3 bg-card">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={cn(
+                              'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white',
+                              scorePercent >= 70 ? 'bg-green-600' : scorePercent >= 40 ? 'bg-amber-500' : scorePercent > 0 ? 'bg-red-500' : 'bg-muted-foreground/30'
+                            )}>
+                              C{comp.competency_number}
                             </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <Label className="text-[10px]">Débito</Label>
-                                <Input
-                                  type="number"
-                                  step="0.001"
-                                  min={0}
-                                  value={error.debit_value}
-                                  onChange={(e) => updateExpressionError(index, 'debit_value', parseFloat(e.target.value) || 0)}
-                                  className="h-6 w-20 text-xs px-1"
-                                />
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => removeExpressionError(index)}
-                              >
-                                <Trash2 className="h-3 w-3 text-destructive" />
-                              </Button>
+                            <div>
+                              <p className="text-sm font-medium">{comp.competency_name}</p>
+                              {def?.description && (
+                                <p className="text-[10px] text-muted-foreground line-clamp-1">{def.description}</p>
+                              )}
                             </div>
                           </div>
-
-                          <div className="space-y-1.5">
-                            <div>
-                              <label className="text-[10px] font-medium text-muted-foreground">Trecho com erro</label>
-                              <Textarea
-                                value={error.error_text}
-                                onChange={(e) => updateExpressionError(index, 'error_text', e.target.value)}
-                                rows={1}
-                                className="text-xs min-h-[32px]"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[10px] font-medium text-muted-foreground">Explicação</label>
-                              <Textarea
-                                value={error.error_explanation}
-                                onChange={(e) => updateExpressionError(index, 'error_explanation', e.target.value)}
-                                rows={2}
-                                className="text-xs min-h-[48px]"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[10px] font-medium text-muted-foreground">Correção sugerida</label>
-                              <Textarea
-                                value={error.suggested_correction}
-                                onChange={(e) => updateExpressionError(index, 'suggested_correction', e.target.value)}
-                                rows={1}
-                                className="text-xs min-h-[32px]"
-                              />
-                            </div>
+                          <div className="text-right">
+                            <span className={cn(
+                              'text-lg font-bold',
+                              getGradeColor(comp.score, comp.max_score)
+                            )}>
+                              {comp.score}
+                            </span>
+                            <span className="text-xs text-muted-foreground">/{comp.max_score}</span>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </CardContent>
-                </ScrollArea>
-              </Card>
-            </TabsContent>
 
-            {/* Structure Analysis Tab */}
-            <TabsContent value="structure" className="flex-1 overflow-hidden mt-2">
-              <Card className="h-full flex flex-col">
-                <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-sm">Análise de Estrutura</CardTitle>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {structureAnalysis.length} parágrafos | Débito total: -{structureDebitTotal.toFixed(3)}
-                    </p>
-                  </div>
-                  <Button size="sm" variant="outline" onClick={addStructureAnalysis}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Parágrafo
-                  </Button>
-                </CardHeader>
-                <ScrollArea className="flex-1">
-                  <CardContent className="px-4 pb-4 space-y-3">
-                    {structureAnalysis.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                        <p className="text-sm">Análise de estrutura pendente</p>
-                        <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
+                        {/* Score level selector */}
+                        <div className="flex gap-1">
+                          {levels.map((level) => (
+                            <button
+                              key={level.score}
+                              onClick={() => updateCompetencyScore(index, 'score', level.score)}
+                              className={cn(
+                                'flex-1 py-1.5 px-1 rounded text-[10px] font-medium border transition-all',
+                                comp.score === level.score
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                  : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+                              )}
+                              title={level.label}
+                            >
+                              {level.score}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Selected level label */}
+                        {comp.score > 0 && levels.length > 0 && (
+                          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                            {levels.find(l => l.score === comp.score)?.label || ''}
+                          </p>
+                        )}
+
+                        {/* Progress bar */}
+                        <Progress value={scorePercent} className={cn(
+                          'h-1.5',
+                          scorePercent >= 70 ? '[&>div]:bg-green-500' : scorePercent >= 40 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-500'
+                        )} />
+
+                        {/* Justification */}
+                        <Textarea
+                          value={comp.justification}
+                          onChange={(e) => updateCompetencyScore(index, 'justification', e.target.value)}
+                          rows={2}
+                          placeholder="Justificativa da nota..."
+                          className="text-xs"
+                        />
                       </div>
-                    ) : (
-                      structureAnalysis.map((analysis, index) => (
-                        <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <Label className="text-[10px]">Parágrafo</Label>
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  value={analysis.paragraph_number}
-                                  onChange={(e) => updateStructureAnalysis(index, 'paragraph_number', parseInt(e.target.value) || 1)}
-                                  className="h-6 w-14 text-xs px-1"
+                    )
+                  })}
+
+                  {competencyScores.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                      <p className="text-sm">Selecione um template ENEM para começar</p>
+                    </div>
+                  )}
+
+                  {/* Teacher feedback */}
+                  <Separator className="my-4" />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Comentários Gerais do Professor</label>
+                    <Textarea
+                      value={teacherFeedback}
+                      onChange={(e) => setTeacherFeedback(e.target.value)}
+                      rows={4}
+                      placeholder="Observações gerais sobre a redação, dicas para o aluno..."
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Suggestions */}
+                  <Separator className="my-4" />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Lightbulb className="h-4 w-4" />
+                        Sugestões de Melhoria
+                      </label>
+                      <Button size="sm" variant="outline" onClick={addSuggestion}>
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
+                      </Button>
+                    </div>
+                    {suggestions.map((suggestion, index) => (
+                      <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
+                        <div className="flex items-center justify-between">
+                          <Select
+                            value={suggestion.category}
+                            onValueChange={(val) => updateSuggestion(index, 'category', val)}
+                          >
+                            <SelectTrigger className="h-6 w-[140px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="expression">Expressão</SelectItem>
+                              <SelectItem value="structure">Estrutura</SelectItem>
+                              <SelectItem value="content">Conteúdo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeSuggestion(index)}>
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                        <Textarea
+                          value={suggestion.suggestion_text}
+                          onChange={(e) => updateSuggestion(index, 'suggestion_text', e.target.value)}
+                          rows={2}
+                          className="text-xs"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </ScrollArea>
+            </Card>
+          ) : (
+            // ==================== CIAAR PANEL ====================
+            <Tabs defaultValue="expression" className="h-full flex flex-col">
+              <TabsList className="w-full shrink-0 grid grid-cols-4">
+                <TabsTrigger value="expression" className="text-xs gap-1.5 bg-white dark:bg-slate-800 data-[state=active]:bg-red-100 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-900/40 dark:data-[state=active]:text-red-300">
+                  <PenLine className="h-3.5 w-3.5" />
+                  Expressão
+                  {expressionErrors.length > 0 && (
+                    <Badge variant="destructive" className="text-[9px] px-1 py-0 ml-1">{expressionErrors.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="structure" className="text-xs gap-1.5 bg-white dark:bg-slate-800 data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/40 dark:data-[state=active]:text-blue-300">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Estrutura
+                </TabsTrigger>
+                <TabsTrigger value="content" className="text-xs gap-1.5 bg-white dark:bg-slate-800 data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700 dark:data-[state=active]:bg-purple-900/40 dark:data-[state=active]:text-purple-300">
+                  <FileText className="h-3.5 w-3.5" />
+                  Conteúdo
+                </TabsTrigger>
+                <TabsTrigger value="suggestions" className="text-xs gap-1.5 bg-white dark:bg-slate-800 data-[state=active]:bg-amber-100 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/40 dark:data-[state=active]:text-amber-300">
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  Sugestões
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Expression Errors Tab */}
+              <TabsContent value="expression" className="flex-1 overflow-hidden mt-2">
+                <Card className="h-full flex flex-col">
+                  <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm">Erros de Expressão</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {expressionErrors.length} erros | Débito total: -{expressionDebitTotal.toFixed(3)}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={addExpressionError}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
+                    </Button>
+                  </CardHeader>
+                  <ScrollArea className="flex-1">
+                    <CardContent className="px-4 pb-4 space-y-3">
+                      {expressionErrors.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                          <p className="text-sm">Nenhum erro de expressão encontrado</p>
+                          <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
+                        </div>
+                      ) : (
+                        expressionErrors.map((error, index) => (
+                          <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <Label className="text-[10px]">P</Label>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={error.paragraph_number}
+                                    onChange={(e) => updateExpressionError(index, 'paragraph_number', parseInt(e.target.value) || 1)}
+                                    className="h-6 w-14 text-xs px-1"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Label className="text-[10px]">Per.</Label>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={error.sentence_number}
+                                    onChange={(e) => updateExpressionError(index, 'sentence_number', parseInt(e.target.value) || 1)}
+                                    className="h-6 w-14 text-xs px-1"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <Label className="text-[10px]">Débito</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.001"
+                                    min={0}
+                                    value={error.debit_value}
+                                    onChange={(e) => updateExpressionError(index, 'debit_value', parseFloat(e.target.value) || 0)}
+                                    className="h-6 w-20 text-xs px-1"
+                                  />
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeExpressionError(index)}>
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <div>
+                                <label className="text-[10px] font-medium text-muted-foreground">Trecho com erro</label>
+                                <Textarea
+                                  value={error.error_text}
+                                  onChange={(e) => updateExpressionError(index, 'error_text', e.target.value)}
+                                  rows={1}
+                                  className="text-xs min-h-[32px]"
                                 />
                               </div>
+                              <div>
+                                <label className="text-[10px] font-medium text-muted-foreground">Explicação</label>
+                                <Textarea
+                                  value={error.error_explanation}
+                                  onChange={(e) => updateExpressionError(index, 'error_explanation', e.target.value)}
+                                  rows={2}
+                                  className="text-xs min-h-[48px]"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-medium text-muted-foreground">Correção sugerida</label>
+                                <Textarea
+                                  value={error.suggested_correction}
+                                  onChange={(e) => updateExpressionError(index, 'suggested_correction', e.target.value)}
+                                  rows={1}
+                                  className="text-xs min-h-[32px]"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </CardContent>
+                  </ScrollArea>
+                </Card>
+              </TabsContent>
+
+              {/* Structure Analysis Tab */}
+              <TabsContent value="structure" className="flex-1 overflow-hidden mt-2">
+                <Card className="h-full flex flex-col">
+                  <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm">Análise de Estrutura</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {structureAnalysis.length} parágrafos | Débito total: -{structureDebitTotal.toFixed(3)}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={addStructureAnalysis}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Parágrafo
+                    </Button>
+                  </CardHeader>
+                  <ScrollArea className="flex-1">
+                    <CardContent className="px-4 pb-4 space-y-3">
+                      {structureAnalysis.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                          <p className="text-sm">Análise de estrutura pendente</p>
+                          <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
+                        </div>
+                      ) : (
+                        structureAnalysis.map((analysis, index) => (
+                          <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <Label className="text-[10px]">Parágrafo</Label>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={analysis.paragraph_number}
+                                    onChange={(e) => updateStructureAnalysis(index, 'paragraph_number', parseInt(e.target.value) || 1)}
+                                    className="h-6 w-14 text-xs px-1"
+                                  />
+                                </div>
+                                <Select
+                                  value={analysis.paragraph_type}
+                                  onValueChange={(val) => updateStructureAnalysis(index, 'paragraph_type', val)}
+                                >
+                                  <SelectTrigger className="h-6 w-[140px] text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="introduction">Introdução</SelectItem>
+                                    <SelectItem value="development">Desenvolvimento</SelectItem>
+                                    <SelectItem value="conclusion">Conclusão</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <Label className="text-[10px]">Débito</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.001"
+                                    min={0}
+                                    value={analysis.debit_value}
+                                    onChange={(e) => updateStructureAnalysis(index, 'debit_value', parseFloat(e.target.value) || 0)}
+                                    className="h-6 w-20 text-xs px-1"
+                                  />
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeStructureAnalysis(index)}>
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-medium text-muted-foreground">Análise</label>
+                              <Textarea
+                                value={analysis.analysis_text}
+                                onChange={(e) => updateStructureAnalysis(index, 'analysis_text', e.target.value)}
+                                rows={3}
+                                className="text-xs"
+                              />
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </CardContent>
+                  </ScrollArea>
+                </Card>
+              </TabsContent>
+
+              {/* Content Analysis Tab */}
+              <TabsContent value="content" className="flex-1 overflow-hidden mt-2">
+                <Card className="h-full flex flex-col">
+                  <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm">Análise de Conteúdo</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {contentAnalysis.length} critérios | Débito total: -{contentDebitTotal.toFixed(3)}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={addContentAnalysis}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Critério
+                    </Button>
+                  </CardHeader>
+                  <ScrollArea className="flex-1">
+                    <CardContent className="px-4 pb-4 space-y-3">
+                      {contentAnalysis.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                          <p className="text-sm">Análise de conteúdo pendente</p>
+                          <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
+                        </div>
+                      ) : (
+                        contentAnalysis.map((analysis, index) => (
+                          <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Select
+                                  value={analysis.criterion_type}
+                                  onValueChange={(val) => updateContentAnalysis(index, 'criterion_type', val)}
+                                >
+                                  <SelectTrigger className="h-6 w-[160px] text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pertinence">Pertinência ao Tema</SelectItem>
+                                    <SelectItem value="argumentation">Argumentação</SelectItem>
+                                    <SelectItem value="informativity">Informatividade</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <Label className="text-[10px]">Nível</Label>
+                                  <Input
+                                    type="text"
+                                    value={analysis.debit_level}
+                                    onChange={(e) => updateContentAnalysis(index, 'debit_level', e.target.value)}
+                                    className="h-6 w-24 text-xs px-1"
+                                    placeholder="Sem débito"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Label className="text-[10px]">Débito</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.001"
+                                    min={0}
+                                    value={analysis.debit_value}
+                                    onChange={(e) => updateContentAnalysis(index, 'debit_value', parseFloat(e.target.value) || 0)}
+                                    className="h-6 w-20 text-xs px-1"
+                                  />
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeContentAnalysis(index)}>
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {analysis.debit_level === 'Fuga TOTAL' && (
+                              <div className="flex items-center gap-2 text-destructive bg-destructive/10 rounded-md px-3 py-1.5">
+                                <AlertTriangle className="h-4 w-4" />
+                                <span className="text-xs font-medium">Fuga total: nota final automaticamente 0</span>
+                              </div>
+                            )}
+
+                            <div>
+                              <label className="text-[10px] font-medium text-muted-foreground">Análise</label>
+                              <Textarea
+                                value={analysis.analysis_text}
+                                onChange={(e) => updateContentAnalysis(index, 'analysis_text', e.target.value)}
+                                rows={3}
+                                className="text-xs"
+                              />
+                            </div>
+                          </div>
+                        ))
+                      )}
+
+                      {/* Teacher feedback at the end of Content tab */}
+                      <Separator className="my-4" />
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Comentários Gerais do Professor</label>
+                        <Textarea
+                          value={teacherFeedback}
+                          onChange={(e) => setTeacherFeedback(e.target.value)}
+                          rows={4}
+                          placeholder="Observações gerais sobre a redação, dicas para o aluno..."
+                          className="text-sm"
+                        />
+                      </div>
+                    </CardContent>
+                  </ScrollArea>
+                </Card>
+              </TabsContent>
+
+              {/* Suggestions Tab */}
+              <TabsContent value="suggestions" className="flex-1 overflow-hidden mt-2">
+                <Card className="h-full flex flex-col">
+                  <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm">Sugestões de Melhoria</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {suggestions.length} sugestões para o aluno
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={addSuggestion}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Sugestão
+                    </Button>
+                  </CardHeader>
+                  <ScrollArea className="flex-1">
+                    <CardContent className="px-4 pb-4 space-y-3">
+                      {suggestions.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                          <p className="text-sm">Nenhuma sugestão ainda</p>
+                          <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
+                        </div>
+                      ) : (
+                        suggestions.map((suggestion, index) => (
+                          <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
+                            <div className="flex items-center justify-between">
                               <Select
-                                value={analysis.paragraph_type}
-                                onValueChange={(val) => updateStructureAnalysis(index, 'paragraph_type', val)}
+                                value={suggestion.category}
+                                onValueChange={(val) => updateSuggestion(index, 'category', val)}
                               >
                                 <SelectTrigger className="h-6 w-[140px] text-xs">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="introduction">Introdução</SelectItem>
-                                  <SelectItem value="development">Desenvolvimento</SelectItem>
-                                  <SelectItem value="conclusion">Conclusão</SelectItem>
+                                  <SelectItem value="expression">Expressão</SelectItem>
+                                  <SelectItem value="structure">Estrutura</SelectItem>
+                                  <SelectItem value="content">Conteúdo</SelectItem>
                                 </SelectContent>
                               </Select>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <Label className="text-[10px]">Débito</Label>
-                                <Input
-                                  type="number"
-                                  step="0.001"
-                                  min={0}
-                                  value={analysis.debit_value}
-                                  onChange={(e) => updateStructureAnalysis(index, 'debit_value', parseFloat(e.target.value) || 0)}
-                                  className="h-6 w-20 text-xs px-1"
-                                />
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => removeStructureAnalysis(index)}
-                              >
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeSuggestion(index)}>
                                 <Trash2 className="h-3 w-3 text-destructive" />
                               </Button>
                             </div>
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-medium text-muted-foreground">Análise</label>
-                            <Textarea
-                              value={analysis.analysis_text}
-                              onChange={(e) => updateStructureAnalysis(index, 'analysis_text', e.target.value)}
-                              rows={3}
-                              className="text-xs"
-                            />
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </ScrollArea>
-              </Card>
-            </TabsContent>
-
-            {/* Content Analysis Tab */}
-            <TabsContent value="content" className="flex-1 overflow-hidden mt-2">
-              <Card className="h-full flex flex-col">
-                <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-sm">Análise de Conteúdo</CardTitle>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {contentAnalysis.length} critérios | Débito total: -{contentDebitTotal.toFixed(3)}
-                    </p>
-                  </div>
-                  <Button size="sm" variant="outline" onClick={addContentAnalysis}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Critério
-                  </Button>
-                </CardHeader>
-                <ScrollArea className="flex-1">
-                  <CardContent className="px-4 pb-4 space-y-3">
-                    {contentAnalysis.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                        <p className="text-sm">Análise de conteúdo pendente</p>
-                        <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
-                      </div>
-                    ) : (
-                      contentAnalysis.map((analysis, index) => (
-                        <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Select
-                                value={analysis.criterion_type}
-                                onValueChange={(val) => updateContentAnalysis(index, 'criterion_type', val)}
-                              >
-                                <SelectTrigger className="h-6 w-[160px] text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pertinence">Pertinência ao Tema</SelectItem>
-                                  <SelectItem value="argumentation">Argumentação</SelectItem>
-                                  <SelectItem value="informativity">Informatividade</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <Label className="text-[10px]">Nível</Label>
-                                <Input
-                                  type="text"
-                                  value={analysis.debit_level}
-                                  onChange={(e) => updateContentAnalysis(index, 'debit_level', e.target.value)}
-                                  className="h-6 w-24 text-xs px-1"
-                                  placeholder="Sem débito"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Label className="text-[10px]">Débito</Label>
-                                <Input
-                                  type="number"
-                                  step="0.001"
-                                  min={0}
-                                  value={analysis.debit_value}
-                                  onChange={(e) => updateContentAnalysis(index, 'debit_value', parseFloat(e.target.value) || 0)}
-                                  className="h-6 w-20 text-xs px-1"
-                                />
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => removeContentAnalysis(index)}
-                              >
-                                <Trash2 className="h-3 w-3 text-destructive" />
-                              </Button>
+                            <div>
+                              <label className="text-[10px] font-medium text-muted-foreground">Sugestão</label>
+                              <Textarea
+                                value={suggestion.suggestion_text}
+                                onChange={(e) => updateSuggestion(index, 'suggestion_text', e.target.value)}
+                                rows={3}
+                                className="text-xs"
+                              />
                             </div>
                           </div>
-
-                          {analysis.debit_level === 'Fuga TOTAL' && (
-                            <div className="flex items-center gap-2 text-destructive bg-destructive/10 rounded-md px-3 py-1.5">
-                              <AlertTriangle className="h-4 w-4" />
-                              <span className="text-xs font-medium">Fuga total: nota final automaticamente 0</span>
-                            </div>
-                          )}
-
-                          <div>
-                            <label className="text-[10px] font-medium text-muted-foreground">Análise</label>
-                            <Textarea
-                              value={analysis.analysis_text}
-                              onChange={(e) => updateContentAnalysis(index, 'analysis_text', e.target.value)}
-                              rows={3}
-                              className="text-xs"
-                            />
-                          </div>
-                        </div>
-                      ))
-                    )}
-
-                    {/* Teacher feedback at the end of Content tab */}
-                    <Separator className="my-4" />
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Comentários Gerais do Professor</label>
-                      <Textarea
-                        value={teacherFeedback}
-                        onChange={(e) => setTeacherFeedback(e.target.value)}
-                        rows={4}
-                        placeholder="Observações gerais sobre a redação, dicas para o aluno..."
-                        className="text-sm"
-                      />
-                    </div>
-                  </CardContent>
-                </ScrollArea>
-              </Card>
-            </TabsContent>
-
-            {/* Suggestions Tab */}
-            <TabsContent value="suggestions" className="flex-1 overflow-hidden mt-2">
-              <Card className="h-full flex flex-col">
-                <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-sm">Sugestões de Melhoria</CardTitle>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {suggestions.length} sugestões para o aluno
-                    </p>
-                  </div>
-                  <Button size="sm" variant="outline" onClick={addSuggestion}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Sugestão
-                  </Button>
-                </CardHeader>
-                <ScrollArea className="flex-1">
-                  <CardContent className="px-4 pb-4 space-y-3">
-                    {suggestions.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                        <p className="text-sm">Nenhuma sugestão ainda</p>
-                        <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
-                      </div>
-                    ) : (
-                      suggestions.map((suggestion, index) => (
-                        <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
-                          <div className="flex items-center justify-between">
-                            <Select
-                              value={suggestion.category}
-                              onValueChange={(val) => updateSuggestion(index, 'category', val)}
-                            >
-                              <SelectTrigger className="h-6 w-[140px] text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="expression">Expressão</SelectItem>
-                                <SelectItem value="structure">Estrutura</SelectItem>
-                                <SelectItem value="content">Conteúdo</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={() => removeSuggestion(index)}
-                            >
-                              <Trash2 className="h-3 w-3 text-destructive" />
-                            </Button>
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-medium text-muted-foreground">Sugestão</label>
-                            <Textarea
-                              value={suggestion.suggestion_text}
-                              onChange={(e) => updateSuggestion(index, 'suggestion_text', e.target.value)}
-                              rows={3}
-                              className="text-xs"
-                            />
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </ScrollArea>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                        ))
+                      )}
+                    </CardContent>
+                  </ScrollArea>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
       </div>
 
@@ -1239,25 +1492,42 @@ export default function AdminEssayCorrectionPage() {
       <div className="shrink-0 border-t pt-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="gap-1.5 py-1 bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800">
-              <PenLine className="h-3 w-3" />
-              Expressão: -{expressionDebitTotal.toFixed(3)} ({expressionErrors.length})
-            </Badge>
-            <Badge variant="outline" className="gap-1.5 py-1 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800">
-              <BookOpen className="h-3 w-3" />
-              Estrutura: -{structureDebitTotal.toFixed(3)}
-            </Badge>
-            <Badge variant="outline" className="gap-1.5 py-1 bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800">
-              <FileText className="h-3 w-3" />
-              Conteúdo: -{contentDebitTotal.toFixed(3)}
-            </Badge>
+            {correctionType === 'enem' ? (
+              // ENEM: show competency badges
+              competencyScores.map((c) => (
+                <Badge key={c.competency_number} variant="outline" className={cn(
+                  'gap-1 py-1',
+                  c.score >= 160 ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' :
+                  c.score >= 80 ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800' :
+                  'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800'
+                )}>
+                  C{c.competency_number}: {c.score}
+                </Badge>
+              ))
+            ) : (
+              // CIAAR: show debit badges
+              <>
+                <Badge variant="outline" className="gap-1.5 py-1 bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800">
+                  <PenLine className="h-3 w-3" />
+                  Expressão: -{expressionDebitTotal.toFixed(3)} ({expressionErrors.length})
+                </Badge>
+                <Badge variant="outline" className="gap-1.5 py-1 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800">
+                  <BookOpen className="h-3 w-3" />
+                  Estrutura: -{structureDebitTotal.toFixed(3)}
+                </Badge>
+                <Badge variant="outline" className="gap-1.5 py-1 bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800">
+                  <FileText className="h-3 w-3" />
+                  Conteúdo: -{contentDebitTotal.toFixed(3)}
+                </Badge>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Nota Final</span>
-            <span className={`text-2xl font-bold ${finalGrade >= 7 ? 'text-green-600' : finalGrade >= 5 ? 'text-amber-600' : 'text-red-600'}`}>
-              {finalGrade.toFixed(3)}
+            <span className={cn('text-2xl font-bold', getGradeColor(finalGrade, maxGrade))}>
+              {correctionType === 'enem' ? finalGrade : finalGrade.toFixed(3)}
             </span>
-            <span className="text-xs text-muted-foreground">/ {template?.max_grade ?? 10}</span>
+            <span className="text-xs text-muted-foreground">/ {maxGrade}</span>
           </div>
         </div>
       </div>

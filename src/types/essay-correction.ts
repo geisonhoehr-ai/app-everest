@@ -1,7 +1,11 @@
 // =============================================================================
-// CIAAR Essay Correction Types
-// Aligned with DB schema (20260312000001_ciaar_correction_system.sql)
+// Essay Correction Types (Multi-format: CIAAR + ENEM)
+// Aligned with DB schema
 // =============================================================================
+
+// --- Correction Type ---
+
+export type CorrectionType = 'ciaar' | 'enem'
 
 // --- Provider types (matches Edge Function) ---
 
@@ -30,23 +34,23 @@ export interface AIProviderConfig {
 }
 
 // --- Correction Template (matches correction_templates table) ---
-// structure_criteria and content_criteria are stored as JSONB
 
 export interface CorrectionTemplate {
   id?: string
   name: string
   description?: string
-  expression_debit_value: number  // e.g. 0.200
-  max_grade: number               // e.g. 10.000
-  structure_criteria: Record<string, unknown>  // JSONB with paragraph structures
-  content_criteria: Record<string, unknown>    // JSONB with pertinence/argumentation/informativity
+  correction_type: CorrectionType
+  expression_debit_value: number
+  max_grade: number
+  structure_criteria: Record<string, unknown>
+  content_criteria: Record<string, unknown>
   is_default: boolean
   created_by?: string
   created_at?: string
   updated_at?: string
 }
 
-// --- Expression Error (matches essay_expression_errors table) ---
+// --- CIAAR Types ---
 
 export interface ExpressionError {
   id?: string
@@ -62,8 +66,6 @@ export interface ExpressionError {
   created_at?: string
 }
 
-// --- Structure Analysis (matches essay_structure_analysis table) ---
-
 export interface StructureAnalysis {
   id?: string
   essay_id?: string
@@ -76,8 +78,6 @@ export interface StructureAnalysis {
   created_by?: string
   created_at?: string
 }
-
-// --- Content Analysis (matches essay_content_analysis table) ---
 
 export interface ContentAnalysis {
   id?: string
@@ -93,14 +93,42 @@ export interface ContentAnalysis {
   created_at?: string
 }
 
-// --- Improvement Suggestion (matches essay_improvement_suggestions table) ---
-
 export interface ImprovementSuggestion {
   id?: string
   essay_id?: string
   category: SuggestionCategory | string
   suggestion_text: string
   created_at?: string
+}
+
+// --- ENEM Types ---
+
+export interface CompetencyScore {
+  id?: string
+  essay_id?: string
+  competency_number: number
+  competency_name: string
+  score: number
+  max_score: number
+  justification: string
+  source: CorrectionSource | string
+  created_by?: string
+  created_at?: string
+}
+
+/** ENEM competency level definition from template */
+export interface EnemCompetencyLevel {
+  score: number
+  label: string
+}
+
+/** ENEM competency definition from template */
+export interface EnemCompetencyDef {
+  number: number
+  name: string
+  description?: string
+  max_score: number
+  levels: EnemCompetencyLevel[]
 }
 
 // --- Correction Request (sent to Edge Function) ---
@@ -113,9 +141,11 @@ export interface CorrectionRequest {
   imageUrls?: string[]
 }
 
-// --- Correction Result (from Edge Function / AI response) ---
+// --- CIAAR Correction Result ---
 
 export interface CorrectionResult {
+  correctionType: CorrectionType
+  // CIAAR fields
   expressionErrors: ExpressionError[]
   structureAnalysis: StructureAnalysis[]
   contentAnalysis: ContentAnalysis[]
@@ -123,10 +153,13 @@ export interface CorrectionResult {
   totalExpressionDebit: number
   totalStructureDebit: number
   totalContentDebit: number
+  // ENEM fields
+  competencyScores: CompetencyScore[]
+  // Shared
   finalGrade: number
 }
 
-// --- Utility Function ---
+// --- Utility Functions ---
 
 /**
  * Calcula a nota final CIAAR.
@@ -150,4 +183,26 @@ export function calculateFinalGrade(
 
   const totalDebit = expressionDebit + structureDebit + contentDebit
   return Math.max(0, Number((maxGrade - totalDebit).toFixed(3)))
+}
+
+/**
+ * Calcula a nota final ENEM.
+ * Soma de todas as competências (0-1000).
+ */
+export function calculateEnemGrade(competencyScores: CompetencyScore[]): number {
+  return competencyScores.reduce((sum, c) => sum + (c.score || 0), 0)
+}
+
+/**
+ * Creates empty ENEM competency scores from template definition.
+ */
+export function createEmptyCompetencyScores(competencies: EnemCompetencyDef[]): CompetencyScore[] {
+  return competencies.map(c => ({
+    competency_number: c.number,
+    competency_name: c.name,
+    score: 0,
+    max_score: c.max_score,
+    justification: '',
+    source: 'manual' as const,
+  }))
 }

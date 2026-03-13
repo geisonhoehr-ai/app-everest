@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
+import { Progress } from '@/components/ui/progress'
 import {
   ArrowLeft,
   FileDown,
@@ -27,7 +28,7 @@ import {
 import { ciaarCorrectionService } from '@/services/ciaarCorrectionService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { cn } from '@/lib/utils'
-import type { CorrectionResult } from '@/types/essay-correction'
+import type { CorrectionResult, CorrectionType } from '@/types/essay-correction'
 
 export default function EssayDetailsPage() {
   const { essayId } = useParams<{ essayId: string }>()
@@ -48,7 +49,6 @@ export default function EssayDetailsPage() {
         setEssay(essayData)
         setCorrection(correctionData)
 
-        // Load teacher's corrected file if available
         if ((essayData as any)?.corrected_file_url) {
           const { data } = await supabase.storage
             .from('essays')
@@ -91,17 +91,24 @@ export default function EssayDetailsPage() {
   const annotatedTextHtml = (essay as any).annotated_text_html || ''
   const annotationImageUrl = (essay as any).annotation_image_url || ''
 
-  // CIAAR grade data
-  const finalGrade = correction?.finalGrade ?? (essay as any).final_grade_ciaar ?? 0
-  const maxGrade = 10
+  // Detect correction type
+  const correctionType: CorrectionType = correction?.correctionType || ((essay as any).correction_type as CorrectionType) || 'ciaar'
+  const isEnem = correctionType === 'enem'
+
+  // Grade data
+  const finalGrade = isEnem
+    ? (correction?.finalGrade ?? (essay as any).final_grade_enem ?? 0)
+    : (correction?.finalGrade ?? (essay as any).final_grade_ciaar ?? 0)
+  const maxGrade = isEnem ? 1000 : 10
   const expressionDebit = correction?.totalExpressionDebit ?? 0
   const structureDebit = correction?.totalStructureDebit ?? 0
   const contentDebit = correction?.totalContentDebit ?? 0
   const hasFugaTotal = correction?.contentAnalysis.some(c => c.debit_level === 'Fuga TOTAL') ?? false
 
-  const getGradeColor = (g: number) => {
-    if (g >= 7) return 'text-green-600'
-    if (g >= 5) return 'text-amber-600'
+  const getGradeColor = (g: number, max: number) => {
+    const pct = g / max
+    if (pct >= 0.7) return 'text-green-600'
+    if (pct >= 0.5) return 'text-amber-600'
     return 'text-red-600'
   }
 
@@ -120,6 +127,7 @@ export default function EssayDetailsPage() {
           <h1 className="text-2xl font-bold text-foreground">{promptTitle}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Enviada em {formattedDate} · {wordCount} palavras
+            {isEnem && <Badge className="ml-2 bg-blue-600 text-white text-[10px]">ENEM</Badge>}
           </p>
         </div>
         <Button
@@ -140,13 +148,13 @@ export default function EssayDetailsPage() {
           <div className="flex items-center gap-6">
             {/* Grade */}
             <div className="text-center shrink-0">
-              <div className={cn('text-5xl font-bold', getGradeColor(finalGrade))}>
-                {finalGrade.toFixed(3)}
+              <div className={cn('text-5xl font-bold', getGradeColor(finalGrade, maxGrade))}>
+                {isEnem ? finalGrade : finalGrade.toFixed(3)}
               </div>
               <div className="text-sm text-muted-foreground">de {maxGrade}</div>
             </div>
 
-            {/* Status + Debits breakdown */}
+            {/* Status + breakdown */}
             <div className="flex-1 space-y-3">
               <div className="flex items-center gap-2">
                 <Badge
@@ -168,8 +176,29 @@ export default function EssayDetailsPage() {
                 )}
               </div>
 
-              {/* Debit bars */}
-              {correction && (
+              {/* ENEM: Competency bars */}
+              {isEnem && correction?.competencyScores && correction.competencyScores.length > 0 && (
+                <div className="space-y-2">
+                  {correction.competencyScores.map((comp) => {
+                    const pct = comp.max_score > 0 ? (comp.score / comp.max_score) * 100 : 0
+                    return (
+                      <div key={comp.competency_number} className="space-y-0.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground truncate mr-2">C{comp.competency_number} - {comp.competency_name}</span>
+                          <span className={cn('font-bold', getGradeColor(comp.score, comp.max_score))}>{comp.score}/{comp.max_score}</span>
+                        </div>
+                        <Progress value={pct} className={cn(
+                          'h-2',
+                          pct >= 70 ? '[&>div]:bg-green-500' : pct >= 40 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-500'
+                        )} />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* CIAAR: Debit bars */}
+              {!isEnem && correction && (
                 <div className="grid grid-cols-3 gap-3">
                   <div className="rounded-lg border p-2.5">
                     <div className="text-[10px] text-muted-foreground">Expressão</div>
@@ -199,6 +228,34 @@ export default function EssayDetailsPage() {
         </CardContent>
       </Card>
 
+      {/* Teacher feedback (visible for both types) */}
+      {(teacherFeedback || feedbackAudioUrl) && (
+        <Card className="border-border shadow-sm border-l-4 border-l-emerald-500">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-emerald-500" />
+              Comentários do Professor
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 space-y-3">
+            {teacherFeedback && (
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-3">
+                {teacherFeedback}
+              </p>
+            )}
+            {feedbackAudioUrl && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Mic className="h-4 w-4" />
+                  Feedback em Áudio
+                </h4>
+                <audio controls src={feedbackAudioUrl} className="w-full" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Teacher's corrected file (scanned) */}
       {correctedFileUrl && (
         <Card className="border-emerald-200 dark:border-emerald-800/30 shadow-sm">
@@ -219,8 +276,53 @@ export default function EssayDetailsPage() {
         </Card>
       )}
 
-      {/* Correction Details Tabs */}
-      {correction && (
+      {/* ENEM: Competency Details */}
+      {isEnem && correction?.competencyScores && correction.competencyScores.length > 0 && (
+        <Card className="border-border shadow-sm">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-blue-500" />
+              Detalhamento por Competência
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 space-y-4">
+            {correction.competencyScores.map((comp) => {
+              const pct = comp.max_score > 0 ? (comp.score / comp.max_score) * 100 : 0
+              return (
+                <div key={comp.competency_number} className="border rounded-lg p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white',
+                        pct >= 70 ? 'bg-green-600' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500'
+                      )}>
+                        C{comp.competency_number}
+                      </div>
+                      <span className="text-sm font-medium">{comp.competency_name}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className={cn('text-lg font-bold', getGradeColor(comp.score, comp.max_score))}>
+                        {comp.score}
+                      </span>
+                      <span className="text-xs text-muted-foreground">/{comp.max_score}</span>
+                    </div>
+                  </div>
+                  <Progress value={pct} className={cn(
+                    'h-2',
+                    pct >= 70 ? '[&>div]:bg-green-500' : pct >= 40 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-500'
+                  )} />
+                  {comp.justification && (
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{comp.justification}</p>
+                  )}
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* CIAAR: Correction Details Tabs */}
+      {!isEnem && correction && (
         <Tabs defaultValue="expression" className="space-y-4">
           <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="expression" className="text-xs gap-1.5">
@@ -359,33 +461,6 @@ export default function EssayDetailsPage() {
                     <p className="text-xs text-muted-foreground whitespace-pre-wrap">{analysis.analysis_text}</p>
                   </div>
                 ))}
-
-                {/* Teacher feedback */}
-                {teacherFeedback && (
-                  <>
-                    <Separator className="my-3" />
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">Comentários do Professor</h4>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-3">
-                        {teacherFeedback}
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {/* Teacher audio feedback */}
-                {feedbackAudioUrl && (
-                  <>
-                    <Separator className="my-3" />
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        <Mic className="h-4 w-4" />
-                        Feedback em Áudio do Professor
-                      </h4>
-                      <audio controls src={feedbackAudioUrl} className="w-full" />
-                    </div>
-                  </>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -420,6 +495,29 @@ export default function EssayDetailsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+      )}
+
+      {/* ENEM: Suggestions (outside tabs) */}
+      {isEnem && correction?.improvementSuggestions && correction.improvementSuggestions.length > 0 && (
+        <Card className="border-border shadow-sm">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-amber-500" />
+              Sugestões de Melhoria
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 space-y-3">
+            {correction.improvementSuggestions.map((suggestion, index) => (
+              <div key={index} className="border rounded-lg p-3 space-y-2">
+                <Badge variant="secondary" className="text-[10px]">
+                  {suggestion.category === 'expression' ? 'Expressão' :
+                    suggestion.category === 'structure' ? 'Estrutura' : 'Conteúdo'}
+                </Badge>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{suggestion.suggestion_text}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       )}
 
       {/* Annotated text from teacher (if available) */}
