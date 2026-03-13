@@ -8,6 +8,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import {
   ArrowLeft,
   Loader2,
@@ -71,6 +90,7 @@ export default function AdminEssayCorrectionPage() {
   const [correctedFileUrl, setCorrectedFileUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
+  const [showFinalizeDialog, setShowFinalizeDialog] = useState(false)
 
   useEffect(() => {
     if (!submissionId) return
@@ -382,7 +402,7 @@ export default function AdminEssayCorrectionPage() {
     }
   }
 
-  const handleSaveCorrection = async () => {
+  const handleSaveDraft = async () => {
     if (!submissionId || !user || !template?.id) return
 
     setIsSaving(true)
@@ -405,9 +425,18 @@ export default function AdminEssayCorrectionPage() {
         user.id
       )
 
-      toast({ title: 'Correção salva com sucesso!' })
+      // Set status to 'correcting' (not 'corrected')
+      await supabase
+        .from('essays')
+        .update({
+          status: 'correcting',
+          teacher_feedback_text: teacherFeedback || null,
+        })
+        .eq('id', submissionId)
+
+      toast({ title: 'Rascunho salvo!' })
     } catch {
-      toast({ title: 'Erro ao salvar correção', variant: 'destructive' })
+      toast({ title: 'Erro ao salvar rascunho', variant: 'destructive' })
     } finally {
       setIsSaving(false)
     }
@@ -460,6 +489,7 @@ export default function AdminEssayCorrectionPage() {
       toast({ title: 'Erro ao finalizar correção', variant: 'destructive' })
     } finally {
       setIsSaving(false)
+      setShowFinalizeDialog(false)
     }
   }
 
@@ -484,6 +514,75 @@ export default function AdminEssayCorrectionPage() {
     setExpressionErrors(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e))
   }
 
+  // --- Structure Analysis management ---
+  const addStructureAnalysis = () => {
+    setStructureAnalysis(prev => [...prev, {
+      paragraph_number: prev.length + 1,
+      paragraph_type: 'development',
+      analysis_text: '',
+      debit_value: 0,
+      source: 'manual',
+    }])
+  }
+
+  const removeStructureAnalysis = (index: number) => {
+    setStructureAnalysis(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const updateStructureAnalysis = (index: number, field: keyof StructureAnalysis, value: string | number) => {
+    setStructureAnalysis(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
+  }
+
+  // --- Content Analysis management ---
+  const criterionNameMap: Record<string, string> = {
+    pertinence: 'Pertinência ao Tema',
+    argumentation: 'Argumentação',
+    informativity: 'Informatividade',
+  }
+
+  const addContentAnalysis = () => {
+    setContentAnalysis(prev => [...prev, {
+      criterion_type: 'pertinence',
+      criterion_name: 'Pertinência ao Tema',
+      analysis_text: '',
+      debit_level: 'Sem débito',
+      debit_value: 0,
+      source: 'manual',
+    }])
+  }
+
+  const removeContentAnalysis = (index: number) => {
+    setContentAnalysis(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const updateContentAnalysis = (index: number, field: keyof ContentAnalysis, value: string | number) => {
+    setContentAnalysis(prev => prev.map((c, i) => {
+      if (i !== index) return c
+      const updated = { ...c, [field]: value }
+      // Auto-fill criterion_name when criterion_type changes
+      if (field === 'criterion_type' && typeof value === 'string') {
+        updated.criterion_name = criterionNameMap[value] || value
+      }
+      return updated
+    }))
+  }
+
+  // --- Suggestions management ---
+  const addSuggestion = () => {
+    setSuggestions(prev => [...prev, {
+      category: 'expression',
+      suggestion_text: '',
+    }])
+  }
+
+  const removeSuggestion = (index: number) => {
+    setSuggestions(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const updateSuggestion = (index: number, field: keyof ImprovementSuggestion, value: string) => {
+    setSuggestions(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
+  }
+
   // --- Render ---
   if (isLoading) return <SectionLoader />
 
@@ -502,87 +601,100 @@ export default function AdminEssayCorrectionPage() {
   const className = essay.users?.student_classes?.[0]?.classes?.name
   const essayText = transcribedText || essay.submission_text || ''
   const isImage = fileUrl && /\.(jpg|jpeg|png)$/i.test((essay as any).file_url || '')
+  const submittedAt = (essay as any)?.created_at
+    ? new Date((essay as any).created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '—'
 
   return (
     <div className="flex flex-col gap-4 h-[calc(100vh-8rem)]">
       {/* Header */}
-      <div className="flex items-center justify-between shrink-0">
-        <div>
-          <button
-            onClick={() => navigate(`/admin/essays/${essay.prompt_id}/submissions`)}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar aos envios
-          </button>
-          <h1 className="text-xl font-bold text-foreground">Correção CIAAR</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-muted-foreground">{studentName || 'Aluno'}</span>
-            {className && <Badge variant="outline" className="text-xs">{className}</Badge>}
-            <Badge variant="outline" className="text-xs">{essay.essay_prompts?.title || 'Tema Livre'}</Badge>
+      <div className="shrink-0 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate(`/admin/essays/${essay.prompt_id}/submissions`)}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-xl font-bold text-foreground">Correção de Redação</h1>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 flex-wrap justify-end">
           {/* Grade display */}
-          <div className="text-right mr-3">
+          <div className="text-right">
             <div className="text-xs text-muted-foreground">Nota</div>
             <div className={`text-2xl font-bold ${finalGrade >= 7 ? 'text-green-600' : finalGrade >= 5 ? 'text-amber-600' : 'text-red-600'}`}>
               {finalGrade.toFixed(3)}
             </div>
             <div className="text-[10px] text-muted-foreground">/ {template?.max_grade ?? 10}</div>
           </div>
+        </div>
 
-          {/* Download essay file */}
+        {/* Info card */}
+        <Card>
+          <CardContent className="py-3 px-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Aluno</Label>
+                <p className="text-sm font-medium">{studentName || '—'}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Turma</Label>
+                <p className="text-sm font-medium">{className || '—'}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Tema</Label>
+                <p className="text-sm font-medium">{essay.essay_prompts?.title || 'Tema Livre'}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Data de Envio</Label>
+                <p className="text-sm font-medium">{submittedAt}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
           {fileUrl && (
-            <Button size="sm" variant="outline" onClick={handleDownloadEssay}
-              className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30">
+            <Button size="sm" variant="outline" onClick={handleDownloadEssay}>
               <Download className="h-4 w-4 mr-1" /> Baixar Redação
             </Button>
           )}
 
-          {/* Upload corrected scan */}
-          <Button size="sm" variant="outline" onClick={() => document.getElementById('corrected-upload')?.click()}
-            disabled={isUploading}
-            className="border-cyan-300 text-cyan-700 hover:bg-cyan-50 dark:border-cyan-700 dark:text-cyan-400 dark:hover:bg-cyan-950/30">
+          <Button size="sm" variant="outline" onClick={() => document.getElementById('corrected-upload')?.click()} disabled={isUploading}>
             {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
             {correctedFileUrl ? 'Reenviar Correção' : 'Enviar Correção'}
           </Button>
           <input id="corrected-upload" type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleUploadCorrected} />
 
-          {/* Transcribe via AI */}
           {fileUrl && !transcribedText && (
-            <Button size="sm" onClick={handleTranscribe} disabled={isTranscribing}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Button size="sm" variant="outline" onClick={handleTranscribe} disabled={isTranscribing}>
               {isTranscribing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ImageIcon className="h-4 w-4 mr-1" />}
               Transcrever
             </Button>
           )}
 
-          {/* AI Correction */}
-          <Button size="sm" onClick={handleAICorrection} disabled={isAILoading || !essayText}
-            className="bg-violet-600 hover:bg-violet-700 text-white">
+          <Button size="sm" variant="outline" onClick={handleAICorrection} disabled={isAILoading || !essayText}>
             {isAILoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
             {isAILoading ? 'Analisando...' : 'Correção IA'}
           </Button>
 
-          {/* Generate PDF Report */}
-          <Button size="sm" variant="outline" onClick={handleGeneratePdf} disabled={isGeneratingPdf}
-            className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-950/30">
+          <Button size="sm" variant="outline" onClick={handleGeneratePdf} disabled={isGeneratingPdf}>
             {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
             Gerar PDF
           </Button>
 
-          {/* Save */}
-          <Button size="sm" variant="outline" onClick={handleSaveCorrection} disabled={isSaving}
-            className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/30">
-            <Save className="h-4 w-4 mr-1" /> Salvar
+          <div className="flex-1" />
+
+          <Button size="sm" variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+            Salvar Rascunho
           </Button>
 
-          {/* Finalize */}
-          <Button size="sm" onClick={handleFinalizeCorrection} disabled={isSaving || expressionErrors.length === 0 && contentAnalysis.length === 0}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            <Send className="h-4 w-4 mr-1" /> Finalizar
+          <Button size="sm" variant="default" onClick={() => setShowFinalizeDialog(true)} disabled={isSaving}>
+            <Send className="h-4 w-4 mr-1" /> Finalizar Correção
           </Button>
         </div>
       </div>
@@ -598,7 +710,7 @@ export default function AdminEssayCorrectionPage() {
                 Redação
                 {transcribedText && <Badge variant="secondary" className="text-[10px]">Transcrita</Badge>}
                 {essay.submission_text && fileUrl && (
-                  <Badge className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Texto + Arquivo</Badge>
+                  <Badge variant="secondary" className="text-[10px]">Texto + Arquivo</Badge>
                 )}
               </CardTitle>
             </CardHeader>
@@ -608,10 +720,10 @@ export default function AdminEssayCorrectionPage() {
                 {essay.submission_text && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <PenLine className="h-3.5 w-3.5 text-blue-500" />
-                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Texto digitado pelo aluno</span>
+                      <PenLine className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Texto digitado pelo aluno</span>
                     </div>
-                    <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-3 border border-blue-200/50 dark:border-blue-800/30">
+                    <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap rounded-lg p-3 border">
                       {essay.submission_text}
                     </div>
                   </div>
@@ -621,10 +733,10 @@ export default function AdminEssayCorrectionPage() {
                 {transcribedText && transcribedText !== essay.submission_text && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Sparkles className="h-3.5 w-3.5 text-violet-500" />
-                      <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wide">Texto transcrito (IA)</span>
+                      <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Texto transcrito (IA)</span>
                     </div>
-                    <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap bg-violet-50/50 dark:bg-violet-950/20 rounded-lg p-3 border border-violet-200/50 dark:border-violet-800/30">
+                    <div className="prose dark:prose-invert max-w-none text-sm whitespace-pre-wrap rounded-lg p-3 border">
                       {transcribedText}
                     </div>
                   </div>
@@ -634,8 +746,8 @@ export default function AdminEssayCorrectionPage() {
                 {fileUrl && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <ImageIcon className="h-3.5 w-3.5 text-amber-500" />
-                      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Arquivo enviado</span>
+                      <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Arquivo enviado</span>
                     </div>
                     {isImage ? (
                       <img src={fileUrl} alt="Redação" className="max-w-full h-auto rounded-lg border" />
@@ -649,13 +761,13 @@ export default function AdminEssayCorrectionPage() {
                 {correctedFileUrl && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
-                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Correção do professor (escaneada)</span>
+                      <CheckCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Correção do professor (escaneada)</span>
                     </div>
                     {/\.(jpg|jpeg|png)$/i.test(correctedFileUrl) ? (
-                      <img src={correctedFileUrl} alt="Correção escaneada" className="max-w-full h-auto rounded-lg border border-emerald-200 dark:border-emerald-800/30" />
+                      <img src={correctedFileUrl} alt="Correção escaneada" className="max-w-full h-auto rounded-lg border" />
                     ) : (
-                      <iframe src={correctedFileUrl} className="w-full h-[500px] rounded-lg border border-emerald-200 dark:border-emerald-800/30" title="Correção PDF" />
+                      <iframe src={correctedFileUrl} className="w-full h-[500px] rounded-lg border" title="Correção PDF" />
                     )}
                   </div>
                 )}
@@ -675,23 +787,23 @@ export default function AdminEssayCorrectionPage() {
         {/* Right: CIAAR Correction Panel with tabs */}
         <div className="lg:col-span-3 h-full overflow-hidden">
           <Tabs defaultValue="expression" className="h-full flex flex-col">
-            <TabsList className="w-full shrink-0 grid grid-cols-4 bg-muted/60 p-1 rounded-xl">
-              <TabsTrigger value="expression" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-red-50 data-[state=active]:text-red-700 dark:data-[state=active]:bg-red-950/40 dark:data-[state=active]:text-red-400">
+            <TabsList className="w-full shrink-0 grid grid-cols-4">
+              <TabsTrigger value="expression" className="text-xs gap-1.5">
                 <PenLine className="h-3.5 w-3.5" />
                 Expressão
                 {expressionErrors.length > 0 && (
                   <Badge variant="destructive" className="text-[9px] px-1 py-0 ml-1">{expressionErrors.length}</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="structure" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-950/40 dark:data-[state=active]:text-blue-400">
+              <TabsTrigger value="structure" className="text-xs gap-1.5">
                 <BookOpen className="h-3.5 w-3.5" />
                 Estrutura
               </TabsTrigger>
-              <TabsTrigger value="content" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-950/40 dark:data-[state=active]:text-amber-400">
+              <TabsTrigger value="content" className="text-xs gap-1.5">
                 <FileText className="h-3.5 w-3.5" />
                 Conteúdo
               </TabsTrigger>
-              <TabsTrigger value="suggestions" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-950/40 dark:data-[state=active]:text-emerald-400">
+              <TabsTrigger value="suggestions" className="text-xs gap-1.5">
                 <Lightbulb className="h-3.5 w-3.5" />
                 Sugestões
               </TabsTrigger>
@@ -707,8 +819,7 @@ export default function AdminEssayCorrectionPage() {
                       {expressionErrors.length} erros | Débito total: -{expressionDebitTotal.toFixed(3)}
                     </p>
                   </div>
-                  <Button size="sm" onClick={addExpressionError}
-                    className="bg-red-600 hover:bg-red-700 text-white">
+                  <Button size="sm" variant="outline" onClick={addExpressionError}>
                     <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
                   </Button>
                 </CardHeader>
@@ -724,13 +835,40 @@ export default function AdminEssayCorrectionPage() {
                       expressionErrors.map((error, index) => (
                         <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
                           <div className="flex items-center justify-between">
-                            <Badge variant="outline" className="text-[10px]">
-                              P{error.paragraph_number}, Per. {error.sentence_number}
-                            </Badge>
                             <div className="flex items-center gap-2">
-                              <Badge variant="destructive" className="text-[10px]">
-                                -{error.debit_value.toFixed(3)}
-                              </Badge>
+                              <div className="flex items-center gap-1">
+                                <Label className="text-[10px]">P</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={error.paragraph_number}
+                                  onChange={(e) => updateExpressionError(index, 'paragraph_number', parseInt(e.target.value) || 1)}
+                                  className="h-6 w-14 text-xs px-1"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Label className="text-[10px]">Per.</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={error.sentence_number}
+                                  onChange={(e) => updateExpressionError(index, 'sentence_number', parseInt(e.target.value) || 1)}
+                                  className="h-6 w-14 text-xs px-1"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <Label className="text-[10px]">Débito</Label>
+                                <Input
+                                  type="number"
+                                  step="0.001"
+                                  min={0}
+                                  value={error.debit_value}
+                                  onChange={(e) => updateExpressionError(index, 'debit_value', parseFloat(e.target.value) || 0)}
+                                  className="h-6 w-20 text-xs px-1"
+                                />
+                              </div>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -749,7 +887,7 @@ export default function AdminEssayCorrectionPage() {
                                 value={error.error_text}
                                 onChange={(e) => updateExpressionError(index, 'error_text', e.target.value)}
                                 rows={1}
-                                className="text-xs min-h-[32px] bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800/30"
+                                className="text-xs min-h-[32px]"
                               />
                             </div>
                             <div>
@@ -767,7 +905,7 @@ export default function AdminEssayCorrectionPage() {
                                 value={error.suggested_correction}
                                 onChange={(e) => updateExpressionError(index, 'suggested_correction', e.target.value)}
                                 rows={1}
-                                className="text-xs min-h-[32px] bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30"
+                                className="text-xs min-h-[32px]"
                               />
                             </div>
                           </div>
@@ -782,11 +920,16 @@ export default function AdminEssayCorrectionPage() {
             {/* Structure Analysis Tab */}
             <TabsContent value="structure" className="flex-1 overflow-hidden mt-2">
               <Card className="h-full flex flex-col">
-                <CardHeader className="py-3 px-4 shrink-0">
-                  <CardTitle className="text-sm">Análise de Estrutura</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {structureAnalysis.length} parágrafos | Débito total: -{structureDebitTotal.toFixed(3)}
-                  </p>
+                <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm">Análise de Estrutura</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {structureAnalysis.length} parágrafos | Débito total: -{structureDebitTotal.toFixed(3)}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={addStructureAnalysis}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Parágrafo
+                  </Button>
                 </CardHeader>
                 <ScrollArea className="flex-1">
                   <CardContent className="px-4 pb-4 space-y-3">
@@ -794,39 +937,68 @@ export default function AdminEssayCorrectionPage() {
                       <div className="text-center py-8 text-muted-foreground">
                         <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-40" />
                         <p className="text-sm">Análise de estrutura pendente</p>
-                        <p className="text-xs">Use "Correção IA" para gerar a análise</p>
+                        <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
                       </div>
                     ) : (
                       structureAnalysis.map((analysis, index) => (
                         <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-[10px]">
-                                Parágrafo {analysis.paragraph_number}
-                              </Badge>
-                              <Badge variant="secondary" className="text-[10px]">
-                                {analysis.paragraph_type === 'introduction' ? 'Introdução' :
-                                  analysis.paragraph_type === 'conclusion' ? 'Conclusão' :
-                                    'Desenvolvimento'}
-                              </Badge>
+                              <div className="flex items-center gap-1">
+                                <Label className="text-[10px]">Parágrafo</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={analysis.paragraph_number}
+                                  onChange={(e) => updateStructureAnalysis(index, 'paragraph_number', parseInt(e.target.value) || 1)}
+                                  className="h-6 w-14 text-xs px-1"
+                                />
+                              </div>
+                              <Select
+                                value={analysis.paragraph_type}
+                                onValueChange={(val) => updateStructureAnalysis(index, 'paragraph_type', val)}
+                              >
+                                <SelectTrigger className="h-6 w-[140px] text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="introduction">Introdução</SelectItem>
+                                  <SelectItem value="development">Desenvolvimento</SelectItem>
+                                  <SelectItem value="conclusion">Conclusão</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
-                            <Badge
-                              variant={analysis.debit_value > 0 ? 'destructive' : 'outline'}
-                              className="text-[10px]"
-                            >
-                              {analysis.debit_value > 0 ? `-${analysis.debit_value.toFixed(3)}` : 'OK'}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <Label className="text-[10px]">Débito</Label>
+                                <Input
+                                  type="number"
+                                  step="0.001"
+                                  min={0}
+                                  value={analysis.debit_value}
+                                  onChange={(e) => updateStructureAnalysis(index, 'debit_value', parseFloat(e.target.value) || 0)}
+                                  className="h-6 w-20 text-xs px-1"
+                                />
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => removeStructureAnalysis(index)}
+                              >
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            </div>
                           </div>
-                          <Textarea
-                            value={analysis.analysis_text}
-                            onChange={(e) => {
-                              setStructureAnalysis(prev =>
-                                prev.map((s, i) => i === index ? { ...s, analysis_text: e.target.value } : s)
-                              )
-                            }}
-                            rows={3}
-                            className="text-xs"
-                          />
+                          <div>
+                            <label className="text-[10px] font-medium text-muted-foreground">Análise</label>
+                            <Textarea
+                              value={analysis.analysis_text}
+                              onChange={(e) => updateStructureAnalysis(index, 'analysis_text', e.target.value)}
+                              rows={3}
+                              className="text-xs"
+                            />
+                          </div>
                         </div>
                       ))
                     )}
@@ -838,11 +1010,16 @@ export default function AdminEssayCorrectionPage() {
             {/* Content Analysis Tab */}
             <TabsContent value="content" className="flex-1 overflow-hidden mt-2">
               <Card className="h-full flex flex-col">
-                <CardHeader className="py-3 px-4 shrink-0">
-                  <CardTitle className="text-sm">Análise de Conteúdo</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {contentAnalysis.length} critérios | Débito total: -{contentDebitTotal.toFixed(3)}
-                  </p>
+                <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm">Análise de Conteúdo</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {contentAnalysis.length} critérios | Débito total: -{contentDebitTotal.toFixed(3)}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={addContentAnalysis}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Critério
+                  </Button>
                 </CardHeader>
                 <ScrollArea className="flex-1">
                   <CardContent className="px-4 pb-4 space-y-3">
@@ -850,46 +1027,76 @@ export default function AdminEssayCorrectionPage() {
                       <div className="text-center py-8 text-muted-foreground">
                         <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
                         <p className="text-sm">Análise de conteúdo pendente</p>
-                        <p className="text-xs">Use "Correção IA" para gerar a análise</p>
+                        <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
                       </div>
                     ) : (
                       contentAnalysis.map((analysis, index) => (
                         <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
                           <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm">{analysis.criterion_name}</span>
                             <div className="flex items-center gap-2">
-                              <Badge
-                                variant={analysis.debit_level === 'Fuga TOTAL' ? 'destructive' : 'outline'}
-                                className="text-[10px]"
+                              <Select
+                                value={analysis.criterion_type}
+                                onValueChange={(val) => updateContentAnalysis(index, 'criterion_type', val)}
                               >
-                                {analysis.debit_level}
-                              </Badge>
-                              <Badge
-                                variant={analysis.debit_value > 0 ? 'destructive' : 'outline'}
-                                className="text-[10px]"
+                                <SelectTrigger className="h-6 w-[160px] text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pertinence">Pertinência ao Tema</SelectItem>
+                                  <SelectItem value="argumentation">Argumentação</SelectItem>
+                                  <SelectItem value="informativity">Informatividade</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <Label className="text-[10px]">Nível</Label>
+                                <Input
+                                  type="text"
+                                  value={analysis.debit_level}
+                                  onChange={(e) => updateContentAnalysis(index, 'debit_level', e.target.value)}
+                                  className="h-6 w-24 text-xs px-1"
+                                  placeholder="Sem débito"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Label className="text-[10px]">Débito</Label>
+                                <Input
+                                  type="number"
+                                  step="0.001"
+                                  min={0}
+                                  value={analysis.debit_value}
+                                  onChange={(e) => updateContentAnalysis(index, 'debit_value', parseFloat(e.target.value) || 0)}
+                                  className="h-6 w-20 text-xs px-1"
+                                />
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => removeContentAnalysis(index)}
                               >
-                                {analysis.debit_value > 0 ? `-${analysis.debit_value.toFixed(3)}` : 'Sem débito'}
-                              </Badge>
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
                             </div>
                           </div>
 
                           {analysis.debit_level === 'Fuga TOTAL' && (
-                            <div className="flex items-center gap-2 text-red-600 bg-red-50 dark:bg-red-950/20 rounded-md px-3 py-1.5">
+                            <div className="flex items-center gap-2 text-destructive bg-destructive/10 rounded-md px-3 py-1.5">
                               <AlertTriangle className="h-4 w-4" />
                               <span className="text-xs font-medium">Fuga total: nota final automaticamente 0</span>
                             </div>
                           )}
 
-                          <Textarea
-                            value={analysis.analysis_text}
-                            onChange={(e) => {
-                              setContentAnalysis(prev =>
-                                prev.map((c, i) => i === index ? { ...c, analysis_text: e.target.value } : c)
-                              )
-                            }}
-                            rows={3}
-                            className="text-xs"
-                          />
+                          <div>
+                            <label className="text-[10px] font-medium text-muted-foreground">Análise</label>
+                            <Textarea
+                              value={analysis.analysis_text}
+                              onChange={(e) => updateContentAnalysis(index, 'analysis_text', e.target.value)}
+                              rows={3}
+                              className="text-xs"
+                            />
+                          </div>
                         </div>
                       ))
                     )}
@@ -914,11 +1121,16 @@ export default function AdminEssayCorrectionPage() {
             {/* Suggestions Tab */}
             <TabsContent value="suggestions" className="flex-1 overflow-hidden mt-2">
               <Card className="h-full flex flex-col">
-                <CardHeader className="py-3 px-4 shrink-0">
-                  <CardTitle className="text-sm">Sugestões de Melhoria</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {suggestions.length} sugestões para o aluno
-                  </p>
+                <CardHeader className="py-3 px-4 shrink-0 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm">Sugestões de Melhoria</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {suggestions.length} sugestões para o aluno
+                    </p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={addSuggestion}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Sugestão
+                  </Button>
                 </CardHeader>
                 <ScrollArea className="flex-1">
                   <CardContent className="px-4 pb-4 space-y-3">
@@ -926,35 +1138,43 @@ export default function AdminEssayCorrectionPage() {
                       <div className="text-center py-8 text-muted-foreground">
                         <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-40" />
                         <p className="text-sm">Nenhuma sugestão ainda</p>
-                        <p className="text-xs">Use "Correção IA" para gerar sugestões</p>
+                        <p className="text-xs">Use "Correção IA" ou adicione manualmente</p>
                       </div>
                     ) : (
                       suggestions.map((suggestion, index) => (
                         <div key={index} className="border rounded-lg p-3 space-y-2 bg-card">
                           <div className="flex items-center justify-between">
-                            <Badge variant="secondary" className="text-[10px]">
-                              {suggestion.category === 'expression' ? 'Expressão' :
-                                suggestion.category === 'structure' ? 'Estrutura' : 'Conteúdo'}
-                            </Badge>
+                            <Select
+                              value={suggestion.category}
+                              onValueChange={(val) => updateSuggestion(index, 'category', val)}
+                            >
+                              <SelectTrigger className="h-6 w-[140px] text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="expression">Expressão</SelectItem>
+                                <SelectItem value="structure">Estrutura</SelectItem>
+                                <SelectItem value="content">Conteúdo</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
-                              onClick={() => setSuggestions(prev => prev.filter((_, i) => i !== index))}
+                              onClick={() => removeSuggestion(index)}
                             >
                               <Trash2 className="h-3 w-3 text-destructive" />
                             </Button>
                           </div>
-                          <Textarea
-                            value={suggestion.suggestion_text}
-                            onChange={(e) => {
-                              setSuggestions(prev =>
-                                prev.map((s, i) => i === index ? { ...s, suggestion_text: e.target.value } : s)
-                              )
-                            }}
-                            rows={3}
-                            className="text-xs"
-                          />
+                          <div>
+                            <label className="text-[10px] font-medium text-muted-foreground">Sugestão</label>
+                            <Textarea
+                              value={suggestion.suggestion_text}
+                              onChange={(e) => updateSuggestion(index, 'suggestion_text', e.target.value)}
+                              rows={3}
+                              className="text-xs"
+                            />
+                          </div>
                         </div>
                       ))
                     )}
@@ -967,36 +1187,50 @@ export default function AdminEssayCorrectionPage() {
       </div>
 
       {/* Bottom: Grade summary */}
-      <div className="shrink-0 border-t pt-3 bg-muted/30 -mx-4 px-4 -mb-4 pb-4 rounded-b-xl">
+      <div className="shrink-0 border-t pt-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 bg-red-50 dark:bg-red-950/30 px-3 py-1.5 rounded-lg border border-red-200/50 dark:border-red-800/30">
-              <PenLine className="h-3.5 w-3.5 text-red-500" />
-              <span className="text-xs text-red-700 dark:text-red-400 font-medium">-{expressionDebitTotal.toFixed(3)}</span>
-              <span className="text-[10px] text-red-500/70">({expressionErrors.length})</span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5 rounded-lg border border-blue-200/50 dark:border-blue-800/30">
-              <BookOpen className="h-3.5 w-3.5 text-blue-500" />
-              <span className="text-xs text-blue-700 dark:text-blue-400 font-medium">-{structureDebitTotal.toFixed(3)}</span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-lg border border-amber-200/50 dark:border-amber-800/30">
-              <FileText className="h-3.5 w-3.5 text-amber-500" />
-              <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">-{contentDebitTotal.toFixed(3)}</span>
-            </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="gap-1.5 py-1">
+              <PenLine className="h-3 w-3" />
+              Expressão: -{expressionDebitTotal.toFixed(3)} ({expressionErrors.length})
+            </Badge>
+            <Badge variant="outline" className="gap-1.5 py-1">
+              <BookOpen className="h-3 w-3" />
+              Estrutura: -{structureDebitTotal.toFixed(3)}
+            </Badge>
+            <Badge variant="outline" className="gap-1.5 py-1">
+              <FileText className="h-3 w-3" />
+              Conteúdo: -{contentDebitTotal.toFixed(3)}
+            </Badge>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Nota Final</span>
-            <div className={`text-2xl font-bold px-4 py-1 rounded-lg ${
-              finalGrade >= 7 ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400' :
-              finalGrade >= 5 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400' :
-              'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400'
-            }`}>
+            <span className={`text-2xl font-bold ${finalGrade >= 7 ? 'text-green-600' : finalGrade >= 5 ? 'text-amber-600' : 'text-red-600'}`}>
               {finalGrade.toFixed(3)}
-            </div>
+            </span>
             <span className="text-xs text-muted-foreground">/ {template?.max_grade ?? 10}</span>
           </div>
         </div>
       </div>
+
+      {/* Finalize Confirmation Dialog */}
+      <AlertDialog open={showFinalizeDialog} onOpenChange={setShowFinalizeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar Correção</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja finalizar a correção? O aluno será notificado e a nota será registrada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleFinalizeCorrection} disabled={isSaving}>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

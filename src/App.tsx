@@ -533,7 +533,7 @@ const App = () => (
                     element={<AdminEssayFormPage />}
                   />
                   <Route
-                    path="essays/:promptId/submissions"
+                    path="essays/turma/:classId"
                     element={<AdminEssaySubmissionsPage />}
                   />
                   <Route
