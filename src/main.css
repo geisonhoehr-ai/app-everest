@@ -644,3 +644,23 @@ h1, h2, h3, h4, h5, h6 {
     @apply bg-background text-foreground;
   }
 }
+
+/* TipTap / ProseMirror rich text dark mode fixes */
+/* Highlighted text must stay dark on colored backgrounds */
+.dark .ProseMirror mark,
+.dark .prose mark,
+.dark [class*="prose"] mark {
+  color: #1a1a2e !important;
+}
+
+/* Strikethrough needs visible color in dark mode */
+.dark .ProseMirror s,
+.dark .prose s {
+  text-decoration-color: currentColor;
+}
+
+/* Underline needs visible color in dark mode */
+.dark .ProseMirror u,
+.dark .prose u {
+  text-decoration-color: currentColor;
+}

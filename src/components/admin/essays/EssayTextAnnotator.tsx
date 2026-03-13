@@ -98,8 +98,8 @@ const HIGHLIGHT_COLORS = [
 ] as const
 
 const TEXT_COLORS = [
-  { color: '#dc2626', label: 'Texto vermelho (erro)' },
-  { color: '#16a34a', label: 'Texto verde (correto)' },
+  { color: '#ef4444', label: 'Texto vermelho (erro)' },
+  { color: '#22c55e', label: 'Texto verde (correto)' },
 ] as const
 
 export function EssayTextAnnotator({
@@ -134,6 +134,7 @@ export function EssayTextAnnotator({
           'prose prose-sm dark:prose-invert max-w-none',
           'min-h-[200px] p-4 focus:outline-none',
           '[&_p]:my-1',
+          '[&_mark]:rounded [&_mark]:px-0.5',
         ),
       },
     },
@@ -182,7 +183,7 @@ export function EssayTextAnnotator({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="rounded-lg border border-border bg-background">
+      <div className="rounded-lg border border-border bg-white dark:bg-slate-800">
         {/* Toolbar */}
         {!readOnly && (
           <div className="flex flex-wrap items-center gap-0.5 border-b border-border px-2 py-1.5">
