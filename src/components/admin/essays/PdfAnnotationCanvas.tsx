@@ -18,7 +18,17 @@ import {
   Maximize2,
   Minus,
   Circle,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
 } from 'lucide-react'
+import * as pdfjsLib from 'pdfjs-dist'
+
+// Use inline worker (no external file needed)
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).href
 
 type Tool = 'pen' | 'highlighter' | 'text' | 'eraser'
 type StrokeWidth = 2 | 4 | 8
@@ -78,10 +88,110 @@ export const PdfAnnotationCanvas = ({
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
 
+  // PDF rendering state
+  const [pdfRenderedUrl, setPdfRenderedUrl] = useState<string | null>(null)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [pdfError, setPdfError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
+  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null)
+
+  // Effective state: treat rendered PDF pages as images
+  const effectiveIsImage = isImage || !!pdfRenderedUrl
+  const effectiveFileUrl = pdfRenderedUrl || fileUrl
+
   // Fullscreen refs (mirror for the dialog canvas)
   const fullscreenCanvasRef = useRef<HTMLCanvasElement>(null)
   const fullscreenImageRef = useRef<HTMLImageElement>(null)
   const fullscreenContainerRef = useRef<HTMLDivElement>(null)
+
+  // Render a specific PDF page to data URL
+  const renderPdfPage = useCallback(async (doc: pdfjsLib.PDFDocumentProxy, pageNum: number) => {
+    const page = await doc.getPage(pageNum)
+    const scale = 2
+    const viewport = page.getViewport({ scale })
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = viewport.width
+    tempCanvas.height = viewport.height
+    const ctx = tempCanvas.getContext('2d')!
+
+    await page.render({ canvasContext: ctx, viewport }).promise
+
+    return tempCanvas.toDataURL('image/png')
+  }, [])
+
+  // Load PDF document and render first page
+  useEffect(() => {
+    if (isImage || !fileUrl) return
+
+    let cancelled = false
+    setPdfLoading(true)
+    setPdfError(null)
+
+    const loadPdf = async () => {
+      try {
+        // Fetch PDF as ArrayBuffer to avoid CORS issues
+        const response = await fetch(fileUrl)
+        if (!response.ok) throw new Error(`Erro ao baixar PDF: ${response.status}`)
+        if (cancelled) return
+
+        const arrayBuffer = await response.arrayBuffer()
+        if (cancelled) return
+
+        const doc = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise
+        if (cancelled) { doc.destroy(); return }
+
+        pdfDocRef.current = doc
+        setTotalPages(doc.numPages)
+
+        // Render first page immediately
+        const dataUrl = await renderPdfPage(doc, 1)
+        if (cancelled) return
+
+        setPdfRenderedUrl(dataUrl)
+        setImageLoaded(false)
+      } catch (err) {
+        if (!cancelled) {
+          const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+          console.error('Failed to load PDF:', err)
+          setPdfError(msg)
+        }
+      } finally {
+        if (!cancelled) setPdfLoading(false)
+      }
+    }
+
+    loadPdf()
+    return () => { cancelled = true }
+  }, [isImage, fileUrl, renderPdfPage])
+
+  // Render page when currentPage changes (skip initial load which is handled above)
+  const prevPageRef = useRef(1)
+  useEffect(() => {
+    if (isImage || !pdfDocRef.current || currentPage === prevPageRef.current) return
+    prevPageRef.current = currentPage
+
+    let cancelled = false
+    setPdfLoading(true)
+
+    const doRender = async () => {
+      try {
+        const dataUrl = await renderPdfPage(pdfDocRef.current!, currentPage)
+        if (!cancelled) {
+          setPdfRenderedUrl(dataUrl)
+          setStrokes([])
+          setImageLoaded(false)
+        }
+      } catch (err) {
+        console.error('Failed to render page:', err)
+      } finally {
+        if (!cancelled) setPdfLoading(false)
+      }
+    }
+
+    doRender()
+    return () => { cancelled = true }
+  }, [isImage, currentPage, renderPdfPage])
 
   const getActiveCanvas = useCallback(() => {
     return isFullscreen ? fullscreenCanvasRef.current : canvasRef.current
@@ -169,7 +279,7 @@ export const PdfAnnotationCanvas = ({
 
   // Load existing annotations
   useEffect(() => {
-    if (!annotationDataUrl || !isImage) return
+    if (!annotationDataUrl || !effectiveIsImage) return
 
     const canvas = getActiveCanvas()
     if (!canvas || canvas.width === 0) return
@@ -183,18 +293,18 @@ export const PdfAnnotationCanvas = ({
       }
     }
     img.src = annotationDataUrl
-  }, [annotationDataUrl, isImage, getActiveCanvas, canvasSize])
+  }, [annotationDataUrl, effectiveIsImage, getActiveCanvas, canvasSize])
 
   // Sync canvas on image load and resize
   useEffect(() => {
-    if (!isImage || !imageLoaded) return
+    if (!effectiveIsImage || !imageLoaded) return
 
     syncCanvasSize()
 
     const handleResize = () => syncCanvasSize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [isImage, imageLoaded, syncCanvasSize, isFullscreen])
+  }, [effectiveIsImage, imageLoaded, syncCanvasSize, isFullscreen])
 
   // Get position relative to canvas
   const getPos = useCallback(
@@ -216,7 +326,7 @@ export const PdfAnnotationCanvas = ({
 
   const handlePointerDown = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
-      if (!isImage) return
+      if (!effectiveIsImage) return
       e.preventDefault()
 
       const pos = getPos(e)
@@ -248,7 +358,7 @@ export const PdfAnnotationCanvas = ({
       }
       setCurrentStroke(newStroke)
     },
-    [isImage, activeTool, activeColor, strokeWidth, getPos]
+    [effectiveIsImage, activeTool, activeColor, strokeWidth, getPos]
   )
 
   const handlePointerMove = useCallback(
@@ -424,7 +534,7 @@ export const PdfAnnotationCanvas = ({
       >
         <Maximize2 className="h-4 w-4" />
       </Button>
-      {isImage && (
+      {effectiveIsImage && (
         <Button
           variant="ghost"
           size="sm"
@@ -447,7 +557,7 @@ export const PdfAnnotationCanvas = ({
     <div ref={ctnRef} className="relative inline-block w-full">
       <img
         ref={imgRef}
-        src={fileUrl}
+        src={effectiveFileUrl}
         alt="Documento"
         crossOrigin="anonymous"
         className="block w-full h-auto select-none"
@@ -472,17 +582,54 @@ export const PdfAnnotationCanvas = ({
     </div>
   )
 
-  const renderPdfViewer = () => (
-    <div className="w-full">
-      <iframe
-        src={fileUrl}
-        className="w-full h-[600px] border-0 rounded-md"
-        title="PDF do documento"
-      />
-      <p className="text-sm text-muted-foreground mt-2 text-center">
-        Para anotar diretamente, converta o PDF para imagem.
-      </p>
-    </div>
+  const renderPdfStatus = () => {
+    if (pdfError) {
+      return (
+        <div className="w-full flex flex-col items-center justify-center py-12 gap-3">
+          <p className="text-sm text-destructive">Erro ao converter PDF: {pdfError}</p>
+          <iframe
+            src={fileUrl}
+            className="w-full h-[600px] border-0 rounded-md mt-4"
+            title="PDF do documento"
+          />
+        </div>
+      )
+    }
+    if (pdfLoading && !pdfRenderedUrl) {
+      return (
+        <div className="w-full flex flex-col items-center justify-center py-12 gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Convertendo PDF para imagem...</p>
+        </div>
+      )
+    }
+    return null
+  }
+
+  const renderPageNavigation = () => (
+    totalPages > 1 ? (
+      <div className="flex items-center justify-center gap-2 mt-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => { setCurrentPage((p) => Math.max(1, p - 1)) }}
+          disabled={currentPage <= 1 || pdfLoading}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="text-sm text-muted-foreground">
+          Página {currentPage} de {totalPages}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => { setCurrentPage((p) => Math.min(totalPages, p + 1)) }}
+          disabled={currentPage >= totalPages || pdfLoading}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    ) : null
   )
 
   return (
@@ -492,25 +639,12 @@ export const PdfAnnotationCanvas = ({
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Arquivo Enviado</CardTitle>
           </div>
-          {isImage && <div className="mt-2">{renderToolbar()}</div>}
-          {!isImage && (
-            <div className="mt-2 flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsFullscreen(true)}
-                title="Expandir"
-              >
-                <Maximize2 className="h-4 w-4 mr-1" />
-                Expandir
-              </Button>
-            </div>
-          )}
+          {effectiveIsImage && <div className="mt-2">{renderToolbar()}</div>}
         </CardHeader>
         <CardContent>
-          {isImage
-            ? renderImageWithCanvas(imageRef, canvasRef, containerRef)
-            : renderPdfViewer()}
+          {!isImage && renderPdfStatus()}
+          {effectiveIsImage && renderImageWithCanvas(imageRef, canvasRef, containerRef)}
+          {!isImage && !pdfError && renderPageNavigation()}
         </CardContent>
       </Card>
 
@@ -519,22 +653,16 @@ export const PdfAnnotationCanvas = ({
         <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] flex flex-col p-4">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Arquivo Enviado</DialogTitle>
-            {isImage && <div className="mt-2">{renderToolbar()}</div>}
+            {effectiveIsImage && <div className="mt-2">{renderToolbar()}</div>}
           </DialogHeader>
           <div className="flex-1 overflow-auto">
-            {isImage
-              ? renderImageWithCanvas(
-                  fullscreenImageRef,
-                  fullscreenCanvasRef,
-                  fullscreenContainerRef
-                )
-              : (
-                <iframe
-                  src={fileUrl}
-                  className="w-full h-full border-0 rounded-md min-h-[70vh]"
-                  title="PDF do documento"
-                />
-              )}
+            {!isImage && renderPdfStatus()}
+            {effectiveIsImage && renderImageWithCanvas(
+              fullscreenImageRef,
+              fullscreenCanvasRef,
+              fullscreenContainerRef
+            )}
+            {!isImage && !pdfError && renderPageNavigation()}
           </div>
         </DialogContent>
       </Dialog>
