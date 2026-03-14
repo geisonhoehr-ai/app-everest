@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/auth-provider'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs } from '@/components/PageTabs'
 import { AchievementsTutorial } from '@/components/achievements/AchievementsTutorial'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
@@ -347,103 +347,95 @@ export default function AchievementsPage() {
       </div>
 
         {/* Tabs de conquistas */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-xl">
-            <TabsTrigger
-              value="unlocked"
-              className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Desbloqueadas ({unlockedAchievements.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="locked"
-              className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white"
-            >
-              <Lock className="h-4 w-4 mr-2" />
-              Pendentes ({lockedAchievements.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="all"
-              className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white"
-            >
-              <Award className="h-4 w-4 mr-2" />
-              Todas ({allAchievements.length})
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Conquistas desbloqueadas */}
-          <TabsContent value="unlocked" className="space-y-4">
-            {unlockedAchievements.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {unlockedAchievements.map((achievement) => {
-                  const ua = userAchievements.find(u => u.achievement_id === achievement.id)
-                  return (
+        <PageTabs
+          value={activeTab}
+          onChange={setActiveTab}
+          layout={3}
+          tabs={[
+            {
+              value: 'unlocked',
+              label: 'Desbloqueadas',
+              icon: <CheckCircle className="h-4 w-4" />,
+              count: unlockedAchievements.length,
+              content: unlockedAchievements.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {unlockedAchievements.map((achievement) => {
+                    const ua = userAchievements.find(u => u.achievement_id === achievement.id)
+                    return (
+                      <AchievementCard
+                        key={achievement.id}
+                        achievement={achievement}
+                        isUnlocked={true}
+                        userAchievement={ua}
+                      />
+                    )
+                  })}
+                </div>
+              ) : (
+                <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
+                  <CardContent className="text-center py-16">
+                    <div className="max-w-md mx-auto">
+                      <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
+                        <Trophy className="w-8 h-8 text-primary" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground mb-2">
+                        Nenhuma conquista desbloqueada ainda
+                      </h3>
+                      <p className="text-muted-foreground mb-6">
+                        Continue estudando e completando atividades para desbloquear suas primeiras conquistas!
+                      </p>
+                      <Button
+                        onClick={() => navigate('/courses')}
+                      >
+                        Começar a Estudar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
+            },
+            {
+              value: 'locked',
+              label: 'Pendentes',
+              icon: <Lock className="h-4 w-4" />,
+              count: lockedAchievements.length,
+              content: (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {lockedAchievements.map((achievement) => (
                     <AchievementCard
                       key={achievement.id}
                       achievement={achievement}
-                      isUnlocked={true}
-                      userAchievement={ua}
+                      isUnlocked={false}
                     />
-                  )
-                })}
-              </div>
-            ) : (
-              <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
-                <CardContent className="text-center py-16">
-                  <div className="max-w-md mx-auto">
-                    <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <Trophy className="w-8 h-8 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">
-                      Nenhuma conquista desbloqueada ainda
-                    </h3>
-                    <p className="text-muted-foreground mb-6">
-                      Continue estudando e completando atividades para desbloquear suas primeiras conquistas!
-                    </p>
-                    <Button
-                      onClick={() => navigate('/courses')}
-                    >
-                      Começar a Estudar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              value: 'all',
+              label: 'Todas',
+              icon: <Award className="h-4 w-4" />,
+              count: allAchievements.length,
+              content: (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {allAchievements.map((achievement) => {
+                    const isUnlocked = unlockedAchievementIds.includes(achievement.id)
+                    const userAchievement = userAchievements.find(ua => ua.achievement_id === achievement.id)
 
-          {/* Conquistas pendentes */}
-          <TabsContent value="locked" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lockedAchievements.map((achievement) => (
-                <AchievementCard
-                  key={achievement.id}
-                  achievement={achievement}
-                  isUnlocked={false}
-                />
-              ))}
-            </div>
-          </TabsContent>
-
-          {/* Todas as conquistas */}
-          <TabsContent value="all" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allAchievements.map((achievement) => {
-                const isUnlocked = unlockedAchievementIds.includes(achievement.id)
-                const userAchievement = userAchievements.find(ua => ua.achievement_id === achievement.id)
-
-                return (
-                  <AchievementCard
-                    key={achievement.id}
-                    achievement={achievement}
-                    isUnlocked={isUnlocked}
-                    userAchievement={userAchievement}
-                  />
-                )
-              })}
-            </div>
-          </TabsContent>
-        </Tabs>
+                    return (
+                      <AchievementCard
+                        key={achievement.id}
+                        achievement={achievement}
+                        isUnlocked={isUnlocked}
+                        userAchievement={userAchievement}
+                      />
+                    )
+                  })}
+                </div>
+              ),
+            },
+          ]}
+        />
 
       {/* Tutorial Modal */}
       <AchievementsTutorial

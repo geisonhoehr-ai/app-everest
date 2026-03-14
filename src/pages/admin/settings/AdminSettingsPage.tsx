@@ -17,7 +17,7 @@ import {
   Zap,
   Loader2,
 } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs } from '@/components/PageTabs'
 import { useToast } from '@/components/ui/use-toast'
 import {
   Select,
@@ -174,372 +174,376 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* Settings Tabs */}
-        <Tabs
+        <PageTabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v as SettingsKey)}
-          className="space-y-6"
-        >
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="general">Geral</TabsTrigger>
-            <TabsTrigger value="email">E-mail</TabsTrigger>
-            <TabsTrigger value="notifications">Notificações</TabsTrigger>
-            <TabsTrigger value="security">Segurança</TabsTrigger>
-            <TabsTrigger value="appearance">Aparência</TabsTrigger>
-          </TabsList>
-
-          {/* General Settings */}
-          <TabsContent value="general" className="space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Globe className="h-5 w-5" />
-                  Configurações Gerais
-                </CardTitle>
-                <CardDescription>
-                  Configure as informações básicas da plataforma
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-name">Nome da Plataforma</Label>
-                    <Input
-                      id="platform-name"
-                      value={g.platformName}
-                      onChange={(ev) => updateField('general', 'platformName', ev.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-url">URL da Plataforma</Label>
-                    <Input
-                      id="platform-url"
-                      value={g.platformUrl}
-                      onChange={(ev) => updateField('general', 'platformUrl', ev.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="platform-description">Descrição</Label>
-                  <Textarea
-                    id="platform-description"
-                    value={g.description}
-                    onChange={(ev) => updateField('general', 'description', ev.target.value)}
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="timezone">Fuso Horário</Label>
-                  <Select
-                    value={g.timezone}
-                    onValueChange={(v) => updateField('general', 'timezone', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o fuso horário" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="America/Sao_Paulo">América/São Paulo (GMT-3)</SelectItem>
-                      <SelectItem value="America/New_York">América/Nova York (GMT-5)</SelectItem>
-                      <SelectItem value="Europe/London">Europa/Londres (GMT+0)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
-                  <div className="space-y-0.5">
-                    <Label>Modo de Manutenção</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Ativar para realizar manutenção no sistema
-                    </p>
-                  </div>
-                  <Switch
-                    checked={g.maintenanceMode}
-                    onCheckedChange={(v) => updateField('general', 'maintenanceMode', v)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
-                  <div className="space-y-0.5">
-                    <Label>Permitir Novos Cadastros</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Usuários podem criar novas contas
-                    </p>
-                  </div>
-                  <Switch
-                    checked={g.allowSignups}
-                    onCheckedChange={(v) => updateField('general', 'allowSignups', v)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Email Settings */}
-          <TabsContent value="email" className="space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Mail className="h-5 w-5" />
-                  Configurações de E-mail
-                </CardTitle>
-                <CardDescription>
-                  Configure o servidor SMTP e templates de e-mail
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="smtp-host">Servidor SMTP</Label>
-                    <Input
-                      id="smtp-host"
-                      placeholder="smtp.gmail.com"
-                      value={e.smtpHost}
-                      onChange={(ev) => updateField('email', 'smtpHost', ev.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smtp-port">Porta SMTP</Label>
-                    <Input
-                      id="smtp-port"
-                      placeholder="587"
-                      type="number"
-                      value={e.smtpPort}
-                      onChange={(ev) => updateField('email', 'smtpPort', ev.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="smtp-user">Usuário SMTP</Label>
-                    <Input
-                      id="smtp-user"
-                      placeholder="noreply@everest.com"
-                      type="email"
-                      value={e.smtpUser}
-                      onChange={(ev) => updateField('email', 'smtpUser', ev.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smtp-password">Senha SMTP</Label>
-                    <Input
-                      id="smtp-password"
-                      placeholder="********"
-                      type="password"
-                      value={e.smtpPassword}
-                      onChange={(ev) => updateField('email', 'smtpPassword', ev.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
-                  <div className="space-y-0.5">
-                    <Label>Usar SSL/TLS</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Conexão segura com o servidor SMTP
-                    </p>
-                  </div>
-                  <Switch
-                    checked={e.useSsl}
-                    onCheckedChange={(v) => updateField('email', 'useSsl', v)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Notifications Settings */}
-          <TabsContent value="notifications" className="space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Bell className="h-5 w-5" />
-                  Configurações de Notificações
-                </CardTitle>
-                <CardDescription>
-                  Gerencie quais notificações serão enviadas aos usuários
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {([
-                  { key: 'newMessage', title: 'Nova Mensagem', description: 'Notificar sobre novas mensagens no fórum' },
-                  { key: 'essayCorrection', title: 'Redação Corrigida', description: 'Notificar quando uma redação for corrigida' },
-                  { key: 'newCourse', title: 'Novo Curso', description: 'Notificar sobre novos cursos disponíveis' },
-                  { key: 'studyReminder', title: 'Lembrete de Estudo', description: 'Enviar lembretes diários de estudo' },
-                  { key: 'achievement', title: 'Conquista Desbloqueada', description: 'Notificar sobre novas conquistas' },
-                  { key: 'rankingUpdate', title: 'Ranking Atualizado', description: 'Notificar sobre mudanças no ranking' },
-                ] as const).map((item) => (
-                  <div
-                    key={item.key}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50"
-                  >
-                    <div className="space-y-0.5">
-                      <Label>{item.title}</Label>
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
+          onChange={(v) => setActiveTab(v as SettingsKey)}
+          layout={5}
+          tabs={[
+            {
+              value: 'general',
+              label: 'Geral',
+              content: (
+                <Card className="border-border shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <Globe className="h-5 w-5" />
+                      Configurações Gerais
+                    </CardTitle>
+                    <CardDescription>
+                      Configure as informações básicas da plataforma
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="platform-name">Nome da Plataforma</Label>
+                        <Input
+                          id="platform-name"
+                          value={g.platformName}
+                          onChange={(ev) => updateField('general', 'platformName', ev.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="platform-url">URL da Plataforma</Label>
+                        <Input
+                          id="platform-url"
+                          value={g.platformUrl}
+                          onChange={(ev) => updateField('general', 'platformUrl', ev.target.value)}
+                        />
+                      </div>
                     </div>
-                    <Switch
-                      checked={n[item.key]}
-                      onCheckedChange={(v) => updateField('notifications', item.key, v)}
-                    />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Security Settings */}
-          <TabsContent value="security" className="space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Shield className="h-5 w-5" />
-                  Configurações de Segurança
-                </CardTitle>
-                <CardDescription>
-                  Configure políticas de segurança e autenticação
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="session-timeout">Tempo de Sessão (minutos)</Label>
-                  <Input
-                    id="session-timeout"
-                    type="number"
-                    value={s.sessionTimeout}
-                    onChange={(ev) => updateField('security', 'sessionTimeout', Number(ev.target.value))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="max-attempts">Máximo de Tentativas de Login</Label>
-                  <Input
-                    id="max-attempts"
-                    type="number"
-                    value={s.maxLoginAttempts}
-                    onChange={(ev) => updateField('security', 'maxLoginAttempts', Number(ev.target.value))}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
-                  <div className="space-y-0.5">
-                    <Label>Autenticação de Dois Fatores</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Exigir 2FA para todos os administradores
-                    </p>
-                  </div>
-                  <Switch
-                    checked={s.twoFactorEnabled}
-                    onCheckedChange={(v) => updateField('security', 'twoFactorEnabled', v)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
-                  <div className="space-y-0.5">
-                    <Label>Exigir Senha Forte</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Senhas devem ter no mínimo 8 caracteres
-                    </p>
-                  </div>
-                  <Switch
-                    checked={s.strongPassword}
-                    onCheckedChange={(v) => updateField('security', 'strongPassword', v)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
-                  <div className="space-y-0.5">
-                    <Label>Log de Auditoria</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Registrar todas as ações administrativas
-                    </p>
-                  </div>
-                  <Switch
-                    checked={s.auditLog}
-                    onCheckedChange={(v) => updateField('security', 'auditLog', v)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Appearance Settings */}
-          <TabsContent value="appearance" className="space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Palette className="h-5 w-5" />
-                  Configurações de Aparência
-                </CardTitle>
-                <CardDescription>
-                  Personalize cores e temas da plataforma
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="primary-color">Cor Primária</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="primary-color"
-                        type="color"
-                        value={a.primaryColor}
-                        onChange={(ev) => updateField('appearance', 'primaryColor', ev.target.value)}
-                        className="w-16 h-10 p-1"
-                      />
-                      <Input
-                        value={a.primaryColor}
-                        onChange={(ev) => updateField('appearance', 'primaryColor', ev.target.value)}
+                    <div className="space-y-2">
+                      <Label htmlFor="platform-description">Descrição</Label>
+                      <Textarea
+                        id="platform-description"
+                        value={g.description}
+                        onChange={(ev) => updateField('general', 'description', ev.target.value)}
+                        className="min-h-[100px]"
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="secondary-color">Cor Secundária</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="secondary-color"
-                        type="color"
-                        value={a.secondaryColor}
-                        onChange={(ev) => updateField('appearance', 'secondaryColor', ev.target.value)}
-                        className="w-16 h-10 p-1"
-                      />
-                      <Input
-                        value={a.secondaryColor}
-                        onChange={(ev) => updateField('appearance', 'secondaryColor', ev.target.value)}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="timezone">Fuso Horário</Label>
+                      <Select
+                        value={g.timezone}
+                        onValueChange={(v) => updateField('general', 'timezone', v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o fuso horário" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="America/Sao_Paulo">América/São Paulo (GMT-3)</SelectItem>
+                          <SelectItem value="America/New_York">América/Nova York (GMT-5)</SelectItem>
+                          <SelectItem value="Europe/London">Europa/Londres (GMT+0)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
+                      <div className="space-y-0.5">
+                        <Label>Modo de Manutenção</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Ativar para realizar manutenção no sistema
+                        </p>
+                      </div>
+                      <Switch
+                        checked={g.maintenanceMode}
+                        onCheckedChange={(v) => updateField('general', 'maintenanceMode', v)}
                       />
                     </div>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
-                  <div className="space-y-0.5">
-                    <Label>Modo Escuro por Padrão</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Iniciar sistema em modo escuro
-                    </p>
-                  </div>
-                  <Switch
-                    checked={a.darkMode}
-                    onCheckedChange={(v) => updateField('appearance', 'darkMode', v)}
-                  />
-                </div>
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
+                      <div className="space-y-0.5">
+                        <Label>Permitir Novos Cadastros</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Usuários podem criar novas contas
+                        </p>
+                      </div>
+                      <Switch
+                        checked={g.allowSignups}
+                        onCheckedChange={(v) => updateField('general', 'allowSignups', v)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
+            },
+            {
+              value: 'email',
+              label: 'E-mail',
+              content: (
+                <Card className="border-border shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <Mail className="h-5 w-5" />
+                      Configurações de E-mail
+                    </CardTitle>
+                    <CardDescription>
+                      Configure o servidor SMTP e templates de e-mail
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="smtp-host">Servidor SMTP</Label>
+                        <Input
+                          id="smtp-host"
+                          placeholder="smtp.gmail.com"
+                          value={e.smtpHost}
+                          onChange={(ev) => updateField('email', 'smtpHost', ev.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="smtp-port">Porta SMTP</Label>
+                        <Input
+                          id="smtp-port"
+                          placeholder="587"
+                          type="number"
+                          value={e.smtpPort}
+                          onChange={(ev) => updateField('email', 'smtpPort', ev.target.value)}
+                        />
+                      </div>
+                    </div>
 
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
-                  <div className="space-y-0.5">
-                    <Label>Animações</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Ativar animações e transições suaves
-                    </p>
-                  </div>
-                  <Switch
-                    checked={a.animations}
-                    onCheckedChange={(v) => updateField('appearance', 'animations', v)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="smtp-user">Usuário SMTP</Label>
+                        <Input
+                          id="smtp-user"
+                          placeholder="noreply@everest.com"
+                          type="email"
+                          value={e.smtpUser}
+                          onChange={(ev) => updateField('email', 'smtpUser', ev.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="smtp-password">Senha SMTP</Label>
+                        <Input
+                          id="smtp-password"
+                          placeholder="********"
+                          type="password"
+                          value={e.smtpPassword}
+                          onChange={(ev) => updateField('email', 'smtpPassword', ev.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
+                      <div className="space-y-0.5">
+                        <Label>Usar SSL/TLS</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Conexão segura com o servidor SMTP
+                        </p>
+                      </div>
+                      <Switch
+                        checked={e.useSsl}
+                        onCheckedChange={(v) => updateField('email', 'useSsl', v)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
+            },
+            {
+              value: 'notifications',
+              label: 'Notificações',
+              content: (
+                <Card className="border-border shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <Bell className="h-5 w-5" />
+                      Configurações de Notificações
+                    </CardTitle>
+                    <CardDescription>
+                      Gerencie quais notificações serão enviadas aos usuários
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {([
+                      { key: 'newMessage', title: 'Nova Mensagem', description: 'Notificar sobre novas mensagens no fórum' },
+                      { key: 'essayCorrection', title: 'Redação Corrigida', description: 'Notificar quando uma redação for corrigida' },
+                      { key: 'newCourse', title: 'Novo Curso', description: 'Notificar sobre novos cursos disponíveis' },
+                      { key: 'studyReminder', title: 'Lembrete de Estudo', description: 'Enviar lembretes diários de estudo' },
+                      { key: 'achievement', title: 'Conquista Desbloqueada', description: 'Notificar sobre novas conquistas' },
+                      { key: 'rankingUpdate', title: 'Ranking Atualizado', description: 'Notificar sobre mudanças no ranking' },
+                    ] as const).map((item) => (
+                      <div
+                        key={item.key}
+                        className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50"
+                      >
+                        <div className="space-y-0.5">
+                          <Label>{item.title}</Label>
+                          <p className="text-sm text-muted-foreground">{item.description}</p>
+                        </div>
+                        <Switch
+                          checked={n[item.key]}
+                          onCheckedChange={(v) => updateField('notifications', item.key, v)}
+                        />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ),
+            },
+            {
+              value: 'security',
+              label: 'Segurança',
+              content: (
+                <Card className="border-border shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <Shield className="h-5 w-5" />
+                      Configurações de Segurança
+                    </CardTitle>
+                    <CardDescription>
+                      Configure políticas de segurança e autenticação
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="session-timeout">Tempo de Sessão (minutos)</Label>
+                      <Input
+                        id="session-timeout"
+                        type="number"
+                        value={s.sessionTimeout}
+                        onChange={(ev) => updateField('security', 'sessionTimeout', Number(ev.target.value))}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="max-attempts">Máximo de Tentativas de Login</Label>
+                      <Input
+                        id="max-attempts"
+                        type="number"
+                        value={s.maxLoginAttempts}
+                        onChange={(ev) => updateField('security', 'maxLoginAttempts', Number(ev.target.value))}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
+                      <div className="space-y-0.5">
+                        <Label>Autenticação de Dois Fatores</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Exigir 2FA para todos os administradores
+                        </p>
+                      </div>
+                      <Switch
+                        checked={s.twoFactorEnabled}
+                        onCheckedChange={(v) => updateField('security', 'twoFactorEnabled', v)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
+                      <div className="space-y-0.5">
+                        <Label>Exigir Senha Forte</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Senhas devem ter no mínimo 8 caracteres
+                        </p>
+                      </div>
+                      <Switch
+                        checked={s.strongPassword}
+                        onCheckedChange={(v) => updateField('security', 'strongPassword', v)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
+                      <div className="space-y-0.5">
+                        <Label>Log de Auditoria</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Registrar todas as ações administrativas
+                        </p>
+                      </div>
+                      <Switch
+                        checked={s.auditLog}
+                        onCheckedChange={(v) => updateField('security', 'auditLog', v)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
+            },
+            {
+              value: 'appearance',
+              label: 'Aparência',
+              content: (
+                <Card className="border-border shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <Palette className="h-5 w-5" />
+                      Configurações de Aparência
+                    </CardTitle>
+                    <CardDescription>
+                      Personalize cores e temas da plataforma
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="primary-color">Cor Primária</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="primary-color"
+                            type="color"
+                            value={a.primaryColor}
+                            onChange={(ev) => updateField('appearance', 'primaryColor', ev.target.value)}
+                            className="w-16 h-10 p-1"
+                          />
+                          <Input
+                            value={a.primaryColor}
+                            onChange={(ev) => updateField('appearance', 'primaryColor', ev.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="secondary-color">Cor Secundária</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="secondary-color"
+                            type="color"
+                            value={a.secondaryColor}
+                            onChange={(ev) => updateField('appearance', 'secondaryColor', ev.target.value)}
+                            className="w-16 h-10 p-1"
+                          />
+                          <Input
+                            value={a.secondaryColor}
+                            onChange={(ev) => updateField('appearance', 'secondaryColor', ev.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
+                      <div className="space-y-0.5">
+                        <Label>Modo Escuro por Padrão</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Iniciar sistema em modo escuro
+                        </p>
+                      </div>
+                      <Switch
+                        checked={a.darkMode}
+                        onCheckedChange={(v) => updateField('appearance', 'darkMode', v)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
+                      <div className="space-y-0.5">
+                        <Label>Animações</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Ativar animações e transições suaves
+                        </p>
+                      </div>
+                      <Switch
+                        checked={a.animations}
+                        onCheckedChange={(v) => updateField('appearance', 'animations', v)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
+            },
+          ]}
+        />
 
         {/* System Info */}
         <Card className="border-border shadow-sm">

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs } from '@/components/PageTabs'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
@@ -362,153 +362,145 @@ export default function RankingPage() {
       )}
 
       {/* Tabs de ranking */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={cn(
-          "grid w-full bg-muted/50 p-1 rounded-xl",
-          studentClasses.length > 0 ? "grid-cols-4" : "grid-cols-3"
-        )}>
-          {studentClasses.length > 0 && (
-            <TabsTrigger value="turma" className="rounded-lg">
-              <GraduationCap className="h-4 w-4 mr-2" />
-              Minha Turma
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="global" className="rounded-lg">
-            <Trophy className="h-4 w-4 mr-2" />
-            Global
-          </TabsTrigger>
-          <TabsTrigger value="flashcards" className="rounded-lg">
-            <Target className="h-4 w-4 mr-2" />
-            Flashcards
-          </TabsTrigger>
-          <TabsTrigger value="quizzes" className="rounded-lg">
-            <Zap className="h-4 w-4 mr-2" />
-            Quizzes
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Ranking por Turma */}
-        {studentClasses.length > 0 && (
-          <TabsContent value="turma" className="space-y-4">
-            <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold">Ranking da Turma</h2>
-                  {studentClasses.length > 1 && (
-                    <Select value={selectedClassId} onValueChange={handleClassChange}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Selecione a turma" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {studentClasses.map((sc) => (
-                          <SelectItem key={sc.class_id} value={sc.class_id}>
-                            {sc.class_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+      <PageTabs
+        value={activeTab}
+        onChange={setActiveTab}
+        layout={studentClasses.length > 0 ? 4 : 3}
+        tabs={[
+          ...(studentClasses.length > 0 ? [{
+            value: 'turma',
+            label: 'Minha Turma',
+            icon: <GraduationCap className="h-4 w-4" />,
+            content: (
+              <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold">Ranking da Turma</h2>
+                    {studentClasses.length > 1 && (
+                      <Select value={selectedClassId} onValueChange={handleClassChange}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Selecione a turma" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {studentClasses.map((sc) => (
+                            <SelectItem key={sc.class_id} value={sc.class_id}>
+                              {sc.class_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  {classRanking.length > 0 ? (
+                    <div className="space-y-3">
+                      {classRanking.map((entry, index) => (
+                        <ClassRankingCard
+                          key={entry.user_id}
+                          entry={entry}
+                          position={index + 1}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <GraduationCap className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                      <p>Nenhum dado de ranking disponível para esta turma ainda.</p>
+                    </div>
                   )}
-                </div>
-                {classRanking.length > 0 ? (
-                  <div className="space-y-3">
-                    {classRanking.map((entry, index) => (
-                      <ClassRankingCard
-                        key={entry.user_id}
-                        entry={entry}
-                        position={index + 1}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <GraduationCap className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                    <p>Nenhum dado de ranking disponível para esta turma ainda.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-
-        {/* Ranking Global */}
-        <TabsContent value="global" className="space-y-4">
-          <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
-            <CardContent className="p-5">
-              <h2 className="text-lg font-semibold mb-4">Ranking Global</h2>
-              {globalRanking.length > 0 ? (
-                <div className="space-y-3">
-                  {globalRanking.map((user, index) => (
-                    <RankingCard
-                      key={user.user_id}
-                      user={user}
-                      position={index + 1}
-                      showChange={true}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Trophy className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p>Nenhum dado de ranking disponível ainda.</p>
-                  <p className="text-xs mt-1">Complete atividades para aparecer no ranking!</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Ranking de Flashcards */}
-        <TabsContent value="flashcards" className="space-y-4">
-          <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
-            <CardContent className="p-5">
-              <h2 className="text-lg font-semibold mb-4">Ranking de Flashcards</h2>
-              {flashcardRanking.length > 0 ? (
-                <div className="space-y-3">
-                  {flashcardRanking.map((user, index) => (
-                    <RankingCard
-                      key={user.user_id}
-                      user={user}
-                      position={index + 1}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Target className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p>Nenhum dado de ranking de flashcards disponível ainda.</p>
-                  <p className="text-xs mt-1">Estude flashcards para aparecer no ranking!</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Ranking de Quizzes */}
-        <TabsContent value="quizzes" className="space-y-4">
-          <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
-            <CardContent className="p-5">
-              <h2 className="text-lg font-semibold mb-4">Ranking de Quizzes</h2>
-              {quizRanking.length > 0 ? (
-                <div className="space-y-3">
-                  {quizRanking.map((user, index) => (
-                    <RankingCard
-                      key={user.user_id}
-                      user={user}
-                      position={index + 1}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Zap className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p>Nenhum dado de ranking de quizzes disponível ainda.</p>
-                  <p className="text-xs mt-1">Complete quizzes para aparecer no ranking!</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                </CardContent>
+              </Card>
+            ),
+          }] : []),
+          {
+            value: 'global',
+            label: 'Global',
+            icon: <Trophy className="h-4 w-4" />,
+            content: (
+              <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
+                <CardContent className="p-5">
+                  <h2 className="text-lg font-semibold mb-4">Ranking Global</h2>
+                  {globalRanking.length > 0 ? (
+                    <div className="space-y-3">
+                      {globalRanking.map((user, index) => (
+                        <RankingCard
+                          key={user.user_id}
+                          user={user}
+                          position={index + 1}
+                          showChange={true}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Trophy className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                      <p>Nenhum dado de ranking disponível ainda.</p>
+                      <p className="text-xs mt-1">Complete atividades para aparecer no ranking!</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ),
+          },
+          {
+            value: 'flashcards',
+            label: 'Flashcards',
+            icon: <Target className="h-4 w-4" />,
+            content: (
+              <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
+                <CardContent className="p-5">
+                  <h2 className="text-lg font-semibold mb-4">Ranking de Flashcards</h2>
+                  {flashcardRanking.length > 0 ? (
+                    <div className="space-y-3">
+                      {flashcardRanking.map((user, index) => (
+                        <RankingCard
+                          key={user.user_id}
+                          user={user}
+                          position={index + 1}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Target className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                      <p>Nenhum dado de ranking de flashcards disponível ainda.</p>
+                      <p className="text-xs mt-1">Estude flashcards para aparecer no ranking!</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ),
+          },
+          {
+            value: 'quizzes',
+            label: 'Quizzes',
+            icon: <Zap className="h-4 w-4" />,
+            content: (
+              <Card className="border-border shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200">
+                <CardContent className="p-5">
+                  <h2 className="text-lg font-semibold mb-4">Ranking de Quizzes</h2>
+                  {quizRanking.length > 0 ? (
+                    <div className="space-y-3">
+                      {quizRanking.map((user, index) => (
+                        <RankingCard
+                          key={user.user_id}
+                          user={user}
+                          position={index + 1}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Zap className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                      <p>Nenhum dado de ranking de quizzes disponível ainda.</p>
+                      <p className="text-xs mt-1">Complete quizzes para aparecer no ranking!</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ),
+          },
+        ]}
+      />
 
       {/* Seção de Conquistas */}
       {userAchievements.length > 0 && (

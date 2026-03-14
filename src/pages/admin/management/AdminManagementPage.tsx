@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs } from '@/components/PageTabs'
 import { logger } from '@/lib/logger'
 import { Card, CardContent } from '@/components/ui/card'
 import { UserManagement } from '@/components/admin/management/UserManagement'
@@ -19,6 +19,7 @@ import { useTeacherClasses } from '@/hooks/useTeacherClasses'
 
 export default function AdminManagementPage() {
   const { isTeacher, isAdmin, studentIds, loading: teacherLoading } = useTeacherClasses()
+  const [activeTab, setActiveTab] = useState('users')
 
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -189,7 +190,7 @@ export default function AdminManagementPage() {
                 <UserManagement isTeacher={true} teacherStudentIds={studentIds} />
               </div>
             ) : (
-              <Tabs defaultValue="users" className="w-full">
+              <div className="w-full">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
                   <div>
                     <h2 className="text-xl md:text-2xl font-bold text-foreground">Gerenciamento</h2>
@@ -197,31 +198,26 @@ export default function AdminManagementPage() {
                       Administre usuarios e turmas
                     </p>
                   </div>
-                  <TabsList className="w-full md:w-auto">
-                    <TabsTrigger
-                      value="users"
-                      className="flex-1 md:flex-none"
-                    >
-                      <Users className="mr-2 h-3 w-3 md:h-4 md:w-4" />
-                      <span className="text-xs md:text-sm">Usuarios</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="classes"
-                      className="flex-1 md:flex-none"
-                    >
-                      <GraduationCap className="mr-2 h-3 w-3 md:h-4 md:w-4" />
-                      <span className="text-xs md:text-sm">Turmas</span>
-                    </TabsTrigger>
-                  </TabsList>
                 </div>
-
-                <TabsContent value="users" className="mt-4 md:mt-6">
-                  <UserManagement />
-                </TabsContent>
-                <TabsContent value="classes" className="mt-4 md:mt-6">
-                  <ClassManagement />
-                </TabsContent>
-              </Tabs>
+                <PageTabs
+                  value={activeTab}
+                  onChange={setActiveTab}
+                  tabs={[
+                    {
+                      value: 'users',
+                      label: 'Usuarios',
+                      icon: <Users className="h-4 w-4" />,
+                      content: <UserManagement />,
+                    },
+                    {
+                      value: 'classes',
+                      label: 'Turmas',
+                      icon: <GraduationCap className="h-4 w-4" />,
+                      content: <ClassManagement />,
+                    },
+                  ]}
+                />
+              </div>
             )}
           </CardContent>
         </Card>

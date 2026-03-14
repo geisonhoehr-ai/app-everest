@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { SimulationsTutorial } from '@/components/simulations/SimulationsTutorial'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs } from '@/components/PageTabs'
 import {
   Table,
   TableBody,
@@ -193,45 +193,21 @@ export default function SimulationsPage() {
     )
   }
 
-  const currentStats = activeTab === 'online' ? stats : sheetsStats
-  const currentData = activeTab === 'online' ? simulations : answerSheets
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Sistema de Avaliações</h1>
-          <p className="text-sm text-muted-foreground mt-1">Simulados online e cartões resposta de provas presenciais</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => setShowTutorial(true)} className="gap-2 w-fit">
-          <HelpCircle className="h-4 w-4" />
-          Ajuda
-        </Button>
-      </div>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="online" className="gap-2">
-            <Monitor className="h-4 w-4" />
-            Simulados Online
-          </TabsTrigger>
-          <TabsTrigger value="presencial" className="gap-2">
-            <ClipboardList className="h-4 w-4" />
-            Cartões Resposta
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
+  const renderTabContent = (
+    tabStats: typeof stats | typeof sheetsStats,
+    data: QuizWithAttempt[],
+    tabType: 'online' | 'presencial'
+  ) => (
+    <div className="space-y-6 mt-6">
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-border shadow-sm transition-all duration-200 hover:shadow-md hover:border-green-500/30">
           <CardContent className="p-4 text-center">
-            {activeTab === 'online'
+            {tabType === 'online'
               ? <Play className="h-5 w-5 text-green-500 mx-auto mb-1.5" />
               : <Send className="h-5 w-5 text-green-500 mx-auto mb-1.5" />
             }
-            <div className="text-xl font-bold text-foreground">{currentStats.available}</div>
+            <div className="text-xl font-bold text-foreground">{tabStats.available}</div>
             <div className="text-xs text-muted-foreground">Disponíveis</div>
           </CardContent>
         </Card>
@@ -239,22 +215,22 @@ export default function SimulationsPage() {
           <CardContent className="p-4 text-center">
             <CheckCircle className="h-5 w-5 text-blue-500 mx-auto mb-1.5" />
             <div className="text-xl font-bold text-foreground">
-              {activeTab === 'online' ? currentStats.completed : (currentStats as any).submitted}
+              {tabType === 'online' ? tabStats.completed : (tabStats as any).submitted}
             </div>
-            <div className="text-xs text-muted-foreground">{activeTab === 'online' ? 'Realizados' : 'Enviados'}</div>
+            <div className="text-xs text-muted-foreground">{tabType === 'online' ? 'Realizados' : 'Enviados'}</div>
           </CardContent>
         </Card>
         <Card className="border-border shadow-sm transition-all duration-200 hover:shadow-md hover:border-purple-500/30">
           <CardContent className="p-4 text-center">
             <TrendingUp className="h-5 w-5 text-purple-500 mx-auto mb-1.5" />
-            <div className="text-xl font-bold text-foreground">{currentStats.average}%</div>
+            <div className="text-xl font-bold text-foreground">{tabStats.average}%</div>
             <div className="text-xs text-muted-foreground">Média</div>
           </CardContent>
         </Card>
         <Card className="border-border shadow-sm transition-all duration-200 hover:shadow-md hover:border-orange-500/30">
           <CardContent className="p-4 text-center">
             <Trophy className="h-5 w-5 text-orange-500 mx-auto mb-1.5" />
-            <div className="text-xl font-bold text-foreground">{currentStats.best}%</div>
+            <div className="text-xl font-bold text-foreground">{tabStats.best}%</div>
             <div className="text-xs text-muted-foreground">Melhor</div>
           </CardContent>
         </Card>
@@ -264,7 +240,7 @@ export default function SimulationsPage() {
       <Card className="border-border shadow-sm">
         <CardContent className="p-5 space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
-            {activeTab === 'online' ? 'Simulados Online' : 'Provas Presenciais'}
+            {tabType === 'online' ? 'Simulados Online' : 'Provas Presenciais'}
           </h2>
 
           <div className="rounded-xl border border-border overflow-hidden">
@@ -281,14 +257,14 @@ export default function SimulationsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentData.length === 0 ? (
+                {data.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      {activeTab === 'online' ? 'Nenhum simulado disponível' : 'Nenhum cartão resposta disponível'}
+                      {tabType === 'online' ? 'Nenhum simulado disponível' : 'Nenhum cartão resposta disponível'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  currentData.map((sim, index) => {
+                  data.map((sim, index) => {
                     const status = getSimulationStatus(sim)
                     const config = getStatusConfig(status)
                     const lastAttempt = sim.user_attempts?.[0]
@@ -340,7 +316,7 @@ export default function SimulationsPage() {
                           )}
                           {status === 'available' && !simLocked && (
                             <Button size="sm" asChild className="transition-all duration-200 hover:shadow-md hover:bg-green-600">
-                              {activeTab === 'online' ? (
+                              {tabType === 'online' ? (
                                 <Link to={`/simulados/${sim.id}`}>
                                   <Play className="mr-1.5 h-3.5 w-3.5" />
                                   Iniciar
@@ -355,7 +331,7 @@ export default function SimulationsPage() {
                           )}
                           {status === 'completed' && lastAttempt && (
                             <Button variant="outline" size="sm" asChild className="transition-all duration-200 hover:shadow-md hover:border-primary/30">
-                              {activeTab === 'online' ? (
+                              {tabType === 'online' ? (
                                 <Link to={`/simulados/${sim.id}/resultado?attemptId=${lastAttempt.id}`}>
                                   <BarChart2 className="mr-1.5 h-3.5 w-3.5" />
                                   Relatório
@@ -391,6 +367,42 @@ export default function SimulationsPage() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  )
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Sistema de Avaliações</h1>
+          <p className="text-sm text-muted-foreground mt-1">Simulados online e cartões resposta de provas presenciais</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setShowTutorial(true)} className="gap-2 w-fit">
+          <HelpCircle className="h-4 w-4" />
+          Ajuda
+        </Button>
+      </div>
+
+      {/* Tabs + Stats + Table */}
+      <PageTabs
+        value={activeTab}
+        onChange={setActiveTab}
+        layout="full"
+        tabs={[
+          {
+            value: 'online',
+            label: 'Simulados Online',
+            icon: <Monitor className="h-4 w-4" />,
+            content: renderTabContent(stats, simulations, 'online'),
+          },
+          {
+            value: 'presencial',
+            label: 'Cartões Resposta',
+            icon: <ClipboardList className="h-4 w-4" />,
+            content: renderTabContent(sheetsStats, answerSheets, 'presencial'),
+          },
+        ]}
+      />
 
       {showTutorial && <SimulationsTutorial onClose={handleCloseTutorial} />}
     </div>
