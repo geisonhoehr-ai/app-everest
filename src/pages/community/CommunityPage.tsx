@@ -6,9 +6,13 @@ import { SpacesSidebar } from '@/components/community/SpacesSidebar'
 import { PostFeed } from '@/components/community/PostFeed'
 import { PostEditor } from '@/components/community/PostEditor'
 import { communityService, type CommunitySpace } from '@/services/communityService'
+import { useAuth } from '@/hooks/use-auth'
+import { useContentAccess } from '@/hooks/useContentAccess'
 import { logger } from '@/lib/logger'
 
 export default function CommunityPage() {
+  const { isStudent } = useAuth()
+  const { isRestricted: isReadOnly } = useContentAccess('community_readonly')
   const [spaces, setSpaces] = useState<CommunitySpace[]>([])
   const [editorOpen, setEditorOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -69,21 +73,25 @@ export default function CommunityPage() {
       </div>
 
       {/* Floating create button */}
-      <Button
-        size="lg"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-40"
-        onClick={() => setEditorOpen(true)}
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
+      {!(isStudent && isReadOnly) && (
+        <Button
+          size="lg"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-40"
+          onClick={() => setEditorOpen(true)}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      )}
 
       {/* Post editor dialog */}
-      <PostEditor
-        spaces={spaces}
-        onSuccess={handlePostSuccess}
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-      />
+      {!(isStudent && isReadOnly) && (
+        <PostEditor
+          spaces={spaces}
+          onSuccess={handlePostSuccess}
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+        />
+      )}
     </div>
   )
 }

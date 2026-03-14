@@ -36,6 +36,7 @@ import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useAuth } from '@/hooks/use-auth'
+import { useContentAccess } from '@/hooks/useContentAccess'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { logger } from '@/lib/logger'
@@ -68,6 +69,7 @@ interface QuizWithAttempt extends Quiz {
 export default function SimulationsPage() {
   const { isStudent } = useAuth()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
+  const { isAllowed } = useContentAccess('simulation')
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('online')
   const [simulations, setSimulations] = useState<QuizWithAttempt[]>([])
@@ -290,12 +292,13 @@ export default function SimulationsPage() {
                     const status = getSimulationStatus(sim)
                     const config = getStatusConfig(status)
                     const lastAttempt = sim.user_attempts?.[0]
+                    const simLocked = isStudent && !isAllowed(sim.id)
                     const formattedDate = sim.scheduled_start
                       ? format(new Date(sim.scheduled_start), 'dd/MM/yyyy', { locale: ptBR })
                       : '—'
 
                     return (
-                      <TableRow key={sim.id} className={cn("hover:bg-muted/50 transition-colors", index % 2 === 1 && "bg-muted/30")}>
+                      <TableRow key={sim.id} className={cn("hover:bg-muted/50 transition-colors", index % 2 === 1 && "bg-muted/30", simLocked && "opacity-50")}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -329,7 +332,13 @@ export default function SimulationsPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {status === 'available' && (
+                          {status === 'available' && simLocked && (
+                            <Button size="sm" variant="outline" disabled className="opacity-50 gap-1.5">
+                              <Lock className="h-3.5 w-3.5" />
+                              Bloqueado
+                            </Button>
+                          )}
+                          {status === 'available' && !simLocked && (
                             <Button size="sm" asChild className="transition-all duration-200 hover:shadow-md hover:bg-green-600">
                               {activeTab === 'online' ? (
                                 <Link to={`/simulados/${sim.id}`}>

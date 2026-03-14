@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { cn, getCategoryColor } from '@/lib/utils'
-import { ArrowLeft, Brain, ChevronRight, Play } from 'lucide-react'
+import { ArrowLeft, Brain, ChevronRight, Lock, Play } from 'lucide-react'
 import { StudyModeDialog } from '@/components/flashcards/StudyModeDialog'
 import {
   getSubjectById,
@@ -12,13 +12,17 @@ import {
   type TopicWithCardCount,
 } from '@/services/flashcardService'
 import { useAuth } from '@/hooks/use-auth'
+import { useContentAccess } from '@/hooks/useContentAccess'
+import { useToast } from '@/hooks/use-toast'
 import { SectionLoader } from '@/components/SectionLoader'
 import { logger } from '@/lib/logger'
 
 export default function FlashcardTopicsPage() {
   const { subjectId } = useParams<{ subjectId: string }>()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, isStudent } = useAuth()
+  const { isAllowed } = useContentAccess('flashcard_topic')
+  const { toast } = useToast()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null)
   const [subject, setSubject] = useState<Subject | null>(null)
@@ -106,13 +110,15 @@ export default function FlashcardTopicsPage() {
           const colors = getCategoryColor(idx)
           const progress = topic.progress || 0
           const allDone = progress === 100
+          const topicLocked = isStudent && !isAllowed(topic.id)
 
           return (
             <div
               key={topic.id}
               className={cn(
                 'group relative flex flex-col rounded-xl border bg-card p-5 transition-all duration-200 shadow-sm hover:shadow-lg',
-                colors.border, colors.hoverBorder
+                colors.border, colors.hoverBorder,
+                topicLocked && 'opacity-50'
               )}
             >
               {/* Badge flutuante */}
@@ -146,15 +152,21 @@ export default function FlashcardTopicsPage() {
 
               {/* Botão */}
               <button
-                onClick={() => handleStudyClick(topic.id)}
+                onClick={() => {
+                  if (topicLocked) {
+                    toast({ title: 'Conteúdo bloqueado', description: 'Adquira o acesso completo para desbloquear este conteúdo' })
+                    return
+                  }
+                  handleStudyClick(topic.id)
+                }}
                 className={cn(
                   'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 text-white hover:shadow-md',
-                  colors.btn
+                  topicLocked ? 'bg-muted-foreground cursor-not-allowed' : colors.btn
                 )}
               >
-                <Play className="h-4 w-4" />
-                Estudar Agora
-                <ChevronRight className="h-4 w-4" />
+                {topicLocked ? <Lock className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                {topicLocked ? 'Bloqueado' : 'Estudar Agora'}
+                {!topicLocked && <ChevronRight className="h-4 w-4" />}
               </button>
             </div>
           )

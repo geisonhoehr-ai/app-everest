@@ -20,12 +20,15 @@ import {
   List,
   Loader2,
   Shield,
+  Lock,
 } from 'lucide-react'
 import { SectionLoader } from '@/components/SectionLoader'
 import { cn } from '@/lib/utils'
 import { acervoService, type AcervoItem, type ProvaGroup } from '@/services/acervoService'
 import { logger } from '@/lib/logger'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/use-auth'
+import { useContentAccess } from '@/hooks/useContentAccess'
 import { cachedFetch } from '@/lib/offlineCache'
 import { OfflineBanner } from '@/components/OfflineBanner'
 
@@ -59,6 +62,9 @@ interface SelectedCategory {
 }
 
 export default function AcervoDigitalPage() {
+  const { isStudent } = useAuth()
+  const { isRestricted: catRestricted, isAllowed: isCatAllowed } = useContentAccess('acervo_category')
+  const { isRestricted: concRestricted, isAllowed: isConcAllowed } = useContentAccess('acervo_concurso')
   const [livros, setLivros] = useState<AcervoItem[]>([])
   const [provas, setProvas] = useState<AcervoItem[]>([])
   const [apostilas, setApostilas] = useState<AcervoItem[]>([])
@@ -569,11 +575,13 @@ export default function AcervoDigitalPage() {
         {filteredLivros.length > 0 && (() => {
           const colors = CONCURSO_COLORS.livros
           const previewItems = filteredLivros.slice(0, 4)
+          const catLocked = isStudent && catRestricted && !isCatAllowed('livros')
           return (
             <div
               className={cn(
                 'group relative flex flex-col rounded-xl border bg-card p-5 transition-all duration-200 shadow-sm',
-                colors.border, colors.hoverBorder, 'hover:shadow-lg'
+                colors.border, colors.hoverBorder, 'hover:shadow-lg',
+                catLocked && 'opacity-50'
               )}
             >
               {/* Category badge */}
@@ -610,6 +618,10 @@ export default function AcervoDigitalPage() {
               {/* Action button */}
               <button
                 onClick={() => {
+                  if (catLocked) {
+                    toast({ title: 'Conteúdo bloqueado', description: 'Adquira o acesso completo para desbloquear este conteúdo' })
+                    return
+                  }
                   setSearch('')
                   setSelectedCategory({
                     type: 'livros',
@@ -619,11 +631,12 @@ export default function AcervoDigitalPage() {
                 }}
                 className={cn(
                   'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 text-white hover:shadow-md',
-                  colors.btn
+                  catLocked ? 'bg-muted-foreground cursor-not-allowed' : colors.btn
                 )}
               >
-                Ver arquivos
-                <ChevronRight className="h-4 w-4" />
+                {catLocked ? <Lock className="h-4 w-4" /> : null}
+                {catLocked ? 'Bloqueado' : 'Ver arquivos'}
+                {!catLocked && <ChevronRight className="h-4 w-4" />}
               </button>
             </div>
           )
@@ -639,12 +652,14 @@ export default function AcervoDigitalPage() {
           const colors = CONCURSO_COLORS[cat.key]
           const previewItems = cat.items.slice(0, 4)
           const Icon = cat.icon
+          const catLocked = isStudent && catRestricted && !isCatAllowed(cat.key)
           return (
             <div
               key={cat.key}
               className={cn(
                 'group relative flex flex-col rounded-xl border bg-card p-5 transition-all duration-200 shadow-sm',
-                colors.border, colors.hoverBorder, 'hover:shadow-lg'
+                colors.border, colors.hoverBorder, 'hover:shadow-lg',
+                catLocked && 'opacity-50'
               )}
             >
               <div className={cn('absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold text-white', colors.badge)}>
@@ -674,6 +689,10 @@ export default function AcervoDigitalPage() {
               </ul>
               <button
                 onClick={() => {
+                  if (catLocked) {
+                    toast({ title: 'Conteúdo bloqueado', description: 'Adquira o acesso completo para desbloquear este conteúdo' })
+                    return
+                  }
                   setSearch('')
                   setSelectedCategory({
                     type: cat.key,
@@ -684,11 +703,12 @@ export default function AcervoDigitalPage() {
                 }}
                 className={cn(
                   'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 text-white hover:shadow-md',
-                  colors.btn
+                  catLocked ? 'bg-muted-foreground cursor-not-allowed' : colors.btn
                 )}
               >
-                Ver arquivos
-                <ChevronRight className="h-4 w-4" />
+                {catLocked ? <Lock className="h-4 w-4" /> : null}
+                {catLocked ? 'Bloqueado' : 'Ver arquivos'}
+                {!catLocked && <ChevronRight className="h-4 w-4" />}
               </button>
             </div>
           )
@@ -700,13 +720,15 @@ export default function AcervoDigitalPage() {
           const allItems = getAllItemsFromGroup(group)
           const previewItems = allItems.slice(0, 4)
           const years = [...new Set(allItems.map(i => i.year))].sort((a, b) => (b || 0) - (a || 0))
+          const concLocked = isStudent && concRestricted && !isConcAllowed(group.concurso)
 
           return (
             <div
               key={group.concurso}
               className={cn(
                 'group relative flex flex-col rounded-xl border bg-card p-5 transition-all duration-200 shadow-sm',
-                colors.border, colors.hoverBorder, 'hover:shadow-lg'
+                colors.border, colors.hoverBorder, 'hover:shadow-lg',
+                concLocked && 'opacity-50'
               )}
             >
               {/* Category badge */}
@@ -761,6 +783,10 @@ export default function AcervoDigitalPage() {
               {/* Action button */}
               <button
                 onClick={() => {
+                  if (concLocked) {
+                    toast({ title: 'Conteúdo bloqueado', description: 'Adquira o acesso completo para desbloquear este conteúdo' })
+                    return
+                  }
                   setSearch('')
                   setSelectedCategory({
                     type: 'provas',
@@ -772,11 +798,12 @@ export default function AcervoDigitalPage() {
                 }}
                 className={cn(
                   'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 text-white hover:shadow-md',
-                  colors.btn
+                  concLocked ? 'bg-muted-foreground cursor-not-allowed' : colors.btn
                 )}
               >
-                Ver arquivos
-                <ChevronRight className="h-4 w-4" />
+                {concLocked ? <Lock className="h-4 w-4" /> : null}
+                {concLocked ? 'Bloqueado' : 'Ver arquivos'}
+                {!concLocked && <ChevronRight className="h-4 w-4" />}
               </button>
             </div>
           )

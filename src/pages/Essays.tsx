@@ -29,6 +29,7 @@ import {
 } from '@/services/essayService'
 import { useAuth } from '@/hooks/use-auth'
 import { SectionLoader } from '@/components/SectionLoader'
+import { useContentAccess } from '@/hooks/useContentAccess'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { logger } from '@/lib/logger'
@@ -36,6 +37,7 @@ import { logger } from '@/lib/logger'
 export default function EssaysPage() {
   const { user, isStudent } = useAuth()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
+  const { isRestricted: essayRestricted, allowedIds: essayAllowedIds } = useContentAccess('essay_limit')
   const [essays, setEssays] = useState<EssayListItem[]>([])
   const [stats, setStats] = useState<EssayStatsData>({
     totalEssays: 0,
@@ -91,6 +93,11 @@ export default function EssaysPage() {
     )
   }
 
+  // Essay limit enforcement
+  const essayLimit = isStudent && essayRestricted ? parseInt(essayAllowedIds[0] || '0') : Infinity
+  const nonDraftCount = essays.filter((e) => e.status !== 'Rascunho').length
+  const essayLimitReached = isStudent && essayRestricted && nonDraftCount >= essayLimit
+
   const correctedCount = essays.filter((e) => e.status === 'Corrigida').length
 
   return (
@@ -103,12 +110,24 @@ export default function EssaysPage() {
             Envie suas redações e acompanhe correções e notas
           </p>
         </div>
-        <Button asChild className="gap-2 w-fit transition-all duration-200 hover:shadow-md hover:bg-green-600">
-          <Link to="/redacoes/nova">
-            <FilePlus2 className="h-4 w-4" />
-            Enviar Nova Redação
-          </Link>
-        </Button>
+        {essayLimitReached ? (
+          <div className="flex flex-col items-end gap-1">
+            <Button disabled className="gap-2 w-fit opacity-50 cursor-not-allowed">
+              <Lock className="h-4 w-4" />
+              Enviar Nova Redação
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              Você atingiu o limite de {essayLimit} redação(ões) para esta turma
+            </span>
+          </div>
+        ) : (
+          <Button asChild className="gap-2 w-fit transition-all duration-200 hover:shadow-md hover:bg-green-600">
+            <Link to="/redacoes/nova">
+              <FilePlus2 className="h-4 w-4" />
+              Enviar Nova Redação
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Stats */}

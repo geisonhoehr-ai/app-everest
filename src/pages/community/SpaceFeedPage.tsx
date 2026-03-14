@@ -8,9 +8,13 @@ import { PostFeed } from '@/components/community/PostFeed'
 import { PostEditor } from '@/components/community/PostEditor'
 import { SectionLoader } from '@/components/SectionLoader'
 import { communityService, type CommunitySpace } from '@/services/communityService'
+import { useAuth } from '@/hooks/use-auth'
+import { useContentAccess } from '@/hooks/useContentAccess'
 import { logger } from '@/lib/logger'
 
 export default function SpaceFeedPage() {
+  const { isStudent } = useAuth()
+  const { isRestricted: isReadOnly } = useContentAccess('community_readonly')
   const { spaceSlug } = useParams<{ spaceSlug: string }>()
   const [space, setSpace] = useState<CommunitySpace | null>(null)
   const [spaces, setSpaces] = useState<CommunitySpace[]>([])
@@ -115,23 +119,34 @@ export default function SpaceFeedPage() {
         </div>
       </div>
 
+      {/* Read-only notice */}
+      {isStudent && isReadOnly && (
+        <div className="text-xs text-muted-foreground text-center py-2">
+          Modo leitura - acesso completo requer assinatura
+        </div>
+      )}
+
       {/* Floating create button */}
-      <Button
-        size="lg"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-40"
-        onClick={() => setEditorOpen(true)}
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
+      {!(isStudent && isReadOnly) && (
+        <Button
+          size="lg"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-40"
+          onClick={() => setEditorOpen(true)}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      )}
 
       {/* Post editor dialog */}
-      <PostEditor
-        spaces={spaces}
-        defaultSpaceId={space.id}
-        onSuccess={handlePostSuccess}
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-      />
+      {!(isStudent && isReadOnly) && (
+        <PostEditor
+          spaces={spaces}
+          defaultSpaceId={space.id}
+          onSuccess={handlePostSuccess}
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+        />
+      )}
     </div>
   )
 }

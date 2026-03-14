@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Play, Target, BookOpen, Clock } from 'lucide-react'
+import { ArrowLeft, Play, Target, BookOpen, Clock, Lock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 import { quizService, type Quiz } from '@/services/quizService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/use-auth'
+import { useContentAccess } from '@/hooks/useContentAccess'
 import { logger } from '@/lib/logger'
 
 interface QuizTopic {
@@ -20,6 +23,8 @@ export default function QuizTopicsPage() {
   const { subjectId } = useParams<{ subjectId: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { isStudent } = useAuth()
+  const { isAllowed } = useContentAccess('quiz_topic')
   const [subjectName, setSubjectName] = useState('')
   const [topics, setTopics] = useState<QuizTopic[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -124,11 +129,12 @@ export default function QuizTopicsPage() {
               0
             )
             const totalQuizzes = topic.quizzes.length
+            const topicLocked = isStudent && !isAllowed(topic.id)
 
             return (
               <Card
                 key={topic.id}
-                className="border-border shadow-sm flex flex-col overflow-hidden transition-colors duration-300 hover:shadow-md h-full"
+                className={cn("border-border shadow-sm flex flex-col overflow-hidden transition-colors duration-300 hover:shadow-md h-full", topicLocked && "opacity-50")}
               >
                 {/* Image Header */}
                 <div className="relative h-32 sm:h-36 overflow-hidden">
@@ -198,7 +204,16 @@ export default function QuizTopicsPage() {
                   )}
 
                   {/* Action Button */}
-                  {totalQuizzes > 0 ? (
+                  {topicLocked ? (
+                    <Button
+                      variant="outline"
+                      className="w-full opacity-50 cursor-not-allowed gap-2"
+                      onClick={() => toast({ title: 'Conteúdo bloqueado', description: 'Adquira o acesso completo para desbloquear este conteúdo' })}
+                    >
+                      <Lock className="h-3.5 w-3.5" />
+                      Bloqueado
+                    </Button>
+                  ) : totalQuizzes > 0 ? (
                     <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md">
                       <Link to={`/quiz/${topic.quizzes[0].id}`}>
                         <Play className="h-3.5 w-3.5 mr-2" />
