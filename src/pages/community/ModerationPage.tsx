@@ -17,7 +17,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs } from '@/components/PageTabs'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
@@ -771,6 +772,7 @@ function WordFilterTab() {
 
 export default function ModerationPage() {
   const { profile } = useAuth()
+  const [tab, setTab] = useState('reports')
 
   const isAuthorized = profile?.role === 'administrator' || profile?.role === 'teacher'
 
@@ -796,25 +798,15 @@ export default function ModerationPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="reports">
-        <TabsList>
-          <TabsTrigger value="reports">Denuncias</TabsTrigger>
-          <TabsTrigger value="spaces">Espacos</TabsTrigger>
-          <TabsTrigger value="words">Filtro de Palavras</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="reports" className="mt-4">
-          <ReportsTab />
-        </TabsContent>
-
-        <TabsContent value="spaces" className="mt-4">
-          <SpacesTab />
-        </TabsContent>
-
-        <TabsContent value="words" className="mt-4">
-          <WordFilterTab />
-        </TabsContent>
-      </Tabs>
+      <PageTabs
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: 'reports', label: 'Denuncias', content: <ReportsTab /> },
+          { value: 'spaces', label: 'Espacos', content: <SpacesTab /> },
+          { value: 'words', label: 'Filtro de Palavras', content: <WordFilterTab /> },
+        ]}
+      />
     </div>
   )
 }

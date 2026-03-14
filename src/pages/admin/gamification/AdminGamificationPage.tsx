@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs, type TabItem } from '@/components/PageTabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Table,
@@ -327,339 +327,331 @@ export default function AdminGamificationPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-          <TabsList className={cn(
-            "grid w-full gap-1 md:gap-2 bg-muted/50 p-1.5 md:p-2 rounded-xl md:rounded-2xl border border-border",
-            isTeacher ? "grid-cols-2" : "grid-cols-3"
-          )}>
-            {!isTeacher && (
-              <TabsTrigger value="overview" className="rounded-lg md:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white text-xs md:text-sm">
-                <BarChart3 className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-                <span className="hidden sm:inline">Visão Geral</span>
-                <span className="sm:hidden">Visão</span>
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="achievements" className="rounded-lg md:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white text-xs md:text-sm">
-              <Trophy className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden sm:inline">Conquistas</span>
-              <span className="sm:hidden">Conquistas</span>
-            </TabsTrigger>
-            <TabsTrigger value="ranking" className="rounded-lg md:rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white text-xs md:text-sm">
-              <Medal className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-              <span className="hidden sm:inline">Ranking</span>
-              <span className="sm:hidden">Ranking</span>
-            </TabsTrigger>
-          </TabsList>
+        <PageTabs
+          value={activeTab}
+          onChange={setActiveTab}
+          layout={isTeacher ? 2 : 3}
+          tabs={[
+            ...(!isTeacher ? [{
+              value: 'overview',
+              label: 'Visão Geral',
+              icon: <BarChart3 className="h-4 w-4" />,
+              content: (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <Card className="border-border shadow-sm">
+                    <CardContent className="p-5">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <Flame className="h-6 w-6 text-primary" />
+                          <div>
+                            <h3 className="text-xl font-bold text-foreground">Sistema de XP</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Configure como os pontos são distribuídos
+                            </p>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">Assistir aula completa</span>
+                            <Badge>+10 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">Comentar na aula</span>
+                            <Badge>+5 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">Avaliar aula</span>
+                            <Badge>+3 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">Postar na comunidade</span>
+                            <Badge>+5 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">Responder na comunidade</span>
+                            <Badge>+3 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">Curtir post/comentário</span>
+                            <Badge>+1 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">Melhor resposta</span>
+                            <Badge>+15 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">Login diário</span>
+                            <Badge>+5 XP</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-          {/* Overview (admin only) */}
-          {!isTeacher && <TabsContent value="overview" className="space-y-4 md:space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <Card className="border-border shadow-sm">
-                <CardContent className="p-5">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <Flame className="h-6 w-6 text-primary" />
-                      <div>
-                        <h3 className="text-xl font-bold text-foreground">Sistema de XP</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Configure como os pontos são distribuídos
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Assistir aula completa</span>
-                        <Badge>+10 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Comentar na aula</span>
-                        <Badge>+5 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Avaliar aula</span>
-                        <Badge>+3 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Postar na comunidade</span>
-                        <Badge>+5 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Responder na comunidade</span>
-                        <Badge>+3 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Curtir post/comentário</span>
-                        <Badge>+1 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Melhor resposta</span>
-                        <Badge>+15 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">Login diário</span>
-                        <Badge>+5 XP</Badge>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border shadow-sm">
-                <CardContent className="p-5">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <TrendingUp className="h-6 w-6 text-primary" />
-                      <div>
-                        <h3 className="text-xl font-bold text-foreground">Níveis</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Sistema de progressão por níveis
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">🥉 Nv 1 Iniciante</span>
-                        <Badge>0–1.000 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">🥈 Nv 2 Estudante</span>
-                        <Badge>1.001–2.500 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">🥇 Nv 3 Aprendiz</span>
-                        <Badge>2.501–5.000 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">💎 Nv 4 Especialista</span>
-                        <Badge>5.001–10.000 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">👑 Nv 5 Mestre</span>
-                        <Badge>10.001–20.000 XP</Badge>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
-                        <span className="text-sm font-medium">🌟 Nv 6 Lenda</span>
-                        <Badge>20.001+ XP</Badge>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>}
-
-          {/* Achievements */}
-          <TabsContent value="achievements" className="space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-semibold text-foreground">Conquistas Disponíveis</h3>
-                  {!isTeacher && <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
-                    setIsCreateDialogOpen(open)
-                    if (!open) {
-                      setEditingAchievement(null)
-                      setNewAchievement({ name: '', description: '', icon_url: '🏆', xp_reward: 100, category: 'general' })
-                    }
-                  }}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <PlusCircle className="h-4 w-4 mr-2" />
-                        Nova Conquista
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{editingAchievement ? 'Editar Conquista' : 'Criar Nova Conquista'}</DialogTitle>
-                        <DialogDescription>
-                          {editingAchievement ? 'Edite os dados da conquista' : 'Adicione uma nova conquista ao sistema de gamificação'}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Nome da Conquista</Label>
-                          <Input
-                            id="name"
-                            placeholder="Ex: Primeira Vitória"
-                            value={newAchievement.name}
-                            onChange={(e) => setNewAchievement({ ...newAchievement, name: e.target.value })}
-                          />
+                  <Card className="border-border shadow-sm">
+                    <CardContent className="p-5">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <TrendingUp className="h-6 w-6 text-primary" />
+                          <div>
+                            <h3 className="text-xl font-bold text-foreground">Níveis</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Sistema de progressão por níveis
+                            </p>
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="description">Descrição</Label>
-                          <Textarea
-                            id="description"
-                            placeholder="Como desbloquear esta conquista..."
-                            value={newAchievement.description}
-                            onChange={(e) => setNewAchievement({ ...newAchievement, description: e.target.value })}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="icon">Ícone (Emoji)</Label>
-                          <Input
-                            id="icon"
-                            placeholder="🏆"
-                            value={newAchievement.icon_url}
-                            onChange={(e) => setNewAchievement({ ...newAchievement, icon_url: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="points">Pontos XP</Label>
-                          <Input
-                            id="points"
-                            type="number"
-                            value={newAchievement.xp_reward}
-                            onChange={(e) => setNewAchievement({ ...newAchievement, xp_reward: parseInt(e.target.value) || 100 })}
-                          />
-                        </div>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">🥉 Nv 1 Iniciante</span>
+                            <Badge>0–1.000 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">🥈 Nv 2 Estudante</span>
+                            <Badge>1.001–2.500 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">🥇 Nv 3 Aprendiz</span>
+                            <Badge>2.501–5.000 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">💎 Nv 4 Especialista</span>
+                            <Badge>5.001–10.000 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">👑 Nv 5 Mestre</span>
+                            <Badge>10.001–20.000 XP</Badge>
+                          </div>
+                          <div className="flex justify-between items-center p-3 rounded-xl bg-muted/50 border border-border">
+                            <span className="text-sm font-medium">🌟 Nv 6 Lenda</span>
+                            <Badge>20.001+ XP</Badge>
+                          </div>
                         </div>
                       </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                          Cancelar
-                        </Button>
-                        <Button onClick={handleSaveAchievement}>
-                          {editingAchievement ? 'Salvar' : 'Criar Conquista'}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>}
+                    </CardContent>
+                  </Card>
                 </div>
+              ),
+            } satisfies TabItem] : []),
+            {
+              value: 'achievements',
+              label: 'Conquistas',
+              icon: <Trophy className="h-4 w-4" />,
+              content: (
+                <Card className="border-border shadow-sm">
+                  <CardContent className="p-5">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-lg font-semibold text-foreground">Conquistas Disponíveis</h3>
+                      {!isTeacher && <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+                        setIsCreateDialogOpen(open)
+                        if (!open) {
+                          setEditingAchievement(null)
+                          setNewAchievement({ name: '', description: '', icon_url: '🏆', xp_reward: 100, category: 'general' })
+                        }
+                      }}>
+                        <DialogTrigger asChild>
+                          <Button>
+                            <PlusCircle className="h-4 w-4 mr-2" />
+                            Nova Conquista
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>{editingAchievement ? 'Editar Conquista' : 'Criar Nova Conquista'}</DialogTitle>
+                            <DialogDescription>
+                              {editingAchievement ? 'Edite os dados da conquista' : 'Adicione uma nova conquista ao sistema de gamificação'}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="name">Nome da Conquista</Label>
+                              <Input
+                                id="name"
+                                placeholder="Ex: Primeira Vitória"
+                                value={newAchievement.name}
+                                onChange={(e) => setNewAchievement({ ...newAchievement, name: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="description">Descrição</Label>
+                              <Textarea
+                                id="description"
+                                placeholder="Como desbloquear esta conquista..."
+                                value={newAchievement.description}
+                                onChange={(e) => setNewAchievement({ ...newAchievement, description: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="icon">Ícone (Emoji)</Label>
+                              <Input
+                                id="icon"
+                                placeholder="🏆"
+                                value={newAchievement.icon_url}
+                                onChange={(e) => setNewAchievement({ ...newAchievement, icon_url: e.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="points">Pontos XP</Label>
+                              <Input
+                                id="points"
+                                type="number"
+                                value={newAchievement.xp_reward}
+                                onChange={(e) => setNewAchievement({ ...newAchievement, xp_reward: parseInt(e.target.value) || 100 })}
+                              />
+                            </div>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                              Cancelar
+                            </Button>
+                            <Button onClick={handleSaveAchievement}>
+                              {editingAchievement ? 'Salvar' : 'Criar Conquista'}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>}
+                    </div>
 
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Conquista</TableHead>
-                        <TableHead className="hidden md:table-cell">Categoria</TableHead>
-                        <TableHead>XP</TableHead>
-                        <TableHead className="hidden sm:table-cell">Desbloqueios</TableHead>
-                        {!isTeacher && <TableHead className="text-right">Ações</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {achievements.map((achievement) => (
-                        <TableRow key={achievement.id} className="group hover:bg-muted/50">
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="text-3xl">{achievement.icon_url}</div>
-                              <div>
-                                <div className="font-medium group-hover:text-primary transition-colors">
-                                  {achievement.name}
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Conquista</TableHead>
+                            <TableHead className="hidden md:table-cell">Categoria</TableHead>
+                            <TableHead>XP</TableHead>
+                            <TableHead className="hidden sm:table-cell">Desbloqueios</TableHead>
+                            {!isTeacher && <TableHead className="text-right">Ações</TableHead>}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {achievements.map((achievement) => (
+                            <TableRow key={achievement.id} className="group hover:bg-muted/50">
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <div className="text-3xl">{achievement.icon_url}</div>
+                                  <div>
+                                    <div className="font-medium group-hover:text-primary transition-colors">
+                                      {achievement.name}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {achievement.description}
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {achievement.description}
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                {getCategoryBadge(achievement.category)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge className="bg-primary/10 border-primary/20 text-primary text-xs">
+                                  +{achievement.xp_reward}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">
+                                <div className="flex items-center gap-2">
+                                  <Users className="h-4 w-4 text-muted-foreground" />
+                                  <span className="font-medium">{achievement.unlocked_count || 0}</span>
                                 </div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {getCategoryBadge(achievement.category)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge className="bg-primary/10 border-primary/20 text-primary text-xs">
-                              +{achievement.xp_reward}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{achievement.unlocked_count || 0}</span>
-                            </div>
-                          </TableCell>
-                          {!isTeacher && (
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditAchievement(achievement)}>
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteAchievement(achievement)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                              </TableCell>
+                              {!isTeacher && (
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditAchievement(achievement)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteAchievement(achievement)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
+            },
+            {
+              value: 'ranking',
+              label: 'Ranking',
+              icon: <Medal className="h-4 w-4" />,
+              content: (
+                <Card className="border-border shadow-sm">
+                  <CardContent className="p-5">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        {isTeacher ? `Ranking dos Meus Alunos (${filteredRanking.length})` : 'Top 50 Estudantes'}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {isTeacher
+                          ? 'Ranking dos alunos matriculados nas suas turmas'
+                          : 'Ranking global baseado em XP acumulado'}
+                      </p>
+                    </div>
 
-          {/* Ranking */}
-          <TabsContent value="ranking" className="space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardContent className="p-5">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {isTeacher ? `Ranking dos Meus Alunos (${filteredRanking.length})` : 'Top 50 Estudantes'}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {isTeacher
-                      ? 'Ranking dos alunos matriculados nas suas turmas'
-                      : 'Ranking global baseado em XP acumulado'}
-                  </p>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead className="w-12 md:w-16">Pos</TableHead>
-                        <TableHead>Estudante</TableHead>
-                        <TableHead className="hidden sm:table-cell">Nível</TableHead>
-                        <TableHead>XP</TableHead>
-                        <TableHead className="hidden md:table-cell">Conquistas</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredRanking.map((entry) => (
-                        <TableRow
-                          key={entry.user_id}
-                          className={cn(
-                            'group hover:bg-muted/50',
-                            entry.position <= 3 && 'bg-muted/50'
-                          )}
-                        >
-                          <TableCell>
-                            <div className="flex items-center justify-center">
-                              {getRankIcon(entry.position)}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium group-hover:text-primary transition-colors text-sm md:text-base">
-                              <span className="hidden sm:inline">{entry.first_name} {entry.last_name}</span>
-                              <span className="sm:hidden">{entry.first_name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <Badge className="bg-primary/10 border-primary/20 text-primary text-xs">
-                              Nv. {entry.level}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1 md:gap-2">
-                              <Zap className="h-3 w-3 md:h-4 md:w-4 text-yellow-500" />
-                              <span className="font-bold text-sm md:text-base">{entry.total_xp.toLocaleString()}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <div className="flex items-center gap-2">
-                              <Trophy className="h-4 w-4 text-muted-foreground" />
-                              <span>{entry.achievements_count}</span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                            <TableRow>
+                            <TableHead className="w-12 md:w-16">Pos</TableHead>
+                            <TableHead>Estudante</TableHead>
+                            <TableHead className="hidden sm:table-cell">Nível</TableHead>
+                            <TableHead>XP</TableHead>
+                            <TableHead className="hidden md:table-cell">Conquistas</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredRanking.map((entry) => (
+                            <TableRow
+                              key={entry.user_id}
+                              className={cn(
+                                'group hover:bg-muted/50',
+                                entry.position <= 3 && 'bg-muted/50'
+                              )}
+                            >
+                              <TableCell>
+                                <div className="flex items-center justify-center">
+                                  {getRankIcon(entry.position)}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium group-hover:text-primary transition-colors text-sm md:text-base">
+                                  <span className="hidden sm:inline">{entry.first_name} {entry.last_name}</span>
+                                  <span className="sm:hidden">{entry.first_name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">
+                                <Badge className="bg-primary/10 border-primary/20 text-primary text-xs">
+                                  Nv. {entry.level}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1 md:gap-2">
+                                  <Zap className="h-3 w-3 md:h-4 md:w-4 text-yellow-500" />
+                                  <span className="font-bold text-sm md:text-base">{entry.total_xp.toLocaleString()}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                <div className="flex items-center gap-2">
+                                  <Trophy className="h-4 w-4 text-muted-foreground" />
+                                  <span>{entry.achievements_count}</span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
+            },
+          ]}
+        />
       </div>
     </div>
   )

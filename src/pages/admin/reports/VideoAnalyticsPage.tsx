@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SectionLoader } from '@/components/SectionLoader'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs } from '@/components/PageTabs'
 import {
   Table,
   TableBody,
@@ -61,6 +61,236 @@ function formatDuration(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60)
   if (h > 0) return `${h}h ${m}min`
   return `${m}min`
+}
+
+function VideoAnalyticsTabs({ courses, filteredLessons, students, searchTerm, setSearchTerm }: {
+  courses: CourseAnalytics[]
+  filteredLessons: LessonAnalytics[]
+  students: StudentProgressEntry[]
+  searchTerm: string
+  setSearchTerm: (v: string) => void
+}) {
+  const [tab, setTab] = useState('courses')
+
+  return (
+    <PageTabs
+      value={tab}
+      onChange={setTab}
+      tabs={[
+        {
+          value: 'courses',
+          label: 'Por Curso',
+          content: (
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-blue-600" />
+                  <CardTitle className="text-base font-semibold">Desempenho por Curso</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {courses.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Nenhum curso encontrado</p>
+                ) : (
+                  <>
+                    <div className="h-[250px] mb-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={courses.slice(0, 10)} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis type="number" fontSize={12} stroke="#9ca3af" />
+                          <YAxis
+                            dataKey="courseName"
+                            type="category"
+                            fontSize={11}
+                            stroke="#9ca3af"
+                            width={150}
+                            tickFormatter={(v: string) => v.length > 20 ? v.substring(0, 20) + '...' : v}
+                          />
+                          <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                          <Legend />
+                          <Bar dataKey="totalStudents" fill="#3b82f6" name="Alunos" radius={[0, 4, 4, 0]} />
+                          <Bar dataKey="completedLessons" fill="#10b981" name="Concluidas" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Curso</TableHead>
+                          <TableHead className="text-center">Aulas</TableHead>
+                          <TableHead className="text-center">Alunos</TableHead>
+                          <TableHead className="text-center">Conclusao</TableHead>
+                          <TableHead className="text-center">Horas</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {courses.map(course => (
+                          <TableRow key={course.courseId}>
+                            <TableCell className="font-medium max-w-[200px] truncate">{course.courseName}</TableCell>
+                            <TableCell className="text-center">{course.totalLessons}</TableCell>
+                            <TableCell className="text-center">{course.totalStudents}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className={cn(
+                                'text-xs',
+                                course.avgCompletionRate >= 70 ? 'bg-emerald-500/10 text-emerald-700' :
+                                course.avgCompletionRate >= 40 ? 'bg-amber-500/10 text-amber-700' :
+                                'bg-red-500/10 text-red-700'
+                              )}>
+                                {course.avgCompletionRate}%
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">{course.totalWatchTimeHours}h</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ),
+        },
+        {
+          value: 'lessons',
+          label: 'Por Aula',
+          content: (
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Play className="h-4 w-4 text-violet-600" />
+                    <CardTitle className="text-base font-semibold">Desempenho por Aula</CardTitle>
+                  </div>
+                  <div className="relative w-[250px]">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar aula..."
+                      className="pl-8 h-9"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {filteredLessons.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Nenhuma aula encontrada</p>
+                ) : (
+                  <>
+                    <p className="text-xs text-muted-foreground mb-3">{filteredLessons.length} aulas</p>
+                    <div className="max-h-[500px] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Aula</TableHead>
+                            <TableHead>Curso</TableHead>
+                            <TableHead className="text-center">Views</TableHead>
+                            <TableHead className="text-center">Conclusao</TableHead>
+                            <TableHead className="text-center">Progresso Medio</TableHead>
+                            <TableHead className="text-center">Tempo Medio</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredLessons.map(lesson => (
+                            <TableRow key={lesson.lessonId}>
+                              <TableCell className="font-medium max-w-[200px]">
+                                <p className="truncate">{lesson.lessonTitle}</p>
+                                <p className="text-xs text-muted-foreground truncate">{lesson.moduleName}</p>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
+                                {lesson.courseName}
+                              </TableCell>
+                              <TableCell className="text-center">{lesson.totalViews}</TableCell>
+                              <TableCell className="text-center">
+                                <Badge variant="outline" className={cn(
+                                  'text-xs',
+                                  lesson.completionRate >= 70 ? 'bg-emerald-500/10 text-emerald-700' :
+                                  lesson.completionRate >= 40 ? 'bg-amber-500/10 text-amber-700' :
+                                  'bg-red-500/10 text-red-700'
+                                )}>
+                                  {lesson.completionRate}%
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center">{lesson.avgProgressPercent}%</TableCell>
+                              <TableCell className="text-center text-xs">
+                                {formatDuration(lesson.avgWatchTimeSeconds)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ),
+        },
+        {
+          value: 'students',
+          label: 'Por Aluno',
+          content: (
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-emerald-600" />
+                  <CardTitle className="text-base font-semibold">Progresso dos Alunos</CardTitle>
+                </div>
+                <p className="text-xs text-muted-foreground">Top 20 alunos por aulas concluidas</p>
+              </CardHeader>
+              <CardContent>
+                {students.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">Nenhum dado de progresso</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>#</TableHead>
+                        <TableHead>Aluno</TableHead>
+                        <TableHead className="text-center">Iniciadas</TableHead>
+                        <TableHead className="text-center">Concluidas</TableHead>
+                        <TableHead className="text-center">Conclusao</TableHead>
+                        <TableHead className="text-center">Horas</TableHead>
+                        <TableHead className="text-center">Ultima Atividade</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {students.map((student, i) => (
+                        <TableRow key={student.userId}>
+                          <TableCell className="font-bold text-muted-foreground">{i + 1}</TableCell>
+                          <TableCell>
+                            <p className="font-medium text-sm">{student.firstName} {student.lastName}</p>
+                            <p className="text-xs text-muted-foreground">{student.email}</p>
+                          </TableCell>
+                          <TableCell className="text-center">{student.lessonsStarted}</TableCell>
+                          <TableCell className="text-center font-bold">{student.lessonsCompleted}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className={cn(
+                              'text-xs',
+                              student.completionRate >= 70 ? 'bg-emerald-500/10 text-emerald-700' :
+                              student.completionRate >= 40 ? 'bg-amber-500/10 text-amber-700' :
+                              'bg-red-500/10 text-red-700'
+                            )}>
+                              {student.completionRate}%
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">{student.totalWatchTimeHours}h</TableCell>
+                          <TableCell className="text-center text-xs text-muted-foreground">
+                            {student.lastActivity ? new Date(student.lastActivity).toLocaleDateString('pt-BR') : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          ),
+        },
+      ]}
+    />
+  )
 }
 
 export default function VideoAnalyticsPage() {
@@ -300,219 +530,13 @@ export default function VideoAnalyticsPage() {
       </div>
 
       {/* Tabs: Courses / Lessons / Students */}
-      <Tabs defaultValue="courses" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="courses">Por Curso</TabsTrigger>
-          <TabsTrigger value="lessons">Por Aula</TabsTrigger>
-          <TabsTrigger value="students">Por Aluno</TabsTrigger>
-        </TabsList>
-
-        {/* Courses Tab */}
-        <TabsContent value="courses">
-          <Card className="border-border shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-blue-600" />
-                <CardTitle className="text-base font-semibold">Desempenho por Curso</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {courses.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Nenhum curso encontrado</p>
-              ) : (
-                <>
-                  {/* Course bar chart */}
-                  <div className="h-[250px] mb-6">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={courses.slice(0, 10)} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis type="number" fontSize={12} stroke="#9ca3af" />
-                        <YAxis
-                          dataKey="courseName"
-                          type="category"
-                          fontSize={11}
-                          stroke="#9ca3af"
-                          width={150}
-                          tickFormatter={(v: string) => v.length > 20 ? v.substring(0, 20) + '...' : v}
-                        />
-                        <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }} />
-                        <Legend />
-                        <Bar dataKey="totalStudents" fill="#3b82f6" name="Alunos" radius={[0, 4, 4, 0]} />
-                        <Bar dataKey="completedLessons" fill="#10b981" name="Concluidas" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Curso</TableHead>
-                        <TableHead className="text-center">Aulas</TableHead>
-                        <TableHead className="text-center">Alunos</TableHead>
-                        <TableHead className="text-center">Conclusao</TableHead>
-                        <TableHead className="text-center">Horas</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {courses.map(course => (
-                        <TableRow key={course.courseId}>
-                          <TableCell className="font-medium max-w-[200px] truncate">{course.courseName}</TableCell>
-                          <TableCell className="text-center">{course.totalLessons}</TableCell>
-                          <TableCell className="text-center">{course.totalStudents}</TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline" className={cn(
-                              'text-xs',
-                              course.avgCompletionRate >= 70 ? 'bg-emerald-500/10 text-emerald-700' :
-                              course.avgCompletionRate >= 40 ? 'bg-amber-500/10 text-amber-700' :
-                              'bg-red-500/10 text-red-700'
-                            )}>
-                              {course.avgCompletionRate}%
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">{course.totalWatchTimeHours}h</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Lessons Tab */}
-        <TabsContent value="lessons">
-          <Card className="border-border shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Play className="h-4 w-4 text-violet-600" />
-                  <CardTitle className="text-base font-semibold">Desempenho por Aula</CardTitle>
-                </div>
-                <div className="relative w-[250px]">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar aula..."
-                    className="pl-8 h-9"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {filteredLessons.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Nenhuma aula encontrada</p>
-              ) : (
-                <>
-                  <p className="text-xs text-muted-foreground mb-3">{filteredLessons.length} aulas</p>
-                  <div className="max-h-[500px] overflow-y-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Aula</TableHead>
-                          <TableHead>Curso</TableHead>
-                          <TableHead className="text-center">Views</TableHead>
-                          <TableHead className="text-center">Conclusao</TableHead>
-                          <TableHead className="text-center">Progresso Medio</TableHead>
-                          <TableHead className="text-center">Tempo Medio</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredLessons.map(lesson => (
-                          <TableRow key={lesson.lessonId}>
-                            <TableCell className="font-medium max-w-[200px]">
-                              <p className="truncate">{lesson.lessonTitle}</p>
-                              <p className="text-xs text-muted-foreground truncate">{lesson.moduleName}</p>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
-                              {lesson.courseName}
-                            </TableCell>
-                            <TableCell className="text-center">{lesson.totalViews}</TableCell>
-                            <TableCell className="text-center">
-                              <Badge variant="outline" className={cn(
-                                'text-xs',
-                                lesson.completionRate >= 70 ? 'bg-emerald-500/10 text-emerald-700' :
-                                lesson.completionRate >= 40 ? 'bg-amber-500/10 text-amber-700' :
-                                'bg-red-500/10 text-red-700'
-                              )}>
-                                {lesson.completionRate}%
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center">{lesson.avgProgressPercent}%</TableCell>
-                            <TableCell className="text-center text-xs">
-                              {formatDuration(lesson.avgWatchTimeSeconds)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Students Tab */}
-        <TabsContent value="students">
-          <Card className="border-border shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-emerald-600" />
-                <CardTitle className="text-base font-semibold">Progresso dos Alunos</CardTitle>
-              </div>
-              <p className="text-xs text-muted-foreground">Top 20 alunos por aulas concluidas</p>
-            </CardHeader>
-            <CardContent>
-              {students.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Nenhum dado de progresso</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>#</TableHead>
-                      <TableHead>Aluno</TableHead>
-                      <TableHead className="text-center">Iniciadas</TableHead>
-                      <TableHead className="text-center">Concluidas</TableHead>
-                      <TableHead className="text-center">Conclusao</TableHead>
-                      <TableHead className="text-center">Horas</TableHead>
-                      <TableHead className="text-center">Ultima Atividade</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {students.map((student, i) => (
-                      <TableRow key={student.userId}>
-                        <TableCell className="font-bold text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell>
-                          <p className="font-medium text-sm">{student.firstName} {student.lastName}</p>
-                          <p className="text-xs text-muted-foreground">{student.email}</p>
-                        </TableCell>
-                        <TableCell className="text-center">{student.lessonsStarted}</TableCell>
-                        <TableCell className="text-center font-bold">{student.lessonsCompleted}</TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="outline" className={cn(
-                            'text-xs',
-                            student.completionRate >= 70 ? 'bg-emerald-500/10 text-emerald-700' :
-                            student.completionRate >= 40 ? 'bg-amber-500/10 text-amber-700' :
-                            'bg-red-500/10 text-red-700'
-                          )}>
-                            {student.completionRate}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">{student.totalWatchTimeHours}h</TableCell>
-                        <TableCell className="text-center text-xs text-muted-foreground">
-                          {student.lastActivity ? new Date(student.lastActivity).toLocaleDateString('pt-BR') : '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <VideoAnalyticsTabs
+        courses={courses}
+        filteredLessons={filteredLessons}
+        students={students}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+      />
     </div>
   )
 }

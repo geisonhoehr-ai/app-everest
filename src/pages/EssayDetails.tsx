@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs } from '@/components/PageTabs'
 import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import {
@@ -29,6 +29,187 @@ import { ciaarCorrectionService } from '@/services/ciaarCorrectionService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { cn } from '@/lib/utils'
 import type { CorrectionResult, CorrectionType } from '@/types/essay-correction'
+
+function CiaarCorrectionTabs({ correction, expressionDebit, structureDebit, contentDebit }: {
+  correction: CorrectionResult
+  expressionDebit: number
+  structureDebit: number
+  contentDebit: number
+}) {
+  const [tab, setTab] = useState('expression')
+
+  return (
+    <PageTabs
+      value={tab}
+      onChange={setTab}
+      layout={4}
+      tabs={[
+        {
+          value: 'expression',
+          label: 'Expressão',
+          icon: <PenLine className="h-3.5 w-3.5" />,
+          count: correction.expressionErrors.length > 0 ? correction.expressionErrors.length : undefined,
+          content: (
+            <Card>
+              <CardHeader className="py-4 px-5">
+                <CardTitle className="text-base">Erros de Expressão</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  {correction.expressionErrors.length} erros encontrados · Débito: -{expressionDebit.toFixed(3)}
+                </p>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 space-y-3">
+                {correction.expressionErrors.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                    <p className="text-sm font-medium">Nenhum erro de expressão!</p>
+                  </div>
+                ) : (
+                  correction.expressionErrors.map((error, index) => (
+                    <div key={index} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-[10px]">
+                          P{error.paragraph_number}, Per. {error.sentence_number}
+                        </Badge>
+                        <Badge variant="destructive" className="text-[10px]">
+                          -{error.debit_value.toFixed(3)}
+                        </Badge>
+                      </div>
+                      <div className="bg-red-50 dark:bg-red-950/20 rounded-md px-3 py-2">
+                        <span className="text-xs text-red-700 dark:text-red-400 line-through">{error.error_text}</span>
+                      </div>
+                      <div className="bg-green-50 dark:bg-green-950/20 rounded-md px-3 py-2">
+                        <span className="text-xs text-green-700 dark:text-green-400">{error.suggested_correction}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{error.error_explanation}</p>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          ),
+        },
+        {
+          value: 'structure',
+          label: 'Estrutura',
+          icon: <BookOpen className="h-3.5 w-3.5" />,
+          content: (
+            <Card>
+              <CardHeader className="py-4 px-5">
+                <CardTitle className="text-base">Análise de Estrutura</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  {correction.structureAnalysis.length} parágrafos analisados · Débito: -{structureDebit.toFixed(3)}
+                </p>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 space-y-3">
+                {correction.structureAnalysis.map((analysis, index) => (
+                  <div key={index} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px]">
+                          Parágrafo {analysis.paragraph_number}
+                        </Badge>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {analysis.paragraph_type === 'introduction' ? 'Introdução' :
+                            analysis.paragraph_type === 'conclusion' ? 'Conclusão' :
+                              'Desenvolvimento'}
+                        </Badge>
+                      </div>
+                      <Badge
+                        variant={analysis.debit_value > 0 ? 'destructive' : 'outline'}
+                        className={cn('text-[10px]', analysis.debit_value === 0 && 'text-green-600 border-green-500/30')}
+                      >
+                        {analysis.debit_value > 0 ? `-${analysis.debit_value.toFixed(3)}` : 'OK'}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{analysis.analysis_text}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ),
+        },
+        {
+          value: 'content',
+          label: 'Conteúdo',
+          icon: <BarChart3 className="h-3.5 w-3.5" />,
+          content: (
+            <Card>
+              <CardHeader className="py-4 px-5">
+                <CardTitle className="text-base">Análise de Conteúdo</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  {correction.contentAnalysis.length} critérios · Débito: -{contentDebit.toFixed(3)}
+                </p>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 space-y-3">
+                {correction.contentAnalysis.map((analysis, index) => (
+                  <div key={index} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{analysis.criterion_name}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={analysis.debit_level === 'Fuga TOTAL' ? 'destructive' : 'outline'}
+                          className="text-[10px]"
+                        >
+                          {analysis.debit_level}
+                        </Badge>
+                        <Badge
+                          variant={analysis.debit_value > 0 ? 'destructive' : 'outline'}
+                          className={cn('text-[10px]', analysis.debit_value === 0 && 'text-green-600 border-green-500/30')}
+                        >
+                          {analysis.debit_value > 0 ? `-${analysis.debit_value.toFixed(3)}` : 'Sem débito'}
+                        </Badge>
+                      </div>
+                    </div>
+                    {analysis.debit_level === 'Fuga TOTAL' && (
+                      <div className="flex items-center gap-2 text-red-600 bg-red-50 dark:bg-red-950/20 rounded-md px-3 py-1.5">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span className="text-xs font-medium">Fuga total: nota final zerada</span>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{analysis.analysis_text}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ),
+        },
+        {
+          value: 'suggestions',
+          label: 'Sugestões',
+          icon: <Lightbulb className="h-3.5 w-3.5" />,
+          content: (
+            <Card>
+              <CardHeader className="py-4 px-5">
+                <CardTitle className="text-base">Sugestões de Melhoria</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  {correction.improvementSuggestions.length} sugestões para melhorar sua redação
+                </p>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 space-y-3">
+                {correction.improvementSuggestions.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">Nenhuma sugestão disponível</p>
+                  </div>
+                ) : (
+                  correction.improvementSuggestions.map((suggestion, index) => (
+                    <div key={index} className="border rounded-lg p-3 space-y-2">
+                      <Badge variant="secondary" className="text-[10px]">
+                        {suggestion.category === 'expression' ? 'Expressão' :
+                          suggestion.category === 'structure' ? 'Estrutura' : 'Conteúdo'}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{suggestion.suggestion_text}</p>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          ),
+        },
+      ]}
+    />
+  )
+}
 
 export default function EssayDetailsPage() {
   const { essayId } = useParams<{ essayId: string }>()
@@ -328,178 +509,12 @@ export default function EssayDetailsPage() {
 
       {/* CIAAR: Correction Details Tabs */}
       {!isEnem && correction && (
-        <Tabs defaultValue="expression" className="space-y-4">
-          <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="expression" className="text-xs gap-1.5">
-              <PenLine className="h-3.5 w-3.5" />
-              Expressão
-              {correction.expressionErrors.length > 0 && (
-                <Badge variant="destructive" className="text-[9px] px-1 py-0">{correction.expressionErrors.length}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="structure" className="text-xs gap-1.5">
-              <BookOpen className="h-3.5 w-3.5" />
-              Estrutura
-            </TabsTrigger>
-            <TabsTrigger value="content" className="text-xs gap-1.5">
-              <BarChart3 className="h-3.5 w-3.5" />
-              Conteúdo
-            </TabsTrigger>
-            <TabsTrigger value="suggestions" className="text-xs gap-1.5">
-              <Lightbulb className="h-3.5 w-3.5" />
-              Sugestões
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Expression Errors */}
-          <TabsContent value="expression">
-            <Card>
-              <CardHeader className="py-4 px-5">
-                <CardTitle className="text-base">Erros de Expressão</CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  {correction.expressionErrors.length} erros encontrados · Débito: -{expressionDebit.toFixed(3)}
-                </p>
-              </CardHeader>
-              <CardContent className="px-5 pb-5 space-y-3">
-                {correction.expressionErrors.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                    <p className="text-sm font-medium">Nenhum erro de expressão!</p>
-                  </div>
-                ) : (
-                  correction.expressionErrors.map((error, index) => (
-                    <div key={index} className="border rounded-lg p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-[10px]">
-                          P{error.paragraph_number}, Per. {error.sentence_number}
-                        </Badge>
-                        <Badge variant="destructive" className="text-[10px]">
-                          -{error.debit_value.toFixed(3)}
-                        </Badge>
-                      </div>
-                      <div className="bg-red-50 dark:bg-red-950/20 rounded-md px-3 py-2">
-                        <span className="text-xs text-red-700 dark:text-red-400 line-through">{error.error_text}</span>
-                      </div>
-                      <div className="bg-green-50 dark:bg-green-950/20 rounded-md px-3 py-2">
-                        <span className="text-xs text-green-700 dark:text-green-400">{error.suggested_correction}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{error.error_explanation}</p>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Structure Analysis */}
-          <TabsContent value="structure">
-            <Card>
-              <CardHeader className="py-4 px-5">
-                <CardTitle className="text-base">Análise de Estrutura</CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  {correction.structureAnalysis.length} parágrafos analisados · Débito: -{structureDebit.toFixed(3)}
-                </p>
-              </CardHeader>
-              <CardContent className="px-5 pb-5 space-y-3">
-                {correction.structureAnalysis.map((analysis, index) => (
-                  <div key={index} className="border rounded-lg p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px]">
-                          Parágrafo {analysis.paragraph_number}
-                        </Badge>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {analysis.paragraph_type === 'introduction' ? 'Introdução' :
-                            analysis.paragraph_type === 'conclusion' ? 'Conclusão' :
-                              'Desenvolvimento'}
-                        </Badge>
-                      </div>
-                      <Badge
-                        variant={analysis.debit_value > 0 ? 'destructive' : 'outline'}
-                        className={cn('text-[10px]', analysis.debit_value === 0 && 'text-green-600 border-green-500/30')}
-                      >
-                        {analysis.debit_value > 0 ? `-${analysis.debit_value.toFixed(3)}` : 'OK'}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{analysis.analysis_text}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Content Analysis */}
-          <TabsContent value="content">
-            <Card>
-              <CardHeader className="py-4 px-5">
-                <CardTitle className="text-base">Análise de Conteúdo</CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  {correction.contentAnalysis.length} critérios · Débito: -{contentDebit.toFixed(3)}
-                </p>
-              </CardHeader>
-              <CardContent className="px-5 pb-5 space-y-3">
-                {correction.contentAnalysis.map((analysis, index) => (
-                  <div key={index} className="border rounded-lg p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{analysis.criterion_name}</span>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant={analysis.debit_level === 'Fuga TOTAL' ? 'destructive' : 'outline'}
-                          className="text-[10px]"
-                        >
-                          {analysis.debit_level}
-                        </Badge>
-                        <Badge
-                          variant={analysis.debit_value > 0 ? 'destructive' : 'outline'}
-                          className={cn('text-[10px]', analysis.debit_value === 0 && 'text-green-600 border-green-500/30')}
-                        >
-                          {analysis.debit_value > 0 ? `-${analysis.debit_value.toFixed(3)}` : 'Sem débito'}
-                        </Badge>
-                      </div>
-                    </div>
-                    {analysis.debit_level === 'Fuga TOTAL' && (
-                      <div className="flex items-center gap-2 text-red-600 bg-red-50 dark:bg-red-950/20 rounded-md px-3 py-1.5">
-                        <AlertTriangle className="h-4 w-4" />
-                        <span className="text-xs font-medium">Fuga total: nota final zerada</span>
-                      </div>
-                    )}
-                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{analysis.analysis_text}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Improvement Suggestions */}
-          <TabsContent value="suggestions">
-            <Card>
-              <CardHeader className="py-4 px-5">
-                <CardTitle className="text-base">Sugestões de Melhoria</CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  {correction.improvementSuggestions.length} sugestões para melhorar sua redação
-                </p>
-              </CardHeader>
-              <CardContent className="px-5 pb-5 space-y-3">
-                {correction.improvementSuggestions.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">Nenhuma sugestão disponível</p>
-                  </div>
-                ) : (
-                  correction.improvementSuggestions.map((suggestion, index) => (
-                    <div key={index} className="border rounded-lg p-3 space-y-2">
-                      <Badge variant="secondary" className="text-[10px]">
-                        {suggestion.category === 'expression' ? 'Expressão' :
-                          suggestion.category === 'structure' ? 'Estrutura' : 'Conteúdo'}
-                      </Badge>
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap">{suggestion.suggestion_text}</p>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <CiaarCorrectionTabs
+          correction={correction}
+          expressionDebit={expressionDebit}
+          structureDebit={structureDebit}
+          contentDebit={contentDebit}
+        />
       )}
 
       {/* ENEM: Suggestions (outside tabs) */}

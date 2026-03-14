@@ -22,7 +22,8 @@ import {
   Clock,
   TrendingDown
 } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs } from '@/components/PageTabs'
 import { logger } from '@/lib/logger'
 import {
   BarChart,
@@ -39,6 +40,7 @@ import {
 
 export default function AdminReportsPage() {
   const [dateRange, setDateRange] = useState('30d')
+  const [reportTab, setReportTab] = useState('overview')
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<SystemStats | null>(null)
   const [userGrowthData, setUserGrowthData] = useState<UserGrowthData[]>([])
@@ -199,249 +201,259 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Main Reports */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3">
-            <TabsTrigger value="overview" className="text-xs md:text-sm">Visao Geral</TabsTrigger>
-            <TabsTrigger value="users" className="text-xs md:text-sm">Usuarios</TabsTrigger>
-            <TabsTrigger value="content" className="text-xs md:text-sm">Conteudo</TabsTrigger>
-          </TabsList>
+        <PageTabs
+          value={reportTab}
+          onChange={setReportTab}
+          layout={3}
+          tabs={[
+            {
+              value: 'overview',
+              label: 'Visao Geral',
+              content: (
+                <div className="space-y-6">
+                  <Card className="border-border shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg md:text-xl text-foreground">
+                        <BarChart3 className="h-5 w-5" />
+                        Resumo
+                      </CardTitle>
+                      <CardDescription className="text-xs md:text-sm">
+                        Principais indicadores da plataforma
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                            <Users className="h-4 w-4" />
+                            Alunos
+                          </div>
+                          <p className="text-xl md:text-2xl font-bold text-foreground">
+                            {stats ? stats.totalStudents.toLocaleString('pt-BR') : '0'}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                            <Award className="h-4 w-4" />
+                            Quizzes
+                          </div>
+                          <p className="text-xl md:text-2xl font-bold text-foreground">
+                            {stats ? stats.totalQuizzes.toLocaleString('pt-BR') : '0'}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                            <TrendingUp className="h-4 w-4" />
+                            Flashcards
+                          </div>
+                          <p className="text-xl md:text-2xl font-bold text-foreground">
+                            {stats ? stats.totalFlashcards.toLocaleString('pt-BR') : '0'}
+                          </p>
+                        </div>
+                      </div>
 
-          {/* Visao Geral */}
-          <TabsContent value="overview" className="space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg md:text-xl text-foreground">
-                  <BarChart3 className="h-5 w-5" />
-                  Resumo
-                </CardTitle>
-                <CardDescription className="text-xs md:text-sm">
-                  Principais indicadores da plataforma
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-                      <Users className="h-4 w-4" />
-                      Alunos
-                    </div>
-                    <p className="text-xl md:text-2xl font-bold text-foreground">
-                      {stats ? stats.totalStudents.toLocaleString('pt-BR') : '0'}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-                      <Award className="h-4 w-4" />
-                      Quizzes
-                    </div>
-                    <p className="text-xl md:text-2xl font-bold text-foreground">
-                      {stats ? stats.totalQuizzes.toLocaleString('pt-BR') : '0'}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-                      <TrendingUp className="h-4 w-4" />
-                      Flashcards
-                    </div>
-                    <p className="text-xl md:text-2xl font-bold text-foreground">
-                      {stats ? stats.totalFlashcards.toLocaleString('pt-BR') : '0'}
-                    </p>
-                  </div>
+                      {userGrowthData.length > 0 && (
+                        <div className="h-[250px] md:h-[350px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={userGrowthData}>
+                              <defs>
+                                <linearGradient id="colorUsuarios" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                </linearGradient>
+                                <linearGradient id="colorAtivos" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                              <XAxis dataKey="month" fontSize={12} />
+                              <YAxis fontSize={12} />
+                              <Tooltip />
+                              <Legend />
+                              <Area
+                                type="monotone"
+                                dataKey="usuarios"
+                                stroke="#3b82f6"
+                                fillOpacity={1}
+                                fill="url(#colorUsuarios)"
+                                name="Total Usuarios"
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="ativos"
+                                stroke="#10b981"
+                                fillOpacity={1}
+                                fill="url(#colorAtivos)"
+                                name="Usuarios Ativos"
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Atividade Semanal */}
+                  {weeklyActivityData.length > 0 && (
+                    <Card className="border-border shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="text-base md:text-lg text-foreground">Atividade Semanal</CardTitle>
+                        <CardDescription className="text-xs md:text-sm">Atividades por dia da semana</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[250px] md:h-[300px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={weeklyActivityData}>
+                              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                              <XAxis dataKey="day" fontSize={12} />
+                              <YAxis fontSize={12} />
+                              <Tooltip />
+                              <Bar dataKey="atividades" fill="#3b82f6" radius={[8, 8, 0, 0]} name="Atividades" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
+              ),
+            },
+            {
+              value: 'users',
+              label: 'Usuarios',
+              content: (
+                <div className="space-y-6">
+                  <Card className="border-border shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base md:text-lg text-foreground">
+                        <Users className="h-5 w-5" />
+                        Crescimento de Usuarios
+                      </CardTitle>
+                      <CardDescription className="text-xs md:text-sm">
+                        Total vs Ativos por mes
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {userGrowthData.length > 0 ? (
+                        <div className="h-[300px] md:h-[400px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={userGrowthData}>
+                              <defs>
+                                <linearGradient id="colorUsuarios2" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                              <XAxis dataKey="month" fontSize={12} />
+                              <YAxis fontSize={12} />
+                              <Tooltip />
+                              <Legend />
+                              <Area type="monotone" dataKey="usuarios" stroke="#3b82f6" fillOpacity={1} fill="url(#colorUsuarios2)" name="Total" />
+                              <Area type="monotone" dataKey="ativos" stroke="#10b981" fill="transparent" name="Ativos" />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          Sem dados de crescimento disponiveis.
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
-                {userGrowthData.length > 0 && (
-                  <div className="h-[250px] md:h-[350px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={userGrowthData}>
-                        <defs>
-                          <linearGradient id="colorUsuarios" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorAtivos" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                        <XAxis dataKey="month" fontSize={12} />
-                        <YAxis fontSize={12} />
-                        <Tooltip />
-                        <Legend />
-                        <Area
-                          type="monotone"
-                          dataKey="usuarios"
-                          stroke="#3b82f6"
-                          fillOpacity={1}
-                          fill="url(#colorUsuarios)"
-                          name="Total Usuarios"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="ativos"
-                          stroke="#10b981"
-                          fillOpacity={1}
-                          fill="url(#colorAtivos)"
-                          name="Usuarios Ativos"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Atividade Semanal */}
-            {weeklyActivityData.length > 0 && (
-              <Card className="border-border shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-base md:text-lg text-foreground">Atividade Semanal</CardTitle>
-                  <CardDescription className="text-xs md:text-sm">Atividades por dia da semana</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[250px] md:h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={weeklyActivityData}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                        <XAxis dataKey="day" fontSize={12} />
-                        <YAxis fontSize={12} />
-                        <Tooltip />
-                        <Bar dataKey="atividades" fill="#3b82f6" radius={[8, 8, 0, 0]} name="Atividades" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Usuarios */}
-          <TabsContent value="users" className="space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base md:text-lg text-foreground">
-                  <Users className="h-5 w-5" />
-                  Crescimento de Usuarios
-                </CardTitle>
-                <CardDescription className="text-xs md:text-sm">
-                  Total vs Ativos por mes
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {userGrowthData.length > 0 ? (
-                  <div className="h-[300px] md:h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={userGrowthData}>
-                        <defs>
-                          <linearGradient id="colorUsuarios2" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                        <XAxis dataKey="month" fontSize={12} />
-                        <YAxis fontSize={12} />
-                        <Tooltip />
-                        <Legend />
-                        <Area type="monotone" dataKey="usuarios" stroke="#3b82f6" fillOpacity={1} fill="url(#colorUsuarios2)" name="Total" />
-                        <Area type="monotone" dataKey="ativos" stroke="#10b981" fill="transparent" name="Ativos" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Sem dados de crescimento disponiveis.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Distribuicao por Papel */}
-            <Card className="border-border shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-base md:text-lg text-foreground">Distribuicao de Usuarios</CardTitle>
-                <CardDescription className="text-xs md:text-sm">Por papel na plataforma</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {stats ? stats.totalStudents : 0}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Alunos</div>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-                    <div className="text-2xl font-bold text-green-600">
-                      {stats ? stats.totalTeachers : 0}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Professores</div>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {stats ? stats.totalAdministrators : 0}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Administradores</div>
-                  </div>
+                  {/* Distribuicao por Papel */}
+                  <Card className="border-border shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-base md:text-lg text-foreground">Distribuicao de Usuarios</CardTitle>
+                      <CardDescription className="text-xs md:text-sm">Por papel na plataforma</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="text-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                          <div className="text-2xl font-bold text-blue-600">
+                            {stats ? stats.totalStudents : 0}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Alunos</div>
+                        </div>
+                        <div className="text-center p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                          <div className="text-2xl font-bold text-green-600">
+                            {stats ? stats.totalTeachers : 0}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Professores</div>
+                        </div>
+                        <div className="text-center p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                          <div className="text-2xl font-bold text-purple-600">
+                            {stats ? stats.totalAdministrators : 0}
+                          </div>
+                          <div className="text-sm text-muted-foreground">Administradores</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Conteudo */}
-          <TabsContent value="content" className="space-y-6">
-            <Card className="border-border shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base md:text-lg text-foreground">
-                  <BookOpen className="h-5 w-5" />
-                  Conteudo da Plataforma
-                </CardTitle>
-                <CardDescription className="text-xs md:text-sm">
-                  Totais por tipo de recurso
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {stats ? stats.totalCourses : 0}
+              ),
+            },
+            {
+              value: 'content',
+              label: 'Conteudo',
+              content: (
+                <Card className="border-border shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base md:text-lg text-foreground">
+                      <BookOpen className="h-5 w-5" />
+                      Conteudo da Plataforma
+                    </CardTitle>
+                    <CardDescription className="text-xs md:text-sm">
+                      Totais por tipo de recurso
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {stats ? stats.totalCourses : 0}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Cursos</div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                        <div className="text-2xl font-bold text-green-600">
+                          {stats ? stats.totalFlashcards : 0}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Flashcards</div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {stats ? stats.totalQuizzes : 0}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Quizzes</div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                        <div className="text-2xl font-bold text-orange-600">
+                          {stats ? stats.totalEssays : 0}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Redacoes</div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-pink-500/10 border border-pink-200">
+                        <div className="text-2xl font-bold text-pink-600">
+                          {stats ? stats.totalAudioCourses : 0}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Audio Cursos</div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-cyan-500/10 border border-cyan-200">
+                        <div className="text-2xl font-bold text-cyan-600">
+                          {stats ? stats.totalClasses : 0}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Turmas</div>
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">Cursos</div>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-                    <div className="text-2xl font-bold text-green-600">
-                      {stats ? stats.totalFlashcards : 0}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Flashcards</div>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {stats ? stats.totalQuizzes : 0}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Quizzes</div>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
-                    <div className="text-2xl font-bold text-orange-600">
-                      {stats ? stats.totalEssays : 0}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Redacoes</div>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-pink-500/10 border border-pink-200">
-                    <div className="text-2xl font-bold text-pink-600">
-                      {stats ? stats.totalAudioCourses : 0}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Audio Cursos</div>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-cyan-500/10 border border-cyan-200">
-                    <div className="text-2xl font-bold text-cyan-600">
-                      {stats ? stats.totalClasses : 0}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Turmas</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                  </CardContent>
+                </Card>
+              ),
+            },
+          ]}
+        />
       </div>
     </div>
   )
