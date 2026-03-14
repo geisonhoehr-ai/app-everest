@@ -339,6 +339,14 @@ export const duplicateCourse = async (
       thumbnail_url: course.thumbnail_url,
       created_by_user_id: adminUserId,
       is_active: false, // start as draft
+      acronym: course.acronym,
+      sales_url: course.sales_url,
+      category: course.category,
+      layout_preference: course.layout_preference,
+      show_in_storefront: course.show_in_storefront,
+      moderate_comments: course.moderate_comments,
+      onboarding_text: course.onboarding_text,
+      status: 'draft', // duplicates always start as draft
     })
     .select()
     .single()
@@ -430,4 +438,75 @@ export const getCourseWithContent = async (courseId: string) => {
   }
 
   return data
+}
+
+// =====================================================
+// COVER IMAGE
+// =====================================================
+
+/**
+ * Upload cover image to course-covers bucket
+ */
+export async function uploadCoverImage(file: File, courseId: string): Promise<string> {
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${courseId}-${Date.now()}.${fileExt}`
+  const filePath = `covers/${fileName}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('course-covers')
+    .upload(filePath, file, { upsert: true })
+
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage
+    .from('course-covers')
+    .getPublicUrl(filePath)
+
+  return data.publicUrl
+}
+
+/**
+ * Delete cover image from course-covers bucket
+ */
+export async function deleteCoverImage(url: string): Promise<void> {
+  const path = url.split('/course-covers/')[1]
+  if (path) {
+    await supabase.storage.from('course-covers').remove([path])
+  }
+}
+
+// =====================================================
+// STOREFRONT
+// =====================================================
+
+/**
+ * Get published storefront courses that the user is NOT enrolled in
+ */
+export async function getStorefrontCourses(userId: string) {
+  // Get courses user is enrolled in
+  const { data: enrollments } = await supabase
+    .from('student_classes')
+    .select('classes(class_courses(course_id))')
+    .eq('user_id', userId)
+
+  const enrolledIds = new Set(
+    (enrollments || []).flatMap((e: any) =>
+      e.classes?.class_courses?.map((cc: any) => cc.course_id) || []
+    )
+  )
+
+  // Get all storefront courses
+  const { data: courses, error } = await supabase
+    .from('video_courses')
+    .select(`
+      id, name, acronym, description, thumbnail_url, sales_url, category, status,
+      video_modules(id, name)
+    `)
+    .eq('show_in_storefront', true)
+    .eq('status', 'published')
+
+  if (error) throw error
+
+  // Filter out enrolled courses client-side
+  return (courses || []).filter(c => !enrolledIds.has(c.id))
 }
