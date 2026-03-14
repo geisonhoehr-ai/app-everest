@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { ArrowLeft, GraduationCap, Save } from 'lucide-react'
 import { getModuleRulesForClass, saveAllModuleRules, checkCircularDependency } from '@/services/moduleRulesService'
+import { getAllContentAccessForClass, saveContentAccess } from '@/services/contentAccessService'
 
 const classSchema = z.object({
   name: z.string().min(1, 'O nome da turma é obrigatório'),
@@ -54,6 +55,19 @@ export default function AdminClassFormPage() {
   const [isDefault, setIsDefault] = useState(false)
   const [moduleRules, setModuleRules] = useState<Record<string, { rule_type: string; rule_value: string }>>({})
   const [modules, setModules] = useState<any[]>([])
+  const [contentAccess, setContentAccess] = useState<Record<string, string[]>>({})
+  const [allTopics, setAllTopics] = useState<any[]>([])
+  const [allSubjects, setAllSubjects] = useState<any[]>([])
+  const [allSimulations, setAllSimulations] = useState<any[]>([])
+  const [contentToggles, setContentToggles] = useState({
+    flashcard_topic: true,
+    quiz_topic: true,
+    acervo: true,
+    simulation: true,
+    essay_limit: true,
+    community_readonly: true,
+  })
+  const [essayLimit, setEssayLimit] = useState('1')
 
   const isEditing = !!classId
 
@@ -161,6 +175,31 @@ export default function AdminClassFormPage() {
       const rulesMap: Record<string, any> = {}
       rules.forEach(r => { rulesMap[r.module_id] = { rule_type: r.rule_type, rule_value: r.rule_value || '' } })
       setModuleRules(rulesMap)
+
+      // Load topics for flashcards/quizzes
+      const { data: subjects } = await supabase.from('subjects').select('id, name')
+      const { data: topics } = await supabase.from('topics').select('id, name, subject_id')
+      setAllSubjects(subjects || [])
+      setAllTopics(topics || [])
+
+      // Load simulations
+      const { data: sims } = await supabase.from('quizzes').select('id, title').eq('type', 'simulation')
+      setAllSimulations(sims || [])
+
+      // Load existing content access
+      const access = await getAllContentAccessForClass(classId!)
+      setContentAccess(access)
+
+      // Set toggles based on existing data
+      setContentToggles({
+        flashcard_topic: !access.flashcard_topic?.length,
+        quiz_topic: !access.quiz_topic?.length,
+        acervo: !access.acervo_category?.length && !access.acervo_concurso?.length,
+        simulation: !access.simulation?.length,
+        essay_limit: !access.essay_limit?.length,
+        community_readonly: !access.community_readonly?.length,
+      })
+      if (access.essay_limit?.length) setEssayLimit(access.essay_limit[0])
     } catch (error) {
       logger.error('Erro ao carregar módulos e regras:', error)
     }
@@ -199,6 +238,30 @@ export default function AdminClassFormPage() {
           }))
         await saveAllModuleRules(classId!, rulesToSave)
 
+        // Save content access
+        if (!contentToggles.flashcard_topic) await saveContentAccess(classId!, 'flashcard_topic', contentAccess.flashcard_topic || [])
+        else await saveContentAccess(classId!, 'flashcard_topic', [])
+
+        if (!contentToggles.quiz_topic) await saveContentAccess(classId!, 'quiz_topic', contentAccess.quiz_topic || [])
+        else await saveContentAccess(classId!, 'quiz_topic', [])
+
+        if (!contentToggles.acervo) {
+          await saveContentAccess(classId!, 'acervo_category', contentAccess.acervo_category || [])
+          await saveContentAccess(classId!, 'acervo_concurso', contentAccess.acervo_concurso || [])
+        } else {
+          await saveContentAccess(classId!, 'acervo_category', [])
+          await saveContentAccess(classId!, 'acervo_concurso', [])
+        }
+
+        if (!contentToggles.simulation) await saveContentAccess(classId!, 'simulation', contentAccess.simulation || [])
+        else await saveContentAccess(classId!, 'simulation', [])
+
+        if (!contentToggles.essay_limit) await saveContentAccess(classId!, 'essay_limit', [essayLimit])
+        else await saveContentAccess(classId!, 'essay_limit', [])
+
+        if (!contentToggles.community_readonly) await saveContentAccess(classId!, 'community_readonly', ['true'])
+        else await saveContentAccess(classId!, 'community_readonly', [])
+
         toast({
           title: 'Sucesso',
           description: 'Turma atualizada com sucesso',
@@ -223,6 +286,31 @@ export default function AdminClassFormPage() {
               rule_value: r.rule_value || null
             }))
           await saveAllModuleRules(insertedData.id, rulesToSave)
+
+          // Save content access
+          const newClassId = insertedData.id
+          if (!contentToggles.flashcard_topic) await saveContentAccess(newClassId, 'flashcard_topic', contentAccess.flashcard_topic || [])
+          else await saveContentAccess(newClassId, 'flashcard_topic', [])
+
+          if (!contentToggles.quiz_topic) await saveContentAccess(newClassId, 'quiz_topic', contentAccess.quiz_topic || [])
+          else await saveContentAccess(newClassId, 'quiz_topic', [])
+
+          if (!contentToggles.acervo) {
+            await saveContentAccess(newClassId, 'acervo_category', contentAccess.acervo_category || [])
+            await saveContentAccess(newClassId, 'acervo_concurso', contentAccess.acervo_concurso || [])
+          } else {
+            await saveContentAccess(newClassId, 'acervo_category', [])
+            await saveContentAccess(newClassId, 'acervo_concurso', [])
+          }
+
+          if (!contentToggles.simulation) await saveContentAccess(newClassId, 'simulation', contentAccess.simulation || [])
+          else await saveContentAccess(newClassId, 'simulation', [])
+
+          if (!contentToggles.essay_limit) await saveContentAccess(newClassId, 'essay_limit', [essayLimit])
+          else await saveContentAccess(newClassId, 'essay_limit', [])
+
+          if (!contentToggles.community_readonly) await saveContentAccess(newClassId, 'community_readonly', ['true'])
+          else await saveContentAccess(newClassId, 'community_readonly', [])
         }
 
         toast({
@@ -528,6 +616,229 @@ export default function AdminClassFormPage() {
                   </CardContent>
                 </Card>
               )}
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Acesso ao Conteúdo</CardTitle>
+                  <CardDescription>Defina quais conteúdos os alunos desta turma podem acessar. Por padrão, tudo é liberado.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+
+                  {/* Flashcards */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">Flashcards</h4>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={contentToggles.flashcard_topic} onChange={e => {
+                          setContentToggles(p => ({...p, flashcard_topic: e.target.checked}))
+                          if (e.target.checked) setContentAccess(p => { const n = {...p}; delete n.flashcard_topic; return n })
+                        }} />
+                        Todos os tópicos
+                      </label>
+                    </div>
+                    {!contentToggles.flashcard_topic && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pl-4">
+                        {allSubjects.map(subject => (
+                          <div key={subject.id}>
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">{subject.name}</p>
+                            {allTopics.filter(t => t.subject_id === subject.id).map(topic => (
+                              <label key={topic.id} className="flex items-center gap-2 text-sm py-0.5">
+                                <input type="checkbox"
+                                  checked={contentAccess.flashcard_topic?.includes(topic.id) || false}
+                                  onChange={e => {
+                                    setContentAccess(prev => {
+                                      const current = prev.flashcard_topic || []
+                                      return { ...prev, flashcard_topic: e.target.checked
+                                        ? [...current, topic.id]
+                                        : current.filter(id => id !== topic.id) }
+                                    })
+                                  }}
+                                />
+                                {topic.name}
+                              </label>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-border" />
+
+                  {/* Quizzes */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">Quizzes</h4>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={contentToggles.quiz_topic} onChange={e => {
+                          setContentToggles(p => ({...p, quiz_topic: e.target.checked}))
+                          if (e.target.checked) setContentAccess(p => { const n = {...p}; delete n.quiz_topic; return n })
+                        }} />
+                        Todos os tópicos
+                      </label>
+                    </div>
+                    {!contentToggles.quiz_topic && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pl-4">
+                        {allSubjects.map(subject => (
+                          <div key={subject.id}>
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">{subject.name}</p>
+                            {allTopics.filter(t => t.subject_id === subject.id).map(topic => (
+                              <label key={topic.id} className="flex items-center gap-2 text-sm py-0.5">
+                                <input type="checkbox"
+                                  checked={contentAccess.quiz_topic?.includes(topic.id) || false}
+                                  onChange={e => {
+                                    setContentAccess(prev => {
+                                      const current = prev.quiz_topic || []
+                                      return { ...prev, quiz_topic: e.target.checked
+                                        ? [...current, topic.id]
+                                        : current.filter(id => id !== topic.id) }
+                                    })
+                                  }}
+                                />
+                                {topic.name}
+                              </label>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-border" />
+
+                  {/* Acervo Digital */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">Acervo Digital</h4>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={contentToggles.acervo} onChange={e => {
+                          setContentToggles(p => ({...p, acervo: e.target.checked}))
+                          if (e.target.checked) setContentAccess(p => { const n = {...p}; delete n.acervo_category; delete n.acervo_concurso; return n })
+                        }} />
+                        Todo o acervo
+                      </label>
+                    </div>
+                    {!contentToggles.acervo && (
+                      <div className="pl-4 space-y-3">
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">Categorias</p>
+                          <div className="flex flex-wrap gap-3">
+                            {['prova', 'livro', 'apostila', 'exercicio', 'regulamento', 'mapa_mental'].map(cat => (
+                              <label key={cat} className="flex items-center gap-2 text-sm">
+                                <input type="checkbox"
+                                  checked={contentAccess.acervo_category?.includes(cat) || false}
+                                  onChange={e => {
+                                    setContentAccess(prev => {
+                                      const current = prev.acervo_category || []
+                                      return { ...prev, acervo_category: e.target.checked ? [...current, cat] : current.filter(id => id !== cat) }
+                                    })
+                                  }}
+                                />
+                                {cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', ' ')}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">Concursos</p>
+                          <div className="flex flex-wrap gap-3">
+                            {['EAOF', 'EAOP', 'CAMAR', 'CADAR', 'CAFAR', 'CFOE'].map(conc => (
+                              <label key={conc} className="flex items-center gap-2 text-sm">
+                                <input type="checkbox"
+                                  checked={contentAccess.acervo_concurso?.includes(conc) || false}
+                                  onChange={e => {
+                                    setContentAccess(prev => {
+                                      const current = prev.acervo_concurso || []
+                                      return { ...prev, acervo_concurso: e.target.checked ? [...current, conc] : current.filter(id => id !== conc) }
+                                    })
+                                  }}
+                                />
+                                {conc}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-border" />
+
+                  {/* Simulados */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">Simulados</h4>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={contentToggles.simulation} onChange={e => {
+                          setContentToggles(p => ({...p, simulation: e.target.checked}))
+                          if (e.target.checked) setContentAccess(p => { const n = {...p}; delete n.simulation; return n })
+                        }} />
+                        Todos os simulados
+                      </label>
+                    </div>
+                    {!contentToggles.simulation && allSimulations.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-4">
+                        {allSimulations.map(sim => (
+                          <label key={sim.id} className="flex items-center gap-2 text-sm">
+                            <input type="checkbox"
+                              checked={contentAccess.simulation?.includes(sim.id) || false}
+                              onChange={e => {
+                                setContentAccess(prev => {
+                                  const current = prev.simulation || []
+                                  return { ...prev, simulation: e.target.checked ? [...current, sim.id] : current.filter(id => id !== sim.id) }
+                                })
+                              }}
+                            />
+                            {sim.title}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-border" />
+
+                  {/* Redação */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">Redação</h4>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={contentToggles.essay_limit} onChange={e => {
+                          setContentToggles(p => ({...p, essay_limit: e.target.checked}))
+                          if (e.target.checked) setContentAccess(p => { const n = {...p}; delete n.essay_limit; return n })
+                        }} />
+                        Ilimitado
+                      </label>
+                    </div>
+                    {!contentToggles.essay_limit && (
+                      <div className="flex items-center gap-2 pl-4">
+                        <span className="text-sm">Máximo de envios:</span>
+                        <Input type="number" min="1" value={essayLimit} onChange={e => setEssayLimit(e.target.value)} className="w-20" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-border" />
+
+                  {/* Comunidade */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">Comunidade</h4>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={contentToggles.community_readonly} onChange={e => {
+                          setContentToggles(p => ({...p, community_readonly: e.target.checked}))
+                          if (e.target.checked) setContentAccess(p => { const n = {...p}; delete n.community_readonly; return n })
+                        }} />
+                        Acesso completo
+                      </label>
+                    </div>
+                    {!contentToggles.community_readonly && (
+                      <p className="text-sm text-muted-foreground pl-4">Somente leitura — aluno pode ver posts mas não pode criar ou comentar</p>
+                    )}
+                  </div>
+
+                </CardContent>
+              </Card>
 
               <div className="flex items-center gap-3 pt-4">
                 <Button
