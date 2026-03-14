@@ -39,7 +39,6 @@ import {
 } from '@/services/adminQuizService'
 import { SectionLoader } from '@/components/SectionLoader'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const questionSchema = z.object({
   id: z.string().optional(),

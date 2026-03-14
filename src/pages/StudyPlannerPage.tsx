@@ -35,6 +35,7 @@ import {
   HelpCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PageTabs } from '@/components/PageTabs'
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -641,220 +642,184 @@ export default function StudyPlannerPage() {
         </Card>
 
         {/* Tabs */}
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Seções do plano de estudos">
-          <Button
-            onClick={() => setActiveTab('planner')}
-            variant={activeTab === 'planner' ? 'default' : 'outline'}
-            className={cn(
-              "flex-1 md:flex-none",
-              activeTab === 'planner' && ""
-            )}
-            role="tab"
-            aria-selected={activeTab === 'planner'}
-            aria-controls="planner-panel"
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            Planejamento
-          </Button>
-          <Button
-            onClick={() => setActiveTab('timer')}
-            variant={activeTab === 'timer' ? 'default' : 'outline'}
-            className={cn(
-              "flex-1 md:flex-none",
-              activeTab === 'timer' && ""
-            )}
-            role="tab"
-            aria-selected={activeTab === 'timer'}
-            aria-controls="timer-panel"
-          >
-            <Clock className="mr-2 h-4 w-4" />
-            Cronômetro Pomodoro
-          </Button>
-          <Button
-            onClick={() => setActiveTab('history')}
-            variant={activeTab === 'history' ? 'default' : 'outline'}
-            className={cn(
-              "flex-1 md:flex-none",
-              activeTab === 'history' && ""
-            )}
-            role="tab"
-            aria-selected={activeTab === 'history'}
-            aria-controls="history-panel"
-          >
-            <Trophy className="mr-2 h-4 w-4" />
-            Histórico
-          </Button>
-        </div>
+        <PageTabs
+          value={activeTab}
+          onChange={(v) => setActiveTab(v as 'planner' | 'timer' | 'history')}
+          tabs={[
+            {
+              value: 'planner',
+              label: 'Planejamento',
+              icon: <Calendar className="h-4 w-4" />,
+              content: (
+                <div className="space-y-6">
+                  {/* Search and Filter Bar */}
+                  <Card className="border-border shadow-sm">
+                    <CardContent className="pt-6">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Buscar conteúdos..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                          aria-label="Buscar conteúdos de estudo"
+                        />
+                      </div>
+                      <Select
+                        value={statusFilter}
+                        onValueChange={(value: any) => setStatusFilter(value)}
+                      >
+                        <SelectTrigger className="w-full md:w-48" aria-label="Filtrar por status">
+                          <Filter className="mr-2 h-4 w-4" />
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos</SelectItem>
+                          <SelectItem value="pending">Pendentes</SelectItem>
+                          <SelectItem value="in-progress">Em Progresso</SelectItem>
+                          <SelectItem value="completed">Completos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    </CardContent>
+                  </Card>
 
-        {/* Search and Filter Bar - Only visible in planner tab */}
-        {activeTab === 'planner' && (
-          <Card className="border-border shadow-sm">
-            <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar conteúdos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                  aria-label="Buscar conteúdos de estudo"
-                />
-              </div>
-              <Select
-                value={statusFilter}
-                onValueChange={(value: any) => setStatusFilter(value)}
-              >
-                <SelectTrigger className="w-full md:w-48" aria-label="Filtrar por status">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="pending">Pendentes</SelectItem>
-                  <SelectItem value="in-progress">Em Progresso</SelectItem>
-                  <SelectItem value="completed">Completos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            </CardContent>
-          </Card>
-        )}
+                  {/* Content */}
+                  {topics.length === 0 ? (
+                    <Card className="border-border shadow-sm">
+                      <CardContent className="text-center py-24">
+                      <div className="max-w-md mx-auto">
+                        <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-primary/10 flex items-center justify-center">
+                          <BookOpen className="w-10 h-10 text-primary" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-foreground mb-4">
+                          Nenhum conteúdo adicionado
+                        </h3>
+                        <p className="text-muted-foreground mb-8">
+                          Comece adicionando conteúdos de estudo ao seu planejamento. Organize seus tópicos por matéria e acompanhe seu progresso!
+                        </p>
+                        <Button
+                          onClick={() => { setEditingTopic(null); setShowAddModal(true); }}
+                          className="hover:bg-green-600"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Adicionar Primeiro Conteúdo
+                        </Button>
+                      </div>
+                      </CardContent>
+                    </Card>
+                  ) : filteredTopics.length === 0 ? (
+                    <Card className="border-border shadow-sm">
+                      <CardContent className="text-center py-16">
+                      <div className="max-w-md mx-auto">
+                        <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                        <h3 className="text-xl font-semibold mb-2">Nenhum resultado encontrado</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Não encontramos conteúdos com os filtros aplicados. Tente ajustar sua busca.
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSearchTerm('')
+                            setStatusFilter('all')
+                          }}
+                        >
+                          Limpar Filtros
+                        </Button>
+                      </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                      {Object.entries(topicsByCategory).map(([key, categoryTopics]) => {
+                        if (categoryTopics.length === 0) return null
 
-        {/* Content */}
-        {activeTab === 'planner' && (
-          <div role="tabpanel" id="planner-panel" aria-labelledby="planner-tab">
-            <>
-            {/* Empty State */}
-            {topics.length === 0 ? (
-              <Card className="border-border shadow-sm">
-                <CardContent className="text-center py-24">
-                <div className="max-w-md mx-auto">
-                  <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-primary/10 flex items-center justify-center">
-                    <BookOpen className="w-10 h-10 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-4">
-                    Nenhum conteúdo adicionado
-                  </h3>
-                  <p className="text-muted-foreground mb-8">
-                    Comece adicionando conteúdos de estudo ao seu planejamento. Organize seus tópicos por matéria e acompanhe seu progresso!
-                  </p>
-                  <Button
-                    onClick={() => { setEditingTopic(null); setShowAddModal(true); }}
-                    className="hover:bg-green-600"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Primeiro Conteúdo
-                  </Button>
+                        const categoryNames: Record<string, string> = {
+                          'portugues': 'Português',
+                          'redacao': 'Redação',
+                          'matematica': 'Matemática',
+                          'raciocinio-logico': 'Raciocínio Lógico',
+                          'direito-constitucional': 'Direito Constitucional',
+                          'direito-administrativo': 'Direito Administrativo',
+                          'direito-penal': 'Direito Penal',
+                          'direito-civil': 'Direito Civil',
+                          'informatica': 'Informática',
+                          'atualidades': 'Atualidades',
+                          'conhecimentos-gerais': 'Conhecimentos Gerais',
+                          'ingles': 'Inglês',
+                          'historia': 'História',
+                          'geografia': 'Geografia',
+                          'legislacao': 'Legislação',
+                          'outros': 'Outros'
+                        }
+
+                        return (
+                          <CategoryCard
+                            key={key}
+                            title={categoryNames[key] || key}
+                            icon={getCategoryIcon(key)}
+                            color={getCategoryColor(key)}
+                            topics={categoryTopics}
+                            onAddTopic={() => {
+                              setNewTopic({ ...newTopic, category: key as any })
+                              setShowAddModal(true)
+                            }}
+                            onUpdateStatus={updateTopicStatus}
+                            onEdit={(topic) => {
+                              setEditingTopic(topic)
+                              setNewTopic({
+                                title: topic.title,
+                                category: topic.category,
+                                type: topic.type
+                              })
+                              setShowAddModal(true)
+                            }}
+                            onDelete={deleteTopic}
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
-                </CardContent>
-              </Card>
-            ) : filteredTopics.length === 0 ? (
-              <Card className="border-border shadow-sm">
-                <CardContent className="text-center py-16">
-                <div className="max-w-md mx-auto">
-                  <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="text-xl font-semibold mb-2">Nenhum resultado encontrado</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Não encontramos conteúdos com os filtros aplicados. Tente ajustar sua busca.
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSearchTerm('')
-                      setStatusFilter('all')
-                    }}
-                  >
-                    Limpar Filtros
-                  </Button>
-                </div>
-                </CardContent>
-              </Card>
-            ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            {/* Renderizar todas as categorias que têm tópicos */}
-            {Object.entries(topicsByCategory).map(([key, categoryTopics]) => {
-              if (categoryTopics.length === 0) return null
-              
-              const categoryNames: Record<string, string> = {
-                'portugues': 'Português',
-                'redacao': 'Redação',
-                'matematica': 'Matemática',
-                'raciocinio-logico': 'Raciocínio Lógico',
-                'direito-constitucional': 'Direito Constitucional',
-                'direito-administrativo': 'Direito Administrativo',
-                'direito-penal': 'Direito Penal',
-                'direito-civil': 'Direito Civil',
-                'informatica': 'Informática',
-                'atualidades': 'Atualidades',
-                'conhecimentos-gerais': 'Conhecimentos Gerais',
-                'ingles': 'Inglês',
-                'historia': 'História',
-                'geografia': 'Geografia',
-                'legislacao': 'Legislação',
-                'outros': 'Outros'
-              }
-
-              return (
-                <CategoryCard
-                  key={key}
-                  title={categoryNames[key] || key}
-                  icon={getCategoryIcon(key)}
-                  color={getCategoryColor(key)}
-                  topics={categoryTopics}
-                  onAddTopic={() => {
-                    setNewTopic({ ...newTopic, category: key as any })
-                    setShowAddModal(true)
-                  }}
-                  onUpdateStatus={updateTopicStatus}
-                  onEdit={(topic) => {
-                    setEditingTopic(topic)
-                    setNewTopic({
-                      title: topic.title,
-                      category: topic.category,
-                      type: topic.type
-                    })
-                    setShowAddModal(true)
-                  }}
-                  onDelete={deleteTopic}
+              ),
+            },
+            {
+              value: 'timer',
+              label: 'Cronômetro Pomodoro',
+              icon: <Clock className="h-4 w-4" />,
+              content: (
+                <PomodoroTimer
+                  timerActive={timerActive}
+                  timerMode={timerMode}
+                  timeLeft={timeLeft}
+                  currentTopic={currentTopicForTimer}
+                  completedPomodoros={completedPomodoros}
+                  soundEnabled={soundEnabled}
+                  notificationsEnabled={notificationsEnabled}
+                  onToggleTimer={() => setTimerActive(!timerActive)}
+                  onResetTimer={resetTimer}
+                  onTopicChange={setCurrentTopicForTimer}
+                  onToggleSound={() => setSoundEnabled(!soundEnabled)}
+                  onRequestNotifications={requestNotificationPermission}
+                  formatTime={formatTime}
                 />
-              )
-            })}
-          </div>
-            )}
-          </>
-          </div>
-        )}
-
-        {activeTab === 'timer' && (
-          <div role="tabpanel" id="timer-panel" aria-labelledby="timer-tab">
-          <PomodoroTimer
-            timerActive={timerActive}
-            timerMode={timerMode}
-            timeLeft={timeLeft}
-            currentTopic={currentTopicForTimer}
-            completedPomodoros={completedPomodoros}
-            soundEnabled={soundEnabled}
-            notificationsEnabled={notificationsEnabled}
-            onToggleTimer={() => setTimerActive(!timerActive)}
-            onResetTimer={resetTimer}
-            onTopicChange={setCurrentTopicForTimer}
-            onToggleSound={() => setSoundEnabled(!soundEnabled)}
-            onRequestNotifications={requestNotificationPermission}
-            formatTime={formatTime}
-          />
-          </div>
-        )}
-
-        {activeTab === 'history' && (
-          <div role="tabpanel" id="history-panel" aria-labelledby="history-tab">
-          <StudyHistory
-            totalPomodoros={totalPomodoros}
-            completedTopics={completedTopics}
-            sessions={sessions}
-          />
-          </div>
-        )}
+              ),
+            },
+            {
+              value: 'history',
+              label: 'Histórico',
+              icon: <Trophy className="h-4 w-4" />,
+              content: (
+                <StudyHistory
+                  totalPomodoros={totalPomodoros}
+                  completedTopics={completedTopics}
+                  sessions={sessions}
+                />
+              ),
+            },
+          ]}
+        />
 
       </div>
 

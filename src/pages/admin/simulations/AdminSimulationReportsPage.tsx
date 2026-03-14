@@ -17,7 +17,7 @@ import {
   XCircle,
   Download,
 } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageTabs } from '@/components/PageTabs'
 import {
   BarChart,
   Bar,
@@ -102,6 +102,7 @@ export default function AdminSimulationReportsPage() {
   const [timeDistribution, setTimeDistribution] = useState<TimeDistribution[]>([])
   const [topStudents, setTopStudents] = useState<TopStudent[]>([])
   const [allAttempts, setAllAttempts] = useState<AttemptRow[]>([])
+  const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
     loadSimulationReports()
@@ -375,16 +376,17 @@ export default function AdminSimulationReportsPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-            <TabsTrigger value="overview" className="text-xs md:text-sm">Visão Geral</TabsTrigger>
-            <TabsTrigger value="questions" className="text-xs md:text-sm">Questões</TabsTrigger>
-            <TabsTrigger value="students" className="text-xs md:text-sm">Alunos</TabsTrigger>
-            <TabsTrigger value="attempts" className="text-xs md:text-sm">Tentativas</TabsTrigger>
-          </TabsList>
-
-          {/* Visão Geral */}
-          <TabsContent value="overview" className="space-y-6">
+        <PageTabs
+          value={activeTab}
+          onChange={setActiveTab}
+          layout={4}
+          tabs={[
+            {
+              value: 'overview',
+              label: 'Visão Geral',
+              icon: <BarChart3 className="h-4 w-4" />,
+              content: (
+          <div className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <Card className="border-border shadow-sm">
                 <CardContent className="p-5">
@@ -469,10 +471,15 @@ export default function AdminSimulationReportsPage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Questões */}
-          <TabsContent value="questions" className="space-y-6">
+          </div>
+              ),
+            },
+            {
+              value: 'questions',
+              label: 'Questões',
+              icon: <Target className="h-4 w-4" />,
+              content: (
+          <div className="space-y-6">
             <Card className="border-border shadow-sm">
               <CardContent className="p-5">
                 <div className="space-y-4">
@@ -556,10 +563,15 @@ export default function AdminSimulationReportsPage() {
               })}
             </div>
             )}
-          </TabsContent>
-
-          {/* Alunos */}
-          <TabsContent value="students" className="space-y-6">
+          </div>
+              ),
+            },
+            {
+              value: 'students',
+              label: 'Alunos',
+              icon: <Users className="h-4 w-4" />,
+              content: (
+          <div className="space-y-6">
             <Card className="border-border shadow-sm">
               <CardContent className="p-5">
                 <div className="space-y-4">
@@ -613,10 +625,15 @@ export default function AdminSimulationReportsPage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Tentativas */}
-          <TabsContent value="attempts" className="space-y-6">
+          </div>
+              ),
+            },
+            {
+              value: 'attempts',
+              label: 'Tentativas',
+              icon: <Clock className="h-4 w-4" />,
+              content: (
+          <div className="space-y-6">
             <Card className="border-border shadow-sm">
               <CardContent className="p-5">
                 <div className="space-y-4">
@@ -671,8 +688,11 @@ export default function AdminSimulationReportsPage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+              ),
+            },
+          ]}
+        />
       </div>
     </div>
   )
