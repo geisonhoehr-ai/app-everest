@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -28,6 +28,7 @@ import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { ArrowLeft, GraduationCap, Save } from 'lucide-react'
+import { getModuleRulesForClass, saveAllModuleRules, checkCircularDependency } from '@/services/moduleRulesService'
 
 const classSchema = z.object({
   name: z.string().min(1, 'O nome da turma é obrigatório'),
@@ -49,6 +50,10 @@ export default function AdminClassFormPage() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [accessDuration, setAccessDuration] = useState<number | ''>('')
+  const [isDefault, setIsDefault] = useState(false)
+  const [moduleRules, setModuleRules] = useState<Record<string, { rule_type: string; rule_value: string }>>({})
+  const [modules, setModules] = useState<any[]>([])
 
   const isEditing = !!classId
 
@@ -71,6 +76,7 @@ export default function AdminClassFormPage() {
       await loadTeachers()
       if (isEditing) {
         await loadClass()
+        await loadModulesAndRules()
       }
       setLoading(false)
     }
@@ -118,6 +124,8 @@ export default function AdminClassFormPage() {
           class_type: classData.class_type || 'standard',
           teacher_id: classData.teacher_id || '',
         })
+        setAccessDuration(classData.access_duration_days ?? '')
+        setIsDefault(classData.is_default ?? false)
       }
     } catch (error) {
       logger.error('Erro ao carregar turma:', error)
@@ -131,42 +139,91 @@ export default function AdminClassFormPage() {
     }
   }
 
+  const loadModulesAndRules = async () => {
+    try {
+      // Fetch modules from courses linked to this class
+      const { data: linkedCourses } = await supabase
+        .from('class_courses')
+        .select('video_courses(id, name, video_modules(id, name, order_index))')
+        .eq('class_id', classId)
+
+      const allModules = (linkedCourses || []).flatMap((lc: any) =>
+        lc.video_courses?.video_modules?.map((m: any) => ({
+          ...m,
+          courseName: lc.video_courses.name
+        })) || []
+      ).sort((a: any, b: any) => a.order_index - b.order_index)
+
+      setModules(allModules)
+
+      // Fetch existing rules
+      const rules = await getModuleRulesForClass(classId!)
+      const rulesMap: Record<string, any> = {}
+      rules.forEach(r => { rulesMap[r.module_id] = { rule_type: r.rule_type, rule_value: r.rule_value || '' } })
+      setModuleRules(rulesMap)
+    } catch (error) {
+      logger.error('Erro ao carregar módulos e regras:', error)
+    }
+  }
+
   const onSubmit = async (values: ClassFormValues) => {
     try {
+      const classPayload = {
+        name: values.name,
+        description: values.description,
+        start_date: values.start_date,
+        end_date: values.end_date,
+        status: values.status,
+        class_type: values.class_type,
+        teacher_id: values.teacher_id,
+        access_duration_days: accessDuration === '' ? null : accessDuration,
+        is_default: isDefault,
+      }
+
       if (isEditing) {
         const { error } = await (supabase as any)
           .from('classes')
-          .update({
-            name: values.name,
-            description: values.description,
-            start_date: values.start_date,
-            end_date: values.end_date,
-            status: values.status,
-            class_type: values.class_type,
-            teacher_id: values.teacher_id,
-          })
+          .update(classPayload)
           .eq('id', classId)
 
         if (error) throw error
+
+        // Save module rules
+        const rulesToSave = Object.entries(moduleRules)
+          .filter(([_, r]) => r.rule_type !== 'free')
+          .map(([moduleId, r]) => ({
+            class_id: classId!,
+            module_id: moduleId,
+            rule_type: r.rule_type as any,
+            rule_value: r.rule_value || null
+          }))
+        await saveAllModuleRules(classId!, rulesToSave)
 
         toast({
           title: 'Sucesso',
           description: 'Turma atualizada com sucesso',
         })
       } else {
-        const { error } = await (supabase as any)
+        const { data: insertedData, error } = await (supabase as any)
           .from('classes')
-          .insert({
-            name: values.name,
-            description: values.description,
-            start_date: values.start_date,
-            end_date: values.end_date,
-            status: values.status,
-            class_type: values.class_type,
-            teacher_id: values.teacher_id,
-          })
+          .insert(classPayload)
+          .select('id')
+          .single()
 
         if (error) throw error
+
+        // Save module rules if we have a new class ID
+        if (insertedData?.id) {
+          const rulesToSave = Object.entries(moduleRules)
+            .filter(([_, r]) => r.rule_type !== 'free')
+            .map(([moduleId, r]) => ({
+              class_id: insertedData.id,
+              module_id: moduleId,
+              rule_type: r.rule_type as any,
+              rule_value: r.rule_value || null
+            }))
+          await saveAllModuleRules(insertedData.id, rulesToSave)
+        }
 
         toast({
           title: 'Sucesso',
@@ -375,6 +432,102 @@ export default function AdminClassFormPage() {
                   )}
                 />
               </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Prazo de Acesso</CardTitle>
+                  <CardDescription>Ao matricular um aluno, o acesso expira apos esse prazo</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={accessDuration}
+                      onChange={e => setAccessDuration(e.target.value ? parseInt(e.target.value) : '')}
+                      placeholder="Ilimitado"
+                      className="w-32"
+                    />
+                    <span className="text-sm text-muted-foreground">dias</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={isDefault} onChange={e => setIsDefault(e.target.checked)} />
+                    <label className="text-sm">Turma padrao - Ingressar membros com acesso ilimitado nesta turma</label>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {modules.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Regras de Liberacao de Modulos</CardTitle>
+                    <CardDescription>Defina quando cada modulo sera liberado para os alunos desta turma</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
+                        <span>NOME DO MODULO</span>
+                        <span>SELECIONE REGRA</span>
+                      </div>
+                      {modules.map(mod => {
+                        const rule = moduleRules[mod.id] || { rule_type: 'free', rule_value: '' }
+                        return (
+                          <div key={mod.id} className="grid grid-cols-2 gap-4 items-center py-2 border-b border-border/50">
+                            <div>
+                              <p className="text-sm font-medium">{mod.name}</p>
+                              <p className="text-xs text-muted-foreground">{mod.courseName}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <select
+                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                value={rule.rule_type}
+                                onChange={e => {
+                                  setModuleRules(prev => ({
+                                    ...prev,
+                                    [mod.id]: { ...prev[mod.id], rule_type: e.target.value, rule_value: '' }
+                                  }))
+                                }}
+                              >
+                                <option value="free">Acesso Livre</option>
+                                <option value="scheduled_date">Data programada</option>
+                                <option value="days_after_enrollment">Dias apos compra</option>
+                                <option value="hidden">Oculto</option>
+                                <option value="blocked">Bloqueado</option>
+                                <option value="module_completed">Modulo concluido</option>
+                              </select>
+                              {rule.rule_type === 'scheduled_date' && (
+                                <Input type="date" value={rule.rule_value} onChange={e => setModuleRules(prev => ({...prev, [mod.id]: {...prev[mod.id], rule_value: e.target.value}}))} className="w-40" />
+                              )}
+                              {rule.rule_type === 'days_after_enrollment' && (
+                                <Input type="number" value={rule.rule_value} onChange={e => setModuleRules(prev => ({...prev, [mod.id]: {...prev[mod.id], rule_value: e.target.value}}))} placeholder="dias" className="w-24" />
+                              )}
+                              {rule.rule_type === 'module_completed' && (
+                                <select
+                                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                  value={rule.rule_value}
+                                  onChange={e => {
+                                    // Check circular dependency
+                                    const allRules = Object.entries(moduleRules).map(([mid, r]) => ({ module_id: mid, class_id: classId!, rule_type: r.rule_type as any, rule_value: r.rule_value }))
+                                    if (checkCircularDependency(allRules, mod.id, e.target.value)) {
+                                      toast({ title: 'Dependencia circular detectada!', variant: 'destructive' })
+                                      return
+                                    }
+                                    setModuleRules(prev => ({...prev, [mod.id]: {...prev[mod.id], rule_value: e.target.value}}))
+                                  }}
+                                >
+                                  <option value="">Selecione...</option>
+                                  {modules.filter(m => m.id !== mod.id).map(m => (
+                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               <div className="flex items-center gap-3 pt-4">
                 <Button

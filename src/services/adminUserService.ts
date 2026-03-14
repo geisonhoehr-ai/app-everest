@@ -75,12 +75,14 @@ export const getUserClasses = async (userId: string) => {
   return data || []
 }
 
-export const addUserToClass = async (userId: string, classId: string) => {
+export const addUserToClass = async (userId: string, classId: string, expiresAt?: string) => {
   const { error } = await supabase
     .from('student_classes')
     .insert({
       user_id: userId,
-      class_id: classId
+      class_id: classId,
+      enrollment_date: new Date().toISOString(),
+      subscription_expires_at: expiresAt || null
     })
 
   if (error) {
@@ -178,4 +180,50 @@ export const getUsersWithClasses = async (): Promise<UserWithClasses[]> => {
   })
 
   return usersWithClasses
+}
+
+export async function banUser(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('users')
+    .update({ is_banned: true })
+    .eq('id', userId)
+  if (error) throw error
+}
+
+export async function unbanUser(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('users')
+    .update({ is_banned: false })
+    .eq('id', userId)
+  if (error) throw error
+}
+
+export async function setUnlimitedAccess(userId: string, unlimited: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('users')
+    .update({ is_unlimited_access: unlimited })
+    .eq('id', userId)
+  if (error) throw error
+}
+
+export async function getEnrollmentsByUser(userId: string) {
+  const { data, error } = await supabase
+    .from('student_classes')
+    .select('*, classes(id, name, class_courses(video_courses(id, name)))')
+    .eq('user_id', userId)
+  if (error) throw error
+  return data || []
+}
+
+export async function unenrollFromClass(userId: string, classId: string): Promise<void> {
+  const { error } = await supabase
+    .from('student_classes')
+    .delete()
+    .eq('user_id', userId)
+    .eq('class_id', classId)
+  if (error) throw error
+}
+
+export async function updateLastSeen(userId: string): Promise<void> {
+  await supabase.rpc('update_last_seen', { p_user_id: userId })
 }

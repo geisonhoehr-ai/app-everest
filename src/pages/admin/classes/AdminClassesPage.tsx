@@ -40,9 +40,17 @@ import {
   getClassStudents,
   type Class
 } from '@/services/classService'
+import { supabase } from '@/lib/supabase/client'
+
+interface LinkedCourse {
+  id: string
+  name: string
+  thumbnail_url: string | null
+}
 
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<Class[]>([])
+  const [classCourseMap, setClassCourseMap] = useState<Record<string, LinkedCourse>>({})
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const { toast } = useToast()
@@ -54,6 +62,33 @@ export default function AdminClassesPage() {
     }
   }, [teacherLoading])
 
+  const loadClassCourses = async (classList: Class[]) => {
+    try {
+      const classIdList = classList.map(c => c.id)
+      const { data, error } = await supabase
+        .from('class_courses')
+        .select('class_id, video_courses(id, name, thumbnail_url)')
+        .in('class_id', classIdList)
+
+      if (error || !data) return
+
+      const map: Record<string, LinkedCourse> = {}
+      for (const row of data as any[]) {
+        // Keep the first linked course per class
+        if (!map[row.class_id] && row.video_courses) {
+          map[row.class_id] = {
+            id: row.video_courses.id,
+            name: row.video_courses.name,
+            thumbnail_url: row.video_courses.thumbnail_url,
+          }
+        }
+      }
+      setClassCourseMap(map)
+    } catch (e) {
+      logger.error('Erro ao carregar cursos das turmas:', e)
+    }
+  }
+
   const loadClasses = async () => {
     try {
       const data = await getClasses()
@@ -62,6 +97,10 @@ export default function AdminClassesPage() {
         ? data.filter(c => classIds.includes(c.id))
         : data
       setClasses(filtered)
+      // Load linked course thumbnails
+      if (filtered.length > 0) {
+        loadClassCourses(filtered)
+      }
     } catch (error) {
       logger.error('Erro ao carregar turmas:', error)
       toast({
@@ -255,18 +294,36 @@ export default function AdminClassesPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredClasses.map((classItem) => (
+                  filteredClasses.map((classItem) => {
+                    const linkedCourse = classCourseMap[classItem.id]
+                    return (
                     <TableRow key={classItem.id} className="group hover:bg-primary/5">
                       <TableCell>
-                        <div>
-                          <div className="font-medium group-hover:text-primary transition-colors">
-                            {classItem.name}
-                          </div>
-                          {classItem.description && (
-                            <div className="text-sm text-muted-foreground">
-                              {classItem.description}
+                        <div className="flex items-center gap-3">
+                          {linkedCourse?.thumbnail_url ? (
+                            <img
+                              src={linkedCourse.thumbnail_url}
+                              alt=""
+                              className="w-16 h-10 rounded object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-16 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                              <BookOpen className="h-4 w-4 text-muted-foreground" />
                             </div>
                           )}
+                          <div>
+                            <div className="font-medium group-hover:text-primary transition-colors">
+                              {classItem.name}
+                            </div>
+                            {linkedCourse && (
+                              <p className="text-xs text-muted-foreground">{linkedCourse.name}</p>
+                            )}
+                            {classItem.description && !linkedCourse && (
+                              <div className="text-sm text-muted-foreground">
+                                {classItem.description}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
@@ -333,7 +390,8 @@ export default function AdminClassesPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                    )
+                  })
                 )}
               </TableBody>
             </Table>
