@@ -1,23 +1,27 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { BookOpen, Play, Lock, Layers } from 'lucide-react'
 import { cachedFetch } from '@/lib/offlineCache'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { courseService, CourseWithProgress } from '@/services/courseService'
+import { getStorefrontCourses } from '@/services/adminCourseService'
 import { cn } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 
 export default function MyCoursesPage() {
   const { user, isStudent } = useAuth()
+  const navigate = useNavigate()
   const { hasFeature, loading: permissionsLoading } = useFeaturePermissions()
   const [courses, setCourses] = useState<CourseWithProgress[]>([])
+  const [storefrontCourses, setStorefrontCourses] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [fromCache, setFromCache] = useState(false)
 
@@ -38,6 +42,12 @@ export default function MyCoursesPage() {
     }
 
     fetchCourses()
+  }, [user?.id])
+
+  useEffect(() => {
+    if (user?.id) {
+      getStorefrontCourses(user.id).then(setStorefrontCourses).catch(() => {})
+    }
   }, [user?.id])
 
   if (permissionsLoading || isLoading) {
@@ -148,6 +158,50 @@ export default function MyCoursesPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {storefrontCourses.length > 0 && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">Outros Cursos Disponiveis</h2>
+            <p className="text-sm text-muted-foreground">Explore mais cursos da plataforma</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {storefrontCourses.map(course => (
+              <Card
+                key={course.id}
+                className="cursor-pointer hover:border-primary/50 transition-colors relative overflow-hidden"
+                onClick={() => navigate(`/courses/${course.id}`)}
+              >
+                {course.thumbnail_url ? (
+                  <img src={course.thumbnail_url} alt="" className="w-full h-40 object-cover" />
+                ) : (
+                  <div className="w-full h-40 bg-muted flex items-center justify-center">
+                    <Lock className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="absolute top-2 right-2">
+                  <Badge variant="secondary" className="gap-1">
+                    <Lock className="h-3 w-3" />
+                    Bloqueado
+                  </Badge>
+                </div>
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">{course.name}</h3>
+                    {course.acronym && (
+                      <Badge variant="outline" className="text-xs">{course.acronym}</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.description}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {course.video_modules?.length || 0} modulos
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
     </div>

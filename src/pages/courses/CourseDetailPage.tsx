@@ -12,6 +12,8 @@ import {
   List,
   Layers,
   Trophy,
+  Lock,
+  ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -24,7 +26,9 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { useAuth } from '@/hooks/use-auth'
+import { useToast } from '@/hooks/use-toast'
 import { courseService } from '@/services/courseService'
+import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 
@@ -57,6 +61,7 @@ interface CourseData {
   name: string
   description: string | null
   thumbnail_url: string | null
+  sales_url: string | null
   modules: ModuleWithLessons[]
 }
 
@@ -90,9 +95,28 @@ export default function CourseDetailPage() {
   const { courseId } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [course, setCourse] = useState<CourseData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('card')
+  const [isEnrolled, setIsEnrolled] = useState(true) // default true to prevent flash
+
+  // ---- Enrollment check ----
+  useEffect(() => {
+    async function checkEnrollment() {
+      if (!user?.id || !courseId) return
+      const { data } = await supabase
+        .from('student_classes')
+        .select('id, classes!inner(class_courses!inner(course_id))')
+        .eq('user_id', user.id)
+
+      const enrolledCourseIds = (data || []).flatMap((sc: any) =>
+        sc.classes?.class_courses?.map((cc: any) => cc.course_id) || []
+      )
+      setIsEnrolled(enrolledCourseIds.includes(courseId))
+    }
+    checkEnrollment()
+  }, [user?.id, courseId])
 
   // ---- Data fetching ----
   useEffect(() => {
@@ -108,6 +132,7 @@ export default function CourseDetailPage() {
             name: data.name,
             description: data.description,
             thumbnail_url: data.thumbnail_url,
+            sales_url: data.sales_url || null,
             modules: (data.modules || []).map((m: ModuleWithLessons) => ({
               id: m.id,
               name: m.name,
@@ -222,6 +247,29 @@ export default function CourseDetailPage() {
             Voltar aos Cursos
           </Link>
         </div>
+
+        {/* ── Storefront Banner (non-enrolled) ── */}
+        {!isEnrolled && course && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              {course.thumbnail_url && (
+                <img src={course.thumbnail_url} alt="" className="w-48 h-32 rounded-lg object-cover" />
+              )}
+              <div className="flex-1 space-y-3">
+                <h2 className="text-xl font-bold">{course.name}</h2>
+                <p className="text-muted-foreground">{course.description}</p>
+                {course.sales_url && (
+                  <Button asChild>
+                    <a href={course.sales_url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      Adquirir este curso
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Hero / Course Header ── */}
         <section className="rounded-2xl border border-border bg-card shadow-sm">
@@ -343,6 +391,8 @@ export default function CourseDetailPage() {
             course={course}
             courseId={courseId!}
             firstIncompleteLessonId={firstIncompleteLesson?.lessonId ?? null}
+            isEnrolled={isEnrolled}
+            onLockedClick={() => toast({ title: 'Adquira o curso para acessar este conteudo', variant: 'destructive' })}
           />
         ) : (
           <ModuleListView
@@ -350,6 +400,8 @@ export default function CourseDetailPage() {
             courseId={courseId!}
             firstIncompleteLessonId={firstIncompleteLesson?.lessonId ?? null}
             defaultOpenModule={defaultOpenModule}
+            isEnrolled={isEnrolled}
+            onLockedClick={() => toast({ title: 'Adquira o curso para acessar este conteudo', variant: 'destructive' })}
           />
         )}
     </div>
@@ -392,10 +444,14 @@ function ModuleCardView({
   course,
   courseId,
   firstIncompleteLessonId,
+  isEnrolled,
+  onLockedClick,
 }: {
   course: CourseData
   courseId: string
   firstIncompleteLessonId: string | null
+  isEnrolled: boolean
+  onLockedClick: () => void
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -457,9 +513,12 @@ function ModuleCardView({
             <ul className="mt-4 flex-1 space-y-1.5">
               {previewLessons.map((lesson) => {
                 const isHighlighted = lesson.id === firstIncompleteLessonId
+                const isLocked = !isEnrolled && !lesson.is_preview
                 return (
                   <li key={lesson.id} className="flex items-center gap-2 min-w-0">
-                    {lesson.completed ? (
+                    {isLocked ? (
+                      <Lock className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/40" />
+                    ) : lesson.completed ? (
                       <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-green-500" />
                     ) : isHighlighted ? (
                       <PlayCircle className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
@@ -489,16 +548,29 @@ function ModuleCardView({
             </ul>
 
             {/* View module link */}
-            <Link
-              to={`/courses/${courseId}/lessons/${module.lessons[0]?.id ?? ''}`}
-              className={cn(
-                'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
-                'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'
-              )}
-            >
-              Ver módulo
-              <ChevronRight className="h-4 w-4" />
-            </Link>
+            {isEnrolled ? (
+              <Link
+                to={`/courses/${courseId}/lessons/${module.lessons[0]?.id ?? ''}`}
+                className={cn(
+                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
+                  'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'
+                )}
+              >
+                Ver módulo
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <button
+                onClick={onLockedClick}
+                className={cn(
+                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
+                  'bg-muted text-muted-foreground hover:bg-muted/80'
+                )}
+              >
+                <Lock className="h-4 w-4" />
+                Bloqueado
+              </button>
+            )}
           </div>
         )
       })}
@@ -515,11 +587,15 @@ function ModuleListView({
   courseId,
   firstIncompleteLessonId,
   defaultOpenModule,
+  isEnrolled,
+  onLockedClick,
 }: {
   course: CourseData
   courseId: string
   firstIncompleteLessonId: string | null
   defaultOpenModule: string[]
+  isEnrolled: boolean
+  onLockedClick: () => void
 }) {
   return (
     <Accordion type="multiple" defaultValue={defaultOpenModule} className="space-y-3">
@@ -579,51 +655,69 @@ function ModuleListView({
                 {module.lessons.map((lesson, lessonIndex) => {
                   const isFirstIncomplete = lesson.id === firstIncompleteLessonId
                   const duration = formatDuration(lesson.duration_seconds)
+                  const isLocked = !isEnrolled && !lesson.is_preview
+
+                  const rowClasses = cn(
+                    'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
+                    isLocked ? 'opacity-60 cursor-pointer' : 'hover:bg-muted/50',
+                    !isLocked && isFirstIncomplete ? 'bg-primary/5 border border-primary/20 shadow-sm' : !isLocked && lessonIndex % 2 === 1 && 'bg-muted/30'
+                  )
+
+                  const statusIcon = isLocked ? (
+                    <Lock className="h-5 w-5 text-muted-foreground/40" />
+                  ) : lesson.completed ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  ) : isFirstIncomplete ? (
+                    <PlayCircle className="h-5 w-5 text-primary animate-pulse" />
+                  ) : (
+                    <Circle className="h-5 w-5 text-muted-foreground/40" />
+                  )
+
+                  const titleClasses = cn(
+                    'flex-1 text-sm',
+                    isLocked
+                      ? 'text-muted-foreground'
+                      : lesson.completed
+                        ? 'text-muted-foreground line-through decoration-muted-foreground/30'
+                        : isFirstIncomplete
+                          ? 'text-foreground font-medium'
+                          : 'text-foreground'
+                  )
+
+                  if (isLocked) {
+                    return (
+                      <div
+                        key={lesson.id}
+                        className={rowClasses}
+                        onClick={onLockedClick}
+                      >
+                        <div className="flex-shrink-0">{statusIcon}</div>
+                        <span className={titleClasses}>{lesson.title}</span>
+                        {duration && (
+                          <span className="flex-shrink-0 text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {duration}
+                          </span>
+                        )}
+                        <Lock className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
+                      </div>
+                    )
+                  }
 
                   return (
                     <Link
                       key={lesson.id}
                       to={`/courses/${courseId}/lessons/${lesson.id}`}
-                      className={cn(
-                        'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
-                        'hover:bg-muted/50',
-                        isFirstIncomplete ? 'bg-primary/5 border border-primary/20 shadow-sm' : lessonIndex % 2 === 1 && 'bg-muted/30'
-                      )}
+                      className={rowClasses}
                     >
-                      {/* Status icon */}
-                      <div className="flex-shrink-0">
-                        {lesson.completed ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        ) : isFirstIncomplete ? (
-                          <PlayCircle className="h-5 w-5 text-primary animate-pulse" />
-                        ) : (
-                          <Circle className="h-5 w-5 text-muted-foreground/40" />
-                        )}
-                      </div>
-
-                      {/* Title */}
-                      <span
-                        className={cn(
-                          'flex-1 text-sm',
-                          lesson.completed
-                            ? 'text-muted-foreground line-through decoration-muted-foreground/30'
-                            : isFirstIncomplete
-                              ? 'text-foreground font-medium'
-                              : 'text-foreground'
-                        )}
-                      >
-                        {lesson.title}
-                      </span>
-
-                      {/* Duration */}
+                      <div className="flex-shrink-0">{statusIcon}</div>
+                      <span className={titleClasses}>{lesson.title}</span>
                       {duration && (
                         <span className="flex-shrink-0 text-xs text-muted-foreground flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {duration}
                         </span>
                       )}
-
-                      {/* Arrow for first incomplete */}
                       {isFirstIncomplete && (
                         <ChevronRight className="h-4 w-4 text-primary flex-shrink-0" />
                       )}
