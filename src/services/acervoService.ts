@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger'
 export interface AcervoItem {
   id: string
   title: string
-  category: 'livro' | 'prova'
+  category: 'livro' | 'prova' | 'apostila' | 'exercicio' | 'regulamento' | 'mapa_mental'
   concurso: string | null
   subcategory: string | null
   year: number | null
@@ -113,6 +113,17 @@ export const acervoService = {
       .eq('category', 'prova')
       .order('concurso')
       .order('year', { ascending: false })
+
+    if (error) throw error
+    return data || []
+  },
+
+  async getByCategory(category: string): Promise<AcervoItem[]> {
+    const { data, error } = await supabase
+      .from('acervo_items')
+      .select('*')
+      .eq('category', category)
+      .order('title')
 
     if (error) throw error
     return data || []

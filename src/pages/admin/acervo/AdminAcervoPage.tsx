@@ -69,9 +69,20 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+const CATEGORIES = [
+  { value: 'livro', label: 'Livro' },
+  { value: 'prova', label: 'Prova' },
+  { value: 'apostila', label: 'Apostila' },
+  { value: 'exercicio', label: 'Exercício' },
+  { value: 'regulamento', label: 'Regulamento' },
+  { value: 'mapa_mental', label: 'Mapa Mental' },
+] as const
+
+type CategoryValue = typeof CATEGORIES[number]['value']
+
 type EditFormData = {
   title: string
-  category: 'livro' | 'prova'
+  category: CategoryValue
   concurso: string
   subcategory: string
   year: string
@@ -212,7 +223,15 @@ export default function AdminAcervoPage() {
       for (let i = 0; i < uploadFiles.length; i++) {
         const file = uploadFiles[i]
         const ext = file.name.split('.').pop()?.toLowerCase() || 'pdf'
-        const prefix = uploadForm.category === 'livro' ? 'livros' : `provas/${sanitizePath(uploadForm.concurso || 'geral')}/${uploadForm.year}`
+        const prefixMap: Record<string, string> = {
+          livro: 'livros',
+          prova: `provas/${sanitizePath(uploadForm.concurso || 'geral')}/${uploadForm.year}`,
+          apostila: 'apostilas',
+          exercicio: 'exercicios',
+          regulamento: 'regulamentos',
+          mapa_mental: 'mapas-mentais',
+        }
+        const prefix = prefixMap[uploadForm.category] || uploadForm.category
         const storagePath = `${prefix}/${sanitizePath(file.name)}`
 
         try {
@@ -344,8 +363,9 @@ export default function AdminAcervoPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="livro">Livros</SelectItem>
-                    <SelectItem value="prova">Provas</SelectItem>
+                    {CATEGORIES.map(c => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Select value={filterConcurso} onValueChange={setFilterConcurso}>
@@ -394,8 +414,8 @@ export default function AdminAcervoPage() {
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-                                {item.category === 'livro'
-                                  ? <BookOpen className="h-4 w-4 text-green-600" />
+                                {item.category === 'livro' ? <BookOpen className="h-4 w-4 text-green-600" />
+                                  : item.category === 'regulamento' ? <FileText className="h-4 w-4 text-red-600" />
                                   : <FileText className="h-4 w-4 text-blue-600" />
                                 }
                               </div>
@@ -412,12 +432,15 @@ export default function AdminAcervoPage() {
                               variant="outline"
                               className={cn(
                                 "font-semibold",
-                                item.category === 'livro'
-                                  ? "border-green-300 text-green-600 bg-green-500/10"
-                                  : "border-blue-300 text-blue-600 bg-blue-500/10"
+                                item.category === 'livro' && "border-green-300 text-green-600 bg-green-500/10",
+                                item.category === 'prova' && "border-blue-300 text-blue-600 bg-blue-500/10",
+                                item.category === 'apostila' && "border-amber-300 text-amber-600 bg-amber-500/10",
+                                item.category === 'exercicio' && "border-purple-300 text-purple-600 bg-purple-500/10",
+                                item.category === 'regulamento' && "border-red-300 text-red-600 bg-red-500/10",
+                                item.category === 'mapa_mental' && "border-teal-300 text-teal-600 bg-teal-500/10",
                               )}
                             >
-                              {item.category === 'livro' ? 'Livro' : 'Prova'}
+                              {CATEGORIES.find(c => c.value === item.category)?.label || item.category}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
@@ -490,14 +513,15 @@ export default function AdminAcervoPage() {
               <Label>Categoria</Label>
               <Select
                 value={editForm.category}
-                onValueChange={(v: 'livro' | 'prova') => setEditForm(f => ({ ...f, category: v }))}
+                onValueChange={(v: CategoryValue) => setEditForm(f => ({ ...f, category: v }))}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="livro">Livro</SelectItem>
-                  <SelectItem value="prova">Prova</SelectItem>
+                  {CATEGORIES.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -567,7 +591,7 @@ export default function AdminAcervoPage() {
                 multiple
                 onChange={e => setUploadFiles(e.target.files)}
               />
-              <p className="text-xs text-muted-foreground">PDF, JPG ou PNG. Máx. 50MB por arquivo.</p>
+              <p className="text-xs text-muted-foreground">PDF, JPG ou PNG. Máx. 100MB por arquivo.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="upload-title">Título (opcional para múltiplos arquivos)</Label>
@@ -582,14 +606,15 @@ export default function AdminAcervoPage() {
               <Label>Categoria</Label>
               <Select
                 value={uploadForm.category}
-                onValueChange={(v: 'livro' | 'prova') => setUploadForm(f => ({ ...f, category: v }))}
+                onValueChange={(v: CategoryValue) => setUploadForm(f => ({ ...f, category: v }))}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="livro">Livro</SelectItem>
-                  <SelectItem value="prova">Prova</SelectItem>
+                  {CATEGORIES.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

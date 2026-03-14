@@ -42,7 +42,7 @@ import {
   Trash2,
   Plus,
   ImageIcon,
-  Download,
+
   Upload,
   FileDown,
 } from 'lucide-react'
@@ -323,15 +323,6 @@ export default function AdminEssayCorrectionPage() {
     } finally {
       setIsTranscribing(false)
     }
-  }
-
-  const handleDownloadEssay = () => {
-    if (!fileUrl) return
-    const a = document.createElement('a')
-    a.href = fileUrl
-    a.download = `redacao-${studentName || 'aluno'}-${essay?.essay_prompts?.title || 'tema'}.pdf`.replace(/\s+/g, '-')
-    a.target = '_blank'
-    a.click()
   }
 
   const handleUploadCorrected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -782,7 +773,7 @@ export default function AdminEssayCorrectionPage() {
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className={cn(
                             'text-[9px] px-1',
-                            t.correction_type === 'enem' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            t.correction_type === 'enem' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800' : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
                           )}>
                             {(t.correction_type || 'ciaar').toUpperCase()}
                           </Badge>
@@ -803,12 +794,6 @@ export default function AdminEssayCorrectionPage() {
 
         {/* Action buttons */}
         <div className="flex items-center gap-2 flex-wrap">
-          {fileUrl && (
-            <Button size="sm" variant="outline" className="bg-white dark:bg-slate-800 hover:bg-green-50 hover:text-green-700 hover:border-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-300 dark:hover:border-green-700" onClick={handleDownloadEssay}>
-              <Download className="h-4 w-4 mr-1" /> Baixar Redação
-            </Button>
-          )}
-
           <Button size="sm" variant="outline" className="bg-white dark:bg-slate-800 hover:bg-green-50 hover:text-green-700 hover:border-green-300 dark:hover:bg-green-900/30 dark:hover:text-green-300 dark:hover:border-green-700" onClick={() => document.getElementById('corrected-upload')?.click()} disabled={isUploading}>
             {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
             {correctedFileUrl ? 'Reenviar Correção' : 'Enviar Correção'}

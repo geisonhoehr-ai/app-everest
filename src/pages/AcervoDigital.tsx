@@ -31,6 +31,10 @@ import { OfflineBanner } from '@/components/OfflineBanner'
 
 const CONCURSO_COLORS: Record<string, { bg: string; text: string; badge: string; border: string; btn: string; hoverBorder: string }> = {
   livros: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20', btn: 'bg-emerald-600 hover:bg-green-600', hoverBorder: 'hover:border-emerald-500/40' },
+  apostilas: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', badge: 'bg-amber-500', border: 'border-amber-500/20', btn: 'bg-amber-600 hover:bg-green-600', hoverBorder: 'hover:border-amber-500/40' },
+  exercicios: { bg: 'bg-violet-500/10', text: 'text-violet-600 dark:text-violet-400', badge: 'bg-violet-500', border: 'border-violet-500/20', btn: 'bg-violet-600 hover:bg-green-600', hoverBorder: 'hover:border-violet-500/40' },
+  regulamentos: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400', badge: 'bg-red-500', border: 'border-red-500/20', btn: 'bg-red-600 hover:bg-green-600', hoverBorder: 'hover:border-red-500/40' },
+  mapas_mentais: { bg: 'bg-teal-500/10', text: 'text-teal-600 dark:text-teal-400', badge: 'bg-teal-500', border: 'border-teal-500/20', btn: 'bg-teal-600 hover:bg-green-600', hoverBorder: 'hover:border-teal-500/40' },
   EAOF: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', badge: 'bg-blue-500', border: 'border-blue-500/20', btn: 'bg-blue-600 hover:bg-green-600', hoverBorder: 'hover:border-blue-500/40' },
   EAOP: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-500', border: 'border-emerald-500/20', btn: 'bg-emerald-600 hover:bg-green-600', hoverBorder: 'hover:border-emerald-500/40' },
   CAMAR: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', badge: 'bg-purple-500', border: 'border-purple-500/20', btn: 'bg-purple-600 hover:bg-green-600', hoverBorder: 'hover:border-purple-500/40' },
@@ -47,7 +51,7 @@ function formatFileSize(bytes: number): string {
 
 // Category that was selected to browse files
 interface SelectedCategory {
-  type: 'livros' | 'provas'
+  type: 'livros' | 'provas' | 'apostilas' | 'exercicios' | 'regulamentos' | 'mapas_mentais'
   label: string
   concurso?: string
   items: AcervoItem[]
@@ -57,6 +61,10 @@ interface SelectedCategory {
 export default function AcervoDigitalPage() {
   const [livros, setLivros] = useState<AcervoItem[]>([])
   const [provas, setProvas] = useState<AcervoItem[]>([])
+  const [apostilas, setApostilas] = useState<AcervoItem[]>([])
+  const [exercicios, setExercicios] = useState<AcervoItem[]>([])
+  const [regulamentos, setRegulamentos] = useState<AcervoItem[]>([])
+  const [mapasMentais, setMapasMentais] = useState<AcervoItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [viewingFile, setViewingFile] = useState<AcervoItem | null>(null)
@@ -120,11 +128,19 @@ export default function AcervoDigitalPage() {
           Promise.all([
             acervoService.getLivros(),
             acervoService.getProvas(),
+            acervoService.getByCategory('apostila'),
+            acervoService.getByCategory('exercicio'),
+            acervoService.getByCategory('regulamento'),
+            acervoService.getByCategory('mapa_mental'),
           ])
         )
-        const [l, p] = result.data
+        const [l, p, a, e, r, m] = result.data
         setLivros(l)
         setProvas(p)
+        setApostilas(a)
+        setExercicios(e)
+        setRegulamentos(r)
+        setMapasMentais(m)
         setFromCache(result.fromCache)
       } catch (err) {
         logger.error('Error loading acervo:', err)
@@ -167,7 +183,7 @@ export default function AcervoDigitalPage() {
       .filter(g => g.subcategories.length > 0)
   }, [provaGroups, search])
 
-  const totalItems = livros.length + provas.length
+  const totalItems = livros.length + provas.length + apostilas.length + exercicios.length + regulamentos.length + mapasMentais.length
 
   function getFileUrl(item: AcervoItem): string {
     return acervoService.getPublicUrl(item.file_path)
@@ -612,6 +628,71 @@ export default function AcervoDigitalPage() {
             </div>
           )
         })()}
+
+        {/* Extra Category Cards (Apostilas, Exercícios, Regulamentos) */}
+        {[
+          { key: 'apostilas' as const, items: apostilas, label: 'Apostilas', icon: BookOpen },
+          { key: 'exercicios' as const, items: exercicios, label: 'Exercícios', icon: ClipboardList },
+          { key: 'regulamentos' as const, items: regulamentos, label: 'Regulamentos', icon: FileText },
+          { key: 'mapas_mentais' as const, items: mapasMentais, label: 'Mapas Mentais', icon: FileText },
+        ].filter(cat => cat.items.length > 0).map(cat => {
+          const colors = CONCURSO_COLORS[cat.key]
+          const previewItems = cat.items.slice(0, 4)
+          const Icon = cat.icon
+          return (
+            <div
+              key={cat.key}
+              className={cn(
+                'group relative flex flex-col rounded-xl border bg-card p-5 transition-all duration-200 shadow-sm',
+                colors.border, colors.hoverBorder, 'hover:shadow-lg'
+              )}
+            >
+              <div className={cn('absolute -top-3 left-4 inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold text-white', colors.badge)}>
+                {cat.label}
+              </div>
+              <div className="flex items-center gap-2.5 mt-1">
+                <div className={cn('p-2 rounded-lg', colors.bg)}>
+                  <Icon className={cn('h-5 w-5', colors.text)} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground leading-snug">{cat.label}</h3>
+                  <p className="text-xs text-muted-foreground">{cat.items.length} arquivos</p>
+                </div>
+              </div>
+              <ul className="mt-4 flex-1 space-y-1.5">
+                {previewItems.map(item => (
+                  <li key={item.id} className="flex items-center gap-2 min-w-0">
+                    <FileText className={cn('h-3.5 w-3.5 flex-shrink-0', colors.text)} />
+                    <span className="truncate text-xs text-foreground">{item.title}</span>
+                  </li>
+                ))}
+                {cat.items.length > 4 && (
+                  <li className="text-xs text-muted-foreground pl-5.5">
+                    +{cat.items.length - 4} arquivos
+                  </li>
+                )}
+              </ul>
+              <button
+                onClick={() => {
+                  setSearch('')
+                  setSelectedCategory({
+                    type: cat.key,
+                    label: cat.label,
+                    concurso: cat.key,
+                    items: cat.items,
+                  })
+                }}
+                className={cn(
+                  'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 text-white hover:shadow-md',
+                  colors.btn
+                )}
+              >
+                Ver arquivos
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )
+        })}
 
         {/* Prova Group Cards */}
         {filteredProvaGroups.map((group) => {

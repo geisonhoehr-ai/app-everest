@@ -53,6 +53,11 @@ export const useAuth = () => {
   const getRedirectPath = () => {
     if (!auth.profile) return '/login'
 
+    // When viewing as student, always redirect to student dashboard
+    if (viewingAsStudent && auth.profile.role !== 'student') {
+      return '/dashboard'
+    }
+
     const role = auth.profile.role.toLowerCase()
 
     // Handle specific admin paths
