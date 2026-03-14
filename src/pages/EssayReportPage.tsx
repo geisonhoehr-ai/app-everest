@@ -1,61 +1,40 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Printer, ArrowLeft, FileText, Target } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Printer, ArrowLeft, FileText, PenLine, BookOpen, BarChart3, Lightbulb, AlertTriangle, CheckCircle } from 'lucide-react'
 import {
   getStudentEssayDetails,
   type StudentEssayDetails,
 } from '@/services/essayService'
+import { ciaarCorrectionService } from '@/services/ciaarCorrectionService'
 import { SectionLoader } from '@/components/SectionLoader'
+import { cn } from '@/lib/utils'
+import type { CorrectionResult, CorrectionType } from '@/types/essay-correction'
 import { Progress } from '@/components/ui/progress'
-
-const renderTextWithAnnotations = (
-  text: string,
-  annotations: any[],
-) => {
-  if (!annotations || annotations.length === 0) {
-    return <p className="whitespace-pre-wrap text-foreground leading-relaxed">{text}</p>
-  }
-
-  let lastIndex = 0
-  const parts: React.ReactNode[] = []
-  const sorted = [...annotations].sort((a, b) => a.start_offset - b.start_offset)
-
-  sorted.forEach((anno, i) => {
-    if (anno.start_offset > lastIndex) {
-      parts.push(text.substring(lastIndex, anno.start_offset))
-    }
-    parts.push(
-      <span
-        key={i}
-        className="bg-yellow-200/60 dark:bg-yellow-500/20 px-0.5 rounded-sm border-b-2 border-yellow-500"
-        title={anno.annotation_text}
-      >
-        {text.substring(anno.start_offset, anno.end_offset)}
-      </span>,
-    )
-    lastIndex = anno.end_offset
-  })
-
-  if (lastIndex < text.length) {
-    parts.push(text.substring(lastIndex))
-  }
-
-  return <p className="whitespace-pre-wrap text-foreground leading-relaxed">{parts}</p>
-}
 
 export default function EssayReportPage() {
   const { essayId } = useParams<{ essayId: string }>()
   const [essay, setEssay] = useState<StudentEssayDetails | null>(null)
+  const [correction, setCorrection] = useState<CorrectionResult | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (essayId) {
-      getStudentEssayDetails(essayId)
-        .then(setEssay)
-        .finally(() => setIsLoading(false))
+    if (!essayId) return
+    const load = async () => {
+      try {
+        const [essayData, correctionData] = await Promise.all([
+          getStudentEssayDetails(essayId),
+          ciaarCorrectionService.loadCorrection(essayId),
+        ])
+        setEssay(essayData)
+        setCorrection(correctionData)
+      } finally {
+        setIsLoading(false)
+      }
     }
+    load()
   }, [essayId])
 
   if (isLoading) return <SectionLoader />
@@ -75,20 +54,30 @@ export default function EssayReportPage() {
   }
 
   const data = essay as any
-  const grade = data.final_grade || 0
-  const criteria = data.essay_prompts?.evaluation_criteria as any
-  const aiAnalysis = data.ai_analysis as any
-  const competencies = criteria?.competencies
-    ? Object.entries(criteria.competencies).map(([key, val]: [string, any]) => ({
-        key,
-        name: val.name || key,
-        maxScore: val.value || 200,
-        score: aiAnalysis?.scores?.[key] || 0,
-      }))
-    : []
+  const correctionType: CorrectionType = correction?.correctionType || (data.correction_type as CorrectionType) || 'ciaar'
+  const isEnem = correctionType === 'enem'
+  const finalGrade = isEnem
+    ? (correction?.finalGrade ?? data.final_grade_enem ?? 0)
+    : (correction?.finalGrade ?? data.final_grade_ciaar ?? 0)
+  const maxGrade = isEnem ? 1000 : 10
+  const expressionDebit = correction?.totalExpressionDebit ?? 0
+  const structureDebit = correction?.totalStructureDebit ?? 0
+  const contentDebit = correction?.totalContentDebit ?? 0
+  const promptTitle = data.essay_prompts?.title || 'Redação'
+  const submissionText = data.submission_text || ''
+  const submissionDate = data.submission_date || data.created_at
+  const formattedDate = submissionDate ? new Date(submissionDate).toLocaleDateString('pt-BR') : '—'
+  const hasFugaTotal = correction?.contentAnalysis.some(c => c.debit_level === 'Fuga TOTAL') ?? false
+
+  const getGradeColor = (g: number, max: number) => {
+    const pct = g / max
+    if (pct >= 0.7) return 'text-green-600'
+    if (pct >= 0.5) return 'text-amber-600'
+    return 'text-red-600'
+  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 print:space-y-4 print:max-w-none print:mx-0">
       {/* Header - hidden on print */}
       <div className="flex items-center justify-between print:hidden">
         <div>
@@ -103,80 +92,294 @@ export default function EssayReportPage() {
         </div>
         <Button onClick={() => window.print()} variant="outline" className="gap-2">
           <Printer className="h-4 w-4" />
-          Imprimir
+          Imprimir / Salvar PDF
         </Button>
       </div>
 
-      {/* Title + Grade */}
-      <Card className="border-border shadow-sm">
-        <CardContent className="p-6 text-center space-y-2">
-          <h2 className="text-xl font-bold text-foreground">
-            {data.essay_prompts?.title || 'Redação'}
-          </h2>
-          <div className="text-4xl font-bold text-primary">{grade}</div>
-          <div className="text-sm text-muted-foreground">de 1000 pontos</div>
-        </CardContent>
-      </Card>
+      {/* Print header */}
+      <div className="hidden print:block text-center mb-4">
+        <h1 className="text-xl font-bold">Relatório de Correção — Everest Preparatórios</h1>
+      </div>
 
-      {/* Competencies */}
-      {competencies.length > 0 && (
-        <Card className="border-border shadow-sm">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Target className="h-5 w-5 text-primary" />
+      {/* Title + Grade */}
+      <Card className="border-border shadow-sm print:shadow-none print:border">
+        <CardContent className="p-6 print:p-4">
+          <div className="flex items-center gap-6">
+            <div className="text-center shrink-0">
+              <div className={cn('text-5xl font-bold print:text-3xl', getGradeColor(finalGrade, maxGrade))}>
+                {isEnem ? finalGrade : finalGrade.toFixed(3)}
               </div>
-              <h3 className="text-lg font-bold text-foreground">Competências</h3>
+              <div className="text-sm text-muted-foreground">de {maxGrade}</div>
             </div>
-            <div className="space-y-3">
-              {competencies.map((c) => {
-                const pct = c.maxScore > 0 ? Math.round((c.score / c.maxScore) * 100) : 0
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-foreground print:text-lg">{promptTitle}</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Enviada em {formattedDate}
+                {isEnem && <Badge className="ml-2 bg-blue-600 text-white text-[10px]">ENEM</Badge>}
+              </p>
+              {hasFugaTotal && (
+                <Badge variant="destructive" className="mt-2 text-xs">
+                  <AlertTriangle className="h-3 w-3 mr-1" /> Fuga Total — Nota Zerada
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* CIAAR debit summary */}
+          {!isEnem && correction && (
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="rounded-lg border p-2.5 text-center">
+                <div className="text-[10px] text-muted-foreground">Expressão</div>
+                <div className="text-sm font-bold text-red-600">-{expressionDebit.toFixed(3)}</div>
+                <div className="text-[10px] text-muted-foreground">{correction.expressionErrors.length} erros</div>
+              </div>
+              <div className="rounded-lg border p-2.5 text-center">
+                <div className="text-[10px] text-muted-foreground">Estrutura</div>
+                <div className="text-sm font-bold text-red-600">-{structureDebit.toFixed(3)}</div>
+              </div>
+              <div className="rounded-lg border p-2.5 text-center">
+                <div className="text-[10px] text-muted-foreground">Conteúdo</div>
+                <div className="text-sm font-bold text-red-600">-{contentDebit.toFixed(3)}</div>
+              </div>
+            </div>
+          )}
+
+          {/* ENEM competency bars */}
+          {isEnem && correction?.competencyScores && correction.competencyScores.length > 0 && (
+            <div className="space-y-2 mt-4">
+              {correction.competencyScores.map((comp) => {
+                const pct = comp.max_score > 0 ? (comp.score / comp.max_score) * 100 : 0
                 return (
-                  <div key={c.key} className="p-3 rounded-lg border border-border bg-muted/30">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-medium text-foreground">{c.name}</span>
-                      <span className="text-sm font-bold text-primary">
-                        {c.score}/{c.maxScore}
-                      </span>
+                  <div key={comp.competency_number} className="space-y-0.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">C{comp.competency_number} - {comp.competency_name}</span>
+                      <span className={cn('font-bold', getGradeColor(comp.score, comp.max_score))}>{comp.score}/{comp.max_score}</span>
                     </div>
-                    <Progress value={pct} className="h-1.5 bg-muted [&>div]:bg-blue-500" />
+                    <Progress value={pct} className={cn(
+                      'h-2',
+                      pct >= 70 ? '[&>div]:bg-green-500' : pct >= 40 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-500'
+                    )} />
                   </div>
                 )
               })}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       {/* Essay Text */}
-      <Card className="border-border shadow-sm">
-        <CardContent className="p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
-            <h3 className="text-lg font-bold text-foreground">Redação</h3>
-          </div>
-          <div className="prose prose-sm max-w-none">
-            {renderTextWithAnnotations(
-              data.submission_text || '',
-              data.essay_annotations || [],
-            )}
+      <Card className="border-border shadow-sm print:shadow-none print:border">
+        <CardHeader className="py-4 px-5">
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Redação
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-5 pb-5">
+          <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
+            {submissionText || <span className="text-muted-foreground italic">Texto não disponível</span>}
           </div>
         </CardContent>
       </Card>
 
+      {/* CIAAR: Expression Errors */}
+      {!isEnem && correction && correction.expressionErrors.length > 0 && (
+        <Card className="border-border shadow-sm print:shadow-none print:border print:break-inside-avoid">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <PenLine className="h-4 w-4 text-red-500" />
+              1 — Erros de Expressão
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {correction.expressionErrors.length} erros · Débito: -{expressionDebit.toFixed(3)}
+            </p>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 space-y-3">
+            {correction.expressionErrors.map((error, index) => (
+              <div key={index} className="border rounded-lg p-3 space-y-1.5 print:break-inside-avoid">
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline" className="text-[10px]">
+                    P{error.paragraph_number}, Per. {error.sentence_number}
+                  </Badge>
+                  <Badge variant="destructive" className="text-[10px]">-{error.debit_value.toFixed(3)}</Badge>
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <span className="text-red-600 line-through">{error.error_text}</span>
+                  <span className="text-muted-foreground">→</span>
+                  <span className="text-green-600">{error.suggested_correction}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{error.error_explanation}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* CIAAR: Structure Analysis */}
+      {!isEnem && correction && correction.structureAnalysis.length > 0 && (
+        <Card className="border-border shadow-sm print:shadow-none print:border print:break-inside-avoid">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-blue-500" />
+              2 — Análise de Estrutura
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Débito: -{structureDebit.toFixed(3)}</p>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 space-y-3">
+            {correction.structureAnalysis.map((analysis, index) => (
+              <div key={index} className="border rounded-lg p-3 space-y-1.5 print:break-inside-avoid">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px]">Parágrafo {analysis.paragraph_number}</Badge>
+                    <Badge variant="secondary" className="text-[10px]">
+                      {analysis.paragraph_type === 'introduction' ? 'Introdução' :
+                        analysis.paragraph_type === 'conclusion' ? 'Conclusão' : 'Desenvolvimento'}
+                    </Badge>
+                  </div>
+                  <Badge
+                    variant={analysis.debit_value > 0 ? 'destructive' : 'outline'}
+                    className={cn('text-[10px]', analysis.debit_value === 0 && 'text-green-600 border-green-500/30')}
+                  >
+                    {analysis.debit_value > 0 ? `-${analysis.debit_value.toFixed(3)}` : 'OK'}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{analysis.analysis_text}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* CIAAR: Content Analysis */}
+      {!isEnem && correction && correction.contentAnalysis.length > 0 && (
+        <Card className="border-border shadow-sm print:shadow-none print:border print:break-inside-avoid">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-orange-500" />
+              3 — Análise de Conteúdo
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Débito: -{contentDebit.toFixed(3)}</p>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 space-y-3">
+            {correction.contentAnalysis.map((analysis, index) => (
+              <div key={index} className="border rounded-lg p-3 space-y-1.5 print:break-inside-avoid">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{analysis.criterion_name}</span>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={analysis.debit_level === 'Fuga TOTAL' ? 'destructive' : 'outline'}
+                      className="text-[10px]"
+                    >
+                      {analysis.debit_level}
+                    </Badge>
+                    <Badge
+                      variant={analysis.debit_value > 0 ? 'destructive' : 'outline'}
+                      className={cn('text-[10px]', analysis.debit_value === 0 && 'text-green-600 border-green-500/30')}
+                    >
+                      {analysis.debit_value > 0 ? `-${analysis.debit_value.toFixed(3)}` : 'Sem débito'}
+                    </Badge>
+                  </div>
+                </div>
+                {analysis.debit_level === 'Fuga TOTAL' && (
+                  <div className="flex items-center gap-2 text-red-600 bg-red-50 dark:bg-red-950/20 rounded-md px-3 py-1.5">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="text-xs font-medium">Fuga total: nota final zerada</span>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{analysis.analysis_text}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Grade Summary Table */}
+      {correction && (
+        <Card className="border-border shadow-sm print:shadow-none print:border print:break-inside-avoid">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base">Cálculo Final da Nota</CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-5">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 font-medium">Critério</th>
+                  <th className="text-right py-2 font-medium">Débito</th>
+                </tr>
+              </thead>
+              <tbody>
+                {!isEnem && (
+                  <>
+                    <tr className="border-b">
+                      <td className="py-2 text-muted-foreground">Erros de Expressão ({correction.expressionErrors.length} erros × -0,200)</td>
+                      <td className="py-2 text-right text-red-600 font-medium">-{expressionDebit.toFixed(3)}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 text-muted-foreground">Erros de Estrutura</td>
+                      <td className="py-2 text-right text-red-600 font-medium">-{structureDebit.toFixed(3)}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 text-muted-foreground">Erros de Conteúdo</td>
+                      <td className="py-2 text-right text-red-600 font-medium">-{contentDebit.toFixed(3)}</td>
+                    </tr>
+                  </>
+                )}
+                <tr className="font-bold text-base">
+                  <td className="py-3">Nota Final</td>
+                  <td className={cn('py-3 text-right', getGradeColor(finalGrade, maxGrade))}>
+                    {isEnem ? finalGrade : finalGrade.toFixed(3)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Suggestions */}
+      {correction && correction.improvementSuggestions.length > 0 && (
+        <Card className="border-border shadow-sm print:shadow-none print:border print:break-inside-avoid">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-amber-500" />
+              Sugestões de Melhoria
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 space-y-3">
+            {correction.improvementSuggestions.map((suggestion, index) => (
+              <div key={index} className="border rounded-lg p-3 space-y-1.5 print:break-inside-avoid">
+                <Badge variant="secondary" className="text-[10px]">
+                  {suggestion.category === 'expression' ? 'Expressão' :
+                    suggestion.category === 'structure' ? 'Estrutura' : 'Conteúdo'}
+                </Badge>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{suggestion.suggestion_text}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Teacher feedback */}
       {data.teacher_feedback_text && (
-        <Card className="border-border shadow-sm">
-          <CardContent className="p-6 space-y-3">
-            <h3 className="font-bold text-foreground">Feedback do Corretor</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+        <Card className="border-border shadow-sm print:shadow-none print:border print:break-inside-avoid">
+          <CardHeader className="py-4 px-5">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-emerald-500" />
+              Feedback do Professor
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-5">
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
               {data.teacher_feedback_text}
             </p>
           </CardContent>
         </Card>
       )}
+
+      {/* Print footer */}
+      <div className="hidden print:block text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
+        Relatório gerado pela plataforma Everest Preparatórios — {new Date().toLocaleDateString('pt-BR')}
+      </div>
     </div>
   )
 }

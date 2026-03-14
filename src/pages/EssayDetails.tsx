@@ -249,7 +249,12 @@ export default function EssayDetailsPage() {
                   <Mic className="h-4 w-4" />
                   Feedback em Áudio
                 </h4>
-                <audio controls src={feedbackAudioUrl} className="w-full" />
+                <audio controls src={feedbackAudioUrl} className="w-full rounded-lg" preload="metadata">
+                  <source src={feedbackAudioUrl} type="audio/webm" />
+                  <source src={feedbackAudioUrl} type="audio/ogg" />
+                  <source src={feedbackAudioUrl} type="audio/mp4" />
+                  Seu navegador não suporta o player de áudio.
+                </audio>
               </div>
             )}
           </CardContent>
