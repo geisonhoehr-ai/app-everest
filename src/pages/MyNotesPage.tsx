@@ -54,15 +54,15 @@ export default function MyNotesPage() {
         const lessonIds = notesData.map(n => n.lesson_id)
 
         const { data: lessonsData } = await supabase
-          .from('lessons')
-          .select('id, title, module_id, modules(id, name, course_id, courses(id, title))')
+          .from('video_lessons')
+          .select('id, title, module_id, video_modules(id, name, course_id, video_courses(id, title))')
           .in('id', lessonIds)
 
         const lessonMap = new Map<string, { title: string; module_name: string; course_id: string; course_title: string }>()
         if (lessonsData) {
           for (const l of lessonsData as any[]) {
-            const mod = l.modules
-            const course = mod?.courses
+            const mod = l.video_modules
+            const course = mod?.video_courses
             lessonMap.set(l.id, {
               title: l.title || 'Aula sem titulo',
               module_name: mod?.name || '',
