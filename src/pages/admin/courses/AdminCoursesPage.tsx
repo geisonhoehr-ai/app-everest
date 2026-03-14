@@ -30,9 +30,9 @@ import {
   Award,
   Copy,
   Loader2,
+  Eye,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
 import { getAllCourses, deleteCourse, duplicateCourse, type AdminCourse } from '@/services/adminCourseService'
 import { useAuth } from '@/contexts/auth-provider'
 import { useTeacherClasses } from '@/hooks/useTeacherClasses'
@@ -136,6 +136,20 @@ export default function AdminCoursesPage() {
       })
     } finally {
       setDuplicating(null)
+    }
+  }
+
+  const renderStatusBadge = (course: AdminCourse) => {
+    const status = (course as any).status || (course.is_active ? 'published' : 'draft')
+    switch (status) {
+      case 'published':
+        return <Badge className="bg-green-500/10 text-green-500 font-semibold">Publicado</Badge>
+      case 'draft':
+        return <Badge variant="secondary" className="font-semibold">Rascunho</Badge>
+      case 'coming_soon':
+        return <Badge className="bg-orange-500/10 text-orange-500 font-semibold">Em Breve</Badge>
+      default:
+        return <Badge variant="secondary" className="font-semibold">Rascunho</Badge>
     }
   }
 
@@ -247,12 +261,23 @@ export default function AdminCoursesPage() {
                         >
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
-                                <BookOpen className="h-5 w-5 text-primary" />
-                              </div>
+                              {(course as any).thumbnail_url ? (
+                                <img src={(course as any).thumbnail_url} alt="" className="w-12 h-8 rounded object-cover" />
+                              ) : (
+                                <div className="w-12 h-8 rounded bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
+                                  {(course as any).acronym || course.name?.substring(0, 2).toUpperCase()}
+                                </div>
+                              )}
                               <div>
-                                <div className="font-semibold text-foreground">{course.name}</div>
-                                <div className="text-sm text-muted-foreground">ID: {course.id.substring(0, 8)}</div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-foreground">{course.name}</p>
+                                  {(course as any).show_in_storefront && (
+                                    <Eye className="h-3.5 w-3.5 text-muted-foreground" title="Visível na vitrine" />
+                                  )}
+                                </div>
+                                {(course as any).acronym && (
+                                  <p className="text-xs text-muted-foreground">{(course as any).acronym}</p>
+                                )}
                               </div>
                             </div>
                           </TableCell>
@@ -269,17 +294,7 @@ export default function AdminCoursesPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge
-                              variant={course.is_active ? 'default' : 'outline'}
-                              className={cn(
-                                "font-semibold",
-                                course.is_active
-                                  ? "bg-green-500/100 text-white"
-                                  : "border-orange-300 text-orange-600 bg-orange-500/10"
-                              )}
-                            >
-                              {course.is_active ? 'Publicado' : 'Rascunho'}
-                            </Badge>
+                            {renderStatusBadge(course)}
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
