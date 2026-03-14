@@ -213,6 +213,18 @@ const AdminClassFormPage = lazy(
 const AdminStudentClassesPage = lazy(
   () => import('@/pages/admin/users/AdminStudentClassesPage'),
 )
+const AdminUserProfilePage = lazy(
+  () => import('@/pages/admin/users/AdminUserProfilePage'),
+)
+const AdminInvitesPage = lazy(
+  () => import('@/pages/admin/invites/AdminInvitesPage'),
+)
+const AdminInviteFormPage = lazy(
+  () => import('@/pages/admin/invites/AdminInviteFormPage'),
+)
+const InvitePage = lazy(
+  () => import('@/pages/public/InvitePage'),
+)
 const MemberkitImportPage = lazy(
   () => import('@/pages/admin/integrations/MemberkitImportPage'),
 )
@@ -255,6 +267,7 @@ const App = () => (
                 <Route path="/register" element={<Navigate to="/login" replace />} />
                 <Route path="/forgot-password" element={<Navigate to="/login" replace />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/invite/:slug" element={<InvitePage />} />
               </Route>
 
               <Route
@@ -442,6 +455,16 @@ const App = () => (
                   <Route
                     path="users/:userId/classes"
                     element={<AdminStudentClassesPage />}
+                  />
+                  <Route
+                    path="users/:userId/profile"
+                    element={<AdminUserProfilePage />}
+                  />
+                  <Route path="invites" element={<AdminInvitesPage />} />
+                  <Route path="invites/new" element={<AdminInviteFormPage />} />
+                  <Route
+                    path="invites/:inviteId/edit"
+                    element={<AdminInviteFormPage />}
                   />
                   <Route path="acervo" element={<AdminAcervoPage />} />
                   <Route path="reports" element={<AdminReportsPage />} />

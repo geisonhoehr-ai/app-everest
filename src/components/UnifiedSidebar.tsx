@@ -54,6 +54,7 @@ import {
   Radio,
   Megaphone,
   StickyNote,
+  Mail,
 } from 'lucide-react'
 
 // ─── Menu structure types ─────────────────────────────────────────────────────
@@ -162,6 +163,7 @@ const adminMenuGroups: MenuGroup[] = [
     items: [
       { label: 'Usuários', href: '/admin/management', icon: Users },
       { label: 'Turmas', href: '/admin/classes', icon: GraduationCap },
+      { label: 'Convites', href: '/admin/invites', icon: Mail },
       { label: 'Enviar Aviso', href: '/admin/broadcast', icon: Megaphone },
       { label: 'Permissões', href: '/admin/permissions', icon: Lock, adminOnly: true },
     ],
