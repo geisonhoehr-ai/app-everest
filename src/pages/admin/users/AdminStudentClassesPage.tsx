@@ -48,7 +48,7 @@ interface StudentClass {
   id: string
   class_id: string
   user_id: string
-  enrolled_at: string
+  enrollment_date: string
   class?: {
     id: string
     name: string
@@ -118,8 +118,6 @@ export default function AdminStudentClassesPage() {
         logger.error('Error loading student classes:', classesError)
         throw classesError
       }
-
-      logger.debug('Student classes data from DB:', classesData)
 
       // Map the data to ensure 'class' field is properly set
       const mappedClasses = (classesData || []).map((item: any) => ({
@@ -346,7 +344,7 @@ export default function AdminStudentClassesPage() {
                         <TableCell className="hidden md:table-cell">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4" />
-                            {new Date(studentClass.enrolled_at).toLocaleDateString('pt-BR')}
+                            {new Date(studentClass.enrollment_date).toLocaleDateString('pt-BR')}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">

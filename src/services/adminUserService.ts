@@ -55,7 +55,7 @@ export const getUserClasses = async (userId: string) => {
       id,
       user_id,
       class_id,
-      enrolled_at,
+      enrollment_date,
       class:classes!class_id (
         id,
         name,

@@ -77,7 +77,7 @@ export default function AdminEssayFormPage() {
         const prompt = await getEssayPromptById(promptId!)
         if (!prompt) {
           toast({ title: 'Tema não encontrado', variant: 'destructive' })
-          navigate('/admin/essays')
+          navigate('/admin/essays/prompts')
           return
         }
         setForm({
@@ -137,7 +137,7 @@ export default function AdminEssayFormPage() {
       }
 
       toast({ title: `Tema ${isEditing ? 'atualizado' : 'criado'} com sucesso!` })
-      navigate('/admin/essays')
+      navigate('/admin/essays/prompts')
     } catch (error: any) {
       toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
     } finally {
@@ -153,7 +153,7 @@ export default function AdminEssayFormPage() {
       <div className="flex items-center justify-between">
         <div>
           <Link
-            to="/admin/essays"
+            to="/admin/essays/prompts"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -256,7 +256,7 @@ export default function AdminEssayFormPage() {
 
       {/* Bottom save */}
       <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={() => navigate('/admin/essays')}>
+        <Button variant="outline" onClick={() => navigate('/admin/essays/prompts')}>
           Cancelar
         </Button>
         <Button onClick={handleSave} disabled={saving} className="gap-2">

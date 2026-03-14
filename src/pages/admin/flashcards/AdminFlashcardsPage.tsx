@@ -160,9 +160,11 @@ export default function AdminFlashcardsPage() {
                 <p className="text-muted-foreground text-center mb-4">
                   Comece criando sua primeira matéria de flashcards
                 </p>
-                <Button className="gap-2">
-                  <PlusCircle className="h-4 w-4" />
-                  Criar Primeira Matéria
+                <Button asChild className="gap-2">
+                  <Link to="/admin/flashcards/new">
+                    <PlusCircle className="h-4 w-4" />
+                    Criar Primeira Matéria
+                  </Link>
                 </Button>
               </div>
             </CardContent>

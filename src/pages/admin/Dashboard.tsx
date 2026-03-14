@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { useTeacherClasses } from '@/hooks/useTeacherClasses'
 import { supabase } from '@/lib/supabase/client'
@@ -164,7 +165,7 @@ export default function AdminDashboard() {
 
         if (recentEssays) {
           for (const essay of recentEssays) {
-            const statusLabel = essay.status === 'submitted' ? 'enviada' : essay.status === 'graded' ? 'corrigida' : essay.status
+            const statusLabel = essay.status === 'submitted' ? 'enviada' : essay.status === 'corrected' ? 'corrigida' : essay.status
             teacherActivities.push({
               type: 'essay',
               message: `Redacao ${statusLabel} por aluno`,
@@ -422,9 +423,9 @@ export default function AdminDashboard() {
               <div className="flex-1">
                 <p className="font-medium">{alert.message}</p>
                 {alert.action && (
-                  <a href={alert.link || '#'} className="text-xs underline mt-1 inline-block opacity-80 hover:opacity-100">
+                  <Link to={alert.link || '#'} className="text-xs underline mt-1 inline-block opacity-80 hover:opacity-100">
                     {alert.action}
-                  </a>
+                  </Link>
                 )}
               </div>
             </div>

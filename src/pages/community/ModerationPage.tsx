@@ -262,15 +262,32 @@ function ReportsTab() {
                         variant="secondary"
                         size="sm"
                         disabled={actionLoading === report.id}
-                        onClick={() =>
-                          setMuteDialog({
-                            open: true,
-                            userId: report.reporter_id,
-                            userName: report.reporter
-                              ? `${report.reporter.first_name} ${report.reporter.last_name}`
-                              : 'Usuario',
-                          })
-                        }
+                        onClick={async () => {
+                          // Buscar o autor do conteúdo denunciado (não o denunciante)
+                          let authorId = ''
+                          let authorName = 'Usuário'
+                          try {
+                            const table = report.target_type === 'post' ? 'community_posts' : 'community_comments'
+                            const { supabase: sb } = await import('@/lib/supabase/client')
+                            const { data } = await sb
+                              .from(table)
+                              .select('user_id, users:user_id(first_name, last_name)')
+                              .eq('id', report.target_id)
+                              .single()
+                            if (data) {
+                              authorId = data.user_id
+                              const u = data.users as any
+                              if (u) authorName = `${u.first_name} ${u.last_name}`
+                            }
+                          } catch {}
+                          if (authorId) {
+                            setMuteDialog({
+                              open: true,
+                              userId: authorId,
+                              userName: authorName,
+                            })
+                          }
+                        }}
                       >
                         <VolumeX className="h-4 w-4 mr-1" />
                         Silenciar
@@ -796,7 +813,7 @@ export default function ModerationPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/community')}>
+        <Button variant="ghost" size="icon" onClick={() => navigate('/comunidade')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>

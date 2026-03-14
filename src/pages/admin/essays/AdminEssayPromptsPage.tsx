@@ -119,7 +119,7 @@ export default function AdminEssayPromptsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      {prompt.submission_count ?? 0}
+                      {prompt.submissions_count ?? 0}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">

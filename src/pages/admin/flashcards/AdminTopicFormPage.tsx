@@ -68,7 +68,7 @@ export default function AdminTopicFormPage() {
       // Se estiver editando, carregar dados do tópico
       if (isEditing && topicId) {
         const { data: topicData, error } = await supabase
-          .from('flashcard_topics')
+          .from('topics')
           .select('*')
           .eq('id', topicId)
           .single()
@@ -99,7 +99,7 @@ export default function AdminTopicFormPage() {
     try {
       if (isEditing && topicId) {
         const { error } = await supabase
-          .from('flashcard_topics')
+          .from('topics')
           .update({
             name: values.name,
             description: values.description,
@@ -115,7 +115,7 @@ export default function AdminTopicFormPage() {
         })
       } else {
         const { error } = await supabase
-          .from('flashcard_topics')
+          .from('topics')
           .insert({
             name: values.name,
             description: values.description,

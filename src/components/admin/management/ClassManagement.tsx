@@ -71,7 +71,7 @@ export const ClassManagement = () => {
     if (searchTerm) {
       filtered = filtered.filter(cls =>
         cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cls.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (cls.description || '').toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
@@ -106,9 +106,11 @@ export const ClassManagement = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Adicionar Turma
+            <Button asChild>
+              <Link to="/admin/classes/new">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Turma
+              </Link>
             </Button>
           </div>
         </div>

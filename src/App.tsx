@@ -96,12 +96,6 @@ const AdminCoursesPage = lazy(
 const AdminCourseEditorPage = lazy(
   () => import('@/pages/admin/courses/AdminCourseEditorPage'),
 )
-const AdminCourseFormPage = lazy(
-  () => import('@/pages/admin/courses/AdminCourseFormPage'),
-)
-const AdminCourseContentPage = lazy(
-  () => import('@/pages/admin/courses/AdminCourseContentPage'),
-)
 const AdminCourseClassesPage = lazy(
   () => import('@/pages/admin/courses/AdminCourseClassesPage'),
 )
@@ -420,21 +414,7 @@ const App = () => (
                 </Route>
               </Route>
 
-              {/* ROTAS APENAS PARA ADMINISTRATOR */}
-              <Route
-                element={
-                  <ProtectedRoute allowedRoles={['administrator']} />
-                }
-              >
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route path="permissions" element={<AdminClassPermissionsPage />} />
-                  <Route path="integrations" element={<AdminIntegrationsPage />} />
-                  <Route path="integrations/memberkit-import" element={<MemberkitImportPage />} />
-                  <Route path="settings" element={<AdminSettingsPage />} />
-                </Route>
-              </Route>
-
-              {/* ROTAS PARA ADMINISTRATOR E TEACHER (Gestão de Conteúdo) */}
+              {/* ROTAS ADMIN (administrator + teacher) */}
               <Route
                 element={
                   <ProtectedRoute allowedRoles={['administrator', 'teacher']} />
@@ -442,6 +422,13 @@ const App = () => (
               >
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
+                  {/* Rotas exclusivas de administrator */}
+                  <Route element={<ProtectedRoute allowedRoles={['administrator']} />}>
+                    <Route path="permissions" element={<AdminClassPermissionsPage />} />
+                    <Route path="integrations" element={<AdminIntegrationsPage />} />
+                    <Route path="integrations/memberkit-import" element={<MemberkitImportPage />} />
+                    <Route path="settings" element={<AdminSettingsPage />} />
+                  </Route>
                   <Route path="management" element={<AdminManagementPage />} />
                   <Route path="classes" element={<AdminClassesPage />} />
                   <Route path="classes/new" element={<AdminClassFormPage />} />

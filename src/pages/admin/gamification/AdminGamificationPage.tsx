@@ -200,10 +200,10 @@ export default function AdminGamificationPage() {
   const getCategoryBadge = (category: string) => {
     const categories: Record<string, { label: string; className: string }> = {
       general: { label: 'Geral', className: 'bg-muted/50 border-border text-muted-foreground' },
-      study: { label: 'Estudos', className: 'bg-blue-500/100/10 border-blue-500/20 text-blue-600' },
-      quiz: { label: 'Quiz', className: 'bg-purple-500/100/10 border-purple-500/20 text-purple-600' },
-      essay: { label: 'Redação', className: 'bg-green-500/100/10 border-green-500/20 text-green-600' },
-      social: { label: 'Social', className: 'bg-orange-500/100/10 border-orange-500/20 text-orange-600' }
+      study: { label: 'Estudos', className: 'bg-blue-500/10 border-blue-500/20 text-blue-600' },
+      quiz: { label: 'Quiz', className: 'bg-purple-500/10 border-purple-500/20 text-purple-600' },
+      essay: { label: 'Redação', className: 'bg-green-500/10 border-green-500/20 text-green-600' },
+      social: { label: 'Social', className: 'bg-orange-500/10 border-orange-500/20 text-orange-600' }
     }
 
     const cat = categories[category] || categories.general

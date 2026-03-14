@@ -296,9 +296,11 @@ export default function AdminFlashcardTopicsPage() {
             <p className="text-muted-foreground text-center mb-4">
               Comece criando seu primeiro tópico para esta matéria
             </p>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Criar Primeiro Tópico
+            <Button asChild>
+              <Link to={`/admin/flashcards/${subjectId}/topics/new`}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Criar Primeiro Tópico
+              </Link>
             </Button>
           </CardContent>
         </Card>

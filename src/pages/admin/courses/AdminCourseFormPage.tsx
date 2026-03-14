@@ -257,7 +257,9 @@ export default function AdminCourseFormPage() {
     if (!courseId) return
     try {
       const { duplicateCourse } = await import('@/services/adminCourseService')
-      const newCourse = await duplicateCourse(courseId)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+      const newCourse = await duplicateCourse(courseId, user.id)
       toast({
         title: 'Curso duplicado!',
         description: 'Uma copia do curso foi criada.',
