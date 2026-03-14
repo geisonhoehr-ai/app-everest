@@ -12,6 +12,7 @@ import {
   ResponsiveDialogDescription,
   ResponsiveDialogFooter,
 } from '@/components/ui/responsive-dialog'
+import DOMPurify from 'dompurify'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
@@ -130,9 +131,11 @@ export function PostEditor({ spaces, defaultSpaceId, onSuccess, open, onOpenChan
 
     setSubmitting(true)
     try {
+      const sanitizedTitle = DOMPurify.sanitize(title.trim(), { ALLOWED_TAGS: [] })
+      const sanitizedContent = DOMPurify.sanitize(content.trim())
       const post = await communityService.createPost({
-        title: title.trim(),
-        content: content.trim(),
+        title: sanitizedTitle,
+        content: sanitizedContent,
         space_id: spaceId,
         user_id: userId,
         type,

@@ -33,6 +33,7 @@ import { MuteUserDialog } from '@/components/community/MuteUserDialog'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { communityService, type CommunitySpace, type CommunityReport } from '@/services/communityService'
+import DOMPurify from 'dompurify'
 import { logger } from '@/lib/logger'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -213,7 +214,7 @@ function ReportsTab() {
 
                     {report.description && (
                       <p className="text-sm text-muted-foreground line-clamp-2">
-                        {report.description}
+                        {DOMPurify.sanitize(report.description, { ALLOWED_TAGS: [] })}
                       </p>
                     )}
 
@@ -486,7 +487,7 @@ function SpacesTab() {
                       </div>
                       {space.description && (
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {space.description}
+                          {DOMPurify.sanitize(space.description, { ALLOWED_TAGS: [] })}
                         </p>
                       )}
                     </div>

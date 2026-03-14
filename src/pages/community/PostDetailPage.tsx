@@ -115,7 +115,7 @@ export default function PostDetailPage() {
           {/* Post header */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-foreground">{post.title}</h1>
+              <h1 className="text-2xl font-bold text-foreground">{DOMPurify.sanitize(post.title, { ALLOWED_TAGS: [] })}</h1>
 
               <div className="flex flex-wrap items-center gap-3 mt-3">
                 {/* Author */}

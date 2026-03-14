@@ -8,6 +8,7 @@ import { PostFeed } from '@/components/community/PostFeed'
 import { PostEditor } from '@/components/community/PostEditor'
 import { SectionLoader } from '@/components/SectionLoader'
 import { communityService, type CommunitySpace } from '@/services/communityService'
+import DOMPurify from 'dompurify'
 import { useAuth } from '@/hooks/use-auth'
 import { useContentAccess } from '@/hooks/useContentAccess'
 import { logger } from '@/lib/logger'
@@ -87,7 +88,7 @@ export default function SpaceFeedPage() {
               {space.name}
             </h1>
             {space.description && (
-              <p className="text-sm text-muted-foreground mt-1">{space.description}</p>
+              <p className="text-sm text-muted-foreground mt-1">{DOMPurify.sanitize(space.description, { ALLOWED_TAGS: [] })}</p>
             )}
           </div>
         </div>

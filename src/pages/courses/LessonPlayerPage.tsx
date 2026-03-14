@@ -1242,7 +1242,7 @@ export default function LessonPlayerPage() {
                                         {new Date(comment.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                       </span>
                                     </div>
-                                    <p className="text-sm text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">{comment.content}</p>
+                                    <p className="text-sm text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">{DOMPurify.sanitize(comment.content, { ALLOWED_TAGS: [] })}</p>
                                     <div className="flex items-center gap-3 mt-2.5">
                                       <button
                                         onClick={() => { setReplyingTo(replyingTo === comment.id ? null : comment.id); setReplyText('') }}
@@ -1307,7 +1307,7 @@ export default function LessonPlayerPage() {
                                               {new Date(reply.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                           </div>
-                                          <p className="text-xs text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">{reply.content}</p>
+                                          <p className="text-xs text-foreground/80 whitespace-pre-wrap break-words leading-relaxed">{DOMPurify.sanitize(reply.content, { ALLOWED_TAGS: [] })}</p>
                                           {reply.user_id === user?.id && (
                                             <button
                                               onClick={() => handleDeleteComment(reply.id)}

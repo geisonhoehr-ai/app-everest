@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import DOMPurify from 'dompurify'
 import { Loader2, Send } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -60,9 +61,10 @@ export function CommentEditor({ postId, parentCommentId, onSuccess, autoFocus }:
 
     setSubmitting(true)
     try {
+      const sanitizedContent = DOMPurify.sanitize(content.trim())
       const comment = await communityService.createComment({
         post_id: postId,
-        content: content.trim(),
+        content: sanitizedContent,
         user_id: userId,
         parent_comment_id: parentCommentId,
       })

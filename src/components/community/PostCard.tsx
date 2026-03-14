@@ -3,6 +3,7 @@ import { Pin, Lock, MessageCircle, Eye } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import DOMPurify from 'dompurify'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -81,11 +82,11 @@ export function PostCard({ post, onReactionChange }: PostCardProps) {
         </div>
 
         {/* Title */}
-        <h3 className="font-semibold text-lg text-foreground leading-tight">{post.title}</h3>
+        <h3 className="font-semibold text-lg text-foreground leading-tight">{DOMPurify.sanitize(post.title, { ALLOWED_TAGS: [] })}</h3>
 
         {/* Content preview */}
         <p className="text-sm text-muted-foreground line-clamp-3">
-          {stripMarkdown(post.content)}
+          {DOMPurify.sanitize(stripMarkdown(post.content), { ALLOWED_TAGS: [] })}
         </p>
 
         {/* Attachments (compact) */}
