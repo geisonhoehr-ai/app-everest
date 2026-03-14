@@ -58,6 +58,7 @@ import type { AIProviderConfig as AIProviderConfigType, AIProviderType } from '@
 const PROVIDER_OPTIONS: { value: AIProviderType; label: string; defaultModel: string; needsBaseUrl: boolean }[] = [
   { value: 'claude', label: 'Claude (Anthropic)', defaultModel: 'claude-sonnet-4-5-20250514', needsBaseUrl: false },
   { value: 'openai', label: 'OpenAI (GPT)', defaultModel: 'gpt-4o', needsBaseUrl: false },
+  { value: 'gemini', label: 'Gemini (Google)', defaultModel: 'gemini-2.5-flash', needsBaseUrl: false },
   { value: 'antigravity', label: 'Antigravity AI', defaultModel: 'default', needsBaseUrl: true },
   { value: 'dify', label: 'Dify AI', defaultModel: '', needsBaseUrl: true },
 ]

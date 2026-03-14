@@ -9,7 +9,7 @@ export type CorrectionType = 'ciaar' | 'enem'
 
 // --- Provider types (matches Edge Function) ---
 
-export type AIProviderType = 'claude' | 'openai' | 'antigravity' | 'dify'
+export type AIProviderType = 'claude' | 'openai' | 'gemini' | 'antigravity' | 'dify'
 
 export type CorrectionSource = 'ai' | 'manual' | 'ai_reviewed'
 

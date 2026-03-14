@@ -98,6 +98,9 @@ async function callProvider(
   if (providerType === 'antigravity') {
     return await callOpenAI(apiKey, model || 'default', baseUrl || 'https://api.antigravity.ai/v1', systemPrompt, userPrompt, imageUrls)
   }
+  if (providerType === 'gemini') {
+    return await callGemini(apiKey, model || 'gemini-2.5-flash', systemPrompt, userPrompt, imageUrls)
+  }
   if (providerType === 'dify') {
     return await callDify(apiKey, baseUrl || 'https://api.dify.ai/v1', systemPrompt, userPrompt)
   }
@@ -193,6 +196,66 @@ async function callOpenAI(
 
   const data = await response.json()
   return data.choices[0].message.content
+}
+
+async function callGemini(
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  imageUrls?: string[]
+): Promise<string> {
+  const parts: Record<string, unknown>[] = []
+
+  if (imageUrls && imageUrls.length > 0) {
+    for (const url of imageUrls) {
+      parts.push({
+        inlineData: {
+          mimeType: 'image/jpeg',
+          data: await fetchImageAsBase64(url),
+        },
+      })
+    }
+  }
+  parts.push({ text: userPrompt })
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts }],
+      generationConfig: {
+        maxOutputTokens: 8192,
+        responseMimeType: 'application/json',
+      },
+    }),
+  })
+
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(`Gemini API error (${response.status}): ${err}`)
+  }
+
+  const data = await response.json()
+  const candidate = data.candidates?.[0]
+  if (!candidate?.content?.parts?.[0]?.text) {
+    throw new Error('Gemini não retornou resposta válida')
+  }
+  return candidate.content.parts[0].text
+}
+
+async function fetchImageAsBase64(url: string): Promise<string> {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Erro ao baixar imagem: ${response.status}`)
+  const buffer = await response.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
 }
 
 async function callDify(
