@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Trash2,
   Plus,
@@ -10,6 +11,7 @@ import {
   Hash,
   AlertTriangle,
   VolumeX,
+  ArrowLeft,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -773,6 +775,7 @@ function WordFilterTab() {
 
 export default function ModerationPage() {
   const { profile } = useAuth()
+  const navigate = useNavigate()
   const [tab, setTab] = useState('reports')
 
   const isAuthorized = profile?.role === 'administrator' || profile?.role === 'teacher'
@@ -792,11 +795,16 @@ export default function ModerationPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Moderacao</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Gerencie denuncias, espacos e filtros
-        </p>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/community')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Moderacao</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerencie denuncias, espacos e filtros
+          </p>
+        </div>
       </div>
 
       <PageTabs

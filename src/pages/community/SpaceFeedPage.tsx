@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { Plus, Menu, Hash } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Plus, Menu, Hash, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { SpacesSidebar } from '@/components/community/SpacesSidebar'
@@ -17,6 +17,7 @@ export default function SpaceFeedPage() {
   const { isStudent } = useAuth()
   const { isRestricted: isReadOnly } = useContentAccess('community_readonly')
   const { spaceSlug } = useParams<{ spaceSlug: string }>()
+  const navigate = useNavigate()
   const [space, setSpace] = useState<CommunitySpace | null>(null)
   const [spaces, setSpaces] = useState<CommunitySpace[]>([])
   const [loading, setLoading] = useState(true)
@@ -78,6 +79,9 @@ export default function SpaceFeedPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/community')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <span
             className="h-3 w-3 rounded-full shrink-0"
             style={{ backgroundColor: space.color }}

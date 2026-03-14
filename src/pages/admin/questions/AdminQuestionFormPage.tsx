@@ -36,6 +36,7 @@ import {
   GripVertical,
   CheckCircle2,
   Circle,
+  ArrowLeft,
 } from 'lucide-react'
 
 const questionSchema = z.object({
@@ -251,9 +252,14 @@ export default function AdminQuestionFormPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{isEditing ? 'Editar Questao' : 'Nova Questao'}</h1>
-        <p className="text-muted-foreground">Crie questoes com formatacao rica e diversos formatos</p>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/questions')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{isEditing ? 'Editar Questao' : 'Nova Questao'}</h1>
+          <p className="text-muted-foreground">Crie questoes com formatacao rica e diversos formatos</p>
+        </div>
       </div>
 
       <Form {...form}>

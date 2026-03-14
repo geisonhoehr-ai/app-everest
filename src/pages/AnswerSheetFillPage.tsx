@@ -23,7 +23,8 @@ import {
   Circle,
   Clock,
   BookText,
-  Target
+  Target,
+  ArrowLeft,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
@@ -230,6 +231,11 @@ export default function AnswerSheetFillPage() {
   return (
     <div className="space-y-6">
       <div className="max-w-5xl mx-auto space-y-6">
+        {/* Back button */}
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+
         {/* Header */}
         <Card className="border-border shadow-sm">
           <CardContent className="pt-6">

@@ -30,7 +30,7 @@ import {
 import { useToast } from '@/components/ui/use-toast'
 import { useEffect, useState } from 'react'
 import { audioLessonService, AudioLesson, AudioModule } from '@/services/audioLessonService'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowLeft } from 'lucide-react'
 
 const evercastSchema = z.object({
   title: z.string().min(3, 'O título é muito curto.'),
@@ -128,6 +128,13 @@ export default function AdminEvercastFormPage() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Button type="button" variant="ghost" size="icon" onClick={() => navigate('/admin/evercast')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl font-bold text-foreground">{isEditing ? 'Editar Áudio-aula' : 'Nova Áudio-aula'}</h1>
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle>

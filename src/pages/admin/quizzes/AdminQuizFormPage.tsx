@@ -38,6 +38,7 @@ import {
   type AdminTopic,
 } from '@/services/adminQuizService'
 import { SectionLoader } from '@/components/SectionLoader'
+import { ArrowLeft } from 'lucide-react'
 
 const quizSchema = z.object({
   title: z.string().min(3, 'O título é muito curto.'),
@@ -141,6 +142,13 @@ export default function AdminQuizFormPage() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/quizzes')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl font-bold text-foreground">{isEditing ? 'Editar Quiz' : 'Novo Quiz'}</h1>
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle>{isEditing ? 'Editar Quiz' : 'Novo Quiz'}</CardTitle>

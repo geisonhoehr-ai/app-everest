@@ -13,6 +13,7 @@ import {
   Brain,
   BookOpen,
   ArrowRight,
+  ArrowLeft,
   BarChart3,
 } from 'lucide-react'
 import {
@@ -115,11 +116,16 @@ export default function SimulationResultsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Relatório de Desempenho</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {result.quiz?.title || 'Simulado'} · {percentage}% de aproveitamento
-        </p>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/simulados')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Relatório de Desempenho</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {result.quiz?.title || 'Simulado'} · {percentage}% de aproveitamento
+          </p>
+        </div>
       </div>
 
       {/* Score Card */}
