@@ -53,6 +53,7 @@ import {
   HelpCircle,
   Radio,
   Megaphone,
+  StickyNote,
 } from 'lucide-react'
 
 // ─── Menu structure types ─────────────────────────────────────────────────────
@@ -108,6 +109,7 @@ const studentMenuGroups: MenuGroup[] = [
     collapsible: true,
     items: [
       { label: 'Acervo Digital', href: '/acervo', icon: Archive },
+      { label: 'Minhas Anotações', href: '/anotacoes', icon: StickyNote },
       { label: 'Evercast', href: '/evercast', icon: Mic, featureKey: FEATURE_KEYS.EVERCAST },
     ],
   },
