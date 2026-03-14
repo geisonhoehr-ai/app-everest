@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import { courseService } from '@/services/courseService'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { RichTextEditor } from '@/components/RichTextEditor'
+const RichTextEditor = lazy(() => import('@/components/RichTextEditor').then(m => ({ default: m.RichTextEditor })))
 import { rankingService } from '@/services/rankingService'
 import {
   lessonInteractionService,
@@ -1228,7 +1228,7 @@ export default function LessonPlayerPage() {
                                 <div className="flex gap-3 p-4 group">
                                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shrink-0 shadow-sm">
                                     {comment.user_avatar ? (
-                                      <img src={comment.user_avatar} alt="" className="w-9 h-9 rounded-full object-cover" />
+                                      <img src={comment.user_avatar} alt="" className="w-9 h-9 rounded-full object-cover" loading="lazy" />
                                     ) : (
                                       <span className="text-xs font-bold text-white">
                                         {(comment.user_name || 'A')[0].toUpperCase()}
@@ -1293,7 +1293,7 @@ export default function LessonPlayerPage() {
                                       <div key={reply.id} className="flex gap-3 p-3 rounded-lg hover:bg-background/60 transition-colors group">
                                         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shrink-0">
                                           {reply.user_avatar ? (
-                                            <img src={reply.user_avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
+                                            <img src={reply.user_avatar} alt="" className="w-7 h-7 rounded-full object-cover" loading="lazy" />
                                           ) : (
                                             <span className="text-[10px] font-bold text-white">
                                               {(reply.user_name || 'A')[0].toUpperCase()}
@@ -1407,12 +1407,14 @@ export default function LessonPlayerPage() {
                           )}
                         </div>
                         <div className="border border-border/40 rounded-xl overflow-hidden bg-white dark:bg-card shadow">
-                          <RichTextEditor
-                            content={noteContent}
-                            onChange={handleNoteChange}
-                            placeholder="Escreva suas anotações aqui..."
-                            minHeight="250px"
-                          />
+                          <Suspense fallback={<div className="p-4 text-muted-foreground text-sm">Carregando editor...</div>}>
+                            <RichTextEditor
+                              content={noteContent}
+                              onChange={handleNoteChange}
+                              placeholder="Escreva suas anotações aqui..."
+                              minHeight="250px"
+                            />
+                          </Suspense>
                         </div>
                       </div>
                     )}

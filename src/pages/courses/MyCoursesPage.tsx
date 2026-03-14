@@ -107,6 +107,7 @@ export default function MyCoursesPage() {
                   src={course.image || '/placeholder.svg'}
                   alt={course.title}
                   className="object-cover w-full h-full"
+                  loading="lazy"
                 />
                 {course.progress === 100 && (
                   <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-emerald-500 text-white text-xs font-bold">
@@ -175,7 +176,7 @@ export default function MyCoursesPage() {
                 onClick={() => navigate(`/courses/${course.id}`)}
               >
                 {course.thumbnail_url ? (
-                  <img src={course.thumbnail_url} alt="" className="w-full h-40 object-cover" />
+                  <img src={course.thumbnail_url} alt="" className="w-full h-40 object-cover" loading="lazy" />
                 ) : (
                   <div className="w-full h-40 bg-muted flex items-center justify-center">
                     <Lock className="h-8 w-8 text-muted-foreground" />

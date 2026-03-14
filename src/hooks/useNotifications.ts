@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/auth-provider'
 import { supabase } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/types'
@@ -160,8 +160,8 @@ export function useNotifications() {
     }
   }, [user?.id])
 
-  // Contar notificações não lidas
-  const unreadCount = notifications.filter(n => !n.is_read).length
+  // Contar notificações não lidas (memoizado)
+  const unreadCount = useMemo(() => notifications.filter(n => !n.is_read).length, [notifications])
 
   // Polling para atualizações de notificações (30s interval)
   // Substituiu Realtime WebSocket para reduzir conexões simultâneas em escala

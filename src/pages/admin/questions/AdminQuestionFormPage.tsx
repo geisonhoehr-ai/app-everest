@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { RichTextEditor } from '@/components/RichTextEditor'
+const RichTextEditor = lazy(() => import('@/components/RichTextEditor').then(m => ({ default: m.RichTextEditor })))
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { supabase } from '@/lib/supabase/client'
@@ -317,12 +317,14 @@ export default function AdminQuestionFormPage() {
                         <FormItem>
                           <FormLabel>Enunciado (com formatacao)</FormLabel>
                           <FormControl>
-                            <RichTextEditor
-                              content={field.value || ''}
-                              onChange={field.onChange}
-                              placeholder="Digite o enunciado da questao..."
-                              minHeight="150px"
-                            />
+                            <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Carregando editor...</div>}>
+                              <RichTextEditor
+                                content={field.value || ''}
+                                onChange={field.onChange}
+                                placeholder="Digite o enunciado da questao..."
+                                minHeight="150px"
+                              />
+                            </Suspense>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -583,12 +585,14 @@ export default function AdminQuestionFormPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <RichTextEditor
-                            content={field.value || ''}
-                            onChange={field.onChange}
-                            placeholder="Digite a explicacao da resposta..."
-                            minHeight="120px"
-                          />
+                          <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Carregando editor...</div>}>
+                            <RichTextEditor
+                              content={field.value || ''}
+                              onChange={field.onChange}
+                              placeholder="Digite a explicacao da resposta..."
+                              minHeight="120px"
+                            />
+                          </Suspense>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

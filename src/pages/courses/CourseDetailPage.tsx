@@ -253,7 +253,7 @@ export default function CourseDetailPage() {
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
             <div className="flex flex-col md:flex-row gap-6 items-start">
               {course.thumbnail_url && (
-                <img src={course.thumbnail_url} alt="" className="w-48 h-32 rounded-lg object-cover" />
+                <img src={course.thumbnail_url} alt="" className="w-48 h-32 rounded-lg object-cover" loading="lazy" />
               )}
               <div className="flex-1 space-y-3">
                 <h2 className="text-xl font-bold">{course.name}</h2>

@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   useRef,
   ReactNode,
 } from 'react'
@@ -473,8 +474,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [profile])
 
-  const value = {
-    user: session?.user ?? null,
+  const user = session?.user ?? null
+
+  const value = useMemo(() => ({
+    user,
     session,
     profile,
     signIn,
@@ -485,7 +488,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     profileFetchAttempted,
     refreshProfile,
     getRedirectPath,
-  }
+  }), [user, session, profile, signIn, signInWithMagicLink, signUp, signOut, loading, profileFetchAttempted, refreshProfile, getRedirectPath])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

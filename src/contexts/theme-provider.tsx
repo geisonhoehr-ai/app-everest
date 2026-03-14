@@ -50,9 +50,13 @@ export function ThemeProvider({
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+    setTheme: (newTheme: Theme) => {
+      // Enable transition only when user explicitly toggles theme
+      document.body.classList.add('theme-transition')
+      localStorage.setItem(storageKey, newTheme)
+      setTheme(newTheme)
+      // Remove transition class after animation completes
+      setTimeout(() => document.body.classList.remove('theme-transition'), 350)
     },
   }
 

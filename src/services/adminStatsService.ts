@@ -18,26 +18,42 @@ export interface SystemStats {
 
 export async function getSystemStats(): Promise<SystemStats> {
   try {
+    // Try RPC first (1 query instead of 12)
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_system_stats')
+
+    if (!rpcError && rpcData) {
+      const d = rpcData as any
+      return {
+        totalUsers: d.total_users || 0,
+        totalStudents: d.total_students || 0,
+        totalTeachers: d.total_teachers || 0,
+        totalAdministrators: d.total_administrators || 0,
+        totalClasses: d.total_classes || 0,
+        totalCourses: d.total_courses || 0,
+        totalFlashcards: d.total_flashcards || 0,
+        totalQuizzes: d.total_quizzes || 0,
+        totalEssays: d.total_essays || 0,
+        totalAudioCourses: d.total_audio_courses || 0,
+        activeUsers: d.active_users || 0,
+        completionRate: d.completion_rate || 0,
+      }
+    }
+
+    // Fallback: consolidated parallel queries (12 → 2 batches)
     const [
-      usersResult,
-      classesResult,
-      coursesResult,
-      flashcardsResult,
-      quizzesResult,
-      essaysResult,
-      audioCoursesResult
+      usersResult, classesResult, coursesResult,
+      flashcardsResult, quizzesResult, essaysResult,
+      audioCoursesResult,
+      studentsResult, teachersResult, adminsResult,
+      completedResult, totalProgressResult
     ] = await Promise.all([
       supabase.from('users').select('role', { count: 'exact', head: true }),
-      supabase.from('classes').select('*', { count: 'exact', head: true }),
-      supabase.from('video_courses').select('*', { count: 'exact', head: true }),
-      supabase.from('flashcards').select('*', { count: 'exact', head: true }),
-      supabase.from('quizzes').select('*', { count: 'exact', head: true }),
-      supabase.from('essays').select('*', { count: 'exact', head: true }),
-      supabase.from('audio_courses').select('*', { count: 'exact', head: true })
-    ])
-
-    // Get users by role with count queries instead of fetching all rows
-    const [studentsResult, teachersResult, adminsResult, completedResult, totalProgressResult] = await Promise.all([
+      supabase.from('classes').select('id', { count: 'exact', head: true }),
+      supabase.from('video_courses').select('id', { count: 'exact', head: true }),
+      supabase.from('flashcards').select('id', { count: 'exact', head: true }),
+      supabase.from('quizzes').select('id', { count: 'exact', head: true }),
+      supabase.from('essays').select('id', { count: 'exact', head: true }),
+      supabase.from('audio_courses').select('id', { count: 'exact', head: true }),
       supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'student'),
       supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
       supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'administrator'),
@@ -45,25 +61,22 @@ export async function getSystemStats(): Promise<SystemStats> {
       supabase.from('video_progress').select('id', { count: 'exact', head: true }),
     ])
 
-    const students = studentsResult.count || 0
-    const teachers = teachersResult.count || 0
-    const administrators = adminsResult.count || 0
     const completionRate = (totalProgressResult.count || 0) > 0
       ? Math.round(((completedResult.count || 0) / (totalProgressResult.count || 1)) * 100)
       : 0
 
     return {
       totalUsers: usersResult.count || 0,
-      totalStudents: students,
-      totalTeachers: teachers,
-      totalAdministrators: administrators,
+      totalStudents: studentsResult.count || 0,
+      totalTeachers: teachersResult.count || 0,
+      totalAdministrators: adminsResult.count || 0,
       totalClasses: classesResult.count || 0,
       totalCourses: coursesResult.count || 0,
       totalFlashcards: flashcardsResult.count || 0,
       totalQuizzes: quizzesResult.count || 0,
       totalEssays: essaysResult.count || 0,
       totalAudioCourses: audioCoursesResult.count || 0,
-      activeUsers: usersResult.count || 0, // Could be enhanced with last_login_at check
+      activeUsers: usersResult.count || 0,
       completionRate
     }
   } catch (error) {
@@ -93,8 +106,8 @@ export async function getUserGrowthData(days: number = 180): Promise<UserGrowthD
         .order('created_at'),
       supabase
         .from('user_sessions')
-        .select('login_at')
-        .gte('login_at', rangeStart.toISOString())
+        .select('created_at')
+        .gte('created_at', rangeStart.toISOString())
         .limit(10000),
     ])
 
@@ -114,7 +127,7 @@ export async function getUserGrowthData(days: number = 180): Promise<UserGrowthD
 
       // Count sessions in this month
       const activeUsers = sessions.filter(s =>
-        s.login_at >= dateISO && s.login_at < nextDateISO
+        s.created_at >= dateISO && s.created_at < nextDateISO
       ).length
 
       result.push({
@@ -158,8 +171,8 @@ export async function getWeeklyActivityData(rangeDays: number = 7): Promise<Acti
     const [sessions, quizAttempts, flashcardSessions] = await Promise.all([
       supabase
         .from('user_sessions')
-        .select('login_at')
-        .gte('login_at', rangeStartISO)
+        .select('created_at')
+        .gte('created_at', rangeStartISO)
         .limit(5000),
       supabase
         .from('quiz_attempts')
@@ -177,7 +190,7 @@ export async function getWeeklyActivityData(rangeDays: number = 7): Promise<Acti
     const dayTotals = [0, 0, 0, 0, 0, 0, 0]
 
     for (const s of sessions.data || []) {
-      dayTotals[new Date(s.login_at).getDay()]++
+      dayTotals[new Date(s.created_at).getDay()]++
     }
     for (const q of quizAttempts.data || []) {
       dayTotals[new Date(q.created_at).getDay()]++
@@ -344,8 +357,8 @@ export async function getSystemAlerts(): Promise<Alert[]> {
 
     const { count: inactiveUsers } = await supabase
       .from('users')
-      .select('*', { count: 'exact', head: true })
-      .lt('last_login_at', thirtyDaysAgo.toISOString())
+      .select('id', { count: 'exact', head: true })
+      .lt('last_seen_at', thirtyDaysAgo.toISOString())
       .eq('role', 'student')
 
     if (inactiveUsers && inactiveUsers > 10) {
@@ -405,8 +418,8 @@ export async function getKPIChanges(): Promise<{
     ] = await Promise.all([
       supabase.from('users').select('id', { count: 'exact', head: true }),
       supabase.from('users').select('id', { count: 'exact', head: true }).lt('created_at', thisMonthISO),
-      supabase.from('user_sessions').select('user_id', { count: 'exact', head: true }).gte('login_at', thisMonthISO),
-      supabase.from('user_sessions').select('user_id', { count: 'exact', head: true }).gte('login_at', lastMonthISO).lt('login_at', thisMonthISO),
+      supabase.from('user_sessions').select('user_id', { count: 'exact', head: true }).gte('created_at', thisMonthISO),
+      supabase.from('user_sessions').select('user_id', { count: 'exact', head: true }).gte('created_at', lastMonthISO).lt('created_at', thisMonthISO),
       supabase.from('classes').select('id', { count: 'exact', head: true }),
       supabase.from('classes').select('id', { count: 'exact', head: true }).lt('created_at', thisMonthISO),
     ])

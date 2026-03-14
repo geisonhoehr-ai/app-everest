@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Pin, Lock, MessageCircle, Eye } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -40,7 +41,7 @@ function getRoleBadge(role?: string) {
   return null
 }
 
-export function PostCard({ post, onReactionChange }: PostCardProps) {
+export const PostCard = memo(function PostCard({ post, onReactionChange }: PostCardProps) {
   const navigate = useNavigate()
 
   const handleClick = () => {
@@ -125,4 +126,4 @@ export function PostCard({ post, onReactionChange }: PostCardProps) {
       </CardContent>
     </Card>
   )
-}
+})

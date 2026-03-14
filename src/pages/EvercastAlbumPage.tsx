@@ -92,7 +92,7 @@ export default function EvercastAlbumPage() {
       <div className="flex flex-col items-center md:flex-row md:items-end gap-6 p-6">
         <div className="w-32 h-32 shadow-sm rounded-md overflow-hidden shrink-0">
           {course.thumbnail_url ? (
-            <img src={course.thumbnail_url} alt={course.name} className="w-full h-full object-cover" />
+            <img src={course.thumbnail_url} alt={course.name} className="w-full h-full object-cover" loading="lazy" />
           ) : (
             <div className="w-full h-full bg-emerald-600 flex items-center justify-center">
               <Disc3 className="w-12 h-12 text-white" />
