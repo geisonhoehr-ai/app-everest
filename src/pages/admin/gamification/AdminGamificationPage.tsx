@@ -108,43 +108,6 @@ export default function AdminGamificationPage() {
     }
   }
 
-  const handleCreateAchievement = async () => {
-    if (!newAchievement.name.trim()) {
-      toast({
-        title: 'Erro',
-        description: 'Digite o nome da conquista',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    try {
-      await createAchievement(newAchievement)
-
-      toast({
-        title: 'Sucesso',
-        description: 'Conquista criada com sucesso'
-      })
-
-      setIsCreateDialogOpen(false)
-      setNewAchievement({
-        name: '',
-        description: '',
-        icon_url: '🏆',
-        xp_reward: 100,
-        category: 'general'
-      })
-      loadData()
-    } catch (error) {
-      logger.error('Erro ao criar conquista:', error)
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível criar a conquista',
-        variant: 'destructive'
-      })
-    }
-  }
-
   const handleEditAchievement = (achievement: Achievement) => {
     setEditingAchievement(achievement)
     setNewAchievement({

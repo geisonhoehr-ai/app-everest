@@ -370,13 +370,15 @@ export async function getSystemAlerts(): Promise<Alert[]> {
       })
     }
 
-    // Success message (backup, etc.)
-    alerts.push({
-      type: 'info',
-      message: 'Sistema funcionando normalmente',
-      action: null,
-      link: null
-    })
+    // Only show success message if there are no warnings
+    if (alerts.length === 0) {
+      alerts.push({
+        type: 'info',
+        message: 'Sistema funcionando normalmente',
+        action: null,
+        link: null
+      })
+    }
 
     return alerts
   } catch (error) {

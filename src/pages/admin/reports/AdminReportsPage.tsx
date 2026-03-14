@@ -117,7 +117,7 @@ export default function AdminReportsPage() {
 
   const statsCards = [
     {
-      title: 'Total de Usuarios',
+      title: 'Total de Usuários',
       value: stats ? stats.totalUsers.toLocaleString('pt-BR') : '0',
       icon: Users,
       bgColor: 'bg-blue-500/10',
@@ -133,7 +133,7 @@ export default function AdminReportsPage() {
       iconColor: 'text-green-500'
     },
     {
-      title: 'Redacoes',
+      title: 'Redações',
       value: stats ? stats.totalEssays.toLocaleString('pt-BR') : '0',
       icon: FileText,
       bgColor: 'bg-purple-500/10',
@@ -141,7 +141,7 @@ export default function AdminReportsPage() {
       iconColor: 'text-purple-500'
     },
     {
-      title: 'Taxa de Conclusao',
+      title: 'Taxa de Conclusão',
       value: stats ? `${stats.completionRate}%` : '0%',
       icon: Target,
       bgColor: 'bg-orange-500/10',
@@ -208,7 +208,7 @@ export default function AdminReportsPage() {
           tabs={[
             {
               value: 'overview',
-              label: 'Visao Geral',
+              label: 'Visão Geral',
               content: (
                 <div className="space-y-6">
                   <Card className="border-border shadow-sm">
@@ -321,14 +321,14 @@ export default function AdminReportsPage() {
             },
             {
               value: 'users',
-              label: 'Usuarios',
+              label: 'Usuários',
               content: (
                 <div className="space-y-6">
                   <Card className="border-border shadow-sm">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base md:text-lg text-foreground">
                         <Users className="h-5 w-5" />
-                        Crescimento de Usuarios
+                        Crescimento de Usuários
                       </CardTitle>
                       <CardDescription className="text-xs md:text-sm">
                         Total vs Ativos por mes
@@ -366,7 +366,7 @@ export default function AdminReportsPage() {
                   {/* Distribuicao por Papel */}
                   <Card className="border-border shadow-sm">
                     <CardHeader>
-                      <CardTitle className="text-base md:text-lg text-foreground">Distribuicao de Usuarios</CardTitle>
+                      <CardTitle className="text-base md:text-lg text-foreground">Distribuição de Usuários</CardTitle>
                       <CardDescription className="text-xs md:text-sm">Por papel na plataforma</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -397,13 +397,13 @@ export default function AdminReportsPage() {
             },
             {
               value: 'content',
-              label: 'Conteudo',
+              label: 'Conteúdo',
               content: (
                 <Card className="border-border shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base md:text-lg text-foreground">
                       <BookOpen className="h-5 w-5" />
-                      Conteudo da Plataforma
+                      Conteúdo da Plataforma
                     </CardTitle>
                     <CardDescription className="text-xs md:text-sm">
                       Totais por tipo de recurso
@@ -433,7 +433,7 @@ export default function AdminReportsPage() {
                         <div className="text-2xl font-bold text-orange-600">
                           {stats ? stats.totalEssays : 0}
                         </div>
-                        <div className="text-sm text-muted-foreground">Redacoes</div>
+                        <div className="text-sm text-muted-foreground">Redações</div>
                       </div>
                       <div className="text-center p-4 rounded-xl bg-pink-500/10 border border-pink-200">
                         <div className="text-2xl font-bold text-pink-600">

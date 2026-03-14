@@ -80,17 +80,6 @@ export default function AdminManagementPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          {isTeacher ? 'Meus Alunos' : 'Gerenciamento Administrativo'}
-        </h1>
-        <p className="text-muted-foreground">
-          {isTeacher
-            ? 'Visualize e gerencie os alunos das suas turmas'
-            : 'Administre usuarios, turmas e permissoes da plataforma'}
-        </p>
-      </div>
-
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         {/* Header Stats */}
         <Card className="border-border shadow-sm">

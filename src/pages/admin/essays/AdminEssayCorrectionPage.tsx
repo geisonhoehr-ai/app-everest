@@ -507,7 +507,11 @@ export default function AdminEssayCorrectionPage() {
   })
 
   const handleSaveDraft = async () => {
-    if (!submissionId || !user || !template?.id) return
+    if (!submissionId || !user) return
+    if (!template?.id) {
+      toast({ title: 'Selecione um modelo de correção', variant: 'destructive' })
+      return
+    }
 
     setIsSaving(true)
     try {
@@ -540,7 +544,11 @@ export default function AdminEssayCorrectionPage() {
   }
 
   const handleFinalizeCorrection = async () => {
-    if (!submissionId || !user || !essay || !template?.id) return
+    if (!submissionId || !user || !essay) return
+    if (!template?.id) {
+      toast({ title: 'Selecione um modelo de correção antes de finalizar', variant: 'destructive' })
+      return
+    }
 
     setIsSaving(true)
     try {
@@ -556,6 +564,7 @@ export default function AdminEssayCorrectionPage() {
         .update({
           status: 'corrected',
           correction_type: correctionType,
+          final_grade: finalGrade,
           teacher_feedback_text: teacherFeedback || null,
           annotated_text_html: annotatedTextHtml || null,
           annotation_image_url: annotationImageUrl || null,

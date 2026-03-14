@@ -916,26 +916,19 @@ export default function AdminCourseEditorPage() {
         description: course.description || null,
         thumbnail_url: course.thumbnail_url || null,
         is_active: course.is_active,
+        status: course.is_active ? 'published' : 'draft',
       }
 
       if (isNewCourse || !savedCourseId) {
         const insertData = { ...baseFields, evercast_enabled: course.evercast_enabled, created_by_user_id: user?.id }
-        let result = await supabase.from('video_courses').insert(insertData).select('id').single()
-        if (result.error) {
-          // Fallback: evercast_enabled column may not exist yet
-          result = await supabase.from('video_courses').insert({ ...baseFields, created_by_user_id: user?.id }).select('id').single()
-          if (result.error) throw result.error
-        }
+        const result = await supabase.from('video_courses').insert(insertData).select('id').single()
+        if (result.error) throw result.error
         savedCourseId = result.data!.id
         setCourse(prev => ({ ...prev, id: savedCourseId }))
       } else {
         const updateData = { ...baseFields, evercast_enabled: course.evercast_enabled, updated_at: new Date().toISOString() }
-        let result = await supabase.from('video_courses').update(updateData).eq('id', savedCourseId)
-        if (result.error) {
-          // Fallback: evercast_enabled column may not exist yet
-          result = await supabase.from('video_courses').update({ ...baseFields, updated_at: new Date().toISOString() }).eq('id', savedCourseId)
-          if (result.error) throw result.error
-        }
+        const result = await supabase.from('video_courses').update(updateData).eq('id', savedCourseId)
+        if (result.error) throw result.error
       }
 
       // 2. Delete removed items
@@ -1002,6 +995,7 @@ export default function AdminCourseEditorPage() {
                 is_active: lesson.is_active,
                 is_preview: lesson.is_preview,
                 order_index: li,
+                accompanying_pdf_attachment_id: lesson.accompanying_pdf_attachment_id || null,
               })
               .select('id')
               .single()

@@ -256,9 +256,6 @@ export default function AdminSimulationReportsPage() {
     }
   }
 
-  // Se não houver dados, mostrar mensagem
-  const hasNoData = !loading && (!scoreDistribution.length && !topStudents.length)
-
   if (loading) {
     return <SectionLoader />
   }
@@ -312,7 +309,19 @@ export default function AdminSimulationReportsPage() {
                     </p>
                   </div>
                 </div>
-                <Button className="gap-2 w-full md:w-auto">
+                <Button className="gap-2 w-full md:w-auto" onClick={() => {
+                  if (!allAttempts.length) return
+                  const csv = ['Nome,Nota,Tempo (min),Data,Concluiu']
+                    .concat(allAttempts.map(a => `${a.name},${a.score},${a.duration},${a.date},${a.completed ? 'Sim' : 'Não'}`))
+                    .join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                  const url = URL.createObjectURL(blob)
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.download = `relatorio-${simulation?.title || 'simulado'}.csv`
+                  link.click()
+                  URL.revokeObjectURL(url)
+                }}>
                   <Download className="h-4 w-4" />
                   Exportar Relatório
                 </Button>

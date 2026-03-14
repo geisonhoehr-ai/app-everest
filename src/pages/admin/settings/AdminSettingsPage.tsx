@@ -556,7 +556,7 @@ export default function AdminSettingsPage() {
                 <div>
                   <h3 className="font-semibold text-foreground">Sistema Operacional</h3>
                   <p className="text-sm text-muted-foreground">
-                    Versão 2.0.0 — Última atualização: 09/03/2026
+                    Versão 2.1.0 — Última atualização: {new Date().toLocaleDateString('pt-BR')}
                   </p>
                 </div>
               </div>

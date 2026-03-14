@@ -21,13 +21,11 @@ import {
   Edit,
   Trash2,
   Lock,
-  Settings,
   TrendingUp,
   BookOpen,
   Calendar,
   UserCheck,
-  Shield,
-  Eye
+  Shield
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SectionLoader } from '@/components/SectionLoader'

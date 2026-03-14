@@ -99,31 +99,20 @@ export default function AdminDashboard() {
   // ----- Teacher-specific data loading -----
   const loadTeacherData = async () => {
     try {
-      const pendingEssaysCount = studentIds.length > 0
-        ? (await supabase
-            .from('essays')
-            .select('*', { count: 'exact', head: true })
-            .in('student_id', studentIds)
-            .eq('status', 'submitted')
-          ).count || 0
-        : 0
-
-      const totalEssaysCount = studentIds.length > 0
-        ? (await supabase
-            .from('essays')
-            .select('*', { count: 'exact', head: true })
-            .in('student_id', studentIds)
-          ).count || 0
-        : 0
-
-      // Completion rate for teacher's students
+      let pendingEssaysCount = 0
+      let totalEssaysCount = 0
       let completionRate = 0
+
       if (studentIds.length > 0) {
-        const [completedR, totalR] = await Promise.all([
+        const [pendingR, totalEssaysR, completedR, totalProgressR] = await Promise.all([
+          supabase.from('essays').select('id', { count: 'exact', head: true }).in('student_id', studentIds).eq('status', 'submitted'),
+          supabase.from('essays').select('id', { count: 'exact', head: true }).in('student_id', studentIds),
           supabase.from('video_progress').select('id', { count: 'exact', head: true }).in('user_id', studentIds).eq('is_completed', true),
           supabase.from('video_progress').select('id', { count: 'exact', head: true }).in('user_id', studentIds),
         ])
-        const total = totalR.count || 0
+        pendingEssaysCount = pendingR.count || 0
+        totalEssaysCount = totalEssaysR.count || 0
+        const total = totalProgressR.count || 0
         const completed = completedR.count || 0
         completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
       }

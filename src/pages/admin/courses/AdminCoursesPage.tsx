@@ -159,11 +159,6 @@ export default function AdminCoursesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Gerenciar Cursos</h1>
-        <p className="text-muted-foreground mt-1">Adicione, edite ou remova cursos da plataforma</p>
-      </div>
-
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Stats */}
         <Card className="border-border shadow-sm">
@@ -214,11 +209,6 @@ export default function AdminCoursesPage() {
                     {totalStudents.toLocaleString('pt-BR')}
                   </div>
                   <div className="text-sm text-muted-foreground">Estudantes</div>
-                </div>
-                <div className="text-center p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
-                  <Award className="h-6 w-6 text-orange-500 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-orange-600">&mdash;</div>
-                  <div className="text-sm text-muted-foreground">Avaliacao Media</div>
                 </div>
               </div>
             </div>
