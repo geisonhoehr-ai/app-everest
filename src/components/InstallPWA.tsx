@@ -95,7 +95,7 @@ export function InstallPWA() {
               <Button
                 onClick={handleInstallClick}
                 size="sm"
-                className="bg-white hover:bg-white/90 text-foreground font-semibold shadow-md"
+                className="bg-white hover:bg-white/90 text-gray-900 font-semibold shadow-md"
               >
                 Instalar Agora
               </Button>
