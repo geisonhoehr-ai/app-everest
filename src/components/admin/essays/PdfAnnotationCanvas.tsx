@@ -582,16 +582,36 @@ export const PdfAnnotationCanvas = ({
     </div>
   )
 
+  const isValidFileUrl = useCallback((url: string) => {
+    if (!url) return false
+    // Allow blob URLs (from local file uploads)
+    if (url.startsWith('blob:')) return true
+    // Allow Supabase storage URLs
+    if (url.includes('supabase.co/storage')) return true
+    // Allow common document viewers
+    try {
+      const parsed = new URL(url)
+      return ['http:', 'https:'].includes(parsed.protocol)
+    } catch {
+      return false
+    }
+  }, [])
+
   const renderPdfStatus = () => {
     if (pdfError) {
       return (
         <div className="w-full flex flex-col items-center justify-center py-12 gap-3">
           <p className="text-sm text-destructive">Erro ao converter PDF: {pdfError}</p>
-          <iframe
-            src={fileUrl}
-            className="w-full h-[600px] border-0 rounded-md mt-4"
-            title="PDF do documento"
-          />
+          {isValidFileUrl(fileUrl) ? (
+            <iframe
+              src={fileUrl}
+              sandbox="allow-same-origin"
+              className="w-full h-[600px] border-0 rounded-md mt-4"
+              title="PDF do documento"
+            />
+          ) : (
+            <div className="text-sm text-destructive mt-4">URL do arquivo inválida</div>
+          )}
         </div>
       )
     }

@@ -96,7 +96,16 @@ export function RichTextEditor({
   const addImage = useCallback(() => {
     const url = window.prompt('URL da imagem:')
     if (url && editor) {
-      editor.chain().focus().setImage({ src: url }).run()
+      try {
+        const parsed = new URL(url)
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          alert('URL inválida. Use apenas links http ou https.')
+          return
+        }
+        editor.chain().focus().setImage({ src: url }).run()
+      } catch {
+        alert('URL inválida.')
+      }
     }
   }, [editor])
 
@@ -113,7 +122,16 @@ export function RichTextEditor({
       return
     }
 
-    editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+    try {
+      const parsed = new URL(url)
+      if (!['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
+        alert('URL inválida. Use apenas links http, https ou mailto.')
+        return
+      }
+      editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+    } catch {
+      alert('URL inválida.')
+    }
   }, [editor])
 
   const highlightText = useCallback(() => {
