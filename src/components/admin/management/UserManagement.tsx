@@ -484,8 +484,8 @@ export const UserManagement = ({ isTeacher = false, teacherStudentIds = [] }: Us
                   </TableRow>
                 )
               : filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
+                  <TableRow key={user.id} className="group hover:bg-primary/5">
+                    <TableCell className="font-medium group-hover:text-primary transition-colors">
                       {user.first_name} {user.last_name}
                     </TableCell>
                     <TableCell>{user.email}</TableCell>

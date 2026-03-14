@@ -18,6 +18,8 @@ import {
   Users,
   Copy,
   Link as LinkIcon,
+  Mail,
+  ArchiveIcon,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -49,7 +51,7 @@ export default function AdminInvitesPage() {
       logger.error('Erro ao carregar convites:', error)
       toast({
         title: 'Erro ao carregar',
-        description: 'Nao foi possivel carregar os convites.',
+        description: 'Não foi possível carregar os convites.',
         variant: 'destructive',
       })
     } finally {
@@ -80,7 +82,7 @@ export default function AdminInvitesPage() {
       logger.error('Erro ao atualizar convite:', error)
       toast({
         title: 'Erro',
-        description: `Nao foi possivel ${action} o convite.`,
+        description: `Não foi possível ${action} o convite.`,
         variant: 'destructive',
       })
     }
@@ -92,13 +94,14 @@ export default function AdminInvitesPage() {
       await navigator.clipboard.writeText(url)
       toast({ title: 'Link copiado!', description: url })
     } catch {
-      toast({ title: 'Erro', description: 'Nao foi possivel copiar o link.', variant: 'destructive' })
+      toast({ title: 'Erro', description: 'Não foi possível copiar o link.', variant: 'destructive' })
     }
   }
 
   const activeInvites = invites.filter((i) => i.status === 'active')
   const archivedInvites = invites.filter((i) => i.status === 'archived')
   const filtered = tab === 'active' ? activeInvites : archivedInvites
+  const totalRegistrations = invites.reduce((sum, i) => sum + (i.invite_registrations?.[0]?.count ?? 0), 0)
 
   const getRegistrationCount = (invite: InviteRow) => {
     return invite.invite_registrations?.[0]?.count ?? 0
@@ -110,11 +113,78 @@ export default function AdminInvitesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Convites</h1>
-          <p className="text-muted-foreground mt-1">Gerencie convites e links de inscricao</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Gestão de Convites</h1>
+        <p className="text-muted-foreground mt-1">Gerencie convites e links de inscrição</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-3 md:p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+              <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                <Mail className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
+              </div>
+              <div>
+                <div className="text-xl md:text-2xl font-bold text-foreground">{invites.length}</div>
+                <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Total de Convites</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-3 md:p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+              <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                <LinkIcon className="h-5 w-5 md:h-6 md:w-6 text-green-500" />
+              </div>
+              <div>
+                <div className="text-xl md:text-2xl font-bold text-foreground">{activeInvites.length}</div>
+                <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Convites Ativos</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-3 md:p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+              <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-500" />
+              </div>
+              <div>
+                <div className="text-xl md:text-2xl font-bold text-foreground">{totalRegistrations}</div>
+                <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Total Inscritos</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-3 md:p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+              <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                <ArchiveIcon className="h-5 w-5 md:h-6 md:w-6 text-purple-500" />
+              </div>
+              <div>
+                <div className="text-xl md:text-2xl font-bold text-foreground">{archivedInvites.length}</div>
+                <div className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">Arquivados</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and New button */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as 'active' | 'archived')}>
+          <TabsList>
+            <TabsTrigger value="active">Ativos ({activeInvites.length})</TabsTrigger>
+            <TabsTrigger value="archived">Arquivados ({archivedInvites.length})</TabsTrigger>
+          </TabsList>
+        </Tabs>
         <Button asChild className="px-6 py-3 rounded-xl font-semibold">
           <Link to="/admin/invites/new">
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -123,33 +193,23 @@ export default function AdminInvitesPage() {
         </Button>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as 'active' | 'archived')}>
-        <TabsList>
-          <TabsTrigger value="active">
-            Ativos ({activeInvites.length})
-          </TabsTrigger>
-          <TabsTrigger value="archived">
-            Arquivados ({archivedInvites.length})
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
+      {/* Table */}
       <Card className="border-border shadow-sm">
-        <CardContent className="p-5">
-          <div className="rounded-xl border border-border overflow-hidden">
+        <CardContent className="p-0">
+          <div className="rounded-xl overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Titulo</TableHead>
+                <TableRow className="bg-muted/30">
+                  <TableHead className="font-semibold">Título</TableHead>
                   <TableHead className="font-semibold">Inscritos</TableHead>
-                  <TableHead className="font-semibold">Link de divulgacao</TableHead>
-                  <TableHead className="text-right font-semibold">Acoes</TableHead>
+                  <TableHead className="font-semibold">Link de divulgação</TableHead>
+                  <TableHead className="text-right font-semibold">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
                       {tab === 'active'
                         ? 'Nenhum convite ativo. Crie seu primeiro convite!'
                         : 'Nenhum convite arquivado.'}
@@ -159,10 +219,10 @@ export default function AdminInvitesPage() {
                   filtered.map((invite) => {
                     const inviteUrl = `${window.location.origin}/invite/${invite.slug}`
                     return (
-                      <TableRow key={invite.id} className="hover:bg-muted/50 transition-colors">
+                      <TableRow key={invite.id} className="group hover:bg-primary/5">
                         <TableCell className="font-medium max-w-xs">
                           <div>
-                            <p className="font-semibold text-foreground">{invite.title}</p>
+                            <p className="font-medium group-hover:text-primary transition-colors">{invite.title}</p>
                             {invite.description && (
                               <p className="text-sm text-muted-foreground truncate max-w-[300px]">
                                 {invite.description.length > 80
@@ -173,8 +233,8 @@ export default function AdminInvitesPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="cursor-pointer">
-                            <Users className="h-3 w-3 mr-1" />
+                          <Badge variant="secondary" className="cursor-pointer gap-1">
+                            <Users className="h-3 w-3" />
                             {getRegistrationCount(invite)}
                           </Badge>
                         </TableCell>
@@ -195,7 +255,7 @@ export default function AdminInvitesPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 group-hover/btn:text-primary" asChild>
                               <Link to={`/admin/invites/${invite.id}/edit`}>
                                 <Pencil className="h-4 w-4" />
                               </Link>
