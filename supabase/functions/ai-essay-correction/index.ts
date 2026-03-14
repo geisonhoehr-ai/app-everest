@@ -227,7 +227,7 @@ async function callGemini(
       systemInstruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: 'user', parts }],
       generationConfig: {
-        maxOutputTokens: 8192,
+        maxOutputTokens: 65536,
         responseMimeType: 'application/json',
       },
     }),

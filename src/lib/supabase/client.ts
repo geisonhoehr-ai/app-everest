@@ -33,9 +33,13 @@ try {
           'X-Client-Info': 'everest-app'
         },
         fetch: (url, options = {}) => {
-          // Create timeout with better browser compatibility
+          // Edge Functions (AI correction) need longer timeout (3 min)
+          // Regular DB queries use 30s timeout
+          const isEdgeFunction = typeof url === 'string' && url.includes('/functions/v1/')
+          const timeout = isEdgeFunction ? 180000 : 30000
+
           const controller = new AbortController()
-          const timeoutId = setTimeout(() => controller.abort(), 30000)
+          const timeoutId = setTimeout(() => controller.abort(), timeout)
 
           return fetch(url, {
             ...options,
