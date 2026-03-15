@@ -172,7 +172,8 @@ export default function MyCoursesPage() {
             {storefrontCourses.map(course => (
               <Card
                 key={course.id}
-                className="relative overflow-hidden border-border"
+                className="cursor-pointer hover:border-primary/50 transition-colors relative overflow-hidden"
+                onClick={() => navigate(`/courses/${course.id}`)}
               >
                 {course.thumbnail_url ? (
                   <img src={course.thumbnail_url} alt="" className="w-full h-40 object-cover" loading="lazy" />
@@ -198,15 +199,6 @@ export default function MyCoursesPage() {
                   <p className="text-xs text-muted-foreground">
                     {course.video_modules?.length || 0} módulos
                   </p>
-                  {course.sales_url ? (
-                    <Button asChild className="w-full" size="sm">
-                      <a href={course.sales_url} target="_blank" rel="noopener noreferrer">
-                        Adquirir este curso
-                      </a>
-                    </Button>
-                  ) : (
-                    <p className="text-xs text-muted-foreground text-center">Entre em contato para adquirir</p>
-                  )}
                 </CardContent>
               </Card>
             ))}

@@ -262,13 +262,15 @@ export default function CourseDetailPage() {
               <div className="flex-1 space-y-3">
                 <h2 className="text-xl font-bold">{course.name}</h2>
                 <p className="text-muted-foreground">{course.description}</p>
-                {course.sales_url && (
-                  <Button asChild>
+                {course.sales_url ? (
+                  <Button asChild size="lg">
                     <a href={course.sales_url} target="_blank" rel="noopener noreferrer" className="gap-2">
                       <ExternalLink className="h-4 w-4" />
                       Adquirir este curso
                     </a>
                   </Button>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Entre em contato com o suporte para adquirir este curso.</p>
                 )}
               </div>
             </div>
