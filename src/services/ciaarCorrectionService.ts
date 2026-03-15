@@ -132,15 +132,16 @@ export const ciaarCorrectionService = {
     result: CorrectionResult,
     templateId: string,
     teacherId: string,
-    rawAiResponse?: Record<string, unknown>
+    rawAiResponse?: Record<string, unknown>,
+    isDraft: boolean = false
   ): Promise<void> {
     try {
       const correctionType = result.correctionType || 'ciaar'
 
       if (correctionType === 'enem') {
-        await this.saveEnemCorrection(essayId, result, templateId, teacherId, rawAiResponse)
+        await this.saveEnemCorrection(essayId, result, templateId, teacherId, rawAiResponse, isDraft)
       } else {
-        await this.saveCiaarCorrection(essayId, result, templateId, teacherId, rawAiResponse)
+        await this.saveCiaarCorrection(essayId, result, templateId, teacherId, rawAiResponse, isDraft)
       }
     } catch (err) {
       logger.error('Erro ao salvar correção:', err)
@@ -153,7 +154,8 @@ export const ciaarCorrectionService = {
     result: CorrectionResult,
     templateId: string,
     teacherId: string,
-    rawAiResponse?: Record<string, unknown>
+    rawAiResponse?: Record<string, unknown>,
+    isDraft: boolean = false
   ): Promise<void> {
     // 1. Delete existing CIAAR data
     await Promise.all([
@@ -248,15 +250,15 @@ export const ciaarCorrectionService = {
         final_grade_ciaar: result.finalGrade,
         correction_template_id: templateId,
         ai_correction_raw: rawAiResponse ?? null,
-        status: 'corrected',
+        status: isDraft ? 'correcting' : 'corrected',
         teacher_id: teacherId,
-        correction_date: new Date().toISOString(),
+        ...(isDraft ? {} : { correction_date: new Date().toISOString() }),
       })
       .eq('id', essayId)
 
     if (updateError) throw updateError
 
-    logger.info(`Correção CIAAR salva para essay ${essayId}. Nota: ${result.finalGrade}`)
+    logger.info(`Correção CIAAR ${isDraft ? '(rascunho)' : ''} salva para essay ${essayId}. Nota: ${result.finalGrade}`)
   },
 
   async saveEnemCorrection(
@@ -264,7 +266,8 @@ export const ciaarCorrectionService = {
     result: CorrectionResult,
     templateId: string,
     teacherId: string,
-    rawAiResponse?: Record<string, unknown>
+    rawAiResponse?: Record<string, unknown>,
+    isDraft: boolean = false
   ): Promise<void> {
     // 1. Delete existing ENEM data
     await supabase.from('essay_competency_scores').delete().eq('essay_id', essayId)
@@ -307,15 +310,15 @@ export const ciaarCorrectionService = {
         final_grade_enem: result.finalGrade,
         correction_template_id: templateId,
         ai_correction_raw: rawAiResponse ?? null,
-        status: 'corrected',
+        status: isDraft ? 'correcting' : 'corrected',
         teacher_id: teacherId,
-        correction_date: new Date().toISOString(),
+        ...(isDraft ? {} : { correction_date: new Date().toISOString() }),
       })
       .eq('id', essayId)
 
     if (updateError) throw updateError
 
-    logger.info(`Correção ENEM salva para essay ${essayId}. Nota: ${result.finalGrade}`)
+    logger.info(`Correção ENEM ${isDraft ? '(rascunho)' : ''} salva para essay ${essayId}. Nota: ${result.finalGrade}`)
   },
 
   // ---------------------------------------------------------------------------

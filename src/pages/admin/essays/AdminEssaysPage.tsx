@@ -76,10 +76,12 @@ export default function AdminEssaysPage() {
         return
       }
 
-      // Fetch all student_classes to map students to classes
+      // Fetch student_classes scoped to loaded classes
+      const classIdList = classes.map(c => c.id)
       const { data: studentClasses, error: scError } = await supabase
         .from('student_classes')
         .select('user_id, class_id')
+        .in('class_id', classIdList)
 
       if (scError) {
         logger.error('Error fetching student_classes:', scError)
@@ -87,10 +89,17 @@ export default function AdminEssaysPage() {
         return
       }
 
-      // Fetch all essays with status
-      const { data: essays, error: essaysError } = await supabase
-        .from('essays')
-        .select('id, student_id, status')
+      // Fetch essays scoped to students in these classes
+      const studentIdList = [...new Set((studentClasses || []).map(sc => sc.user_id))]
+      let essaysQuery = supabase.from('essays').select('id, student_id, status')
+      if (studentIdList.length > 0) {
+        essaysQuery = essaysQuery.in('student_id', studentIdList)
+      } else {
+        // No students, no essays to fetch
+        setClassStats(classes.map(c => ({ classId: c.id, className: c.name, totalStudents: 0, submitted: 0, correcting: 0, corrected: 0, total: 0 })))
+        return
+      }
+      const { data: essays, error: essaysError } = await essaysQuery
 
       if (essaysError) {
         logger.error('Error fetching essays:', essaysError)

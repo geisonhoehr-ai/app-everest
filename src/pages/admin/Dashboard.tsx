@@ -147,7 +147,7 @@ export default function AdminDashboard() {
         // Recent essays submitted by teacher's students
         const { data: recentEssays } = await supabase
           .from('essays')
-          .select('created_at, status, student_id')
+          .select('created_at, status, student_id, users:student_id(first_name, last_name)')
           .in('student_id', studentIds)
           .order('created_at', { ascending: false })
           .limit(3)
@@ -155,9 +155,11 @@ export default function AdminDashboard() {
         if (recentEssays) {
           for (const essay of recentEssays) {
             const statusLabel = essay.status === 'submitted' ? 'enviada' : essay.status === 'corrected' ? 'corrigida' : essay.status
+            const student = essay.users as any
+            const studentName = student ? `${student.first_name} ${student.last_name}` : 'aluno'
             teacherActivities.push({
               type: 'essay',
-              message: `Redacao ${statusLabel} por aluno`,
+              message: `Redação ${statusLabel} por ${studentName}`,
               time: getRelativeTime(new Date(essay.created_at)),
               icon: 'FileText',
               timestamp: new Date(essay.created_at),

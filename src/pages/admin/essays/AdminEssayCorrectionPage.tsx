@@ -519,19 +519,18 @@ export default function AdminEssayCorrectionPage() {
         submissionId,
         buildCorrectionResult(),
         template.id,
-        user.id
+        user.id,
+        undefined,
+        true // isDraft
       )
 
-      // Set status to 'correcting' (not 'corrected')
+      // Save additional teacher feedback fields
       await supabase
         .from('essays')
         .update({
-          status: 'correcting',
-          correction_type: correctionType,
           teacher_feedback_text: teacherFeedback || null,
           annotated_text_html: annotatedTextHtml || null,
           annotation_image_url: annotationImageUrl || null,
-          teacher_feedback_audio_url: (feedbackAudioUrl && !feedbackAudioUrl.startsWith('http')) ? feedbackAudioUrl : undefined,
         } as any)
         .eq('id', submissionId)
 

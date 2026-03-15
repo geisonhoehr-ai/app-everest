@@ -40,6 +40,7 @@ import {
 } from 'lucide-react'
 import { SectionLoader } from '@/components/SectionLoader'
 import { useToast } from '@/hooks/use-toast'
+import { useTeacherClasses } from '@/hooks/useTeacherClasses'
 import { supabase } from '@/lib/supabase/client'
 import { getUsers } from '@/services/adminUserService'
 import type { User } from '@/services/adminUserService'
@@ -61,6 +62,7 @@ export default function AdminClassStudentsPage() {
   const { classId } = useParams<{ classId: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { classIds: teacherClassIds, isTeacher, isAdmin, loading: teacherLoading } = useTeacherClasses()
 
   const [className, setClassName] = useState('')
   const [students, setStudents] = useState<ClassStudent[]>([])
@@ -71,8 +73,15 @@ export default function AdminClassStudentsPage() {
   const [selectedUserId, setSelectedUserId] = useState('')
 
   useEffect(() => {
+    if (teacherLoading) return
+    // Teacher can only manage students in their own classes
+    if (isTeacher && classId && !teacherClassIds.includes(classId)) {
+      toast({ title: 'Acesso negado', description: 'Você não tem permissão para gerenciar esta turma.', variant: 'destructive' })
+      navigate('/admin/classes')
+      return
+    }
     loadData()
-  }, [classId])
+  }, [classId, teacherLoading])
 
   const loadData = async () => {
     try {
