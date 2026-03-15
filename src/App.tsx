@@ -428,112 +428,50 @@ const App = () => (
                     <Route path="integrations" element={<AdminIntegrationsPage />} />
                     <Route path="integrations/memberkit-import" element={<MemberkitImportPage />} />
                     <Route path="settings" element={<AdminSettingsPage />} />
+                    <Route path="invites" element={<AdminInvitesPage />} />
+                    <Route path="invites/new" element={<AdminInviteFormPage />} />
+                    <Route path="invites/:inviteId/edit" element={<AdminInviteFormPage />} />
+                    <Route path="broadcast" element={<AdminBroadcastPage />} />
+                    <Route path="courses" element={<AdminCoursesPage />} />
+                    <Route path="courses/new" element={<AdminCourseEditorPage />} />
+                    <Route path="courses/:courseId/edit" element={<AdminCourseEditorPage />} />
+                    <Route path="courses/:courseId/content" element={<AdminCourseEditorPage />} />
+                    <Route path="courses/:courseId/classes" element={<AdminCourseClassesPage />} />
+                    <Route path="flashcards" element={<AdminFlashcardsPage />} />
+                    <Route path="flashcards/new" element={<AdminSubjectFormPage />} />
+                    <Route path="flashcards/:subjectId" element={<AdminFlashcardTopicsPage />} />
+                    <Route path="flashcards/:subjectId/edit" element={<AdminSubjectFormPage />} />
+                    <Route path="flashcards/:subjectId/topics/new" element={<AdminTopicFormPage />} />
+                    <Route path="flashcards/:subjectId/topics/:topicId/edit" element={<AdminTopicFormPage />} />
+                    <Route path="flashcards/:subjectId/:topicId" element={<AdminFlashcardsManagementPage />} />
+                    <Route path="quizzes" element={<AdminQuizzesPage />} />
+                    <Route path="quizzes/new" element={<AdminQuizFormPage />} />
+                    <Route path="quizzes/:quizId/edit" element={<AdminQuizFormPage />} />
+                    <Route path="quizzes/:quizId/questions" element={<AdminQuizQuestionsPage />} />
+                    <Route path="quizzes/:quizId/reports" element={<AdminQuizReportsPage />} />
+                    <Route path="simulations" element={<AdminSimulationsPage />} />
+                    <Route path="simulations/new" element={<AdminSimulationFormPage />} />
+                    <Route path="simulations/:simulationId/edit" element={<AdminSimulationFormPage />} />
+                    <Route path="simulations/:simulationId/reports" element={<AdminSimulationReportsPage />} />
+                    <Route path="lives" element={<AdminLiveEventsPage />} />
+                    <Route path="questions" element={<AdminQuestionsPage />} />
+                    <Route path="questions/new" element={<AdminQuestionFormPage />} />
+                    <Route path="questions/:questionId/edit" element={<AdminQuestionFormPage />} />
+                    <Route path="classes/new" element={<AdminClassFormPage />} />
+                    <Route path="classes/:classId/edit" element={<AdminClassFormPage />} />
+                    <Route path="users/:userId/edit" element={<AdminUserFormPage />} />
+                    <Route path="acervo" element={<AdminAcervoPage />} />
                   </Route>
+                  {/* Rotas compartilhadas (administrator + teacher) */}
                   <Route path="management" element={<AdminManagementPage />} />
                   <Route path="classes" element={<AdminClassesPage />} />
-                  <Route path="classes/new" element={<AdminClassFormPage />} />
-                  <Route path="classes/:classId/edit" element={<AdminClassFormPage />} />
                   <Route path="classes/:classId/students" element={<AdminClassStudentsPage />} />
                   <Route path="gamification" element={<AdminGamificationPage />} />
-                  <Route
-                    path="users/:userId/edit"
-                    element={<AdminUserFormPage />}
-                  />
-                  <Route
-                    path="users/:userId/classes"
-                    element={<AdminStudentClassesPage />}
-                  />
-                  <Route
-                    path="users/:userId/profile"
-                    element={<AdminUserProfilePage />}
-                  />
-                  <Route path="invites" element={<AdminInvitesPage />} />
-                  <Route path="invites/new" element={<AdminInviteFormPage />} />
-                  <Route
-                    path="invites/:inviteId/edit"
-                    element={<AdminInviteFormPage />}
-                  />
-                  <Route path="acervo" element={<AdminAcervoPage />} />
+                  <Route path="users/:userId/classes" element={<AdminStudentClassesPage />} />
+                  <Route path="users/:userId/profile" element={<AdminUserProfilePage />} />
                   <Route path="reports" element={<AdminReportsPage />} />
                   <Route path="reports/videos" element={<VideoAnalyticsPage />} />
-                  <Route path="courses" element={<AdminCoursesPage />} />
-                  <Route path="courses/new" element={<AdminCourseEditorPage />} />
-                  <Route
-                    path="courses/:courseId/edit"
-                    element={<AdminCourseEditorPage />}
-                  />
-                  <Route
-                    path="courses/:courseId/content"
-                    element={<AdminCourseEditorPage />}
-                  />
-                  <Route
-                    path="courses/:courseId/classes"
-                    element={<AdminCourseClassesPage />}
-                  />
-                  <Route path="flashcards" element={<AdminFlashcardsPage />} />
-                  <Route path="flashcards/new" element={<AdminSubjectFormPage />} />
-                  <Route
-                    path="flashcards/:subjectId"
-                    element={<AdminFlashcardTopicsPage />}
-                  />
-                  <Route
-                    path="flashcards/:subjectId/edit"
-                    element={<AdminSubjectFormPage />}
-                  />
-                  <Route
-                    path="flashcards/:subjectId/topics/new"
-                    element={<AdminTopicFormPage />}
-                  />
-                  <Route
-                    path="flashcards/:subjectId/topics/:topicId/edit"
-                    element={<AdminTopicFormPage />}
-                  />
-                  <Route
-                    path="flashcards/:subjectId/:topicId"
-                    element={<AdminFlashcardsManagementPage />}
-                  />
-                  <Route path="quizzes" element={<AdminQuizzesPage />} />
-                  <Route path="quizzes/new" element={<AdminQuizFormPage />} />
-                  <Route
-                    path="quizzes/:quizId/edit"
-                    element={<AdminQuizFormPage />}
-                  />
-                  <Route
-                    path="quizzes/:quizId/questions"
-                    element={<AdminQuizQuestionsPage />}
-                  />
-                  <Route
-                    path="quizzes/:quizId/reports"
-                    element={<AdminQuizReportsPage />}
-                  />
-                  <Route
-                    path="simulations"
-                    element={<AdminSimulationsPage />}
-                  />
-                  <Route
-                    path="simulations/new"
-                    element={<AdminSimulationFormPage />}
-                  />
-                  <Route
-                    path="simulations/:simulationId/edit"
-                    element={<AdminSimulationFormPage />}
-                  />
-                  <Route
-                    path="simulations/:simulationId/reports"
-                    element={<AdminSimulationReportsPage />}
-                  />
-                  <Route path="lives" element={<AdminLiveEventsPage />} />
-                  <Route path="questions" element={<AdminQuestionsPage />} />
-                  <Route
-                    path="questions/new"
-                    element={<AdminQuestionFormPage />}
-                  />
-                  <Route
-                    path="questions/:questionId/edit"
-                    element={<AdminQuestionFormPage />}
-                  />
                   <Route path="calendar" element={<AdminCalendarPage />} />
-                  <Route path="broadcast" element={<AdminBroadcastPage />} />
                   <Route path="evercast" element={<AdminEvercastPage />} />
                   <Route
                     path="evercast/new"

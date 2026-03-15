@@ -159,20 +159,22 @@ export default function AdminEssaysPage() {
             Gerencie as redações dos alunos por turma
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline" className="gap-2">
-            <Link to="/admin/essays/prompts">
-              <ListChecks className="h-4 w-4" />
-              Gerenciar Temas
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="gap-2">
-            <Link to="/admin/essays/settings">
-              <Settings className="h-4 w-4" />
-              Configurações
-            </Link>
-          </Button>
-        </div>
+        {isAdmin && (
+          <div className="flex gap-2">
+            <Button asChild variant="outline" className="gap-2">
+              <Link to="/admin/essays/prompts">
+                <ListChecks className="h-4 w-4" />
+                Gerenciar Temas
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="gap-2">
+              <Link to="/admin/essays/settings">
+                <Settings className="h-4 w-4" />
+                Configurações
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Class Cards Grid */}

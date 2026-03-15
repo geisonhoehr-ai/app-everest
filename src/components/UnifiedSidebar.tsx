@@ -164,8 +164,8 @@ const adminMenuGroups: MenuGroup[] = [
     items: [
       { label: 'Usuários', href: '/admin/management', icon: Users },
       { label: 'Turmas', href: '/admin/classes', icon: GraduationCap },
-      { label: 'Convites', href: '/admin/invites', icon: Mail },
-      { label: 'Enviar Aviso', href: '/admin/broadcast', icon: Megaphone },
+      { label: 'Convites', href: '/admin/invites', icon: Mail, adminOnly: true },
+      { label: 'Enviar Aviso', href: '/admin/broadcast', icon: Megaphone, adminOnly: true },
       { label: 'Permissões', href: '/admin/permissions', icon: Lock, adminOnly: true },
     ],
   },
@@ -174,14 +174,14 @@ const adminMenuGroups: MenuGroup[] = [
     icon: BookOpen,
     collapsible: true,
     items: [
-      { label: 'Cursos', href: '/admin/courses', icon: BookOpen },
-      { label: 'Flashcards', href: '/admin/flashcards', icon: Brain },
-      { label: 'Quizzes', href: '/admin/quizzes', icon: Target },
-      { label: 'Questões', href: '/admin/questions', icon: HelpCircle },
+      { label: 'Cursos', href: '/admin/courses', icon: BookOpen, adminOnly: true },
+      { label: 'Flashcards', href: '/admin/flashcards', icon: Brain, adminOnly: true },
+      { label: 'Quizzes', href: '/admin/quizzes', icon: Target, adminOnly: true },
+      { label: 'Questões', href: '/admin/questions', icon: HelpCircle, adminOnly: true },
       { label: 'Redações', href: '/admin/essays', icon: FileText },
-      { label: 'Simulados', href: '/admin/simulations', icon: ClipboardCheck },
-      { label: 'Lives', href: '/admin/lives', icon: Radio },
-      { label: 'Acervo Digital', href: '/admin/acervo', icon: Archive },
+      { label: 'Simulados', href: '/admin/simulations', icon: ClipboardCheck, adminOnly: true },
+      { label: 'Lives', href: '/admin/lives', icon: Radio, adminOnly: true },
+      { label: 'Acervo Digital', href: '/admin/acervo', icon: Archive, adminOnly: true },
     ],
   },
   {
@@ -378,7 +378,7 @@ export function UnifiedSidebar() {
                 Everest
               </h1>
               <p className="text-[11px] text-sidebar-foreground/50">
-                {isAdmin ? 'Admin' : 'Plataforma de Estudos'}
+                {isAdministrator ? 'Admin' : isTeacher ? 'Professor' : 'Plataforma de Estudos'}
               </p>
             </div>
           )}

@@ -417,23 +417,25 @@ export default function AdminClassesPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-6">
-              <Link to="/admin/permissions" className="block">
-                <div className="flex items-center gap-3 md:gap-4">
-                  <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
-                    <Lock className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+          {isAdmin && (
+            <Card className="border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-6">
+                <Link to="/admin/permissions" className="block">
+                  <div className="flex items-center gap-3 md:gap-4">
+                    <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-muted/50">
+                      <Lock className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm md:text-base font-semibold mb-1 text-foreground">Permissões</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground">
+                        Configurar acesso aos recursos
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm md:text-base font-semibold mb-1 text-foreground">Permissões</h3>
-                    <p className="text-xs md:text-sm text-muted-foreground">
-                      Configurar acesso aos recursos
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            </CardContent>
-          </Card>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-6">
