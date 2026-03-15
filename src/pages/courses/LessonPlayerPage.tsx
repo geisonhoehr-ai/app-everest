@@ -232,6 +232,22 @@ export default function LessonPlayerPage() {
       try {
         setIsLoading(true)
 
+        // Check enrollment before allowing lesson access
+        const { data: enrollment } = await supabase
+          .from('student_classes')
+          .select('id, classes!inner(class_courses!inner(course_id))')
+          .eq('user_id', user.id)
+
+        const enrolledCourseIds = (enrollment || []).flatMap((sc: any) =>
+          sc.classes?.class_courses?.map((cc: any) => cc.course_id) || []
+        )
+
+        if (!enrolledCourseIds.includes(courseId)) {
+          toast({ title: 'Acesso negado', description: 'Você não está matriculado neste curso.', variant: 'destructive' })
+          navigate(`/courses/${courseId}`)
+          return
+        }
+
         const course = await courseService.getCourseWithModulesAndProgress(courseId, user.id)
         if (!course) {
           toast({ title: 'Curso não encontrado', variant: 'destructive' })

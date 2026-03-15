@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import DOMPurify from 'dompurify'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -71,6 +72,7 @@ type Phase = 'select' | 'study' | 'summary'
 const QUANTITY_OPTIONS = [10, 15, 20, 25, 30, 50]
 
 export default function QuestionBankPage() {
+  const { toast } = useToast()
   const [allQuestions, setAllQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -140,6 +142,14 @@ export default function QuestionBankPage() {
 
   // Start study session
   const startStudy = () => {
+    if (availableQuestions.length === 0) {
+      toast({
+        title: 'Nenhuma questão disponível',
+        description: 'Selecione uma matéria ou tópico que tenha questões.',
+        variant: 'destructive',
+      })
+      return
+    }
     const shuffled = [...availableQuestions].sort(() => Math.random() - 0.5)
     const selected = shuffled.slice(0, quantity)
     setStudyQuestions(selected)
@@ -372,6 +382,11 @@ export default function QuestionBankPage() {
   }
 
   // ─── STUDY PHASE ───────────────────────────────────────────────────────
+  if (phase === 'study' && !currentQuestion) {
+    // Safety fallback: no questions loaded, return to selection
+    setPhase('select')
+    return null
+  }
   if (phase === 'study' && currentQuestion) {
     const progressPercent = ((currentIndex + 1) / studyQuestions.length) * 100
     const answeredCount = Object.keys(answers).length

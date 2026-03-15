@@ -330,8 +330,8 @@ export default function CourseDetailPage() {
                   />
                 </div>
 
-                {/* Continue button */}
-                {firstIncompleteLesson ? (
+                {/* Continue button - only for enrolled students */}
+                {firstIncompleteLesson && isEnrolled ? (
                   <Button
                     size="lg"
                     onClick={() =>
