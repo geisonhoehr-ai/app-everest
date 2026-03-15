@@ -14,6 +14,7 @@ import {
   Trophy,
   Lock,
   ExternalLink,
+  MessageSquare,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -99,12 +100,16 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<CourseData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('card')
-  const [isEnrolled, setIsEnrolled] = useState(true) // default true to prevent flash
+  const [isEnrolled, setIsEnrolled] = useState(false)
+  const [enrollmentChecked, setEnrollmentChecked] = useState(false)
 
   // ---- Enrollment check ----
   useEffect(() => {
     async function checkEnrollment() {
-      if (!user?.id || !courseId) return
+      if (!user?.id || !courseId) {
+        setEnrollmentChecked(true)
+        return
+      }
       const { data } = await supabase
         .from('student_classes')
         .select('id, classes!inner(class_courses!inner(course_id))')
@@ -114,6 +119,7 @@ export default function CourseDetailPage() {
         sc.classes?.class_courses?.map((cc: any) => cc.course_id) || []
       )
       setIsEnrolled(enrolledCourseIds.includes(courseId))
+      setEnrollmentChecked(true)
     }
     checkEnrollment()
   }, [user?.id, courseId])
@@ -204,7 +210,7 @@ export default function CourseDetailPage() {
   }, [firstIncompleteLesson, course])
 
   // ---- Loading state ----
-  if (isLoading) {
+  if (isLoading || !enrollmentChecked) {
     return <SectionLoader />
   }
 
@@ -254,23 +260,29 @@ export default function CourseDetailPage() {
 
         {/* ── Storefront Banner (non-enrolled) ── */}
         {!isEnrolled && course && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              {course.thumbnail_url && (
-                <img src={course.thumbnail_url} alt="" className="w-48 h-32 rounded-lg object-cover" loading="lazy" />
-              )}
-              <div className="flex-1 space-y-3">
-                <h2 className="text-xl font-bold">{course.name}</h2>
-                <p className="text-muted-foreground">{course.description}</p>
+          <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-2 border-orange-500/30 rounded-xl p-6">
+            <div className="flex flex-col md:flex-row gap-6 items-center">
+              <div className="w-16 h-16 rounded-2xl bg-orange-500/20 flex items-center justify-center shrink-0">
+                <Lock className="h-8 w-8 text-orange-500" />
+              </div>
+              <div className="flex-1 space-y-2 text-center md:text-left">
+                <h2 className="text-xl font-bold text-foreground">Este curso está bloqueado</h2>
+                <p className="text-muted-foreground text-sm">Adquira o acesso para desbloquear todas as aulas, materiais e funcionalidades.</p>
+              </div>
+              <div className="shrink-0">
                 {course.sales_url ? (
-                  <Button asChild size="lg">
-                    <a href={course.sales_url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                  <Button asChild size="lg" className="bg-orange-500 hover:bg-orange-600 text-white shadow-lg gap-2">
+                    <a href={course.sales_url} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4" />
                       Adquirir este curso
                     </a>
                   </Button>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Entre em contato com o suporte para adquirir este curso.</p>
+                  <Button size="lg" variant="outline" className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10 gap-2"
+                    onClick={() => window.open('https://wa.me/5555999999999?text=Olá! Tenho interesse no curso ' + encodeURIComponent(course.name), '_blank')}>
+                    <MessageSquare className="h-4 w-4" />
+                    Falar com o suporte
+                  </Button>
                 )}
               </div>
             </div>
