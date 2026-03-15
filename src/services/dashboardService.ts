@@ -158,33 +158,38 @@ export const dashboardService = {
 
       const classIds = (teacherClasses || []).map(c => c.id)
 
-      const [essaysResult, forumResult, studentsResult] = await Promise.all([
-        // Redações com status 'submitted' (aguardando correção)
-        supabase
-          .from('essays')
-          .select('id', { count: 'exact', head: true })
-          .in('status', ['submitted', 'correcting'] as any),
+      // Get student IDs for the teacher's classes
+      let teacherStudentIds: string[] = []
+      if (classIds.length > 0) {
+        const { data: enrollments } = await supabase
+          .from('student_classes')
+          .select('user_id')
+          .in('class_id', classIds)
+        teacherStudentIds = [...new Set((enrollments || []).map(e => e.user_id))]
+      }
 
-        // Tópicos do fórum sem resposta
+      const [essaysResult, forumResult] = await Promise.all([
+        // Redações dos alunos do professor com status 'submitted' ou 'correcting'
+        teacherStudentIds.length > 0
+          ? supabase
+              .from('essays')
+              .select('id', { count: 'exact', head: true })
+              .in('student_id', teacherStudentIds)
+              .in('status', ['submitted', 'correcting'] as any)
+          : Promise.resolve({ count: 0, error: null }),
+
+        // Tópicos do fórum sem resposta (global — não há scoping por turma)
         supabase
           .from('community_posts')
           .select('id', { count: 'exact', head: true })
           .eq('type', 'question')
           .eq('comments_count', 0),
-
-        // Alunos nas turmas do professor
-        classIds.length > 0
-          ? supabase
-              .from('student_classes')
-              .select('user_id', { count: 'exact', head: true })
-              .in('class_id', classIds)
-          : Promise.resolve({ count: 0, error: null }),
       ])
 
       return {
         essaysToCorrect: essaysResult.count || 0,
         forumQuestions: forumResult.count || 0,
-        activeStudents: studentsResult.count || 0,
+        activeStudents: teacherStudentIds.length,
       }
     } catch (error) {
       logger.error('Erro ao buscar estatísticas do professor:', error)

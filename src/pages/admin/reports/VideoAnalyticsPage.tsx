@@ -41,6 +41,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/use-auth'
 import { useNavigate } from 'react-router-dom'
 import {
   LineChart,
@@ -63,12 +64,13 @@ function formatDuration(seconds: number): string {
   return `${m}min`
 }
 
-function VideoAnalyticsTabs({ courses, filteredLessons, students, searchTerm, setSearchTerm }: {
+function VideoAnalyticsTabs({ courses, filteredLessons, students, searchTerm, setSearchTerm, showStudentTab = true }: {
   courses: CourseAnalytics[]
   filteredLessons: LessonAnalytics[]
   students: StudentProgressEntry[]
   searchTerm: string
   setSearchTerm: (v: string) => void
+  showStudentTab?: boolean
 }) {
   const [tab, setTab] = useState('courses')
 
@@ -227,7 +229,7 @@ function VideoAnalyticsTabs({ courses, filteredLessons, students, searchTerm, se
             </Card>
           ),
         },
-        {
+        ...(showStudentTab ? [{
           value: 'students',
           label: 'Por Aluno',
           content: (
@@ -287,13 +289,14 @@ function VideoAnalyticsTabs({ courses, filteredLessons, students, searchTerm, se
               </CardContent>
             </Card>
           ),
-        },
+        }] : []),
       ]}
     />
   )
 }
 
 export default function VideoAnalyticsPage() {
+  const { isAdmin } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [overview, setOverview] = useState<VideoAnalyticsOverview | null>(null)
@@ -536,6 +539,7 @@ export default function VideoAnalyticsPage() {
         students={students}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
+        showStudentTab={isAdmin}
       />
     </div>
   )

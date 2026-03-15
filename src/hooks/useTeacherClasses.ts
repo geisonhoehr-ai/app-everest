@@ -16,6 +16,8 @@ interface TeacherContext {
   isAdmin: boolean
   /** Loading state */
   loading: boolean
+  /** Error message if teacher record is missing */
+  error: string | null
 }
 
 /**
@@ -29,6 +31,7 @@ export function useTeacherClasses(): TeacherContext {
   const [classIds, setClassIds] = useState<string[]>([])
   const [studentIds, setStudentIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const isTeacher = profile?.role === 'teacher'
   const isAdmin = profile?.role === 'administrator'
@@ -57,6 +60,7 @@ export function useTeacherClasses(): TeacherContext {
 
         if (!teacher) {
           logger.error('Teacher record not found for user:', profile.id)
+          setError('Registro de professor não encontrado. Peça ao administrador para configurar seu perfil de professor.')
           setLoading(false)
           return
         }
@@ -93,5 +97,5 @@ export function useTeacherClasses(): TeacherContext {
     fetchTeacherData()
   }, [profile?.id, isTeacher])
 
-  return { teacherId, classIds, studentIds, isTeacher, isAdmin, loading }
+  return { teacherId, classIds, studentIds, isTeacher, isAdmin, loading, error }
 }

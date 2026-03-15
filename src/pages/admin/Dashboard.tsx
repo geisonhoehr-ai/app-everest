@@ -59,7 +59,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 
 export default function AdminDashboard() {
   const { profile } = useAuth()
-  const { classIds, studentIds, isTeacher, loading: teacherLoading } = useTeacherClasses()
+  const { classIds, studentIds, isTeacher, loading: teacherLoading, error: teacherError } = useTeacherClasses()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<SystemStats>({
     totalUsers: 0,
@@ -377,6 +377,18 @@ export default function AdminDashboard() {
 
   if (loading || teacherLoading) {
     return <SectionLoader />
+  }
+
+  if (teacherError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+          <AlertCircle className="w-8 h-8 text-amber-500" />
+        </div>
+        <h3 className="text-xl font-bold text-foreground mb-2">Perfil de Professor Incompleto</h3>
+        <p className="text-muted-foreground max-w-md">{teacherError}</p>
+      </div>
+    )
   }
 
   return (

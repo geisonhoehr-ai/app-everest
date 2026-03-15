@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SectionLoader } from '@/components/SectionLoader'
+import { useAuth } from '@/hooks/use-auth'
+import { useTeacherClasses } from '@/hooks/useTeacherClasses'
 import {
   getSystemStats,
   getUserGrowthData,
@@ -39,6 +41,8 @@ import {
 } from 'recharts'
 
 export default function AdminReportsPage() {
+  const { isAdmin } = useAuth()
+  const { isTeacher } = useTeacherClasses()
   const [dateRange, setDateRange] = useState('30d')
   const [reportTab, setReportTab] = useState('overview')
   const [loading, setLoading] = useState(true)
@@ -157,9 +161,15 @@ export default function AdminReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Relatorios e Analises</h1>
-        <p className="text-muted-foreground">Visualize metricas e estatisticas detalhadas da plataforma</p>
+        <h1 className="text-2xl font-bold text-foreground">Relatórios e Análises</h1>
+        <p className="text-muted-foreground">Visualize métricas e estatísticas detalhadas da plataforma</p>
       </div>
+
+      {isTeacher && (
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+          Os relatórios mostram dados gerais da plataforma. Para ver dados específicos dos seus alunos, acesse a página de Redações.
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         {/* Header Actions */}
@@ -173,10 +183,12 @@ export default function AdminReportsPage() {
             </TabsList>
           </Tabs>
 
-          <Button onClick={handleExport} className="gap-2">
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Exportar CSV</span>
-          </Button>
+          {isAdmin && (
+            <Button onClick={handleExport} className="gap-2">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Exportar CSV</span>
+            </Button>
+          )}
         </div>
 
         {/* Stats Cards */}
