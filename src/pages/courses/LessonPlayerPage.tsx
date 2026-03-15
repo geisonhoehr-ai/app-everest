@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { StudentNotebook } from '@/components/StudentNotebook'
@@ -14,7 +14,6 @@ import { courseService } from '@/services/courseService'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-const RichTextEditor = lazy(() => import('@/components/RichTextEditor').then(m => ({ default: m.RichTextEditor })))
 import { rankingService } from '@/services/rankingService'
 import {
   lessonInteractionService,
@@ -46,11 +45,9 @@ import {
   Send,
   Trash2,
   Reply,
-  StickyNote,
   Search,
-  Save,
-  Loader2,
   BookOpen,
+  SkipForward,
 } from 'lucide-react'
 
 /* ------------------------------------------------------------------ */
@@ -160,12 +157,11 @@ export default function LessonPlayerPage() {
   const [replyText, setReplyText] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
   const [hoverRating, setHoverRating] = useState(0)
-  const [activeTab, setActiveTab] = useState<'comments' | 'resources' | 'notes'>('comments')
+  const [activeTab, setActiveTab] = useState<'comments' | 'resources'>('comments')
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   // Notes
   const [noteContent, setNoteContent] = useState('')
-  const [noteSaving, setNoteSaving] = useState(false)
   const [noteLastSaved, setNoteLastSaved] = useState<string | null>(null)
   const noteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -179,6 +175,10 @@ export default function LessonPlayerPage() {
   const [autoPlayNext, setAutoPlayNext] = useState(() => {
     return localStorage.getItem('everest-autoplay') !== 'false'
   })
+
+  // Auto-play countdown
+  const [autoPlayCountdown, setAutoPlayCountdown] = useState<number | null>(null)
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Search in sidebar
   const [lessonSearch, setLessonSearch] = useState('')
@@ -212,7 +212,6 @@ export default function LessonPlayerPage() {
     [flatLessons],
   )
   const totalCount = flatLessons.length
-  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   /* ---- PDF attachments ---- */
   const pdfAttachments = useMemo(
@@ -319,12 +318,17 @@ export default function LessonPlayerPage() {
     }
   }, [isLoading, lessonId])
 
-  /* ---- Escape exits theater ---- */
+  /* ---- Escape exits theater / closes mobile sidebar ---- */
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape' && theaterMode) setTheaterMode(false) }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isSidebarOpen) setIsSidebarOpen(false)
+        else if (theaterMode) setTheaterMode(false)
+      }
+    }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [theaterMode])
+  }, [theaterMode, isSidebarOpen])
 
   /* ---- Resizable split ---- */
   const handleDragStart = useCallback((e: React.MouseEvent) => {
@@ -445,9 +449,7 @@ export default function LessonPlayerPage() {
     if (noteTimerRef.current) clearTimeout(noteTimerRef.current)
     noteTimerRef.current = setTimeout(async () => {
       if (!user?.id || !lessonId) return
-      setNoteSaving(true)
       const ok = await lessonInteractionService.saveNote(lessonId, user.id, value)
-      setNoteSaving(false)
       setNoteLastSaved(ok ? 'Salvo' : 'Erro ao salvar')
     }, 1500)
   }, [user?.id, lessonId])
@@ -488,14 +490,34 @@ export default function LessonPlayerPage() {
         const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data
         if (data?.event === 'onEnded' || data?.message === 'ended' || data?.type === 'ended') {
           if (autoPlayNext && nextLesson) {
-            navigate(`/courses/${courseId}/lessons/${nextLesson.id}`)
+            setAutoPlayCountdown(5)
           }
         }
       } catch { /* ignore non-JSON messages */ }
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [autoPlayNext, nextLesson, courseId, navigate])
+  }, [autoPlayNext, nextLesson])
+
+  /* ---- auto-play countdown timer ---- */
+  useEffect(() => {
+    if (autoPlayCountdown === null) return
+    if (autoPlayCountdown <= 0 && nextLesson) {
+      navigate(`/courses/${courseId}/lessons/${nextLesson.id}`)
+      setAutoPlayCountdown(null)
+      return
+    }
+    countdownRef.current = setInterval(() => {
+      setAutoPlayCountdown(prev => prev !== null ? prev - 1 : null)
+    }, 1000)
+    return () => { if (countdownRef.current) clearInterval(countdownRef.current) }
+  }, [autoPlayCountdown, nextLesson, courseId, navigate])
+
+  // Reset countdown on lesson change
+  useEffect(() => {
+    setAutoPlayCountdown(null)
+    if (countdownRef.current) clearInterval(countdownRef.current)
+  }, [lessonId])
 
   /* ---- module helpers ---- */
   const sortedModules = useMemo(() => {
@@ -573,7 +595,6 @@ export default function LessonPlayerPage() {
     )
   }
 
-  const sanitizedDescription = lessonData.description ? DOMPurify.sanitize(lessonData.description) : ''
   const modCompleted = currentModule?.lessons.filter((l) => l.completed).length || 0
   const modTotal = currentModule?.lessons.length || 0
 
@@ -878,27 +899,13 @@ export default function LessonPlayerPage() {
 
               <button
                 className="lg:hidden p-2.5 rounded-lg text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10 transition-all"
-                onClick={() => setIsSidebarOpen(true)}
+                onClick={() => { setDrawerOpen(false); setIsSidebarOpen(true) }}
               >
                 <Menu className="h-5 w-5" />
               </button>
             </>
           )}
         </header>
-
-        {/* Progress bar below header */}
-        {!theaterMode && (
-          <div className="h-1.5 bg-muted/40 shrink-0 relative overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 rounded-r-full transition-all duration-700 ease-out relative"
-              style={{ width: `${modTotal > 0 ? (modCompleted / modTotal) * 100 : 0}%` }}
-            >
-              {modCompleted > 0 && modCompleted < modTotal && (
-                <div className="absolute right-0 top-0 h-full w-3 bg-white/40 rounded-full animate-pulse" />
-              )}
-            </div>
-          </div>
-        )}
 
         {/* ============================================================ */}
         {/* Main layout                                                    */}
@@ -1095,7 +1102,7 @@ export default function LessonPlayerPage() {
                         <ChevronLeft className="h-5 w-5 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Aula Anterior</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Aula Anterior</span>
                         <p className="text-sm font-semibold text-foreground truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{cleanTitle(prevLesson.title)}</p>
                       </div>
                     </Link>
@@ -1104,7 +1111,7 @@ export default function LessonPlayerPage() {
                     <Link to={`/courses/${courseId}/lessons/${nextLesson.id}`}
                       className="flex-1 flex items-center gap-3 p-3.5 sm:p-4 rounded-xl border border-border bg-card hover:bg-emerald-500/5 hover:border-emerald-500/30 transition-all duration-200 group text-right">
                       <div className="min-w-0 flex-1">
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Próxima Aula</span>
+                        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Próxima Aula</span>
                         <p className="text-sm font-semibold text-foreground truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{cleanTitle(nextLesson.title)}</p>
                       </div>
                       <div className="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 group-hover:bg-emerald-600 transition-colors shadow-sm">
@@ -1122,9 +1129,9 @@ export default function LessonPlayerPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => { setActiveTab('comments'); setDrawerOpen(true) }}
-                    className="flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-medium transition-all border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                    className="flex items-center gap-2 h-10 sm:h-9 px-4 rounded-lg text-xs font-medium transition-all border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-primary"
                   >
-                    <MessageSquare className="h-3.5 w-3.5" />
+                    <MessageSquare className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                     Comentários
                     {comments.length > 0 && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-muted min-w-[18px] text-center">
@@ -1135,30 +1142,23 @@ export default function LessonPlayerPage() {
                   {attachments.length > 0 && (
                     <button
                       onClick={() => { setActiveTab('resources'); setDrawerOpen(true) }}
-                      className="flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-medium transition-all border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                      className="flex items-center gap-2 h-10 sm:h-9 px-4 rounded-lg text-xs font-medium transition-all border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-primary"
                     >
-                      <Paperclip className="h-3.5 w-3.5" />
+                      <Paperclip className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                       Arquivos
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-muted min-w-[18px] text-center">{attachments.length}</span>
                     </button>
                   )}
                   <button
-                    onClick={() => { setActiveTab('notes'); setDrawerOpen(true) }}
-                    className="flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-medium transition-all border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-primary"
-                  >
-                    <StickyNote className="h-3.5 w-3.5" />
-                    Anotações
-                  </button>
-                  <button
                     onClick={() => setNotebookOpen(prev => !prev)}
                     className={cn(
-                      "flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-medium transition-all border",
+                      "flex items-center gap-2 h-10 sm:h-9 px-4 rounded-lg text-xs font-medium transition-all border",
                       notebookOpen
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-primary"
                     )}
                   >
-                    <BookOpen className="h-3.5 w-3.5" />
+                    <BookOpen className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                     Caderno
                   </button>
                 </div>
@@ -1237,21 +1237,9 @@ export default function LessonPlayerPage() {
                           )}>{attachments.length}</span>
                         </button>
                       )}
-                      <button
-                        onClick={() => setActiveTab('notes')}
-                        className={cn(
-                          "flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-all rounded-lg flex-1 justify-center",
-                          activeTab === 'notes'
-                            ? "bg-white dark:bg-background text-primary shadow border border-border/40"
-                            : "text-muted-foreground hover:text-foreground hover:bg-white/50"
-                        )}
-                      >
-                        <StickyNote className="h-4 w-4" />
-                        Anotações
-                      </button>
                     </div>
                     <SheetTitle className="sr-only">
-                      {activeTab === 'comments' ? 'Comentários' : activeTab === 'resources' ? 'Arquivos' : 'Anotações'}
+                      {activeTab === 'comments' ? 'Comentários' : 'Arquivos'}
                     </SheetTitle>
                   </SheetHeader>
 
@@ -1475,44 +1463,6 @@ export default function LessonPlayerPage() {
                       </div>
                     )}
 
-                    {/* Notes */}
-                    {activeTab === 'notes' && (
-                      <div className="space-y-4 max-w-3xl mx-auto">
-                        <div className="flex items-center justify-between bg-white dark:bg-card rounded-xl p-4 border border-border/40 shadow">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                              <StickyNote className="h-4.5 w-4.5 text-amber-500" />
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-semibold text-foreground">Suas anotações</h3>
-                              <p className="text-[11px] text-muted-foreground">Privado · Salvo automaticamente</p>
-                            </div>
-                          </div>
-                          {noteLastSaved && (
-                            <span className={cn(
-                              "flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors",
-                              noteLastSaved === 'Salvando...' ? "text-muted-foreground bg-muted/50" :
-                                noteLastSaved === 'Erro ao salvar' ? "text-red-500 bg-red-500/5" :
-                                  "text-emerald-600 bg-emerald-500/5"
-                            )}>
-                              {noteSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                              {noteLastSaved}
-                            </span>
-                          )}
-                        </div>
-                        <div className="border border-border/40 rounded-xl overflow-hidden bg-white dark:bg-card shadow">
-                          <Suspense fallback={<div className="p-4 text-muted-foreground text-sm">Carregando editor...</div>}>
-                            <RichTextEditor
-                              content={noteContent}
-                              onChange={handleNoteChange}
-                              placeholder="Escreva suas anotações aqui..."
-                              minHeight="250px"
-                              hideAdvanced
-                            />
-                          </Suspense>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </SheetContent>
               </Sheet>
@@ -1529,7 +1479,7 @@ export default function LessonPlayerPage() {
               desktopSidebarVisible ? "w-[320px] min-w-[320px]" : "w-0 min-w-0 border-l-0"
           )}>
             {desktopSidebarVisible && (
-              <div className="sticky top-[calc(4rem+1.5px)] flex flex-col h-[calc(100vh-4rem-1.5px)] overflow-hidden">
+              <div className="sticky top-16 flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
                 {renderModuleSelector(false)}
                 {renderLessonList(false)}
                 <div className="shrink-0 h-[0.80rem]" />
@@ -1537,35 +1487,65 @@ export default function LessonPlayerPage() {
             )}
           </aside>
 
-          {/* ============================================================ */}
-          {/* Mobile sidebar                                                */}
-          {/* ============================================================ */}
-          {isSidebarOpen && (
-            <>
-              <div className="fixed inset-0 z-40 bg-black/60 lg:hidden"
-                onClick={() => setIsSidebarOpen(false)} />
-              <aside className="fixed inset-y-0 right-0 z-50 w-[85%] max-w-[360px] lg:hidden bg-card border-l border-border shadow-lg flex flex-col">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-                  <div className="flex items-center gap-2">
-                    <ListVideo className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">Aulas</span>
-                  </div>
-                  <button onClick={() => setIsSidebarOpen(false)}
-                    className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {renderModuleSelector(true)}
-                {renderLessonList(true)}
-              </aside>
-            </>
-          )}
         </div>
       </div>
 
+      {/* ============================================================ */}
+      {/* Mobile sidebar (outside overflow-hidden container)            */}
+      {/* ============================================================ */}
+      {isSidebarOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)} />
+          <aside
+            className="fixed inset-y-0 right-0 z-50 w-[85%] max-w-[360px] lg:hidden bg-card border-l border-border shadow-lg flex flex-col"
+            style={{ animation: 'lp-slide-in 0.2s ease-out' }}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+              <div className="flex items-center gap-2">
+                <ListVideo className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Aulas</span>
+              </div>
+              <button onClick={() => setIsSidebarOpen(false)}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {renderModuleSelector(true)}
+            {renderLessonList(true)}
+          </aside>
+        </>
+      )}
+
+      {/* ============================================================ */}
+      {/* Auto-play countdown overlay                                   */}
+      {/* ============================================================ */}
+      {autoPlayCountdown !== null && nextLesson && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-3 bg-card border border-border rounded-xl px-5 py-3 shadow-lg" style={{ animation: 'lp-fade-in 0.3s ease-out' }}>
+          <SkipForward className="h-4 w-4 text-primary shrink-0" />
+          <span className="text-sm text-foreground">
+            Próxima aula em <strong className="text-primary tabular-nums">{autoPlayCountdown}s</strong>
+          </span>
+          <span className="text-xs text-muted-foreground truncate max-w-[200px]">{cleanTitle(nextLesson.title)}</span>
+          <button
+            onClick={() => { setAutoPlayCountdown(null); if (countdownRef.current) clearInterval(countdownRef.current) }}
+            className="ml-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => { setAutoPlayCountdown(null); navigate(`/courses/${courseId}/lessons/${nextLesson.id}`) }}
+            className="text-xs font-semibold text-white bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            Ir agora
+          </button>
+        </div>
+      )}
+
       <style>{`
         @keyframes lp-fade-in { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes lp-slide-in { from { transform: translateX(100%) } to { transform: translateX(0) } }
         @keyframes lp-xp-float {
           0% { opacity: 1; transform: translateY(0); }
           100% { opacity: 0; transform: translateY(-24px); }

@@ -138,23 +138,23 @@ export function CommandPalette() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="p-0 gap-0 max-w-lg overflow-hidden !rounded-xl border-border/50 shadow-2xl [&>button]:hidden">
         {/* Search input */}
-        <div className="flex items-center border-b px-4 py-3">
+        <div className="flex items-center border-b px-3 sm:px-4 py-3">
           <Search className="h-4 w-4 text-muted-foreground/60 shrink-0 mr-3" />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Buscar página ou funcionalidade..."
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+            placeholder="Buscar página..."
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 min-h-[44px]"
           />
-          <kbd className="ml-2 text-[10px] text-muted-foreground/50 border rounded px-1.5 py-0.5 bg-muted/30 shrink-0">
+          <kbd className="ml-2 text-xs text-muted-foreground/50 border rounded px-1.5 py-0.5 bg-muted/30 shrink-0 hidden sm:inline">
             ESC
           </kbd>
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="max-h-[320px] overflow-y-auto p-2">
+        <div ref={listRef} className="max-h-[50vh] sm:max-h-[320px] overflow-y-auto p-2">
           {flatFiltered.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
               Nenhum resultado para "{query}"
@@ -177,7 +177,7 @@ export function CommandPalette() {
                       onClick={() => go(item)}
                       onMouseEnter={() => setSelectedIndex(idx)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors cursor-pointer",
+                        "w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 rounded-lg text-sm transition-colors cursor-pointer min-h-[44px]",
                         isSelected
                           ? "bg-primary/10 text-foreground"
                           : "text-muted-foreground hover:bg-muted/50"
@@ -202,7 +202,7 @@ export function CommandPalette() {
         </div>
 
         {/* Footer */}
-        <div className="border-t px-4 py-2 flex items-center gap-4 text-[10px] text-muted-foreground/40">
+        <div className="border-t px-4 py-2 hidden sm:flex items-center gap-4 text-[10px] text-muted-foreground/40">
           <span>↑↓ navegar</span>
           <span>↵ abrir</span>
           <span>esc fechar</span>

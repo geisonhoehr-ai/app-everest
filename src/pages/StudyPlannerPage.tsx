@@ -57,6 +57,8 @@ import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/use-auth'
 import * as studyPlannerService from '@/services/studyPlannerService'
 import { PomodoroWidget } from '@/components/study-planner/PomodoroWidget'
+import { cachedFetch } from '@/lib/offlineCache'
+import { OfflineBanner } from '@/components/OfflineBanner'
 
 type StudyTopic = {
   id: string
@@ -88,6 +90,7 @@ export default function StudyPlannerPage() {
 
   // Tutorial states
   const [showTutorial, setShowTutorial] = useState(false)
+  const [fromCache, setFromCache] = useState(false)
 
   // Timer states
   const [timerActive, setTimerActive] = useState(false)
@@ -119,23 +122,8 @@ export default function StudyPlannerPage() {
     type: 'teoria' as const
   })
 
-  // Check if user has seen tutorial before
-  useEffect(() => {
-    const hasSeenTutorial = localStorage.getItem('hasSeenStudyPlannerTutorial')
-    if (!hasSeenTutorial && user) {
-      // Delay showing tutorial slightly to let page load
-      setTimeout(() => {
-        setShowTutorial(true)
-      }, 500)
-    }
-  }, [user])
-
   const handleTutorialComplete = () => {
-    localStorage.setItem('hasSeenStudyPlannerTutorial', 'true')
-    toast({
-      title: 'Tutorial concluído!',
-      description: 'Você pode rever este tutorial a qualquer momento clicando no ícone de ajuda.'
-    })
+    setShowTutorial(false)
   }
 
   // Initialize audio element for notifications
@@ -188,20 +176,19 @@ export default function StudyPlannerPage() {
 
     setIsLoading(true)
     try {
-      logger.debug('🔍 Loading study planner data for user:', user.id)
+      const result = await cachedFetch(`study-planner-${user.id}`, () =>
+        Promise.all([
+          studyPlannerService.getStudyTopics(user.id),
+          studyPlannerService.getPomodoroSessions(user.id, 20),
+        ])
+      )
 
-      // Carregar tópicos de estudo do Supabase
-      const loadedTopics = await studyPlannerService.getStudyTopics(user.id)
+      const [loadedTopics, loadedSessions] = result.data
       setTopics(loadedTopics)
-      logger.debug('✅ Loaded study topics:', loadedTopics.length)
-
-      // Carregar sessões pomodoro
-      const loadedSessions = await studyPlannerService.getPomodoroSessions(user.id, 20)
       setSessions(loadedSessions)
-      logger.debug('✅ Loaded pomodoro sessions:', loadedSessions.length)
+      setFromCache(result.fromCache)
     } catch (error) {
-      logger.error('❌ Error loading study planner data:', error)
-      // Não mostrar erro para novos usuários sem dados
+      logger.error('Error loading study planner data:', error)
       if (error instanceof Error && !error.message.includes('relation') && !error.message.includes('does not exist')) {
         toast({
           title: 'Erro ao carregar dados',
@@ -544,6 +531,7 @@ export default function StudyPlannerPage() {
 
   return (
     <div className="space-y-6">
+      <OfflineBanner fromCache={fromCache} />
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Plano de Estudos</h1>

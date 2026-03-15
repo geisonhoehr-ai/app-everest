@@ -2,6 +2,12 @@ import { supabase } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
 import { createEvent, updateEvent, deleteEvent } from '@/services/calendarService'
 import { notificationService } from '@/services/notificationService'
+import {
+  createPandaLive,
+  finishPandaLive,
+  deletePandaLive,
+  type PandaLive,
+} from '@/services/pandaLiveService'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -24,6 +30,9 @@ export interface LiveEvent {
   recording_published: boolean
   reminder_sent: boolean
   calendar_event_id: string | null
+  panda_live_id: string | null
+  panda_rtmp: string | null
+  panda_stream_key: string | null
   created_at: string
   updated_at: string
   // Joined fields
@@ -35,12 +44,23 @@ export interface CreateLiveEventInput {
   title: string
   description?: string
   provider: LiveEventProvider
-  stream_url: string
+  stream_url?: string
   class_id?: string | null
   course_id?: string | null
   teacher_id: string
   scheduled_start: string
   scheduled_end: string
+  /** Panda-specific options */
+  active_dvr?: boolean
+  bitrate?: string[]
+}
+
+/** Dados retornados ao criar uma live Panda (RTMP + key para OBS) */
+export interface PandaLiveCredentials {
+  rtmp: string
+  stream_key: string
+  live_player: string
+  panda_live_id: string
 }
 
 // ─── CRUD ────────────────────────────────────────────────────────────────────
@@ -83,20 +103,37 @@ export const getLiveEvent = async (id: string): Promise<LiveEvent | null> => {
 
 export const createLiveEvent = async (
   input: CreateLiveEventInput
-): Promise<LiveEvent> => {
-  // 1. Create live event first (to get its ID)
+): Promise<LiveEvent & { pandaCredentials?: PandaLiveCredentials }> => {
+  // 1. If Panda provider, auto-create live via Panda API
+  let pandaLive: PandaLive | null = null
+  let streamUrl = input.stream_url || ''
+
+  if (input.provider === 'panda') {
+    pandaLive = await createPandaLive({
+      title: input.title,
+      scheduled_at: input.scheduled_start,
+      active_dvr: input.active_dvr,
+      bitrate: input.bitrate,
+    })
+    streamUrl = pandaLive.live_player
+  }
+
+  // 2. Create live event in Supabase
   const { data, error } = await supabase
     .from('live_events')
     .insert({
       title: input.title,
       description: input.description || null,
       provider: input.provider,
-      stream_url: input.stream_url,
+      stream_url: streamUrl,
       class_id: input.class_id || null,
       course_id: input.course_id || null,
       teacher_id: input.teacher_id,
       scheduled_start: input.scheduled_start,
       scheduled_end: input.scheduled_end,
+      panda_live_id: pandaLive?.id || null,
+      panda_rtmp: pandaLive?.rtmp || null,
+      panda_stream_key: pandaLive?.stream_key || null,
     })
     .select('*, classes(name), users!live_events_teacher_id_fkey(first_name, last_name)')
     .single()
@@ -134,7 +171,18 @@ export const createLiveEvent = async (
     `A aula "${input.title}" foi agendada para ${new Date(input.scheduled_start).toLocaleString('pt-BR')}.`
   )
 
-  return data as unknown as LiveEvent
+  const result = data as unknown as LiveEvent & { pandaCredentials?: PandaLiveCredentials }
+
+  if (pandaLive) {
+    result.pandaCredentials = {
+      rtmp: pandaLive.rtmp,
+      stream_key: pandaLive.stream_key,
+      live_player: pandaLive.live_player,
+      panda_live_id: pandaLive.id,
+    }
+  }
+
+  return result
 }
 
 export const updateLiveEvent = async (
@@ -193,6 +241,15 @@ export const deleteLiveEvent = async (id: string): Promise<void> => {
       logger.error('Erro ao deletar calendar event vinculado:', e)
     }
   }
+
+  // Delete live on Panda too
+  if (event?.panda_live_id) {
+    try {
+      await deletePandaLive(event.panda_live_id)
+    } catch (e) {
+      logger.error('Erro ao deletar live no Panda:', e)
+    }
+  }
 }
 
 // ─── Lifecycle ───────────────────────────────────────────────────────────────
@@ -218,6 +275,9 @@ export const startLive = async (id: string): Promise<void> => {
 }
 
 export const endLive = async (id: string): Promise<void> => {
+  // Fetch to check if it has a Panda live to finish
+  const event = await getLiveEvent(id)
+
   const { error } = await supabase
     .from('live_events')
     .update({ status: 'ended' })
@@ -226,6 +286,16 @@ export const endLive = async (id: string): Promise<void> => {
   if (error) {
     logger.error('Erro ao encerrar live:', error)
     throw error
+  }
+
+  // Finish live on Panda (starts VOD conversion)
+  if (event?.panda_live_id) {
+    try {
+      await finishPandaLive(event.panda_live_id)
+      logger.info('Live finalizada no Panda, VOD em conversão')
+    } catch (e) {
+      logger.error('Erro ao finalizar live no Panda:', e)
+    }
   }
 }
 

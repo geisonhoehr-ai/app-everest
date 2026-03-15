@@ -79,14 +79,8 @@ export default function SimulationsPage() {
   const [sheetsStats, setSheetsStats] = useState({ available: 0, submitted: 0, average: 0, best: 0 })
   const [showTutorial, setShowTutorial] = useState(false)
 
-  useEffect(() => {
-    const hasSeenTutorial = localStorage.getItem('simulations_tutorial_seen')
-    if (!hasSeenTutorial) setShowTutorial(true)
-  }, [])
-
   const handleCloseTutorial = () => {
     setShowTutorial(false)
-    localStorage.setItem('simulations_tutorial_seen', 'true')
   }
 
   useEffect(() => { loadData() }, [])

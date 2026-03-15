@@ -36,6 +36,8 @@ import { getRankingByClass, getStudentClassIds, type RankingEntry } from '@/serv
 import { SectionLoader } from '@/components/SectionLoader'
 import { logger } from '@/lib/logger'
 import { useAuth } from '@/hooks/use-auth'
+import { cachedFetch } from '@/lib/offlineCache'
+import { OfflineBanner } from '@/components/OfflineBanner'
 
 export default function RankingPage() {
   const { user } = useAuth()
@@ -53,6 +55,7 @@ export default function RankingPage() {
   const [classRanking, setClassRanking] = useState<RankingEntry[]>([])
   const [studentClasses, setStudentClasses] = useState<{ class_id: string; class_name: string }[]>([])
   const [selectedClassId, setSelectedClassId] = useState<string>('')
+  const [fromCache, setFromCache] = useState(false)
 
   useEffect(() => {
     const fetchRankingData = async () => {
@@ -61,26 +64,25 @@ export default function RankingPage() {
       try {
         setIsLoading(true)
 
-        // Check and grant achievements first
-        await rankingService.checkAndGrantAchievements(user.id).catch(() => {})
+        // Check and grant achievements first (only online)
+        if (navigator.onLine) {
+          await rankingService.checkAndGrantAchievements(user.id).catch(() => {})
+        }
 
-        const [
-          globalData,
-          positionData,
-          statsData,
-          achievementsData,
-          flashcardData,
-          quizData,
-          classesData
-        ] = await Promise.all([
-          rankingService.getUserRanking(50).catch(() => []),
-          rankingService.getUserPosition(user.id).catch(() => null),
-          rankingService.getXPStatistics().catch(() => null),
-          rankingService.getUserAchievements(user.id).catch(() => []),
-          rankingService.getRankingByActivity('flashcard', 20).catch(() => []),
-          rankingService.getRankingByActivity('quiz', 20).catch(() => []),
-          getStudentClassIds(user.id).catch(() => [])
-        ])
+        const result = await cachedFetch(`ranking-${user.id}`, () =>
+          Promise.all([
+            rankingService.getUserRanking(50).catch(() => []),
+            rankingService.getUserPosition(user.id).catch(() => null),
+            rankingService.getXPStatistics().catch(() => null),
+            rankingService.getUserAchievements(user.id).catch(() => []),
+            rankingService.getRankingByActivity('flashcard', 20).catch(() => []),
+            rankingService.getRankingByActivity('quiz', 20).catch(() => []),
+            getStudentClassIds(user.id).catch(() => [])
+          ])
+        )
+
+        setFromCache(result.fromCache)
+        const [globalData, positionData, statsData, achievementsData, flashcardData, quizData, classesData] = result.data
 
         setGlobalRanking(globalData)
         setUserPosition(positionData)
@@ -262,16 +264,16 @@ export default function RankingPage() {
           isCurrentUser && "ring-2 ring-blue-500/40 bg-blue-50/50 dark:bg-blue-950/20"
         )}
       >
-        <div className="flex items-center gap-4 p-4">
+        <div className="flex items-center gap-2.5 sm:gap-4 p-3 sm:p-4">
           <div className="flex-shrink-0">{getRankIcon(position)}</div>
-          <Avatar className="h-12 w-12">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+          <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm sm:text-base">
               {entry.first_name?.[0]}{entry.last_name?.[0]}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-foreground truncate">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+              <h3 className="font-semibold text-foreground truncate text-sm sm:text-base">
                 {entry.first_name} {entry.last_name}
                 {isCurrentUser && <span className="text-xs text-blue-500 ml-1">(você)</span>}
               </h3>
@@ -314,6 +316,7 @@ export default function RankingPage() {
 
   return (
     <div className="space-y-6">
+      <OfflineBanner fromCache={fromCache} />
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Ranking</h1>

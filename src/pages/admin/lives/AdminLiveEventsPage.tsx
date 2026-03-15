@@ -56,6 +56,9 @@ import {
   Trash2,
   Pencil,
   XCircle,
+  Copy,
+  CheckCircle,
+  Settings2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
@@ -75,6 +78,7 @@ import {
   type LiveEvent,
   type LiveEventProvider,
   type LiveEventStatus,
+  type PandaLiveCredentials,
 } from '@/services/liveEventService'
 import { SectionLoader } from '@/components/SectionLoader'
 
@@ -134,6 +138,11 @@ export default function AdminLiveEventsPage() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // OBS credentials dialog (shown after Panda live creation or from table)
+  const [obsDialogOpen, setObsDialogOpen] = useState(false)
+  const [obsCredentials, setObsCredentials] = useState<{ rtmp: string; key: string; title: string } | null>(null)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
 
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterClass, setFilterClass] = useState<string>('all')
@@ -199,7 +208,7 @@ export default function AdminLiveEventsPage() {
           title: form.title,
           description: form.description || null,
           provider: form.provider,
-          stream_url: form.stream_url,
+          stream_url: form.stream_url || undefined,
           class_id: classId,
           course_id: courseId,
           scheduled_start: new Date(form.scheduled_start).toISOString(),
@@ -207,17 +216,28 @@ export default function AdminLiveEventsPage() {
         } as Partial<LiveEvent>)
         toast({ title: 'Live atualizada!' })
       } else {
-        await createLiveEvent({
+        const result = await createLiveEvent({
           title: form.title,
           description: form.description || undefined,
           provider: form.provider,
-          stream_url: form.stream_url,
+          stream_url: form.stream_url || undefined,
           class_id: classId,
           course_id: courseId,
           teacher_id: user!.id,
           scheduled_start: new Date(form.scheduled_start).toISOString(),
           scheduled_end: new Date(form.scheduled_end).toISOString(),
         })
+
+        // Show OBS credentials if Panda live was created
+        if (result.pandaCredentials) {
+          setObsCredentials({
+            rtmp: result.pandaCredentials.rtmp,
+            key: result.pandaCredentials.stream_key,
+            title: form.title,
+          })
+          setObsDialogOpen(true)
+        }
+
         toast({ title: 'Live criada!' })
       }
       setDialogOpen(false)
@@ -404,6 +424,14 @@ export default function AdminLiveEventsPage() {
                               <DropdownMenuItem onClick={() => openEditDialog(live)}>
                                 <Pencil className="h-4 w-4 mr-2" /> Editar
                               </DropdownMenuItem>
+                              {live.panda_rtmp && live.panda_stream_key && (
+                                <DropdownMenuItem onClick={() => {
+                                  setObsCredentials({ rtmp: live.panda_rtmp!, key: live.panda_stream_key!, title: live.title })
+                                  setObsDialogOpen(true)
+                                }}>
+                                  <Settings2 className="h-4 w-4 mr-2" /> Config OBS
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem onClick={() => handleStartLive(live.id)}>
                                 <Play className="h-4 w-4 mr-2" /> Iniciar Live
                               </DropdownMenuItem>
@@ -485,14 +513,23 @@ export default function AdminLiveEventsPage() {
                 </Select>
               </div>
             </div>
-            <div>
-              <Label>URL da Stream *</Label>
-              <Input
-                value={form.stream_url}
-                onChange={e => setForm(f => ({ ...f, stream_url: e.target.value }))}
-                placeholder={form.provider === 'meet' ? 'https://meet.google.com/...' : 'https://...'}
-              />
-            </div>
+            {form.provider === 'panda' && !editingId ? (
+              <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-3">
+                <p className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 shrink-0" />
+                  A URL do player e credenciais OBS serão geradas automaticamente pelo Panda Video.
+                </p>
+              </div>
+            ) : form.provider !== 'panda' ? (
+              <div>
+                <Label>URL da Stream *</Label>
+                <Input
+                  value={form.stream_url}
+                  onChange={e => setForm(f => ({ ...f, stream_url: e.target.value }))}
+                  placeholder={form.provider === 'meet' ? 'https://meet.google.com/...' : 'https://...'}
+                />
+              </div>
+            ) : null}
             <div>
               <Label>Curso (para gravação)</Label>
               <Select value={form.course_id} onValueChange={v => setForm(f => ({ ...f, course_id: v }))}>
@@ -555,6 +592,79 @@ export default function AdminLiveEventsPage() {
             <Button onClick={handlePublish} disabled={saving || !recordingUrl}>
               {saving ? 'Publicando...' : 'Publicar'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* OBS Credentials Dialog */}
+      <Dialog open={obsDialogOpen} onOpenChange={setObsDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="h-5 w-5 text-primary" />
+              Configuração OBS / Streaming
+            </DialogTitle>
+          </DialogHeader>
+          {obsCredentials && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Configure seu software de streaming (OBS, StreamYard, etc.) com os dados abaixo para a live <strong>"{obsCredentials.title}"</strong>.
+              </p>
+
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Servidor RTMP</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input value={obsCredentials.rtmp} readOnly className="font-mono text-xs bg-muted/30" />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(obsCredentials.rtmp)
+                        setCopiedField('rtmp')
+                        setTimeout(() => setCopiedField(null), 2000)
+                      }}
+                    >
+                      {copiedField === 'rtmp' ? <CheckCircle className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Chave da Stream</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input value={obsCredentials.key} readOnly className="font-mono text-xs bg-muted/30" />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(obsCredentials.key)
+                        setCopiedField('key')
+                        setTimeout(() => setCopiedField(null), 2000)
+                      }}
+                    >
+                      {copiedField === 'key' ? <CheckCircle className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-600 dark:text-amber-400 space-y-1">
+                <p className="font-semibold">Como configurar no OBS Studio:</p>
+                <ol className="list-decimal ml-4 space-y-0.5">
+                  <li>Abra Configurações → Transmissão</li>
+                  <li>Serviço: <strong>Personalizado</strong></li>
+                  <li>Cole o <strong>Servidor RTMP</strong> acima</li>
+                  <li>Cole a <strong>Chave da Stream</strong> acima</li>
+                  <li>Clique "Iniciar Transmissão" quando estiver pronto</li>
+                </ol>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setObsDialogOpen(false)}>Entendi</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

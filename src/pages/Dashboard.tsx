@@ -362,8 +362,8 @@ export default function DashboardPage() {
                   )}>
                     {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                   </span>
-                  <Avatar className="h-7 w-7">
-                    <AvatarFallback className="text-[10px]">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs">
                       {rankedUser.first_name[0]}{rankedUser.last_name[0]}
                     </AvatarFallback>
                   </Avatar>

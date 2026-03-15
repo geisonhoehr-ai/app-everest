@@ -60,6 +60,13 @@ export const Header = () => {
                 Ctrl K
               </kbd>
             </button>
+            <button
+              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+              aria-label="Buscar"
+            >
+              <Search className="h-5 w-5" />
+            </button>
             <CommandPalette />
           </>
         ) : (

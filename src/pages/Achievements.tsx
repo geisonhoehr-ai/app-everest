@@ -42,23 +42,8 @@ export default function AchievementsPage() {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
   const [userPosition, setUserPosition] = useState<UserPosition | null>(null)
 
-  // Check if user has seen tutorial before
-  useEffect(() => {
-    const hasSeenTutorial = localStorage.getItem('hasSeenAchievementsTutorial')
-    if (!hasSeenTutorial && user) {
-      // Delay showing tutorial slightly to let page load
-      setTimeout(() => {
-        setShowTutorial(true)
-      }, 500)
-    }
-  }, [user])
-
   const handleTutorialComplete = () => {
-    localStorage.setItem('hasSeenAchievementsTutorial', 'true')
-    toast({
-      title: 'Tutorial concluído!',
-      description: 'Você pode rever este tutorial a qualquer momento clicando no ícone de ajuda.'
-    })
+    setShowTutorial(false)
   }
 
   useEffect(() => {

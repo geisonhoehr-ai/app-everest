@@ -15,6 +15,8 @@ import { useAuth } from '@/hooks/use-auth'
 import { useFeaturePermissions } from '@/hooks/use-feature-permissions'
 import { FEATURE_KEYS } from '@/services/classPermissionsService'
 import { logger } from '@/lib/logger'
+import { cachedFetch } from '@/lib/offlineCache'
+import { OfflineBanner } from '@/components/OfflineBanner'
 
 export default function QuizzesPage() {
   const navigate = useNavigate()
@@ -24,31 +26,17 @@ export default function QuizzesPage() {
   const [subjects, setSubjects] = useState<QuizSubject[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showTutorial, setShowTutorial] = useState(false)
-
-  useEffect(() => {
-    const hasSeenTutorial = localStorage.getItem('quizzes_tutorial_seen')
-    if (!hasSeenTutorial) {
-      setShowTutorial(true)
-    }
-  }, [])
+  const [fromCache, setFromCache] = useState(false)
 
   const handleCloseTutorial = () => {
     setShowTutorial(false)
-    localStorage.setItem('quizzes_tutorial_seen', 'true')
   }
 
   useEffect(() => {
-    quizService.getQuizSubjects()
-      .then((data) => {
-        logger.debug('📊 Quiz subjects loaded:', data.length)
-        data.forEach((subject, idx) => {
-          logger.debug(`  Subject ${idx + 1}: ${subject.name}`)
-          logger.debug(`    Topics: ${subject.topics?.length || 0}`)
-          subject.topics?.forEach((topic, topicIdx) => {
-            logger.debug(`      Topic ${topicIdx + 1}: ${topic.name} - Quizzes: ${topic.quizzes?.length || 0}`)
-          })
-        })
-        setSubjects(data)
+    cachedFetch('quiz-subjects', () => quizService.getQuizSubjects())
+      .then((result) => {
+        setSubjects(result.data)
+        setFromCache(result.fromCache)
       })
       .catch((error) => logger.error('Error fetching quiz subjects:', error))
       .finally(() => setIsLoading(false))
@@ -96,6 +84,8 @@ export default function QuizzesPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-foreground">Quizzes</h1>
 
+      <OfflineBanner fromCache={fromCache} />
+
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Stats */}
         <Card className="border-border shadow-sm">
@@ -133,26 +123,26 @@ export default function QuizzesPage() {
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                <div className="text-center p-3 md:p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                  <Target className="h-5 w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-2" />
-                  <div className="text-xl md:text-2xl font-bold text-blue-600">{totalTopicsAvailable}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Tópicos</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+                <div className="text-center p-2.5 sm:p-3 md:p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                  <Target className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-500 mx-auto mb-1.5" />
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">{totalTopicsAvailable}</div>
+                  <div className="text-[11px] sm:text-xs md:text-sm text-muted-foreground">Tópicos</div>
                 </div>
-                <div className="text-center p-3 md:p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-                  <Brain className="h-5 w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-2" />
-                  <div className="text-xl md:text-2xl font-bold text-green-600">{totalQuestionsAvailable}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Questões</div>
+                <div className="text-center p-2.5 sm:p-3 md:p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                  <Brain className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-green-500 mx-auto mb-1.5" />
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{totalQuestionsAvailable}</div>
+                  <div className="text-[11px] sm:text-xs md:text-sm text-muted-foreground">Questões</div>
                 </div>
-                <div className="text-center p-3 md:p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                  <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-2" />
-                  <div className="text-xl md:text-2xl font-bold text-purple-600">{subjects.length}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Matérias</div>
+                <div className="text-center p-2.5 sm:p-3 md:p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                  <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-purple-500 mx-auto mb-1.5" />
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-purple-600">{subjects.length}</div>
+                  <div className="text-[11px] sm:text-xs md:text-sm text-muted-foreground">Matérias</div>
                 </div>
-                <div className="text-center p-3 md:p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
-                  <Zap className="h-5 w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-2" />
-                  <div className="text-xl md:text-2xl font-bold text-orange-600">{totalQuizzesAvailable}</div>
-                  <div className="text-xs md:text-sm text-muted-foreground">Quizzes</div>
+                <div className="text-center p-2.5 sm:p-3 md:p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                  <Zap className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-orange-500 mx-auto mb-1.5" />
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-orange-600">{totalQuizzesAvailable}</div>
+                  <div className="text-[11px] sm:text-xs md:text-sm text-muted-foreground">Quizzes</div>
                 </div>
               </div>
             </div>

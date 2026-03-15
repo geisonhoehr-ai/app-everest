@@ -177,7 +177,7 @@ export const StudentNotebook = memo(function StudentNotebook({
               )}
             >
               <Type className="h-3 w-3" />
-              Texto
+              Anotações
             </button>
             <button
               onClick={() => setMode('draw')}
