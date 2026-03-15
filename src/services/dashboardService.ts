@@ -116,10 +116,13 @@ export const dashboardService = {
       const classIds = userClasses?.map(uc => uc.class_id) || []
 
       // Buscar eventos das turmas do usuário e eventos gerais
+      const classFilter = classIds.length > 0
+        ? `class_id.in.(${classIds.join(',')}),class_id.is.null`
+        : 'class_id.is.null'
       const { data: events, error: eventsError } = await supabase
         .from('calendar_events')
         .select('*')
-        .or(`class_id.in.(${classIds.join(',')}),class_id.is.null`)
+        .or(classFilter)
         .gte('start_time', new Date().toISOString())
         .order('start_time', { ascending: true })
         .limit(5)

@@ -294,7 +294,7 @@ export default function AchievementsPage() {
   }
 
   const totalXP = userAchievements.reduce((sum, ua) => sum + (ua.achievement?.xp_reward || 0), 0)
-  const completionPercentage = (unlockedAchievements.length / allAchievements.length) * 100
+  const completionPercentage = allAchievements.length > 0 ? (unlockedAchievements.length / allAchievements.length) * 100 : 0
 
   return (
     <div className="space-y-6">

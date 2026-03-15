@@ -165,15 +165,14 @@ export default function MyCoursesPage() {
       {storefrontCourses.length > 0 && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold">Outros Cursos Disponiveis</h2>
+            <h2 className="text-xl font-semibold">Outros Cursos Disponíveis</h2>
             <p className="text-sm text-muted-foreground">Explore mais cursos da plataforma</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {storefrontCourses.map(course => (
               <Card
                 key={course.id}
-                className="cursor-pointer hover:border-primary/50 transition-colors relative overflow-hidden"
-                onClick={() => navigate(`/courses/${course.id}`)}
+                className="relative overflow-hidden border-border"
               >
                 {course.thumbnail_url ? (
                   <img src={course.thumbnail_url} alt="" className="w-full h-40 object-cover" loading="lazy" />
@@ -188,17 +187,26 @@ export default function MyCoursesPage() {
                     Bloqueado
                   </Badge>
                 </div>
-                <CardContent className="pt-4">
+                <CardContent className="pt-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">{course.name}</h3>
                     {course.acronym && (
                       <Badge variant="outline" className="text-xs">{course.acronym}</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.description}</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {course.video_modules?.length || 0} modulos
+                  <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {course.video_modules?.length || 0} módulos
                   </p>
+                  {course.sales_url ? (
+                    <Button asChild className="w-full" size="sm">
+                      <a href={course.sales_url} target="_blank" rel="noopener noreferrer">
+                        Adquirir este curso
+                      </a>
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center">Entre em contato para adquirir</p>
+                  )}
                 </CardContent>
               </Card>
             ))}

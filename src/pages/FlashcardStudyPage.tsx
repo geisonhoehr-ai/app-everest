@@ -204,6 +204,8 @@ export default function FlashcardStudyPage() {
             navigate(`/flashcards/${subjectId}`)
             return
           }
+          // Set minimal topicData so finishSession can save the session
+          setTopicData({ id: topicId, name: 'Revisão de Difíceis', flashcards: fetchedCards } as any)
         } else {
           const data = await getTopicWithCards(topicId)
           if (data) {

@@ -26,8 +26,6 @@ const PrivacyPage = lazy(() => import('@/pages/Privacy'))
 const DashboardPage = lazy(() => import('@/pages/Dashboard'))
 
 const CoursesPage = lazy(() => import('@/pages/Courses'))
-const CourseDetailsPage = lazy(() => import('@/pages/CourseDetailsPage'))
-const CourseLessonPage = lazy(() => import('@/pages/CourseLessonPage'))
 const CalendarPage = lazy(() => import('@/pages/Calendar'))
 const ProgressPage = lazy(() => import('@/pages/Progress'))
 const EssaysPage = lazy(() => import('@/pages/Essays'))
@@ -397,8 +395,8 @@ const App = () => (
                   />
                   <Route path="/acervo" element={<AcervoDigitalPage />} />
                   <Route path="/comunidade" element={<CommunityPage />} />
-                  <Route path="/comunidade/:spaceSlug" element={<SpaceFeedPage />} />
                   <Route path="/comunidade/post/:postId" element={<PostDetailPage />} />
+                  <Route path="/comunidade/:spaceSlug" element={<SpaceFeedPage />} />
                   <Route path="/comunidade/moderacao" element={<ModerationPage />} />
                   <Route path="/forum" element={<Navigate to="/comunidade" replace />} />
                   <Route path="/forum/:topicId" element={<Navigate to="/comunidade" replace />} />

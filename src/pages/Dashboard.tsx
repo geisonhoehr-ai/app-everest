@@ -2,12 +2,7 @@ import { useState, useEffect } from 'react'
 import { LiveBanner } from '@/components/LiveBanner'
 import { useAuth } from '@/hooks/use-auth'
 import { cachedFetch } from '@/lib/offlineCache'
-import {
-  getUserSettings,
-  saveDashboardLayout,
-} from '@/services/userSettingsService'
 import { courseService } from '@/services/courseService'
-import { DEFAULT_LAYOUTS } from '@/lib/dashboard-config'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'

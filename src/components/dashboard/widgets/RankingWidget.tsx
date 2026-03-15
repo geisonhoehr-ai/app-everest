@@ -20,12 +20,12 @@ import {
   Users
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { 
 import { logger } from '@/lib/logger'
-  rankingService, 
-  type UserPosition, 
+import {
+  rankingService,
+  type UserPosition,
   type UserRanking,
-  type UserAchievement 
+  type UserAchievement
 } from '@/services/rankingService'
 
 interface RankingWidgetProps {

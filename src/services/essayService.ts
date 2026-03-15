@@ -179,6 +179,9 @@ export const getUserEssaysList = async (userId: string): Promise<EssayListItem[]
         id,
         status,
         final_grade,
+        final_grade_ciaar,
+        final_grade_enem,
+        correction_type,
         created_at,
         submission_date,
         essay_prompts (
@@ -190,13 +193,19 @@ export const getUserEssaysList = async (userId: string): Promise<EssayListItem[]
 
     if (error) throw error
 
-    return essays?.map((essay: any) => ({
-      id: essay.id,
-      theme: essay.essay_prompts?.title || 'Redação sem título',
-      date: new Date(essay.submission_date || essay.created_at).toLocaleDateString('pt-BR'),
-      status: mapStatusToPortuguese(essay.status || 'draft'),
-      grade: essay.final_grade
-    })) || []
+    return essays?.map((essay: any) => {
+      // Use the most specific grade available
+      const grade = essay.final_grade
+        ?? (essay.correction_type === 'enem' ? essay.final_grade_enem : essay.final_grade_ciaar)
+        ?? null
+      return {
+        id: essay.id,
+        theme: essay.essay_prompts?.title || 'Redação sem título',
+        date: new Date(essay.submission_date || essay.created_at).toLocaleDateString('pt-BR'),
+        status: mapStatusToPortuguese(essay.status || 'draft'),
+        grade,
+      }
+    }) || []
   } catch (error) {
     logger.error('Erro ao buscar lista de redações:', error)
     return []

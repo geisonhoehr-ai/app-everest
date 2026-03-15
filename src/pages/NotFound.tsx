@@ -133,7 +133,7 @@ const NotFound = () => {
                     <Link to="/flashcards">Flashcards</Link>
                   </Button>
                   <Button variant="outline" size="sm" asChild>
-                    <Link to="/essays">Redações</Link>
+                    <Link to="/redacoes">Redações</Link>
                   </Button>
                 </div>
               </div>
