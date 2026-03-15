@@ -226,6 +226,7 @@ export const StudentNotebook = memo(function StudentNotebook({
                 content={noteContent}
                 onChange={onNoteChange}
                 placeholder="Escreva suas anotações aqui..."
+                hideAdvanced
                 minHeight="400px"
               />
             </Suspense>
@@ -255,6 +256,7 @@ export const StudentNotebook = memo(function StudentNotebook({
                   content={noteContent}
                   onChange={onNoteChange}
                   placeholder="Escreva suas anotações aqui..."
+                hideAdvanced
                   minHeight="200px"
                 />
               </Suspense>

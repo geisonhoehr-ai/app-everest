@@ -990,29 +990,6 @@ export default function LessonPlayerPage() {
               </div>
 
               {/* ======================================================== */}
-              {/* Notebook split panel (beside video area)                   */}
-              {/* ======================================================== */}
-              {notebookOpen && (
-                <div className={cn(
-                  "border-b border-border bg-card transition-all duration-300",
-                  notebookExpanded ? "h-[80vh]" : "h-[50vh]",
-                  "px-4 sm:px-6 lg:px-8 py-3"
-                )}>
-                  <StudentNotebook
-                    noteContent={noteContent}
-                    onNoteChange={handleNoteChange}
-                    drawingData={drawingData}
-                    onDrawingChange={handleDrawingChange}
-                    lessonTitle={lessonData?.title || 'Aula'}
-                    saveStatus={noteLastSaved}
-                    expanded={notebookExpanded}
-                    onToggleExpand={() => setNotebookExpanded(prev => !prev)}
-                    className="h-full"
-                  />
-                </div>
-              )}
-
-              {/* ======================================================== */}
               {/* Below video — info + actions                               */}
               {/* ======================================================== */}
               <div className={cn(
@@ -1170,6 +1147,29 @@ export default function LessonPlayerPage() {
                   </button>
                 </div>
               </div>
+
+              {/* ======================================================== */}
+              {/* Caderno Digital (below action buttons)                     */}
+              {/* ======================================================== */}
+              {notebookOpen && (
+                <div className={cn(
+                  "bg-card transition-all duration-300",
+                  notebookExpanded ? "h-[80vh]" : "h-[50vh]",
+                  "px-4 sm:px-6 lg:px-8 py-3"
+                )}>
+                  <StudentNotebook
+                    noteContent={noteContent}
+                    onNoteChange={handleNoteChange}
+                    drawingData={drawingData}
+                    onDrawingChange={handleDrawingChange}
+                    lessonTitle={lessonData?.title || 'Aula'}
+                    saveStatus={noteLastSaved}
+                    expanded={notebookExpanded}
+                    onToggleExpand={() => setNotebookExpanded(prev => !prev)}
+                    className="h-full"
+                  />
+                </div>
+              )}
 
               {/* ======================================================== */}
               {/* Drawer / Sheet for Comments, Resources, Notes             */}
@@ -1478,6 +1478,7 @@ export default function LessonPlayerPage() {
                               onChange={handleNoteChange}
                               placeholder="Escreva suas anotações aqui..."
                               minHeight="250px"
+                              hideAdvanced
                             />
                           </Suspense>
                         </div>

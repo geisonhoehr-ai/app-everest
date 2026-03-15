@@ -42,6 +42,8 @@ interface RichTextEditorProps {
   placeholder?: string
   className?: string
   minHeight?: string
+  /** Hide advanced tools (code, link, image) for simpler note-taking */
+  hideAdvanced?: boolean
 }
 
 export function RichTextEditor({
@@ -50,6 +52,7 @@ export function RichTextEditor({
   placeholder = 'Digite aqui...',
   className,
   minHeight = '200px',
+  hideAdvanced = false,
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -308,13 +311,15 @@ export function RichTextEditor({
           >
             <Quote className="h-4 w-4" />
           </Toggle>
-          <Toggle
-            size="sm"
-            pressed={editor.isActive('code')}
-            onPressedChange={() => editor.chain().focus().toggleCode().run()}
-          >
-            <Code className="h-4 w-4" />
-          </Toggle>
+          {!hideAdvanced && (
+            <Toggle
+              size="sm"
+              pressed={editor.isActive('code')}
+              onPressedChange={() => editor.chain().focus().toggleCode().run()}
+            >
+              <Code className="h-4 w-4" />
+            </Toggle>
+          )}
           <Toggle
             size="sm"
             pressed={false}
@@ -348,29 +353,33 @@ export function RichTextEditor({
           </Button>
         </div>
 
-        <Separator orientation="vertical" className="h-8" />
+        {!hideAdvanced && (
+          <>
+            <Separator orientation="vertical" className="h-8" />
 
-        {/* Media */}
-        <div className="flex gap-1">
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={setLink}
-            className="h-8 px-2"
-          >
-            <LinkIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={addImage}
-            className="h-8 px-2"
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
-        </div>
+            {/* Media */}
+            <div className="flex gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={setLink}
+                className="h-8 px-2"
+              >
+                <LinkIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={addImage}
+                className="h-8 px-2"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Editor */}
