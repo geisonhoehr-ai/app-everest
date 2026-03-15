@@ -1,4 +1,3 @@
-Initialising login role...
 export type Json =
   | string
   | number
@@ -42,37 +41,49 @@ export type Database = {
     Tables: {
       acervo_items: {
         Row: {
+          banca: string | null
           category: string
           concurso: string | null
           created_at: string | null
+          description: string | null
           file_path: string
           file_size: number | null
           file_type: string | null
           id: string
+          questions_count: number | null
+          questions_extracted: boolean | null
           subcategory: string | null
           title: string
           year: number | null
         }
         Insert: {
+          banca?: string | null
           category: string
           concurso?: string | null
           created_at?: string | null
+          description?: string | null
           file_path: string
           file_size?: number | null
           file_type?: string | null
           id?: string
+          questions_count?: number | null
+          questions_extracted?: boolean | null
           subcategory?: string | null
           title: string
           year?: number | null
         }
         Update: {
+          banca?: string | null
           category?: string
           concurso?: string | null
           created_at?: string | null
+          description?: string | null
           file_path?: string
           file_size?: number | null
           file_type?: string | null
           id?: string
+          questions_count?: number | null
+          questions_extracted?: boolean | null
           subcategory?: string | null
           title?: string
           year?: number | null
@@ -374,6 +385,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "calendar_events_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circuit_breaker_state: {
+        Row: {
+          failure_count: number | null
+          last_failure_at: string | null
+          opened_at: string | null
+          service: string
+          state: string
+          updated_at: string | null
+        }
+        Insert: {
+          failure_count?: number | null
+          last_failure_at?: string | null
+          opened_at?: string | null
+          service: string
+          state?: string
+          updated_at?: string | null
+        }
+        Update: {
+          failure_count?: number | null
+          last_failure_at?: string | null
+          opened_at?: string | null
+          service?: string
+          state?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      class_content_access: {
+        Row: {
+          class_id: string
+          content_id: string
+          content_type: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          class_id: string
+          content_id: string
+          content_type: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          class_id?: string
+          content_id?: string
+          content_type?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_content_access_class_id_fkey"
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
@@ -1773,6 +1843,7 @@ export type Database = {
       }
       flashcards: {
         Row: {
+          acervo_item_id: string | null
           answer: string
           created_at: string
           created_by_user_id: string
@@ -1782,10 +1853,15 @@ export type Database = {
           flashcard_set_id: string | null
           id: string
           question: string
+          source_banca: string | null
+          source_exam: string | null
+          source_type: string | null
+          source_year: number | null
           topic_id: string
           updated_at: string
         }
         Insert: {
+          acervo_item_id?: string | null
           answer: string
           created_at?: string
           created_by_user_id: string
@@ -1795,10 +1871,15 @@ export type Database = {
           flashcard_set_id?: string | null
           id?: string
           question: string
+          source_banca?: string | null
+          source_exam?: string | null
+          source_type?: string | null
+          source_year?: number | null
           topic_id: string
           updated_at?: string
         }
         Update: {
+          acervo_item_id?: string | null
           answer?: string
           created_at?: string
           created_by_user_id?: string
@@ -1808,15 +1889,98 @@ export type Database = {
           flashcard_set_id?: string | null
           id?: string
           question?: string
+          source_banca?: string | null
+          source_exam?: string | null
+          source_type?: string | null
+          source_year?: number | null
           topic_id?: string
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "flashcards_acervo_item_id_fkey"
+            columns: ["acervo_item_id"]
+            isOneToOne: false
+            referencedRelation: "acervo_items"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "public_flashcards_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          duplicate_items: number | null
+          error_log: Json | null
+          failed_items: number | null
+          flashcards_created: number | null
+          id: string
+          imported_items: number | null
+          job_type: string
+          metadata: Json | null
+          questions_created: number | null
+          source_name: string
+          started_at: string | null
+          status: string
+          total_items: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          duplicate_items?: number | null
+          error_log?: Json | null
+          failed_items?: number | null
+          flashcards_created?: number | null
+          id?: string
+          imported_items?: number | null
+          job_type: string
+          metadata?: Json | null
+          questions_created?: number | null
+          source_name: string
+          started_at?: string | null
+          status?: string
+          total_items?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          duplicate_items?: number | null
+          error_log?: Json | null
+          failed_items?: number | null
+          flashcards_created?: number | null
+          id?: string
+          imported_items?: number | null
+          job_type?: string
+          metadata?: Json | null
+          questions_created?: number | null
+          source_name?: string
+          started_at?: string | null
+          status?: string
+          total_items?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_jobs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_jobs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1912,6 +2076,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_queue: {
+        Row: {
+          attempts: number | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          max_attempts: number | null
+          payload: Json
+          result: Json | null
+          started_at: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          attempts?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          max_attempts?: number | null
+          payload?: Json
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+          type: string
+        }
+        Update: {
+          attempts?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          max_attempts?: number | null
+          payload?: Json
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: []
       }
       kiwify_products: {
         Row: {
@@ -2032,6 +2238,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          drawing_data: string | null
           id: string
           lesson_id: string
           updated_at: string
@@ -2040,6 +2247,7 @@ export type Database = {
         Insert: {
           content?: string
           created_at?: string
+          drawing_data?: string | null
           id?: string
           lesson_id: string
           updated_at?: string
@@ -2048,6 +2256,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          drawing_data?: string | null
           id?: string
           lesson_id?: string
           updated_at?: string
@@ -2517,6 +2726,7 @@ export type Database = {
       }
       quiz_questions: {
         Row: {
+          acervo_item_id: string | null
           correct_answer: string
           correct_answers: Json | null
           created_at: string
@@ -2540,12 +2750,17 @@ export type Database = {
           question_type: string
           quiz_id: string
           reading_text_id: string | null
+          source_banca: string | null
+          source_exam: string | null
+          source_question_number: number | null
+          source_year: number | null
           tags: string[] | null
           time_limit_seconds: number | null
           topic_id: string | null
           updated_at: string
         }
         Insert: {
+          acervo_item_id?: string | null
           correct_answer: string
           correct_answers?: Json | null
           created_at?: string
@@ -2569,12 +2784,17 @@ export type Database = {
           question_type: string
           quiz_id: string
           reading_text_id?: string | null
+          source_banca?: string | null
+          source_exam?: string | null
+          source_question_number?: number | null
+          source_year?: number | null
           tags?: string[] | null
           time_limit_seconds?: number | null
           topic_id?: string | null
           updated_at?: string
         }
         Update: {
+          acervo_item_id?: string | null
           correct_answer?: string
           correct_answers?: Json | null
           created_at?: string
@@ -2598,6 +2818,10 @@ export type Database = {
           question_type?: string
           quiz_id?: string
           reading_text_id?: string | null
+          source_banca?: string | null
+          source_exam?: string | null
+          source_question_number?: number | null
+          source_year?: number | null
           tags?: string[] | null
           time_limit_seconds?: number | null
           topic_id?: string | null
@@ -2609,6 +2833,13 @@ export type Database = {
             columns: ["quiz_id"]
             isOneToOne: false
             referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_questions_acervo_item_id_fkey"
+            columns: ["acervo_item_id"]
+            isOneToOne: false
+            referencedRelation: "acervo_items"
             referencedColumns: ["id"]
           },
           {
@@ -3659,6 +3890,8 @@ export type Database = {
         }[]
       }
       get_auth_user_role: { Args: never; Returns: string }
+      get_gamification_stats: { Args: never; Returns: Json }
+      get_import_stats: { Args: never; Returns: Json }
       get_question_performance_for_quiz: {
         Args: { p_quiz_id: string }
         Returns: {
@@ -3666,6 +3899,17 @@ export type Database = {
           incorrect_answers: number
           question_id: string
           question_text: string
+        }[]
+      }
+      get_ranking: {
+        Args: { ranking_limit?: number }
+        Returns: {
+          achievements_count: number
+          email: string
+          first_name: string
+          last_name: string
+          total_xp: number
+          user_id: string
         }[]
       }
       get_ranking_by_activity_type: {
@@ -3677,6 +3921,17 @@ export type Database = {
           rank_position: number
           total_xp_activity: number
           total_xp_general: number
+          user_id: string
+        }[]
+      }
+      get_ranking_by_class: {
+        Args: { p_class_id: string; ranking_limit?: number }
+        Returns: {
+          achievements_count: number
+          email: string
+          first_name: string
+          last_name: string
+          total_xp: number
           user_id: string
         }[]
       }
@@ -3704,6 +3959,8 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_system_stats: { Args: never; Returns: Json }
+      get_total_xp: { Args: never; Returns: number }
       get_trial_allowed_content_for_user: {
         Args: { user_id: string }
         Returns: {
