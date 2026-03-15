@@ -55,6 +55,7 @@ import {
   Megaphone,
   StickyNote,
   Mail,
+  ShieldAlert,
 } from 'lucide-react'
 
 // ─── Menu structure types ─────────────────────────────────────────────────────
@@ -189,7 +190,7 @@ const adminMenuGroups: MenuGroup[] = [
     collapsible: true,
     items: [
       { label: 'Feed', href: '/comunidade', icon: MessageSquare },
-      { label: 'Moderação', href: '/comunidade/moderacao', icon: Settings },
+      { label: 'Moderação', href: '/comunidade/moderacao', icon: ShieldAlert },
     ],
   },
   {
@@ -217,7 +218,6 @@ const adminMenuGroups: MenuGroup[] = [
     items: [
       { label: 'Integrações', href: '/admin/integrations', icon: Plug, adminOnly: true },
       { label: 'Configurações', href: '/admin/settings', icon: Settings, adminOnly: true },
-      { label: 'Notificações', href: '/notificacoes', icon: Bell },
     ],
   },
 ]

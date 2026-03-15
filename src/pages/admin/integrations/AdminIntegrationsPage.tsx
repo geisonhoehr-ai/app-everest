@@ -57,7 +57,7 @@ const INTEGRATIONS_CONFIG: Omit<Integration, 'status' | 'statusMessage'>[] = [
     icon: Video,
     brandColor: 'text-emerald-600',
     bgGradient: 'from-emerald-500/10 to-emerald-600/5',
-    apiKey: 'panda-33e2092c0e0334f9a6b353db3ce0ccf89d46dbe076b0aaabd3a88ac1a4ecfd6d',
+    apiKey: import.meta.env.VITE_PANDA_API_KEY || 'panda-••••••••••••••••',
     features: ['555 vídeos hospedados', 'Player embed', 'HLS streaming', 'Analytics'],
     docsUrl: 'https://docs.pandavideo.com',
     extra: {
@@ -72,7 +72,7 @@ const INTEGRATIONS_CONFIG: Omit<Integration, 'status' | 'statusMessage'>[] = [
     icon: Users,
     brandColor: 'text-blue-600',
     bgGradient: 'from-blue-500/10 to-blue-600/5',
-    apiKey: '3cG57cb4CAgAKMX7Fg59qY8f',
+    apiKey: import.meta.env.VITE_MEMBERKIT_API_KEY || '••••••••••••••••',
     features: ['Import de cursos', 'Import de alunos', 'Sincronização de turmas', 'API REST'],
     docsUrl: 'https://docs.memberkit.com.br',
     extra: {

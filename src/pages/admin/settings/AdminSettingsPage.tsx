@@ -425,12 +425,13 @@ export default function AdminSettingsPage() {
                       <div className="space-y-0.5">
                         <Label>Autenticação de Dois Fatores</Label>
                         <p className="text-sm text-muted-foreground">
-                          Exigir 2FA para todos os administradores
+                          Exigir 2FA para todos os administradores (em breve)
                         </p>
                       </div>
                       <Switch
                         checked={s.twoFactorEnabled}
                         onCheckedChange={(v) => updateField('security', 'twoFactorEnabled', v)}
+                        disabled
                       />
                     </div>
 
@@ -438,12 +439,13 @@ export default function AdminSettingsPage() {
                       <div className="space-y-0.5">
                         <Label>Exigir Senha Forte</Label>
                         <p className="text-sm text-muted-foreground">
-                          Senhas devem ter no mínimo 8 caracteres
+                          Senhas devem ter no mínimo 8 caracteres (em breve)
                         </p>
                       </div>
                       <Switch
                         checked={s.strongPassword}
                         onCheckedChange={(v) => updateField('security', 'strongPassword', v)}
+                        disabled
                       />
                     </div>
 
@@ -451,12 +453,13 @@ export default function AdminSettingsPage() {
                       <div className="space-y-0.5">
                         <Label>Log de Auditoria</Label>
                         <p className="text-sm text-muted-foreground">
-                          Registrar todas as ações administrativas
+                          Registrar todas as ações administrativas (em breve)
                         </p>
                       </div>
                       <Switch
                         checked={s.auditLog}
                         onCheckedChange={(v) => updateField('security', 'auditLog', v)}
+                        disabled
                       />
                     </div>
                   </CardContent>
@@ -474,7 +477,7 @@ export default function AdminSettingsPage() {
                       Configurações de Aparência
                     </CardTitle>
                     <CardDescription>
-                      Personalize cores e temas da plataforma
+                      Personalize cores e temas da plataforma (em breve)
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">

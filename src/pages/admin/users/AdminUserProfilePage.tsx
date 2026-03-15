@@ -223,18 +223,6 @@ export default function AdminUserProfilePage() {
   const handleSave = async () => {
     if (!userId) return
 
-    // Validate passwords
-    if (newPassword || confirmPassword) {
-      if (newPassword !== confirmPassword) {
-        toast({ title: 'As senhas não coincidem', variant: 'destructive' })
-        return
-      }
-      if (newPassword.length < 6) {
-        toast({ title: 'A senha deve ter pelo menos 6 caracteres', variant: 'destructive' })
-        return
-      }
-    }
-
     setSaving(true)
 
     try {
@@ -305,14 +293,6 @@ export default function AdminUserProfilePage() {
             .update({ subscription_expires_at: expiresAt || null })
             .eq('id', existing.id)
         }
-      }
-
-      // 5. Password change
-      if (newPassword) {
-        toast({
-          title: 'Atenção',
-          description: 'A alteração de senha pelo admin requer service_role key no backend. Use o painel do Supabase para redefinir.',
-        })
       }
 
       toast({ title: 'Membro atualizado com sucesso!' })
@@ -431,31 +411,9 @@ export default function AdminUserProfilePage() {
                 <Lock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-semibold">Alterar Senha</span>
               </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                Deixe em branco para manter a atual
+              <p className="text-xs text-muted-foreground">
+                Para redefinir a senha de um usuário, use o painel do Supabase Authentication.
               </p>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-semibold">Nova Senha</label>
-                  <Input
-                    type="password"
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    placeholder="Nova senha"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold">Confirmar Senha</label>
-                  <Input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    placeholder="Confirmar senha"
-                    className="mt-1"
-                  />
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>

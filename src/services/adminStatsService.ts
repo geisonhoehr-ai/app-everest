@@ -39,13 +39,16 @@ export async function getSystemStats(): Promise<SystemStats> {
       }
     }
 
-    // Fallback: consolidated parallel queries (12 → 2 batches)
+    // Fallback: consolidated parallel queries
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     const [
       usersResult, classesResult, coursesResult,
       flashcardsResult, quizzesResult, essaysResult,
       audioCoursesResult,
       studentsResult, teachersResult, adminsResult,
-      completedResult, totalProgressResult
+      completedResult, totalProgressResult,
+      activeUsersResult
     ] = await Promise.all([
       supabase.from('users').select('role', { count: 'exact', head: true }),
       supabase.from('classes').select('id', { count: 'exact', head: true }),
@@ -59,6 +62,7 @@ export async function getSystemStats(): Promise<SystemStats> {
       supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'administrator'),
       supabase.from('video_progress').select('id', { count: 'exact', head: true }).eq('is_completed', true),
       supabase.from('video_progress').select('id', { count: 'exact', head: true }),
+      supabase.from('user_sessions').select('user_id', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo.toISOString()),
     ])
 
     const completionRate = (totalProgressResult.count || 0) > 0
@@ -76,7 +80,7 @@ export async function getSystemStats(): Promise<SystemStats> {
       totalQuizzes: quizzesResult.count || 0,
       totalEssays: essaysResult.count || 0,
       totalAudioCourses: audioCoursesResult.count || 0,
-      activeUsers: usersResult.count || 0,
+      activeUsers: activeUsersResult.count || 0,
       completionRate
     }
   } catch (error) {

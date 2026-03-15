@@ -122,6 +122,13 @@ export default function AdminQuizzesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {quizzes.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  Nenhum quiz encontrado. Crie o primeiro quiz.
+                </TableCell>
+              </TableRow>
+            )}
             {quizzes.map((quiz) => (
               <TableRow key={quiz.id}>
                 <TableCell className="font-medium">{quiz.title}</TableCell>

@@ -131,7 +131,6 @@ function SortableModuleItem({
   onDeleteAttachment,
   onSetAccompanyingPdf,
   onOpenVideoPicker,
-  totalModules,
 }: {
   module: ModuleData
   moduleIndex: number
@@ -147,7 +146,6 @@ function SortableModuleItem({
   onDeleteAttachment: (lessonIndex: number, attId: string) => void
   onSetAccompanyingPdf: (lessonIndex: number, attId: string | null) => void
   onOpenVideoPicker: (lessonIndex: number) => void
-  totalModules: number
 }) {
   const {
     attributes,
@@ -168,7 +166,7 @@ function SortableModuleItem({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  const lessonsCompleted = module.lessons.filter(l => l.is_active).length
+
 
   return (
     <div
@@ -1266,7 +1264,6 @@ export default function AdminCourseEditorPage() {
                     onDeleteAttachment={(li, attId) => deleteAttachment(moduleIndex, li, attId)}
                     onSetAccompanyingPdf={(li, attId) => setAccompanyingPdf(moduleIndex, li, attId)}
                     onOpenVideoPicker={(li) => openVideoPicker(moduleIndex, li)}
-                    totalModules={modules.length}
                   />
                 ))}
               </SortableContext>
