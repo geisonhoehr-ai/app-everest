@@ -177,29 +177,46 @@ serve(async (req) => {
     if (RESEND_API_KEY) {
       const appUrl = Deno.env.get('APP_URL') || 'https://app.everestpreparatorios.com.br'
 
-      const emailHtml = [
-          '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>',
-          '<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;">',
-          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 20px;"><tr><td align="center">',
-          '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">',
-          '<tr><td style="background:linear-gradient(135deg,#ea580c 0%,#c2410c 100%);padding:40px 40px 30px;text-align:center;">',
-          '<h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;">Bem-vindo ao Everest!</h1>',
-          '</td></tr>',
-          '<tr><td style="padding:36px 40px;">',
-          `<p style="margin:0 0 16px;font-size:17px;color:#1f2937;line-height:1.6;">Ol&#225; <strong>${firstName}</strong>,</p>`,
-          `<p style="margin:0 0 16px;font-size:16px;color:#374151;line-height:1.6;">Sua matr&#237;cula na turma <strong style="color:#ea580c;">${productMapping.product_name}</strong> foi confirmada!</p>`,
-          '<p style="margin:0 0 28px;font-size:16px;color:#374151;line-height:1.6;">Para acessar a plataforma, clique no bot&#227;o abaixo e informe seu email. Voc&#234; receber&#225; um link de acesso instant&#226;neo &#8212; sem senha!</p>',
-          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:8px 0 32px;">',
-          `<a href="${appUrl}/login" style="background-color:#ea580c;color:#ffffff;padding:16px 48px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block;box-shadow:0 2px 4px rgba(234,88,12,0.3);">Acessar Plataforma</a>`,
-          '</td></tr></table>',
-          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background-color:#fff7ed;border-radius:8px;padding:16px 20px;border-left:4px solid #ea580c;">',
-          '<p style="margin:0;font-size:14px;color:#9a3412;line-height:1.5;"><strong>Como funciona?</strong><br/>Digite seu email no login e receba um link m&#225;gico. Clicou, entrou! Sem senha para lembrar.</p>',
-          '</td></tr></table>',
-          '</td></tr>',
-          '<tr><td style="background-color:#f9fafb;padding:24px 40px;text-align:center;border-top:1px solid #e5e7eb;">',
-          '<p style="margin:0;font-size:13px;color:#9ca3af;">Everest Preparat&#243;rios &#8212; Plataforma de Ensino</p>',
-          '</td></tr></table></td></tr></table></body></html>',
-        ].join('')
+      const emailHtml = `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<!--[if mso]><style>table,td{font-family:Arial,sans-serif!important}</style><![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#1a1a2e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1a1a2e;padding:24px 16px;">
+<tr><td align="center">
+<table role="presentation" style="width:100%;max-width:520px;background-color:#ffffff;border-radius:16px;overflow:hidden;">
+<!-- Header -->
+<tr><td style="background-color:#ff6b35;padding:32px 24px;text-align:center;">
+<div style="width:56px;height:56px;background-color:rgba(255,255,255,0.2);border-radius:14px;margin:0 auto 16px;line-height:56px;font-size:28px;">&#9968;</div>
+<h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">Everest Preparat&#243;rios</h1>
+<p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Sua matr&#237;cula foi confirmada!</p>
+</td></tr>
+<!-- Body -->
+<tr><td style="padding:32px 24px;">
+<p style="margin:0 0 16px;font-size:16px;color:#1f2937;line-height:1.6;">Ol&#225; <strong>${firstName}</strong>,</p>
+<p style="margin:0 0 20px;font-size:15px;color:#4b5563;line-height:1.6;">Voc&#234; agora tem acesso ao curso <strong style="color:#ff6b35;">${productMapping.product_name}</strong>. Estamos prontos para te ajudar a conquistar o topo!</p>
+<!-- Button (mobile-safe: full-width on small screens) -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:8px 0 24px;">
+<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${appUrl}/login" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="16%" fillcolor="#ff6b35"><center style="color:#fff;font-family:Arial;font-size:16px;font-weight:bold;">Acessar Plataforma</center></v:roundrect><![endif]-->
+<!--[if !mso]><!--><a href="${appUrl}/login" style="background-color:#ff6b35;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:block;text-align:center;max-width:280px;margin:0 auto;mso-padding-alt:0;box-sizing:border-box;">Acessar Plataforma</a><!--<![endif]-->
+</td></tr></table>
+<!-- Info box -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td style="background-color:#fff7ed;border-radius:8px;padding:16px;border-left:3px solid #ff6b35;">
+<p style="margin:0;font-size:13px;color:#9a3412;line-height:1.5;"><strong>&#128161; Como acessar?</strong><br/>Informe seu email no login e receba um link m&#225;gico. Clicou, entrou! Sem senha para lembrar.</p>
+</td></tr></table>
+</td></tr>
+<!-- Footer -->
+<tr><td style="background-color:#f9fafb;padding:20px 24px;text-align:center;border-top:1px solid #e5e7eb;">
+<p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.5;">Everest Preparat&#243;rios &#8212; Plataforma de Ensino<br/>Conquiste o topo da sua prepara&#231;&#227;o.</p>
+</td></tr>
+</table>
+</td></tr></table>
+</body></html>`
 
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -210,7 +227,7 @@ serve(async (req) => {
         body: JSON.stringify({
           from: 'Everest Preparatorios <noreply@app.everestpreparatorios.com.br>',
           to: [customerEmail],
-          subject: 'Bem-vindo ao Everest! Seu acesso esta pronto',
+          subject: `${firstName}, seu acesso ao Everest esta pronto!`,
           html: emailHtml,
         }),
       })
