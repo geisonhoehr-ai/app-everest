@@ -36,6 +36,7 @@ type StrokeWidth = 2 | 4 | 8
 interface Point {
   x: number
   y: number
+  pressure?: number
 }
 
 interface Stroke {
@@ -251,17 +252,58 @@ export const PdfAnnotationCanvas = ({
           ctx.strokeStyle = stroke.color
         }
 
-        ctx.lineWidth = stroke.tool === 'highlighter' ? stroke.width * 4 : stroke.width
+        const baseWidth = stroke.tool === 'highlighter' ? stroke.width * 4 : stroke.width
         ctx.lineCap = 'round'
         ctx.lineJoin = 'round'
 
         if (stroke.points.length > 0) {
-          ctx.beginPath()
-          ctx.moveTo(stroke.points[0].x, stroke.points[0].y)
-          for (let i = 1; i < stroke.points.length; i++) {
-            ctx.lineTo(stroke.points[i].x, stroke.points[i].y)
+          const hasPressure = stroke.points.some(p => p.pressure !== undefined && p.pressure !== 0.5)
+
+          if (hasPressure && stroke.tool === 'pen') {
+            // Pressure-sensitive rendering: draw segments with varying width
+            for (let i = 1; i < stroke.points.length; i++) {
+              const prev = stroke.points[i - 1]
+              const curr = stroke.points[i]
+              const pressure = curr.pressure ?? 0.5
+              ctx.lineWidth = baseWidth * (0.3 + pressure * 1.4) // range: 30%-170% of base width
+
+              ctx.beginPath()
+              ctx.moveTo(prev.x, prev.y)
+
+              // Smooth curve using midpoints for quadratic bezier
+              if (i < stroke.points.length - 1) {
+                const next = stroke.points[i + 1]
+                const midX = (curr.x + next.x) / 2
+                const midY = (curr.y + next.y) / 2
+                ctx.quadraticCurveTo(curr.x, curr.y, midX, midY)
+              } else {
+                ctx.lineTo(curr.x, curr.y)
+              }
+              ctx.stroke()
+            }
+          } else {
+            // Standard rendering with smooth curves (no pressure)
+            ctx.lineWidth = baseWidth
+            ctx.beginPath()
+            ctx.moveTo(stroke.points[0].x, stroke.points[0].y)
+
+            if (stroke.points.length === 2) {
+              ctx.lineTo(stroke.points[1].x, stroke.points[1].y)
+            } else {
+              // Smooth curve through midpoints
+              for (let i = 1; i < stroke.points.length - 1; i++) {
+                const curr = stroke.points[i]
+                const next = stroke.points[i + 1]
+                const midX = (curr.x + next.x) / 2
+                const midY = (curr.y + next.y) / 2
+                ctx.quadraticCurveTo(curr.x, curr.y, midX, midY)
+              }
+              // Connect to last point
+              const last = stroke.points[stroke.points.length - 1]
+              ctx.lineTo(last.x, last.y)
+            }
+            ctx.stroke()
           }
-          ctx.stroke()
         }
 
         ctx.restore()
@@ -306,26 +348,40 @@ export const PdfAnnotationCanvas = ({
     return () => window.removeEventListener('resize', handleResize)
   }, [effectiveIsImage, imageLoaded, syncCanvasSize, isFullscreen])
 
-  // Get position relative to canvas
+  // Get position relative to canvas (supports PointerEvent pressure)
   const getPos = useCallback(
-    (e: React.MouseEvent | React.TouchEvent): Point => {
+    (e: React.PointerEvent | React.MouseEvent | React.TouchEvent): Point => {
       const canvas = getActiveCanvas()
       if (!canvas) return { x: 0, y: 0 }
 
       const rect = canvas.getBoundingClientRect()
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+      let clientX: number, clientY: number
+      let pressure = 0.5 // default for mouse
+
+      if ('touches' in e && e.touches.length > 0) {
+        clientX = e.touches[0].clientX
+        clientY = e.touches[0].clientY
+      } else {
+        clientX = (e as React.MouseEvent).clientX
+        clientY = (e as React.MouseEvent).clientY
+      }
+
+      // Capture pen pressure from PointerEvent
+      if ('pressure' in e && (e as React.PointerEvent).pressure > 0) {
+        pressure = (e as React.PointerEvent).pressure
+      }
 
       return {
         x: clientX - rect.left,
         y: clientY - rect.top,
+        pressure,
       }
     },
     [getActiveCanvas]
   )
 
   const handlePointerDown = useCallback(
-    (e: React.MouseEvent | React.TouchEvent) => {
+    (e: React.PointerEvent | React.MouseEvent | React.TouchEvent) => {
       if (!effectiveIsImage) return
       e.preventDefault()
 
@@ -362,7 +418,7 @@ export const PdfAnnotationCanvas = ({
   )
 
   const handlePointerMove = useCallback(
-    (e: React.MouseEvent | React.TouchEvent) => {
+    (e: React.PointerEvent | React.MouseEvent | React.TouchEvent) => {
       if (!isDrawing || !currentStroke) return
       e.preventDefault()
 
@@ -571,13 +627,11 @@ export const PdfAnnotationCanvas = ({
       <canvas
         ref={cvRef}
         className={`absolute top-0 left-0 touch-none ${getCursorClass()}`}
-        onMouseDown={handlePointerDown}
-        onMouseMove={handlePointerMove}
-        onMouseUp={handlePointerUp}
-        onMouseLeave={handlePointerUp}
-        onTouchStart={handlePointerDown}
-        onTouchMove={handlePointerMove}
-        onTouchEnd={handlePointerUp}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       />
     </div>
   )
