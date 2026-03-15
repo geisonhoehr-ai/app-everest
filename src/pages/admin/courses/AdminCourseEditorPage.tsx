@@ -97,6 +97,7 @@ interface CourseDetails {
   is_active: boolean
   evercast_enabled: boolean
   sales_url: string | null
+  kiwify_product_id: string | null
 }
 
 /* ------------------------------------------------------------------ */
@@ -539,6 +540,7 @@ export default function AdminCourseEditorPage() {
     is_active: false,
     evercast_enabled: false,
     sales_url: null,
+    kiwify_product_id: null,
   })
 
   // Modules & lessons
@@ -584,9 +586,39 @@ export default function AdminCourseEditorPage() {
             .eq('id', courseId!)
             .single()
           if (fallbackError) throw fallbackError
-          setCourse({ ...fallbackData, evercast_enabled: false, sales_url: fallbackData.sales_url || null })
+          setCourse({ ...fallbackData, evercast_enabled: false, sales_url: fallbackData.sales_url || null, kiwify_product_id: null })
         } else {
-          setCourse({ ...courseData, evercast_enabled: courseData.evercast_enabled ?? false, sales_url: courseData.sales_url || null })
+          setCourse({ ...courseData, evercast_enabled: courseData.evercast_enabled ?? false, sales_url: courseData.sales_url || null, kiwify_product_id: null })
+        }
+
+        // Fetch Kiwify product mapping
+        if (courseId) {
+          const { data: kiwifyData } = await supabase
+            .from('kiwify_products' as any)
+            .select('kiwify_product_id')
+            .eq('class_id', courseId)
+            .maybeSingle()
+          // Try finding by class linked to this course
+          if (!kiwifyData) {
+            const { data: classLink } = await supabase
+              .from('class_courses')
+              .select('class_id')
+              .eq('course_id', courseId)
+              .limit(1)
+              .maybeSingle()
+            if (classLink) {
+              const { data: kiwifyByClass } = await supabase
+                .from('kiwify_products' as any)
+                .select('kiwify_product_id')
+                .eq('class_id', classLink.class_id)
+                .maybeSingle()
+              if (kiwifyByClass) {
+                setCourse(prev => ({ ...prev, kiwify_product_id: (kiwifyByClass as any).kiwify_product_id }))
+              }
+            }
+          } else {
+            setCourse(prev => ({ ...prev, kiwify_product_id: (kiwifyData as any).kiwify_product_id }))
+          }
         }
 
         // Fetch modules with lessons and attachments
@@ -1076,6 +1108,26 @@ export default function AdminCourseEditorPage() {
       setDeletedAttachmentIds([])
       setHasChanges(false)
 
+      // Save Kiwify product mapping if product ID is set
+      if (course.kiwify_product_id?.trim()) {
+        // Find the class linked to this course
+        const { data: classLink } = await supabase
+          .from('class_courses')
+          .select('class_id')
+          .eq('course_id', savedCourseId)
+          .limit(1)
+          .maybeSingle()
+
+        if (classLink) {
+          await supabase.from('kiwify_products' as any).upsert({
+            kiwify_product_id: course.kiwify_product_id.trim(),
+            class_id: classLink.class_id,
+            product_name: course.name,
+            is_active: true,
+          }, { onConflict: 'kiwify_product_id' })
+        }
+      }
+
       toast({ title: 'Curso salvo com sucesso!' })
 
       // If was new course, navigate to edit URL
@@ -1165,6 +1217,16 @@ export default function AdminCourseEditorPage() {
                     className="text-sm"
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">Aparece para alunos não matriculados na vitrine de cursos</p>
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Kiwify Product ID</label>
+                  <Input
+                    value={course.kiwify_product_id || ''}
+                    onChange={(e) => updateCourseField('kiwify_product_id', e.target.value || null)}
+                    placeholder="Ex: 9fb08420-022f-11f1-929a-d77c1f07a453"
+                    className="text-sm font-mono"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">ID do produto na Kiwify — conecta compra automática com matrícula</p>
                 </div>
                 <div className="flex items-center gap-6">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
