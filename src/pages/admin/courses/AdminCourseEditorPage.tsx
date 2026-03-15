@@ -96,6 +96,7 @@ interface CourseDetails {
   thumbnail_url: string | null
   is_active: boolean
   evercast_enabled: boolean
+  sales_url: string | null
 }
 
 /* ------------------------------------------------------------------ */
@@ -537,6 +538,7 @@ export default function AdminCourseEditorPage() {
     thumbnail_url: null,
     is_active: false,
     evercast_enabled: false,
+    sales_url: null,
   })
 
   // Modules & lessons
@@ -582,9 +584,9 @@ export default function AdminCourseEditorPage() {
             .eq('id', courseId!)
             .single()
           if (fallbackError) throw fallbackError
-          setCourse({ ...fallbackData, evercast_enabled: false })
+          setCourse({ ...fallbackData, evercast_enabled: false, sales_url: fallbackData.sales_url || null })
         } else {
-          setCourse({ ...courseData, evercast_enabled: courseData.evercast_enabled ?? false })
+          setCourse({ ...courseData, evercast_enabled: courseData.evercast_enabled ?? false, sales_url: courseData.sales_url || null })
         }
 
         // Fetch modules with lessons and attachments
@@ -915,6 +917,7 @@ export default function AdminCourseEditorPage() {
         thumbnail_url: course.thumbnail_url || null,
         is_active: course.is_active,
         status: course.is_active ? 'published' : 'draft',
+        sales_url: course.sales_url || null,
       }
 
       if (isNewCourse || !savedCourseId) {
@@ -1152,6 +1155,16 @@ export default function AdminCourseEditorPage() {
                     rows={3}
                     className="resize-none text-sm"
                   />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Link de Checkout (Kiwify, Hotmart, etc.)</label>
+                  <Input
+                    value={course.sales_url || ''}
+                    onChange={(e) => updateCourseField('sales_url', e.target.value || null)}
+                    placeholder="https://pay.kiwify.com.br/..."
+                    className="text-sm"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Aparece para alunos não matriculados na vitrine de cursos</p>
                 </div>
                 <div className="flex items-center gap-6">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
