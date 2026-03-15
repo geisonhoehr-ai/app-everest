@@ -121,16 +121,16 @@ function buildManifest(): ExamPDF[] {
 const EXTRACT_SCRIPT = path.join(__dirname, 'extract-pdf-text.py')
 
 function ensureExtractScript() {
-  if (!fs.existsSync(EXTRACT_SCRIPT)) {
-    fs.writeFileSync(EXTRACT_SCRIPT, `
-import fitz, sys, json
-doc = fitz.open(sys.argv[1])
-pages = []
-for i in range(doc.page_count):
-    pages.append(doc[i].get_text())
-print(json.dumps(pages, ensure_ascii=False))
-`.trim())
-  }
+  // Always write latest version with UTF-8 fix for Windows
+  fs.writeFileSync(EXTRACT_SCRIPT, [
+    'import fitz, sys, json, io',
+    "sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')",
+    'doc = fitz.open(sys.argv[1])',
+    'pages = []',
+    'for i in range(doc.page_count):',
+    '    pages.append(doc[i].get_text())',
+    'print(json.dumps(pages, ensure_ascii=False))',
+  ].join('\n'))
 }
 
 function extractPdfText(pdfPath: string): string {
