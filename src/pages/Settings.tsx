@@ -35,11 +35,15 @@ import {
 } from 'lucide-react'
 import { updateUserPassword } from '@/services/authService'
 
-// Função para gerar Gravatar URL
-const getGravatarUrl = (email: string, size: number = 200) => {
-  // Criar hash MD5 do email (simplificado usando crypto web API)
+// Função para gerar Gravatar URL com hash MD5 via SubtleCrypto
+const getGravatarUrl = async (email: string, size: number = 200) => {
   const emailLower = email.toLowerCase().trim()
-  return `https://www.gravatar.com/avatar/${emailLower}?s=${size}&d=identicon`
+  const encoder = new TextEncoder()
+  const data = encoder.encode(emailLower)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  return `https://www.gravatar.com/avatar/${hashHex}?s=${size}&d=identicon`
 }
 
 function SecurityPasswordForm() {
@@ -473,19 +477,43 @@ export default function SettingsPage() {
     setIsUploadingAvatar(true)
 
     try {
-      // Converter imagem para base64
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        try {
-          const base64String = reader.result as string
+      // Upload para Supabase Storage
+      const filePath = `avatars/${profile.id}/${Date.now()}-${file.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { contentType: file.type, upsert: true })
 
-          logger.debug('Salvando avatar como base64')
+      if (uploadError) {
+        // Fallback: salvar como base64 se bucket não existir
+        const reader = new FileReader()
+        reader.onloadend = async () => {
+          try {
+            const base64String = reader.result as string
+            const { error: updateError } = await supabase
+              .from('user_profiles')
+              .update({ avatar_url: base64String, updated_at: new Date().toISOString() })
+              .eq('id', profile.id)
+            if (updateError) throw updateError
+            setSettings(prev => ({ ...prev, profile: { ...prev.profile, avatar: base64String } }))
+            toast({ title: 'Avatar atualizado!' })
+          } catch (err) {
+            logger.error('Erro ao salvar avatar base64:', err)
+            toast({ title: 'Erro ao atualizar avatar', variant: 'destructive' })
+          }
+        }
+        reader.readAsDataURL(file)
+        return
+      }
 
-          // Salvar base64 direto no banco (alternativa ao storage)
+      // Obter URL pública
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+      const avatarUrl = urlData.publicUrl
+
+      try {
           const { error: updateError } = await supabase
             .from('user_profiles')
             .update({
-              avatar_url: base64String,
+              avatar_url: avatarUrl,
               updated_at: new Date().toISOString()
             })
             .eq('id', profile.id)
@@ -495,7 +523,7 @@ export default function SettingsPage() {
           // Atualizar state local
           setSettings(prev => ({
             ...prev,
-            profile: { ...prev.profile, avatar: base64String }
+            profile: { ...prev.profile, avatar: avatarUrl }
           }))
 
           // Atualizar profile no contexto
@@ -863,9 +891,15 @@ export default function SettingsPage() {
                   id="pwa-install"
                   variant="outline"
                   onClick={() => {
-                    // Trigger PWA install prompt
-                    const event = new Event('beforeinstallprompt')
-                    window.dispatchEvent(event)
+                    // Check if app is already installed
+                    if (window.matchMedia('(display-mode: standalone)').matches) {
+                      toast({ title: 'O Everest já está instalado no seu dispositivo!' })
+                      return
+                    }
+                    toast({
+                      title: 'Para instalar o Everest',
+                      description: 'Use o menu do navegador > "Instalar aplicativo" ou "Adicionar à tela inicial".',
+                    })
                   }}
                 >
                   <Download className="mr-2 h-4 w-4" />

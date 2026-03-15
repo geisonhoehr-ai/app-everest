@@ -37,19 +37,9 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 
-const chartData = [
-  { day: 'Seg', hours: 2.5 },
-  { day: 'Ter', hours: 3 },
-  { day: 'Qua', hours: 4 },
-  { day: 'Qui', hours: 2 },
-  { day: 'Sex', hours: 5 },
-  { day: 'Sáb', hours: 6 },
-  { day: 'Dom', hours: 1.5 },
-]
-
 const chartConfig = {
-  hours: {
-    label: 'Horas de Estudo',
+  progress: {
+    label: 'Progresso',
     color: 'hsl(var(--primary))',
   },
 }
@@ -128,14 +118,13 @@ export default function DashboardPage() {
         const result = await cachedFetch(`dashboard-${userId}`, () =>
           Promise.all([
             courseService.getUserCoursesByTrail(userId),
-            dashboardService.getUserCourses(userId),
             dashboardService.getUpcomingEvents(userId),
             rankingService.getUserPosition(userId).catch(() => null),
             rankingService.getUserRanking(5).catch(() => []),
           ])
         )
         setFromCache(result.fromCache)
-        const [trailsData, userCourses, upcomingEvents, positionData, rankingData] = result.data
+        const [trailsData, upcomingEvents, positionData, rankingData] = result.data
 
         // Stats from trails
         const trails = Array.isArray(trailsData) ? trailsData : []
@@ -162,7 +151,7 @@ export default function DashboardPage() {
           studyTime: isNaN(totalStudyHours) ? 0 : Math.round(totalStudyHours),
         })
 
-        setCourses(userCourses)
+        setCourses(allCourses)
         setEvents(upcomingEvents)
         setUserPosition(positionData)
         setTopRanking(rankingData)
@@ -393,30 +382,36 @@ export default function DashboardPage() {
 
       {/* Second Row */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Progresso Semanal */}
+        {/* Progresso por Curso */}
         <Card className="border-border shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Progresso Semanal</CardTitle>
-            <CardDescription>Horas de estudo nos últimos 7 dias</CardDescription>
+            <CardTitle className="text-base font-semibold">Progresso por Curso</CardTitle>
+            <CardDescription>Seu avanço em cada curso</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[200px] w-full">
-              <BarChart accessibilityLayer data={chartData}>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="day"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                  fontSize={12}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="dot" />}
-                />
-                <Bar dataKey="hours" fill="var(--color-hours)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ChartContainer>
+            {courses.length > 0 ? (
+              <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                <BarChart accessibilityLayer data={courses.map(c => ({ name: c.title?.substring(0, 20) + (c.title?.length > 20 ? '...' : ''), progress: c.progress || 0 }))}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="name"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                    fontSize={11}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent indicator="dot" />}
+                  />
+                  <Bar dataKey="progress" fill="var(--color-progress)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
+                Nenhum curso matriculado ainda.
+              </div>
+            )}
           </CardContent>
         </Card>
 

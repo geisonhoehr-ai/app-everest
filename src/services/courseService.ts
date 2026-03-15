@@ -413,6 +413,7 @@ export const courseService = {
           )
         `)
         .eq('id', courseId)
+        .eq('is_active', true)
         .single()
 
       if (courseError) throw courseError
