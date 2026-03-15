@@ -85,7 +85,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm max-w-none focus:outline-none px-3 py-2',
+          'prose prose-sm dark:prose-invert max-w-none focus:outline-none px-3 py-2',
           className
         ),
         style: `min-height: ${minHeight}`,

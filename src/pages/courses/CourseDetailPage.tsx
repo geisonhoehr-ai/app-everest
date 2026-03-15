@@ -133,12 +133,16 @@ export default function CourseDetailPage() {
             description: data.description,
             thumbnail_url: data.thumbnail_url,
             sales_url: data.sales_url || null,
-            modules: (data.modules || []).map((m: ModuleWithLessons) => ({
+            modules: (data.modules || [])
+              .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
+              .map((m: ModuleWithLessons) => ({
               id: m.id,
               name: m.name,
               description: m.description,
               order_index: m.order_index,
-              lessons: (m.lessons || []).map((l: LessonWithProgress) => ({
+              lessons: (m.lessons || [])
+                .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
+                .map((l: LessonWithProgress) => ({
                 id: l.id,
                 title: l.title,
                 description: l.description,

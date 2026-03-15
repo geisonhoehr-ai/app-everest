@@ -1375,7 +1375,7 @@ export default function LessonPlayerPage() {
                                     className={cn(
                                       "flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold transition-all",
                                       isPdf
-                                        ? "flex-1 text-foreground bg-gray-100 hover:bg-gray-200 border border-border/60"
+                                        ? "flex-1 text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-border/60"
                                         : "flex-1 text-white bg-primary hover:bg-primary/90 shadow-sm"
                                     )}>
                                     <Download className="h-3.5 w-3.5" />
