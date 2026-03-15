@@ -173,8 +173,8 @@ serve(async (req) => {
       })
     }
 
-    // 6. Send welcome email via Resend (only for new users)
-    if (RESEND_API_KEY && !existingUser) {
+    // 6. Send email via Resend (welcome for new users, confirmation for existing)
+    if (RESEND_API_KEY) {
       const appUrl = Deno.env.get('APP_URL') || 'https://app.everestpreparatorios.com.br'
 
       const emailHtml = [
