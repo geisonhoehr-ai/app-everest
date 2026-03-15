@@ -603,55 +603,89 @@ function ModuleListView({
   isEnrolled: boolean
   onLockedClick: () => void
 }) {
+  // When not enrolled, check which modules have any preview lessons
+  const modulesWithPreview = new Set(
+    course.modules
+      .filter(m => m.lessons.some(l => l.is_preview))
+      .map(m => m.id)
+  )
+
   return (
-    <Accordion type="multiple" defaultValue={defaultOpenModule} className="space-y-3">
+    <Accordion type="multiple" defaultValue={isEnrolled ? defaultOpenModule : []} className="space-y-3">
       {course.modules.map((module, idx) => {
         const completedInModule = module.lessons.filter((l) => l.completed).length
         const totalInModule = module.lessons.length
         const allCompleted = totalInModule > 0 && completedInModule === totalInModule
         const moduleProgress =
           totalInModule > 0 ? Math.round((completedInModule / totalInModule) * 100) : 0
+        const isModuleLocked = !isEnrolled && !modulesWithPreview.has(module.id)
 
         return (
           <AccordionItem
             key={module.id}
             value={module.id}
-            className="border border-border rounded-xl overflow-hidden bg-card"
+            className={cn(
+              "border border-border rounded-xl overflow-hidden bg-card",
+              isModuleLocked && "opacity-60"
+            )}
           >
-            <AccordionTrigger className="px-5 py-4 hover:bg-muted/30 hover:no-underline transition-colors">
+            <AccordionTrigger
+              className="px-5 py-4 hover:bg-muted/30 hover:no-underline transition-colors"
+              onClick={(e) => {
+                if (isModuleLocked) {
+                  e.preventDefault()
+                  onLockedClick()
+                }
+              }}
+            >
               <div className="flex items-center justify-between w-full pr-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  {/* Module number */}
-                  <span
-                    className={cn(
-                      'flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold',
-                      allCompleted
-                        ? 'bg-green-500/15 text-green-500'
-                        : 'bg-primary/10 text-primary'
-                    )}
-                  >
-                    {idx + 1}
-                  </span>
-                  <span className="font-semibold text-left truncate text-foreground">
+                  {/* Module number or lock */}
+                  {isModuleLocked ? (
+                    <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-muted">
+                      <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                    </span>
+                  ) : (
+                    <span
+                      className={cn(
+                        'flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold',
+                        allCompleted
+                          ? 'bg-green-500/15 text-green-500'
+                          : 'bg-primary/10 text-primary'
+                      )}
+                    >
+                      {idx + 1}
+                    </span>
+                  )}
+                  <span className={cn("font-semibold text-left truncate", isModuleLocked ? "text-muted-foreground" : "text-foreground")}>
                     {module.name}
                   </span>
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0 ml-4">
-                  {/* Mini progress bar */}
-                  <div className="hidden sm:flex items-center gap-2 w-24">
-                    <Progress
-                      value={moduleProgress}
-                      className="h-1.5 bg-muted [&>div]:bg-blue-500"
-                    />
-                    <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">
-                      {moduleProgress}%
+                  {!isModuleLocked && (
+                    <>
+                      {/* Mini progress bar */}
+                      <div className="hidden sm:flex items-center gap-2 w-24">
+                        <Progress
+                          value={moduleProgress}
+                          className="h-1.5 bg-muted [&>div]:bg-blue-500"
+                        />
+                        <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">
+                          {moduleProgress}%
+                        </span>
+                      </div>
+                      {/* Lesson count */}
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {completedInModule}/{totalInModule} aula{totalInModule !== 1 ? 's' : ''}
+                      </span>
+                      {allCompleted && <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />}
+                    </>
+                  )}
+                  {isModuleLocked && (
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {totalInModule} aula{totalInModule !== 1 ? 's' : ''} · Bloqueado
                     </span>
-                  </div>
-                  {/* Lesson count */}
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {completedInModule}/{totalInModule} aula{totalInModule !== 1 ? 's' : ''}
-                  </span>
-                  {allCompleted && <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />}
+                  )}
                 </div>
               </div>
             </AccordionTrigger>
