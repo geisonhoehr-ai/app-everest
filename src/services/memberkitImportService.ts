@@ -551,10 +551,9 @@ export async function importMemberkitUsers(
     }
   }
 
-  // Filter only active memberships
-  const activeMemberships = allMemberships.filter(
-    (m) => m.status === 'active',
-  )
+  // Import all memberships (active, expired, and inactive)
+  // Previously filtered only 'active' which excluded most students
+  const activeMemberships = allMemberships
 
   onProgress?.({
     step: 'Importando usuarios',
