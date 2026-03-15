@@ -98,6 +98,7 @@ interface CourseDetails {
   evercast_enabled: boolean
   sales_url: string | null
   kiwify_product_id: string | null
+  show_in_storefront: boolean
 }
 
 /* ------------------------------------------------------------------ */
@@ -541,6 +542,7 @@ export default function AdminCourseEditorPage() {
     evercast_enabled: false,
     sales_url: null,
     kiwify_product_id: null,
+    show_in_storefront: false,
   })
 
   // Modules & lessons
@@ -586,9 +588,9 @@ export default function AdminCourseEditorPage() {
             .eq('id', courseId!)
             .single()
           if (fallbackError) throw fallbackError
-          setCourse({ ...fallbackData, evercast_enabled: false, sales_url: fallbackData.sales_url || null, kiwify_product_id: null })
+          setCourse({ ...fallbackData, evercast_enabled: false, sales_url: fallbackData.sales_url || null, kiwify_product_id: null, show_in_storefront: fallbackData.show_in_storefront ?? false })
         } else {
-          setCourse({ ...courseData, evercast_enabled: courseData.evercast_enabled ?? false, sales_url: courseData.sales_url || null, kiwify_product_id: null })
+          setCourse({ ...courseData, evercast_enabled: courseData.evercast_enabled ?? false, sales_url: courseData.sales_url || null, kiwify_product_id: null, show_in_storefront: courseData.show_in_storefront ?? false })
         }
 
         // Fetch Kiwify product mapping
@@ -950,6 +952,7 @@ export default function AdminCourseEditorPage() {
         is_active: course.is_active,
         status: course.is_active ? 'published' : 'draft',
         sales_url: course.sales_url || null,
+        show_in_storefront: course.show_in_storefront,
       }
 
       if (isNewCourse || !savedCourseId) {
@@ -1245,6 +1248,15 @@ export default function AdminCourseEditorPage() {
                     />
                     <span className={course.evercast_enabled ? 'text-purple-500 font-medium' : 'text-muted-foreground'}>
                       {course.evercast_enabled ? 'Evercast ativo' : 'Evercast desativado'}
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Switch
+                      checked={course.show_in_storefront}
+                      onCheckedChange={(v) => updateCourseField('show_in_storefront', v)}
+                    />
+                    <span className={course.show_in_storefront ? 'text-orange-500 font-medium' : 'text-muted-foreground'}>
+                      {course.show_in_storefront ? 'Vitrine ativa' : 'Vitrine desativada'}
                     </span>
                   </label>
                 </div>
