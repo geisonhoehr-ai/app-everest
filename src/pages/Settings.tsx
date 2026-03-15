@@ -477,102 +477,44 @@ export default function SettingsPage() {
     setIsUploadingAvatar(true)
 
     try {
-      // Upload para Supabase Storage
+      let avatarUrl: string
+
+      // Try Supabase Storage first
       const filePath = `avatars/${profile.id}/${Date.now()}-${file.name}`
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { contentType: file.type, upsert: true })
 
       if (uploadError) {
-        // Fallback: salvar como base64 se bucket não existir
-        const reader = new FileReader()
-        reader.onloadend = async () => {
-          try {
-            const base64String = reader.result as string
-            const { error: updateError } = await supabase
-              .from('user_profiles')
-              .update({ avatar_url: base64String, updated_at: new Date().toISOString() })
-              .eq('id', profile.id)
-            if (updateError) throw updateError
-            setSettings(prev => ({ ...prev, profile: { ...prev.profile, avatar: base64String } }))
-            toast({ title: 'Avatar atualizado!' })
-          } catch (err) {
-            logger.error('Erro ao salvar avatar base64:', err)
-            toast({ title: 'Erro ao atualizar avatar', variant: 'destructive' })
-          }
-        }
-        reader.readAsDataURL(file)
-        return
-      }
-
-      // Obter URL pública
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
-      const avatarUrl = urlData.publicUrl
-
-      try {
-          const { error: updateError } = await supabase
-            .from('user_profiles')
-            .update({
-              avatar_url: avatarUrl,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', profile.id)
-
-          if (updateError) throw updateError
-
-          // Atualizar state local
-          setSettings(prev => ({
-            ...prev,
-            profile: { ...prev.profile, avatar: avatarUrl }
-          }))
-
-          // Atualizar profile no contexto
-          await refreshProfile()
-
-          toast({
-            title: 'Sucesso!',
-            description: 'Sua foto de perfil foi atualizada.',
-          })
-
-          logger.debug('Avatar atualizado com sucesso')
-        } catch (error: any) {
-          logger.error('Erro ao salvar avatar:', error)
-          toast({
-            title: 'Erro ao salvar',
-            description: 'Não foi possível salvar a imagem. Tente usar uma URL externa.',
-            variant: 'destructive'
-          })
-        } finally {
-          setIsUploadingAvatar(false)
-          // Limpar input
-          if (fileInputRef.current) {
-            fileInputRef.current.value = ''
-          }
-        }
-      }
-
-      reader.onerror = () => {
-        logger.error('Erro ao ler arquivo')
-        toast({
-          title: 'Erro',
-          description: 'Não foi possível ler o arquivo.',
-          variant: 'destructive'
+        // Fallback: convert to base64 if storage bucket doesn't exist
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(reader.result as string)
+          reader.onerror = () => reject(new Error('Erro ao ler arquivo'))
+          reader.readAsDataURL(file)
         })
-        setIsUploadingAvatar(false)
+        avatarUrl = base64
+      } else {
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+        avatarUrl = urlData.publicUrl
       }
 
-      reader.readAsDataURL(file)
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+        .eq('id', profile.id)
+
+      if (updateError) throw updateError
+
+      setSettings(prev => ({ ...prev, profile: { ...prev.profile, avatar: avatarUrl } }))
+      await refreshProfile()
+      toast({ title: 'Foto de perfil atualizada!' })
     } catch (error: any) {
-      logger.error('Erro ao processar arquivo:', error)
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível processar o arquivo.',
-        variant: 'destructive'
-      })
+      logger.error('Erro ao salvar avatar:', error)
+      toast({ title: 'Erro ao salvar avatar', variant: 'destructive' })
+    } finally {
       setIsUploadingAvatar(false)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
