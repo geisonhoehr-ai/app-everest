@@ -459,6 +459,8 @@ export default function FlashcardStudyPage() {
               transformStyle: 'preserve-3d',
               transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
               minHeight: '360px',
+              maxHeight: '70vh',
+              height: 'auto',
             }}
             onClick={studyState === 'question' ? handleFlip : undefined}
           >
@@ -483,10 +485,15 @@ export default function FlashcardStudyPage() {
                     Card {currentIndex + 1} de {studyDeck.length}
                   </span>
                 </div>
-                <div className="flex-grow flex items-center justify-center py-6">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center leading-relaxed text-foreground">
+                <div className="flex-grow flex items-center justify-center overflow-y-auto py-4">
+                  <p className={cn(
+                    'font-bold text-center leading-relaxed text-foreground break-words',
+                    currentCard.question.length > 300 ? 'text-sm sm:text-base' :
+                    currentCard.question.length > 150 ? 'text-base sm:text-lg md:text-xl' :
+                    'text-xl sm:text-2xl md:text-3xl'
+                  )}>
                     {currentCard.question}
-                  </h2>
+                  </p>
                 </div>
                 {/* Feedback overlay */}
                 {lastAnswer && (
@@ -528,17 +535,24 @@ export default function FlashcardStudyPage() {
                     Card {currentIndex + 1} de {studyDeck.length}
                   </span>
                 </div>
-                <div className="flex-grow flex items-center justify-center py-6">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center leading-relaxed text-foreground">
-                    {currentCard.answer}
-                  </h2>
-                </div>
-                {currentCard.explanation && (
-                  <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20 mb-3">
-                    <p className="text-xs font-semibold text-blue-600 mb-1">Explicação:</p>
-                    <p className="text-sm text-foreground">{currentCard.explanation}</p>
+                <div className="flex-grow overflow-y-auto py-4">
+                  <div className="flex items-center justify-center min-h-full">
+                    <p className={cn(
+                      'font-bold text-center leading-relaxed text-foreground break-words',
+                      currentCard.answer.length > 300 ? 'text-sm sm:text-base' :
+                      currentCard.answer.length > 150 ? 'text-base sm:text-lg md:text-xl' :
+                      'text-xl sm:text-2xl md:text-3xl'
+                    )}>
+                      {currentCard.answer}
+                    </p>
                   </div>
-                )}
+                  {currentCard.explanation && (
+                    <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20 mt-4">
+                      <p className="text-xs font-semibold text-blue-600 mb-1">Explicação:</p>
+                      <p className="text-xs sm:text-sm text-foreground line-clamp-6">{currentCard.explanation}</p>
+                    </div>
+                  )}
+                </div>
                 {currentCard.external_resource_url && (
                   <Button asChild variant="outline" size="sm" className="w-full">
                     <a href={currentCard.external_resource_url} target="_blank" rel="noopener noreferrer">
