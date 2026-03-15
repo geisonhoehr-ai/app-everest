@@ -40,18 +40,25 @@ export interface UserProgress {
 }
 
 // Build XP totals from scores table (the actual source of truth)
+// Batches requests to avoid hitting Supabase's .in() limit (~300 items)
 async function getXPFromScores(userIds: string[]): Promise<Map<string, number>> {
-  const { data, error } = await supabase
-    .from('scores')
-    .select('user_id, score_value')
-    .in('user_id', userIds)
-
   const xpMap = new Map<string, number>()
-  if (!error && data) {
-    for (const row of data) {
-      xpMap.set(row.user_id, (xpMap.get(row.user_id) || 0) + (row.score_value || 0))
+  const BATCH_SIZE = 200
+
+  for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+    const batch = userIds.slice(i, i + BATCH_SIZE)
+    const { data, error } = await supabase
+      .from('scores')
+      .select('user_id, score_value')
+      .in('user_id', batch)
+
+    if (!error && data) {
+      for (const row of data) {
+        xpMap.set(row.user_id, (xpMap.get(row.user_id) || 0) + (row.score_value || 0))
+      }
     }
   }
+
   return xpMap
 }
 
@@ -148,10 +155,29 @@ export async function unlockAchievement(userId: string, achievementId: string): 
   if (error) throw error
 }
 
-// Ranking by Class (turma) - built from scores table
+// Ranking by Class (turma) - uses RPC to aggregate at DB level
 export async function getRankingByClass(classId: string, limit: number = 50): Promise<RankingEntry[]> {
   try {
-    // Get student IDs in this class
+    // Try RPC first (single query, aggregated at DB level)
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_ranking_by_class', {
+      p_class_id: classId,
+      ranking_limit: limit,
+    })
+
+    if (!rpcError && rpcData && rpcData.length > 0) {
+      return (rpcData as any[]).map((row, index) => ({
+        user_id: row.user_id,
+        email: row.email || '',
+        first_name: row.first_name || '',
+        last_name: row.last_name || '',
+        total_xp: row.total_xp || 0,
+        level: calculateLevel(row.total_xp || 0),
+        achievements_count: row.achievements_count || 0,
+        position: index + 1,
+      }))
+    }
+
+    // Fallback: client-side aggregation
     const { data: classStudents, error: classError } = await supabase
       .from('student_classes')
       .select('user_id')
@@ -161,7 +187,6 @@ export async function getRankingByClass(classId: string, limit: number = 50): Pr
 
     const studentIds = classStudents.map(s => s.user_id)
 
-    // Build XP from scores + fetch users and achievements in parallel
     const [xpMap, usersResult, achievementsResult] = await Promise.all([
       getXPFromScores(studentIds),
       supabase.from('users').select('id, email, first_name, last_name').in('id', studentIds),
@@ -174,7 +199,6 @@ export async function getRankingByClass(classId: string, limit: number = 50): Pr
       achievementCounts.set(ua.user_id, (achievementCounts.get(ua.user_id) || 0) + 1)
     }
 
-    // Build ranking sorted by XP
     const entries: RankingEntry[] = studentIds
       .map(uid => {
         const user = usersMap.get(uid)
@@ -218,30 +242,43 @@ export async function getStudentClassIds(userId: string): Promise<{ class_id: st
   }
 }
 
-// Ranking - built from scores table
+// Ranking - uses RPC to aggregate at DB level (no full table scan)
 export async function getRanking(limit: number = 50): Promise<RankingEntry[]> {
   try {
-    // Get all scores grouped by user
+    // Try RPC first (single query, aggregated at DB level)
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_ranking', { ranking_limit: limit })
+
+    if (!rpcError && rpcData && rpcData.length > 0) {
+      return (rpcData as any[]).map((row, index) => ({
+        user_id: row.user_id,
+        email: row.email || '',
+        first_name: row.first_name || '',
+        last_name: row.last_name || '',
+        total_xp: row.total_xp || 0,
+        level: calculateLevel(row.total_xp || 0),
+        achievements_count: row.achievements_count || 0,
+        position: index + 1,
+      }))
+    }
+
+    // Fallback: client-side aggregation with limited data
     const { data: scoresData, error: scoresError } = await supabase
       .from('scores')
       .select('user_id, score_value')
 
     if (scoresError || !scoresData || scoresData.length === 0) return []
 
-    // Aggregate XP per user
     const xpMap = new Map<string, number>()
     for (const row of scoresData) {
       xpMap.set(row.user_id, (xpMap.get(row.user_id) || 0) + (row.score_value || 0))
     }
 
-    // Sort by XP and take top N
     const topUsers = Array.from(xpMap.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit)
 
     const userIds = topUsers.map(([uid]) => uid)
 
-    // Batch fetch users and achievement counts
     const [usersResult, achievementsResult] = await Promise.all([
       supabase.from('users').select('id, email, first_name, last_name').in('id', userIds),
       supabase.from('user_achievements').select('user_id').in('user_id', userIds),
@@ -355,23 +392,35 @@ export async function addXP(
   if (error) throw error
 }
 
-// Global Stats
+// Global Stats - uses RPC to aggregate at DB level
 export async function getGamificationStats() {
   try {
-    const [achievementsResult, rankingResult, scoresResult] = await Promise.all([
+    // Try RPC first (1 query)
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_gamification_stats')
+    if (!rpcError && rpcData) {
+      const d = rpcData as any
+      return {
+        totalAchievements: d.total_achievements || 0,
+        totalUnlocked: d.total_unlocked || 0,
+        totalXP: d.total_xp || 0,
+        activeUsers: d.active_users || 0,
+      }
+    }
+
+    // Fallback: count queries (no full table scans)
+    const [achievementsResult, rankingResult, scoresCountResult, activeUsersResult] = await Promise.all([
       supabase.from('achievements').select('*', { count: 'exact', head: true }),
       supabase.from('user_achievements').select('*', { count: 'exact', head: true }),
-      supabase.from('scores').select('user_id, score_value'),
+      supabase.rpc('get_total_xp'),
+      supabase.from('scores').select('user_id').limit(10000),
     ])
 
-    const scores = scoresResult.data || []
-    const totalXP = scores.reduce((sum, s) => sum + (s.score_value || 0), 0)
-    const activeUsers = new Set(scores.map(s => s.user_id)).size
+    const activeUsers = new Set((activeUsersResult.data || []).map(s => s.user_id)).size
 
     return {
       totalAchievements: achievementsResult.count || 0,
       totalUnlocked: rankingResult.count || 0,
-      totalXP,
+      totalXP: (scoresCountResult.data as any) || 0,
       activeUsers,
     }
   } catch {

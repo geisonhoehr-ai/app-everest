@@ -163,28 +163,45 @@ export function useNotifications() {
   // Contar notificações não lidas (memoizado)
   const unreadCount = useMemo(() => notifications.filter(n => !n.is_read).length, [notifications])
 
-  // Polling para atualizações de notificações (30s interval)
-  // Substituiu Realtime WebSocket para reduzir conexões simultâneas em escala
+  // Realtime subscription for instant notification updates (1 WebSocket per user)
+  // More efficient than polling: no repeated queries, instant delivery
   useEffect(() => {
     if (!user?.id) return
 
-    const POLL_INTERVAL = 30_000 // 30 segundos
+    // Initial load
+    loadNotifications()
 
-    const poll = () => {
-      loadNotifications()
-    }
-
-    const intervalId = setInterval(poll, POLL_INTERVAL)
+    // Subscribe to realtime changes for this user's notifications
+    const channel = supabase
+      .channel(`notifications:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setNotifications(prev => [payload.new as Notification, ...prev])
+          } else if (payload.eventType === 'UPDATE') {
+            setNotifications(prev =>
+              prev.map(n => n.id === (payload.new as Notification).id ? payload.new as Notification : n)
+            )
+          } else if (payload.eventType === 'DELETE') {
+            setNotifications(prev =>
+              prev.filter(n => n.id !== (payload.old as any).id)
+            )
+          }
+        }
+      )
+      .subscribe()
 
     return () => {
-      clearInterval(intervalId)
+      supabase.removeChannel(channel)
     }
   }, [user?.id, loadNotifications])
-
-  // Carregar notificações na inicialização
-  useEffect(() => {
-    loadNotifications()
-  }, [loadNotifications])
 
   return {
     notifications,

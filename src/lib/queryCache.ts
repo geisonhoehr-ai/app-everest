@@ -34,10 +34,11 @@ export function invalidateCache(keyPrefix: string): void {
   }
 }
 
-// TTL constants
+// TTL constants - longer TTLs for stable data to reduce DB load at scale
 export const CACHE_TTL = {
-  DASHBOARD_STATS: 5 * 60 * 1000,    // 5 min
-  COURSE_LIST: 10 * 60 * 1000,       // 10 min
-  LEADERBOARD: 60 * 1000,            // 1 min
-  ANALYTICS: 2 * 60 * 1000,          // 2 min
+  DASHBOARD_STATS: 30 * 60 * 1000,   // 30 min (stats change rarely)
+  COURSE_LIST: 30 * 60 * 1000,       // 30 min (courses change rarely)
+  LEADERBOARD: 5 * 60 * 1000,        // 5 min (scores update more often)
+  ANALYTICS: 15 * 60 * 1000,         // 15 min (aggregated data)
+  VIDEO_METADATA: 60 * 60 * 1000,    // 1 hour (Panda video URLs rarely change)
 } as const

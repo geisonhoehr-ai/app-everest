@@ -251,7 +251,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Initialize auth - runs only once
   useEffect(() => {
     let mounted = true
-    let refreshInterval: NodeJS.Timeout | null = null
 
     const initializeAuth = async () => {
       try {
@@ -269,20 +268,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         await handleSessionChange(initialSession)
 
-        // Set up token refresh check every 5 minutes
-        if (initialSession) {
-          refreshInterval = setInterval(async () => {
-            const { data: { session: currentSession } } = await supabase.auth.getSession()
-            if (currentSession) {
-              const expiresAt = currentSession.expires_at
-              const now = Math.floor(Date.now() / 1000)
-
-              if (expiresAt && (expiresAt - now) < 600) {
-                await supabase.auth.refreshSession()
-              }
-            }
-          }, 5 * 60 * 1000)
-        }
+        // Token refresh is handled automatically by Supabase's onAuthStateChange
+        // (TOKEN_REFRESHED event) - no manual interval needed
 
       } catch (error) {
         if (!mounted) return
@@ -328,10 +315,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (event === 'SIGNED_OUT') {
-          if (refreshInterval) {
-            clearInterval(refreshInterval)
-            refreshInterval = null
-          }
           setSession(null)
           setProfile(null)
           setProfileFetchAttempted(false)
@@ -357,19 +340,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             })
           }
 
-          // Set up token refresh if not already running
-          if (!refreshInterval) {
-            refreshInterval = setInterval(async () => {
-              const { data: { session: currentSession } } = await supabase.auth.getSession()
-              if (currentSession) {
-                const expiresAt = currentSession.expires_at
-                const now = Math.floor(Date.now() / 1000)
-                if (expiresAt && (expiresAt - now) < 600) {
-                  await supabase.auth.refreshSession()
-                }
-              }
-            }, 5 * 60 * 1000)
-          }
+          // Token refresh handled by Supabase onAuthStateChange (TOKEN_REFRESHED)
         }
 
         await handleSessionChange(newSession)
@@ -386,9 +357,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       mounted = false
       subscription.unsubscribe()
-      if (refreshInterval) {
-        clearInterval(refreshInterval)
-      }
     }
   }, [handleSessionChange, toast])
 
