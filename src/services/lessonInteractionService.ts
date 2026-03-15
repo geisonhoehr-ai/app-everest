@@ -172,20 +172,23 @@ export const lessonInteractionService = {
 
   // ---- NOTES ----
 
-  async getNote(lessonId: string, userId: string): Promise<string> {
+  async getNote(lessonId: string, userId: string): Promise<{ content: string; drawingData: string | null }> {
     try {
       const { data, error } = await supabase
         .from('lesson_notes')
-        .select('content')
+        .select('content, drawing_data')
         .eq('lesson_id', lessonId)
         .eq('user_id', userId)
         .maybeSingle()
 
       if (error) throw error
-      return data?.content || ''
+      return {
+        content: data?.content || '',
+        drawingData: (data as any)?.drawing_data || null,
+      }
     } catch (error) {
       logger.error('Error fetching note:', error)
-      return ''
+      return { content: '', drawingData: null }
     }
   },
 
@@ -203,6 +206,24 @@ export const lessonInteractionService = {
       return true
     } catch (error) {
       logger.error('Error saving note:', error)
+      return false
+    }
+  },
+
+  async saveDrawing(lessonId: string, userId: string, drawingData: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('lesson_notes')
+        .upsert({
+          lesson_id: lessonId,
+          user_id: userId,
+          drawing_data: drawingData,
+        } as any, { onConflict: 'lesson_id,user_id' })
+
+      if (error) throw error
+      return true
+    } catch (error) {
+      logger.error('Error saving drawing:', error)
       return false
     }
   },

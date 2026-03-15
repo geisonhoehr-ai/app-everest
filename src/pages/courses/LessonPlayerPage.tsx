@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import DOMPurify from 'dompurify'
+import { StudentNotebook } from '@/components/StudentNotebook'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -49,6 +50,7 @@ import {
   Search,
   Save,
   Loader2,
+  BookOpen,
 } from 'lucide-react'
 
 /* ------------------------------------------------------------------ */
@@ -167,6 +169,12 @@ export default function LessonPlayerPage() {
   const [noteLastSaved, setNoteLastSaved] = useState<string | null>(null)
   const noteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Notebook (drawing + split view)
+  const [drawingData, setDrawingData] = useState<string | null>(null)
+  const [notebookOpen, setNotebookOpen] = useState(false)
+  const [notebookExpanded, setNotebookExpanded] = useState(false)
+  const drawingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // Auto-play next lesson
   const [autoPlayNext, setAutoPlayNext] = useState(() => {
     return localStorage.getItem('everest-autoplay') !== 'false'
@@ -268,8 +276,9 @@ export default function LessonPlayerPage() {
         ])
         setComments(commentsData)
         setRatingStats(ratingsData)
-        setNoteContent(noteData)
-        setNoteLastSaved(noteData ? 'Salvo' : null)
+        setNoteContent(noteData.content || noteData as any || '')
+        setDrawingData(noteData.drawingData || null)
+        setNoteLastSaved(noteData.content ? 'Salvo' : null)
       } catch (error) {
         logger.error('Error fetching lesson data:', error)
         toast({ title: 'Erro ao carregar aula', variant: 'destructive' })
@@ -427,10 +436,23 @@ export default function LessonPlayerPage() {
     }, 1500)
   }, [user?.id, lessonId])
 
-  // Cleanup note timer on unmount
+  // Drawing auto-save (debounced)
+  const handleDrawingChange = useCallback((data: string) => {
+    setDrawingData(data)
+    setNoteLastSaved('Salvando...')
+    if (drawingTimerRef.current) clearTimeout(drawingTimerRef.current)
+    drawingTimerRef.current = setTimeout(async () => {
+      if (!user?.id || !lessonId) return
+      const ok = await lessonInteractionService.saveDrawing(lessonId, user.id, data)
+      setNoteLastSaved(ok ? 'Salvo' : 'Erro ao salvar')
+    }, 1500)
+  }, [user?.id, lessonId])
+
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (noteTimerRef.current) clearTimeout(noteTimerRef.current)
+      if (drawingTimerRef.current) clearTimeout(drawingTimerRef.current)
     }
   }, [])
 
@@ -968,6 +990,29 @@ export default function LessonPlayerPage() {
               </div>
 
               {/* ======================================================== */}
+              {/* Notebook split panel (beside video area)                   */}
+              {/* ======================================================== */}
+              {notebookOpen && (
+                <div className={cn(
+                  "border-b border-border bg-card transition-all duration-300",
+                  notebookExpanded ? "h-[80vh]" : "h-[50vh]",
+                  "px-4 sm:px-6 lg:px-8 py-3"
+                )}>
+                  <StudentNotebook
+                    noteContent={noteContent}
+                    onNoteChange={handleNoteChange}
+                    drawingData={drawingData}
+                    onDrawingChange={handleDrawingChange}
+                    lessonTitle={lessonData?.title || 'Aula'}
+                    saveStatus={noteLastSaved}
+                    expanded={notebookExpanded}
+                    onToggleExpand={() => setNotebookExpanded(prev => !prev)}
+                    className="h-full"
+                  />
+                </div>
+              )}
+
+              {/* ======================================================== */}
               {/* Below video — info + actions                               */}
               {/* ======================================================== */}
               <div className={cn(
@@ -1110,6 +1155,18 @@ export default function LessonPlayerPage() {
                   >
                     <StickyNote className="h-3.5 w-3.5" />
                     Anotações
+                  </button>
+                  <button
+                    onClick={() => setNotebookOpen(prev => !prev)}
+                    className={cn(
+                      "flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-medium transition-all border",
+                      notebookOpen
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                    )}
+                  >
+                    <BookOpen className="h-3.5 w-3.5" />
+                    Caderno
                   </button>
                 </div>
               </div>
