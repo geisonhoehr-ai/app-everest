@@ -85,8 +85,8 @@ export const NotebookCanvas = memo(function NotebookCanvas({
 
   // Draw lined paper background
   const drawBackground = useCallback((ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    // Paper background
-    ctx.fillStyle = 'var(--notebook-bg, #fefce8)'
+    // Paper background (cream/yellow — always light for paper feel)
+    ctx.fillStyle = '#fffef5'
     ctx.fillRect(0, 0, w, h)
 
     // Red margin line
@@ -124,7 +124,7 @@ export const NotebookCanvas = memo(function NotebookCanvas({
       if (stroke.tool === 'eraser') {
         // Eraser paints background color over strokes
         ctx.globalCompositeOperation = 'source-over'
-        ctx.strokeStyle = '#fefce8'
+        ctx.strokeStyle = '#fffef5'
         ctx.globalAlpha = 1
       } else if (stroke.tool === 'highlighter') {
         ctx.globalCompositeOperation = 'source-over'
@@ -324,12 +324,11 @@ export const NotebookCanvas = memo(function NotebookCanvas({
       </div>
 
       {/* Canvas area */}
-      <div ref={containerRef} className="flex-1 relative overflow-auto rounded-b-lg border border-t-0 border-border"
-        style={{ '--notebook-bg': '#fefce8' } as React.CSSProperties}>
+      <div ref={containerRef} className="flex-1 relative overflow-auto rounded-b-lg border border-t-0 border-border">
         <canvas
           ref={canvasRef}
           className="touch-none cursor-crosshair"
-          style={{ background: '#fefce8' }}
+          style={{ background: '#fffef5' }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
