@@ -187,15 +187,23 @@ export default function AdminLiveEventsPage() {
       stream_url: live.stream_url,
       class_id: live.class_id || 'global',
       course_id: live.course_id || 'none',
-      scheduled_start: live.scheduled_start.slice(0, 16),
-      scheduled_end: live.scheduled_end.slice(0, 16),
+      scheduled_start: new Date(live.scheduled_start).toISOString().slice(0, 16),
+      scheduled_end: new Date(live.scheduled_end).toISOString().slice(0, 16),
     })
     setDialogOpen(true)
   }
 
   const handleSave = async () => {
-    if (!form.title || !form.stream_url || !form.scheduled_start || !form.scheduled_end) {
+    if (!form.title || !form.scheduled_start || !form.scheduled_end) {
       toast({ title: 'Preencha os campos obrigatórios', variant: 'destructive' })
+      return
+    }
+    if (form.provider !== 'panda' && !form.stream_url) {
+      toast({ title: 'Informe a URL da stream', variant: 'destructive' })
+      return
+    }
+    if (new Date(form.scheduled_end) <= new Date(form.scheduled_start)) {
+      toast({ title: 'O horário de término deve ser após o início', variant: 'destructive' })
       return
     }
     setSaving(true)
@@ -242,8 +250,12 @@ export default function AdminLiveEventsPage() {
       }
       setDialogOpen(false)
       await loadData()
-    } catch {
-      toast({ title: 'Erro ao salvar', variant: 'destructive' })
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao salvar',
+        description: err?.message || 'Tente novamente.',
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }
@@ -252,20 +264,20 @@ export default function AdminLiveEventsPage() {
   const handleStartLive = async (id: string) => {
     try {
       await startLive(id)
-      toast({ title: 'Live iniciada!' })
+      toast({ title: 'Live iniciada!', description: 'Os alunos foram notificados.' })
       await loadData()
-    } catch {
-      toast({ title: 'Erro ao iniciar live', variant: 'destructive' })
+    } catch (err: any) {
+      toast({ title: 'Erro ao iniciar live', description: err?.message, variant: 'destructive' })
     }
   }
 
   const handleEndLive = async (id: string) => {
     try {
       await endLive(id)
-      toast({ title: 'Live encerrada!' })
+      toast({ title: 'Live encerrada!', description: 'Gravação em processamento no Panda.' })
       await loadData()
-    } catch {
-      toast({ title: 'Erro ao encerrar live', variant: 'destructive' })
+    } catch (err: any) {
+      toast({ title: 'Erro ao encerrar live', description: err?.message, variant: 'destructive' })
     }
   }
 
@@ -274,8 +286,8 @@ export default function AdminLiveEventsPage() {
       await cancelLive(id)
       toast({ title: 'Live cancelada!' })
       await loadData()
-    } catch {
-      toast({ title: 'Erro ao cancelar live', variant: 'destructive' })
+    } catch (err: any) {
+      toast({ title: 'Erro ao cancelar live', description: err?.message, variant: 'destructive' })
     }
   }
 
@@ -286,8 +298,8 @@ export default function AdminLiveEventsPage() {
       toast({ title: 'Live excluída!' })
       setDeleteDialogOpen(false)
       await loadData()
-    } catch {
-      toast({ title: 'Erro ao excluir live', variant: 'destructive' })
+    } catch (err: any) {
+      toast({ title: 'Erro ao excluir live', description: err?.message, variant: 'destructive' })
     }
   }
 
@@ -372,7 +384,7 @@ export default function AdminLiveEventsPage() {
       </div>
 
       {/* Table */}
-      <Card className="border-border shadow-sm">
+      <Card className="border-border shadow-sm overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

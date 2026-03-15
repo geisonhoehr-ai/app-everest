@@ -37,12 +37,11 @@ export function LivePlayerEmbed({ provider, streamUrl, title }: LivePlayerEmbedP
   }
 
   return (
-    <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border bg-black">
+    <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-border bg-black shadow-sm">
       <iframe
         src={streamUrl}
-        title={title}
-        className="absolute inset-0 w-full h-full"
-        frameBorder="0"
+        title={`Aula ao vivo: ${title}`}
+        className="absolute inset-0 w-full h-full border-0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
       />

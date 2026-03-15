@@ -103,7 +103,7 @@ export default function LiveEventsPage() {
                   )}
 
                   <Button
-                    className="w-full gap-2"
+                    className="w-full gap-2 min-h-[44px]"
                     variant={live.status === 'live' ? 'destructive' : 'outline'}
                     asChild
                   >

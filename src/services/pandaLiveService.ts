@@ -50,10 +50,21 @@ async function pandaFetch<T>(endpoint: string, options?: RequestInit): Promise<T
   if (!res.ok) {
     const text = await res.text()
     logger.error(`[PandaLive] ${options?.method || 'GET'} ${endpoint} → ${res.status}:`, text)
-    throw new Error(`Panda API error: ${res.status}`)
+
+    // Parse Panda error message if possible
+    let message = `Erro na API Panda (${res.status})`
+    try {
+      const parsed = JSON.parse(text)
+      if (parsed.message) message = parsed.message
+      else if (parsed.error) message = parsed.error
+    } catch { /* use default message */ }
+
+    throw new Error(message)
   }
 
-  return res.json()
+  const text = await res.text()
+  if (!text) return {} as T
+  return JSON.parse(text)
 }
 
 /**

@@ -439,11 +439,11 @@ export const getUpcomingLives = async (): Promise<LiveEvent[]> => {
 
 const extractVideoSourceId = (url: string, provider: 'panda' | 'youtube'): string => {
   if (provider === 'youtube') {
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=))([a-zA-Z0-9_-]{11})/)
+    const match = url.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|live\/))([a-zA-Z0-9_-]{11})/)
     return match?.[1] || url
   }
-  // Panda: extract UUID from embed URL
-  const match = url.match(/[?&]v=([a-f0-9-]{36})/)
+  // Panda: extract UUID from embed URL or raw UUID
+  const match = url.match(/[?&]v=([a-f0-9-]{36})/) || url.match(/^([a-f0-9-]{36})$/)
   return match?.[1] || url
 }
 
