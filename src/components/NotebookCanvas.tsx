@@ -29,10 +29,16 @@ interface NotebookCanvasProps {
 }
 
 const COLORS = [
+  { value: '#1f2937', label: 'Preto' },
   { value: '#1e40af', label: 'Azul' },
   { value: '#dc2626', label: 'Vermelho' },
   { value: '#16a34a', label: 'Verde' },
-  { value: '#1f2937', label: 'Preto' },
+  { value: '#7c3aed', label: 'Roxo' },
+  { value: '#ea580c', label: 'Laranja' },
+  { value: '#0891b2', label: 'Ciano' },
+  { value: '#be185d', label: 'Rosa' },
+  { value: '#854d0e', label: 'Marrom' },
+  { value: '#6b7280', label: 'Cinza' },
 ]
 
 const STROKE_WIDTHS = [
