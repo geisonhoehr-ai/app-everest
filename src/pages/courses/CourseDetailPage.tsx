@@ -550,7 +550,7 @@ function ModuleCardView({
             {/* View module link */}
             {isEnrolled ? (
               <Link
-                to={`/courses/${courseId}/lessons/${module.lessons[0]?.id ?? ''}`}
+                to={`/courses/${courseId}/lessons/${(module.lessons.find(l => !l.completed) || module.lessons[0])?.id ?? ''}`}
                 className={cn(
                   'mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200',
                   'bg-primary text-primary-foreground hover:bg-green-600 hover:shadow-md'

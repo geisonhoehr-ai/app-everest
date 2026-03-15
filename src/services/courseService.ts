@@ -259,10 +259,10 @@ export const courseService = {
         .select(`
           course_id,
           video_courses (
-            id, name, description, thumbnail_url,
-            video_modules (
-              id,
-              video_lessons ( id, duration_seconds )
+            id, name, description, thumbnail_url, category,
+            video_modules!video_modules_course_id_fkey (
+              id, is_active,
+              video_lessons ( id, duration_seconds, is_active )
             )
           )
         `)
@@ -279,13 +279,13 @@ export const courseService = {
         const course = cc.video_courses as any
         if (!course || courseMap.has(cc.course_id)) continue
 
-        const modules = course.video_modules || []
+        const modules = (course.video_modules || []).filter((m: any) => m.is_active !== false)
         const moduleIds = modules.map((m: any) => m.id)
         const lessonIds: string[] = []
         let totalSeconds = 0
 
         for (const mod of modules) {
-          for (const lesson of mod.video_lessons || []) {
+          for (const lesson of (mod.video_lessons || []).filter((l: any) => l.is_active !== false)) {
             lessonIds.push(lesson.id)
             totalSeconds += lesson.duration_seconds || 0
           }
@@ -335,7 +335,7 @@ export const courseService = {
           modules_count: moduleIds.length,
           lessons_count: lessonsCount,
           total_hours: Math.round(totalSeconds / 3600 * 10) / 10,
-          category: 'Geral',
+          category: course.category || 'Geral',
         })
       }
 

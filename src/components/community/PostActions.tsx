@@ -73,11 +73,11 @@ export function PostActions({ post, onAction }: PostActionsProps) {
           {/* Author actions */}
           {isAuthor && (
             <>
-              <DropdownMenuItem>
-                <Pencil className="h-4 w-4 mr-2" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+              <DropdownMenuItem onClick={() => {
+                if (window.confirm('Tem certeza que deseja excluir este post? Esta ação não pode ser desfeita.')) {
+                  handleDelete()
+                }
+              }} className="text-destructive">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Excluir
               </DropdownMenuItem>

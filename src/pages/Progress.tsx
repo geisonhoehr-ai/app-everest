@@ -81,7 +81,7 @@ export default function ProgressPage() {
         // Total study hours from course durations (approximate)
         const totalHours = Math.round(courses.reduce((sum, c) => sum + (c.total_hours || 0), 0))
 
-        // Build recent activity from courses sorted by progress (most recent progress first)
+        // Build activity from courses with most progress
         const recentActivity = courses
           .filter(c => c.progress > 0)
           .sort((a, b) => b.progress - a.progress)
@@ -90,7 +90,6 @@ export default function ProgressPage() {
             course: c.title,
             progress: c.progress,
             completed: c.progress >= 100,
-            date: new Date().toISOString().split('T')[0]
           }))
 
         // Build achievements list from real data

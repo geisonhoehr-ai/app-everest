@@ -34,8 +34,6 @@ import {
   Clock,
   Menu,
   X,
-  SkipBack,
-  SkipForward,
   Moon,
   Sun,
   PanelRightOpen,
@@ -353,8 +351,9 @@ export default function LessonPlayerPage() {
       })
       toast({ title: 'Aula concluida!', description: 'Parabens! +10 XP. Continue seu progresso.' })
       if (nextLesson) setTimeout(() => navigate(`/courses/${courseId}/lessons/${nextLesson.id}`), 1500)
-    } catch {
-      toast({ title: 'Erro', description: 'Nao foi possivel marcar a aula como concluida.', variant: 'destructive' })
+    } catch (error) {
+      logger.error('Erro ao marcar aula como concluída:', error)
+      toast({ title: 'Erro', description: 'Não foi possível marcar a aula como concluída.', variant: 'destructive' })
     }
   }, [user?.id, lessonId, lessonData, toast, nextLesson, courseId, navigate])
 
@@ -379,8 +378,9 @@ export default function LessonPlayerPage() {
         setReplyingTo(null)
         toast({ title: 'Comentario enviado! +5 XP' })
       }
-    } catch {
-      toast({ title: 'Erro ao enviar comentario', variant: 'destructive' })
+    } catch (error) {
+      logger.error('Erro ao enviar comentário:', error)
+      toast({ title: 'Erro ao enviar comentário', variant: 'destructive' })
     } finally {
       setSubmittingComment(false)
     }
@@ -426,6 +426,13 @@ export default function LessonPlayerPage() {
       setNoteLastSaved(ok ? 'Salvo' : 'Erro ao salvar')
     }, 1500)
   }, [user?.id, lessonId])
+
+  // Cleanup note timer on unmount
+  useEffect(() => {
+    return () => {
+      if (noteTimerRef.current) clearTimeout(noteTimerRef.current)
+    }
+  }, [])
 
   /* ---- auto-play toggle ---- */
   const toggleAutoPlay = useCallback(() => {
@@ -1192,6 +1199,7 @@ export default function LessonPlayerPage() {
                               onChange={(e) => setCommentText(e.target.value)}
                               placeholder="Compartilhe sua dúvida ou comentário sobre esta aula..."
                               rows={2}
+                              maxLength={2000}
                               className="w-full px-4 py-3 text-sm bg-muted/30 border-0 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-muted/50 text-foreground placeholder:text-muted-foreground/50 transition-all"
                             />
                             {commentText.trim() && (

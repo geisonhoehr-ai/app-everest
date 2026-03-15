@@ -439,7 +439,7 @@ export default function AcervoDigitalPage() {
                       size="sm"
                       variant="outline"
                       className="h-8 px-3 text-xs gap-1.5 opacity-70 group-hover/item:opacity-100 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
-                      onClick={() => setViewingFile(item)}
+                      onClick={() => handleViewWithWatermark(item)}
                     >
                       <Eye className="h-3.5 w-3.5" />
                       Ler
